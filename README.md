@@ -33,7 +33,7 @@ Canot fait cette répétition de départ, sans que vous quittiez votre fournisse
 | Contrôle | `canot verify-evidence` | toute modification du dossier après coup se voit |
 | Nettoyage | `canot teardown` | supprime ce qui a été copié |
 
-Un exemple complet sur données inventées est dans [`examples/distributeur-fictif/`](examples/distributeur-fictif/).
+Un exemple sur données inventées : [`examples/distributeur-fictif/`](examples/distributeur-fictif/). Un exemple réel sur BigQuery (jeu public `thelook_ecommerce`) : [`examples/bigquery-thelook/`](examples/bigquery-thelook/), où Canot repère une requête qui diverge (`DATE_TRUNC` rend une `DATE` chez BigQuery, un horodatage ailleurs).
 Ce que le client reçoit, offre par offre : [`docs/livrables.md`](docs/livrables.md).
 
 ## Essayer en 2 minutes, sans compte
@@ -64,7 +64,7 @@ Détails, pays de l'UE et qualifications : [`docs/cibles-ue.md`](docs/cibles-ue.
 | | |
 |---|---|
 | Source DuckDB, cible locale Iceberg | testées de bout en bout (`pytest`) |
-| Source BigQuery | scan testé sur un vrai projet Google ; copie en cours de validation |
+| Source BigQuery | testée sur un vrai projet Google (jeu public, 3,3 M de lignes copiées en 20 s, 7 tables identiques) : [`examples/bigquery-thelook/`](examples/bigquery-thelook/) |
 | Sources Snowflake, Databricks | écrites, **pas encore testées sur un vrai compte** |
 | Cibles S3 souveraines | écrites, à essayer |
 | Module OpenTofu Scaleway | validé, jamais appliqué |

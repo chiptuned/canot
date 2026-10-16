@@ -18,7 +18,7 @@ class Job:
 
 class FakeClient:
     def __init__(self): self.sql = []
-    def query(self, sql):
+    def query(self, sql, **kw):
         self.sql.append(sql)
         s = sql.lower()
         if "from" in s and ".columns" in s:

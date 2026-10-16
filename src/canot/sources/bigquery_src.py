@@ -42,8 +42,16 @@ class BigQuerySource(Source):
     def table_ref(self, table: TableInfo) -> str:
         return f"{q(self.data_project, 'bigquery')}.{table.sql_for('bigquery')}"
 
+    def _job(self, sql: str):
+        try:  # étiquette : ces requêtes sont les nôtres, on les exclut de l'historique rejoué
+            from google.cloud import bigquery
+
+            return self.client.query(sql, job_config=bigquery.QueryJobConfig(labels={"tool": "canot"}))
+        except ImportError:
+            return self.client.query(sql)
+
     def _rows(self, sql: str) -> list[tuple]:
-        return [tuple(r.values()) for r in self.client.query(sql).result()]
+        return [tuple(r.values()) for r in self._job(sql).result()]
 
     def _datasets(self) -> list[str]:
         return self.datasets or [d.dataset_id for d in self.client.list_datasets()]
@@ -79,10 +87,17 @@ class BigQuerySource(Source):
 
     def read(self, table: TableInfo, batch_rows: int = 100_000) -> Iterator[pa.RecordBatch]:
         ref = f"{self.data_project}.{table.schema}.{table.name}"
-        yield from self.client.list_rows(ref, page_size=batch_rows).to_arrow_iterable()
+        bqs = None
+        try:  # API Storage Read : bien plus rapide que les pages REST
+            from google.cloud import bigquery_storage
+
+            bqs = bigquery_storage.BigQueryReadClient()
+        except Exception:
+            pass
+        yield from self.client.list_rows(ref, page_size=batch_rows).to_arrow_iterable(bqstorage_client=bqs)
 
     def query(self, sql: str) -> pa.Table:
-        return self.client.query(sql).to_arrow()
+        return self._job(sql).to_arrow()
 
     def history_queries(self, limit: int = 20) -> list[str]:
         try:
@@ -93,6 +108,7 @@ class BigQuerySource(Source):
                 "and creation_time > timestamp_sub(current_timestamp(), interval 30 day) "
                 "and statement_type='SELECT' and cache_hit is not true "
                 "and lower(query) not like '%information_schema%' "
+                "and not exists (select 1 from unnest(labels) l where l.key='tool' and l.value='canot') "
                 f"group by query order by b desc limit {int(limit)}"
             )
             return [r[0] for r in rows]

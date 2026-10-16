@@ -181,7 +181,10 @@ def replay_queries(src: Source, queries: list[str], catalog, tables: list[TableI
     for sql in queries:
         qc = QueryCheck(sql, None, "error")
         try:
-            tr = sqlglot.transpile(sql, read=src.dialect, write="duckdb")[0]
+            tree = sqlglot.parse_one(sql, read=src.dialect)
+            for tb in tree.find_all(exp.Table):  # le projet (catalogue) n'existe pas côté copie
+                tb.set("catalog", None)
+            tr = tree.sql(dialect="duckdb")
             qc.translated = tr
             for db, name in referenced_tables(sql, src.dialect):
                 t = by_name.get(((db or "").lower(), name.lower())) if db else None
