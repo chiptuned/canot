@@ -8,3 +8,4 @@ canot-out/
 *.tfvars
 private/
 .DS_Store
+dist/

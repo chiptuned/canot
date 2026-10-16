@@ -3,8 +3,20 @@ name = "canot"
 version = "0.1.0"
 description = "Prouvez que vous pouvez partir : exercice de sortie Snowflake/Databricks vers Apache Iceberg, avec dossier de preuve."
 readme = "README.md"
-license = { text = "Apache-2.0" }
-requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [{ name = "Vincent Fraillon" }]
+keywords = ["data", "snowflake", "bigquery", "databricks", "iceberg", "migration", "reversibility", "DORA", "data-act", "sovereign-cloud"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Information Technology",
+  "Programming Language :: Python :: 3",
+  "Topic :: Database",
+  "Topic :: System :: Archiving :: Backup",
+]
 dependencies = [
   "duckdb>=1.1",
   "pyarrow>=16",
@@ -12,6 +24,11 @@ dependencies = [
   "sqlglot>=25",
   "cryptography>=42",
 ]
+
+[project.urls]
+Homepage = "https://canot.io"
+Source = "https://github.com/chiptuned/canot"
+Issues = "https://github.com/chiptuned/canot/issues"
 
 [project.optional-dependencies]
 snowflake = ["snowflake-connector-python[pandas]>=3.12"]

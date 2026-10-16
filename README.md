@@ -33,8 +33,8 @@ Canot fait cette répétition de départ, sans que vous quittiez votre fournisse
 | Contrôle | `canot verify-evidence` | toute modification du dossier après coup se voit |
 | Nettoyage | `canot teardown` | supprime ce qui a été copié |
 
-Un exemple sur données inventées : [`examples/distributeur-fictif/`](examples/distributeur-fictif/). Un exemple réel sur BigQuery (jeu public `thelook_ecommerce`) : [`examples/bigquery-thelook/`](examples/bigquery-thelook/), où Canot repère une requête qui diverge (`DATE_TRUNC` rend une `DATE` chez BigQuery, un horodatage ailleurs).
-Ce que le client reçoit, offre par offre : [`docs/livrables.md`](docs/livrables.md).
+Un exemple sur données inventées : [`examples/distributeur-fictif/`](https://github.com/chiptuned/canot/tree/main/examples/distributeur-fictif/). Un exemple réel sur BigQuery (jeu public `thelook_ecommerce`) : [`examples/bigquery-thelook/`](https://github.com/chiptuned/canot/tree/main/examples/bigquery-thelook/), où Canot repère une requête qui diverge (`DATE_TRUNC` rend une `DATE` chez BigQuery, un horodatage ailleurs).
+Ce que le client reçoit, offre par offre : [`docs/livrables.md`](https://github.com/chiptuned/canot/blob/main/docs/livrables.md).
 
 ## Essayer en 2 minutes, sans compte
 
@@ -51,7 +51,7 @@ canot verify-evidence canot-out
 |---|---|
 | Snowflake, BigQuery, Databricks, DuckDB (démo) | Scaleway, OVHcloud, Outscale, IONOS, STACKIT, AWS, ou un dossier local |
 
-Détails, pays de l'UE et qualifications : [`docs/cibles-ue.md`](docs/cibles-ue.md).
+Détails, pays de l'UE et qualifications : [`docs/cibles-ue.md`](https://github.com/chiptuned/canot/blob/main/docs/cibles-ue.md).
 
 ## Sécurité
 
@@ -64,7 +64,7 @@ Détails, pays de l'UE et qualifications : [`docs/cibles-ue.md`](docs/cibles-ue.
 | | |
 |---|---|
 | Source DuckDB, cible locale Iceberg | testées de bout en bout (`pytest`) |
-| Source BigQuery | testée sur un vrai projet Google (jeu public, 3,3 M de lignes copiées en 20 s, 7 tables identiques) : [`examples/bigquery-thelook/`](examples/bigquery-thelook/) |
+| Source BigQuery | testée sur un vrai projet Google (jeu public, 3,3 M de lignes copiées en 20 s, 7 tables identiques) : [`examples/bigquery-thelook/`](https://github.com/chiptuned/canot/tree/main/examples/bigquery-thelook/) |
 | Source Snowflake | testée sur un compte d'essai (TPC-H, 8,7 M de lignes copiées en 15 s pour le plus gros fichier, 8 tables identiques ; une requête diverge : `AVG` d'un décimal) |
 | Source Databricks | écrite, **pas encore testée sur un vrai compte** |
 | Cibles S3 souveraines | écrites, à essayer |
