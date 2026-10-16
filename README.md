@@ -7,7 +7,8 @@
 
 <p align="center">
   <b>Prouvez que vous pouvez partir.</b> · <i>Prove you can leave.</i><br>
-  Copie, compare et signe : un exercice de sortie de votre plateforme de données, dans vos comptes.
+  Copie, compare et signe : un exercice de sortie de votre plateforme de données, dans vos comptes.<br>
+  <a href="https://canot.io">canot.io</a> : le site, un exemple de rapport et la prise de contact.
 </p>
 
 <p align="center">
@@ -19,6 +20,7 @@
 </p>
 
 <p align="center">
+  <a href="https://canot.io"><b>canot.io</b></a> ·
   <a href="#-démonstration">Démonstration</a> ·
   <a href="#-pourquoi">Pourquoi</a> ·
   <a href="#%EF%B8%8F-comment-ça-marche">Comment ça marche</a> ·
@@ -127,6 +129,6 @@ La contribution la plus utile : **un cas qui fait diverger deux moteurs** (`VARI
 
 ## Licence
 
-Apache-2.0. Canot est un outil libre ; les missions et l'abonnement (dossiers signés planifiés, modèles réglementaires, support) sont proposés séparément par [q4o](https://q4o.com).
+Apache-2.0. Canot est un outil libre ; les missions et l'abonnement (dossiers signés planifiés, modèles réglementaires, support) sont proposés séparément par [q4o](https://q4o.com). Site : [canot.io](https://canot.io).
 
 <p align="center"><sub>Fait à Paris. Aucun pisteur, aucune télémétrie.</sub></p>
