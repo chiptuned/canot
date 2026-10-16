@@ -6,3 +6,4 @@ canot-out/
 .terraform/
 *.tfstate*
 *.tfvars
+private/

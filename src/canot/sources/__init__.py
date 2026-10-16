@@ -9,6 +9,10 @@ def open_source(url: str) -> Source:
         from .snowflake_src import SnowflakeSource
 
         return SnowflakeSource(url)
+    if scheme == "bigquery":
+        from .bigquery_src import BigQuerySource
+
+        return BigQuerySource(url)
     if scheme == "databricks":
         from .databricks_src import DatabricksSource
 
@@ -17,4 +21,4 @@ def open_source(url: str) -> Source:
         from .duckdb_src import DuckDBSource
 
         return DuckDBSource(url)
-    raise ValueError(f"Source inconnue : {url!r} (snowflake://, databricks://, duckdb://)")
+    raise ValueError(f"Source inconnue : {url!r} (snowflake://, bigquery://, databricks://, duckdb://)")

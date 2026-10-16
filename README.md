@@ -51,3 +51,8 @@ Voir [docs/cibles-ue.md](docs/cibles-ue.md) : hébergeurs français et européen
 ## Licence
 
 Apache-2.0. Les fonctions de l'offre payante **Canot Vigie** (dossiers signés avec modèles réglementaires, exercices planifiés, support) arrivent séparément.
+
+## Sources prises en charge
+
+`duckdb://` (démo), `snowflake://`, `bigquery://PROJET/DATASET?location=EU`, `databricks://`. BigQuery : `pip install 'canot[bigquery]'`, identifiants Google applicatifs.
+Livrables par offre : [docs/livrables.md](docs/livrables.md). Exemple chiffré sur données inventées : `examples/distributeur-fictif/`.

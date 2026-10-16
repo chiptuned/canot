@@ -15,6 +15,7 @@ dependencies = [
 
 [project.optional-dependencies]
 snowflake = ["snowflake-connector-python[pandas]>=3.12"]
+bigquery = ["google-cloud-bigquery[bqstorage]>=3.25"]
 databricks = ["databricks-sql-connector>=3.5"]
 dev = ["pytest>=8"]
 

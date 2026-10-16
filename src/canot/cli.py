@@ -48,6 +48,7 @@ def main(argv: list[str] | None = None) -> int:
     dd = sub.add_parser("demo-data", help="crée une base DuckDB de démonstration")
     dd.add_argument("path")
     dd.add_argument("--rows", type=int, default=20_000)
+    dd.add_argument("--retail", action="store_true", help="jeu fictif de distributeur (tickets avec lignes imbriquées)")
 
     a = ap.parse_args(argv)
     out = Path(getattr(a, "out", "canot-out"))
@@ -64,11 +65,14 @@ def main(argv: list[str] | None = None) -> int:
         _p(f"écrit : {a.path}")
         return 0
     if a.cmd == "demo-data":
-        from .demo import DEMO_QUERIES, make_demo
+        from .demo import DEMO_QUERIES, RETAIL_QUERIES, make_demo, make_retail
 
-        make_demo(a.path, a.rows)
+        if a.retail:
+            make_retail(a.path, a.rows)
+        else:
+            make_demo(a.path, a.rows)
         q = Path(a.path).with_suffix(".queries.sql")
-        q.write_text(DEMO_QUERIES)
+        q.write_text(RETAIL_QUERIES if a.retail else DEMO_QUERIES)
         _p(f"écrit : {a.path} et {q}")
         return 0
     if a.cmd == "verify-evidence":

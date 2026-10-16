@@ -41,18 +41,18 @@ def _kind(t: pa.DataType) -> str | None:
     return None
 
 
-def _stats_sql(table_sql: str, schema: pa.Schema) -> tuple[str, list[tuple[str, str]]]:
+def _stats_sql(table_sql: str, schema: pa.Schema, dialect: str = "duckdb") -> tuple[str, list[tuple[str, str]]]:
     exprs, keys = ["count(*) as n"], []
     for f in schema:
         k = _kind(f.type)
-        c = q(f.name)
-        exprs.append(f"count({c}) as {q('nn__' + f.name)}")
+        c = q(f.name, dialect)
+        exprs.append(f"count({c}) as {q('nn__' + f.name, dialect)}")
         keys.append((f.name, "nn"))
         if k:
-            exprs += [f"min({c}) as {q('min__' + f.name)}", f"max({c}) as {q('max__' + f.name)}"]
+            exprs += [f"min({c}) as {q('min__' + f.name, dialect)}", f"max({c}) as {q('max__' + f.name, dialect)}"]
             keys += [(f.name, "min"), (f.name, "max")]
         if k == "num":
-            exprs.append(f"sum({c}) as {q('sum__' + f.name)}")
+            exprs.append(f"sum({c}) as {q('sum__' + f.name, dialect)}")
             keys.append((f.name, "sum"))
     return f"select {', '.join(exprs)} from {table_sql}", keys
 
@@ -76,7 +76,7 @@ def check_table(src: Source, t: TableInfo, ice_table, source_fp: dict[int, list[
     tgt = _row(con.execute(sql_t).fetch_arrow_table())
     con.close()
 
-    sql_s, _ = _stats_sql(f"{q(src_db(src))}.{t.sql}" if src.dialect == "snowflake" else t.sql, schema)
+    sql_s, _ = _stats_sql(src.table_ref(t), schema, src.dialect)
     srow = _row(src.query(sql_s))
 
     diffs = []

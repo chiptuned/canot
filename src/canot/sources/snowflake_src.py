@@ -75,6 +75,9 @@ class SnowflakeSource(Source):
     def describe(self) -> str:
         return f"snowflake:{self.account}/{self.database}"
 
+    def table_ref(self, table: TableInfo) -> str:
+        return f"{q(self.database, 'snowflake')}.{table.sql_for('snowflake')}"
+
     def _rows(self, sql: str) -> list[tuple]:
         cur = self.con.cursor()
         try:
@@ -84,7 +87,7 @@ class SnowflakeSource(Source):
             cur.close()
 
     def tables(self) -> list[TableInfo]:
-        db = q(self.database)
+        db = q(self.database, 'snowflake')
         trs = self._rows(
             f"select table_schema, table_name, row_count, bytes from {db}.information_schema.tables "
             "where table_type='BASE TABLE' and table_schema <> 'INFORMATION_SCHEMA' order by 1,2"
@@ -100,7 +103,7 @@ class SnowflakeSource(Source):
     def read(self, table: TableInfo, batch_rows: int = 100_000) -> Iterator[pa.RecordBatch]:
         cur = self.con.cursor()
         try:
-            cur.execute(f"select * from {q(self.database)}.{table.sql}")
+            cur.execute(f"select * from {self.table_ref(table)}")
             for chunk in cur.fetch_arrow_batches():
                 yield from chunk.to_batches(max_chunksize=batch_rows)
         finally:
@@ -129,7 +132,7 @@ class SnowflakeSource(Source):
             return []
 
     def objects(self) -> dict[str, list[str]]:
-        db = q(self.database)
+        db = q(self.database, 'snowflake')
         out: dict[str, list[str]] = {}
 
         def grab(key: str, sql: str):

@@ -3,7 +3,12 @@ from __future__ import annotations
 from .convert import target_schema
 from .sources.base import Source
 
-NON_PORTABLE = ("VARIANT", "OBJECT", "ARRAY", "GEOGRAPHY", "GEOMETRY", "VECTOR", "MAP", "STRUCT")
+EGRESS_NOTES = {
+    "snowflake": "Lecture par le connecteur : pas de frais de sortie Snowflake, seulement les crédits de l'entrepôt qui lit.",
+    "bigquery": "BigQuery : la lecture facture l'API Storage Read (par Tio lu) et la sortie réseau vers l'extérieur de Google Cloud ; "
+                "le programme de sortie de Google peut les créditer sous conditions (à confirmer sur cloud.google.com/exit-cloud). Tarifs à renseigner.",
+}
+NON_PORTABLE = ("JSON", "RANGE", "INTERVAL", "VARIANT", "OBJECT", "ARRAY", "GEOGRAPHY", "GEOMETRY", "VECTOR", "MAP", "STRUCT")
 # assumed copy throughput range in MB/s: a planning assumption (est.), replaced by the measured value after a drill
 THROUGHPUT_MBPS = (20.0, 80.0)
 
@@ -39,6 +44,5 @@ def scan(src: Source, credit_price: float | None = 3.90) -> dict:
         "object_counts": movable,
         "usage_90d": src.usage_90d(),
         "exit_estimate": est,
-        "egress_note": "Lecture par le connecteur : pas de frais de sortie Snowflake, seulement les crédits de l'entrepôt qui lit."
-        if src.dialect == "snowflake" else "",
+        "egress_note": EGRESS_NOTES.get(src.dialect, ""),
     }

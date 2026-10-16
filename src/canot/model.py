@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from sqlglot import exp
 
-def q(ident: str) -> str:
-    """Quote an SQL identifier (valid for Snowflake, Databricks ANSI mode and DuckDB)."""
-    return '"' + ident.replace('"', '""') + '"'
+
+def q(ident: str, dialect: str = "duckdb") -> str:
+    """Quote an SQL identifier for the given dialect (backticks for BigQuery/Databricks, double quotes otherwise)."""
+    return exp.to_identifier(ident, quoted=True).sql(dialect=dialect)
 
 
 @dataclass
@@ -26,6 +28,9 @@ class TableInfo:
     def fqn(self) -> str:
         return f"{self.schema}.{self.name}"
 
+    def sql_for(self, dialect: str = "duckdb") -> str:
+        return f"{q(self.schema, dialect)}.{q(self.name, dialect)}"
+
     @property
     def sql(self) -> str:
-        return f"{q(self.schema)}.{q(self.name)}"
+        return self.sql_for("duckdb")

@@ -23,6 +23,10 @@ class Source(ABC):
     @abstractmethod
     def query(self, sql: str) -> pa.Table: ...
 
+    def table_ref(self, table: TableInfo) -> str:
+        """How to name the table in SQL sent to this source."""
+        return table.sql_for(self.dialect)
+
     def history_queries(self, limit: int = 20) -> list[str]:
         return []
 

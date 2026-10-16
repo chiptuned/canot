@@ -32,13 +32,16 @@ class DatabricksSource(Source):
     def describe(self) -> str:
         return f"databricks:{self.host}/{self.catalog}"
 
+    def table_ref(self, table: TableInfo) -> str:
+        return f"{q(self.catalog, 'databricks')}.{table.sql_for('databricks')}"
+
     def _rows(self, sql: str) -> list[tuple]:
         with self.con.cursor() as cur:
             cur.execute(sql)
             return cur.fetchall()
 
     def tables(self) -> list[TableInfo]:
-        cat = q(self.catalog)
+        cat = q(self.catalog, "databricks")
         trs = self._rows(
             f"select table_schema, table_name from {cat}.information_schema.tables "
             "where table_type in ('MANAGED','EXTERNAL','BASE TABLE') and table_schema <> 'information_schema' order by 1,2"
@@ -51,13 +54,13 @@ class DatabricksSource(Source):
             cols.setdefault((s, t), []).append(ColumnInfo(c, d))
         out = []
         for s, t in trs:
-            n = self._rows(f"select count(*) from {cat}.{q(s)}.{q(t)}")[0][0]
+            n = self._rows(f"select count(*) from {cat}.{q(s, "databricks")}.{q(t, "databricks")}")[0][0]
             out.append(TableInfo(s, t, int(n), None, cols.get((s, t), [])))
         return out
 
     def read(self, table: TableInfo, batch_rows: int = 100_000) -> Iterator[pa.RecordBatch]:
         with self.con.cursor() as cur:
-            cur.execute(f"select * from {q(self.catalog)}.{table.sql}")
+            cur.execute(f"select * from {self.table_ref(table)}")
             while True:
                 chunk = cur.fetchmany_arrow(batch_rows)
                 if chunk.num_rows == 0:
@@ -72,7 +75,7 @@ class DatabricksSource(Source):
     def objects(self) -> dict[str, list[str]]:
         try:
             rows = self._rows(
-                f"select table_schema, table_name from {q(self.catalog)}.information_schema.views where table_schema <> 'information_schema'"
+                f"select table_schema, table_name from {q(self.catalog, 'databricks')}.information_schema.views where table_schema <> 'information_schema'"
             )
             return {"views": [f"{a}.{b}" for a, b in rows]}
         except Exception:
