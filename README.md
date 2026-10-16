@@ -65,7 +65,8 @@ Détails, pays de l'UE et qualifications : [`docs/cibles-ue.md`](docs/cibles-ue.
 |---|---|
 | Source DuckDB, cible locale Iceberg | testées de bout en bout (`pytest`) |
 | Source BigQuery | testée sur un vrai projet Google (jeu public, 3,3 M de lignes copiées en 20 s, 7 tables identiques) : [`examples/bigquery-thelook/`](examples/bigquery-thelook/) |
-| Sources Snowflake, Databricks | écrites, **pas encore testées sur un vrai compte** |
+| Source Snowflake | testée sur un compte d'essai (TPC-H, 8,7 M de lignes copiées en 15 s pour le plus gros fichier, 8 tables identiques ; une requête diverge : `AVG` d'un décimal) |
+| Source Databricks | écrite, **pas encore testée sur un vrai compte** |
 | Cibles S3 souveraines | écrites, à essayer |
 | Module OpenTofu Scaleway | validé, jamais appliqué |
 

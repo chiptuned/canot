@@ -53,9 +53,30 @@ class Target:
         return f"vidé : s3://{path}"
 
 
+def _scw_config() -> tuple[str | None, str | None]:
+    """Clés de la CLI Scaleway (`scw init`) : ~/.config/scw/config.yaml, profil par défaut."""
+    path = Path(os.environ.get("SCW_CONFIG_PATH", Path.home() / ".config" / "scw" / "config.yaml"))
+    ak = sk = None
+    try:
+        for line in path.read_text().splitlines():
+            if line.startswith((" ", "\t")) or ":" not in line:
+                if line.strip().startswith("profiles:"):
+                    break
+                continue
+            k, v = (x.strip().strip("'\"") for x in line.split(":", 1))
+            if k == "access_key":
+                ak = v
+            elif k == "secret_key":
+                sk = v
+    except OSError:
+        pass
+    return ak, sk
+
+
 def _creds() -> dict[str, str]:
-    ak = os.environ.get("CANOT_S3_ACCESS_KEY") or os.environ.get("SCW_ACCESS_KEY") or os.environ.get("AWS_ACCESS_KEY_ID")
-    sk = os.environ.get("CANOT_S3_SECRET_KEY") or os.environ.get("SCW_SECRET_KEY") or os.environ.get("AWS_SECRET_ACCESS_KEY")
+    cak, csk = _scw_config()
+    ak = os.environ.get("CANOT_S3_ACCESS_KEY") or os.environ.get("SCW_ACCESS_KEY") or os.environ.get("AWS_ACCESS_KEY_ID") or cak
+    sk = os.environ.get("CANOT_S3_SECRET_KEY") or os.environ.get("SCW_SECRET_KEY") or os.environ.get("AWS_SECRET_ACCESS_KEY") or csk
     out = {}
     if ak and sk:
         out["s3.access-key-id"], out["s3.secret-access-key"] = ak, sk
@@ -70,7 +91,7 @@ def parse_target(spec: str, bucket: str | None, workdir: Path) -> Target:
         endpoint = PROVIDERS[provider][0].format(region=region)
         props = {"s3.endpoint": endpoint, "s3.region": region, **_creds()}
         if not props.get("s3.access-key-id"):
-            raise ValueError("Clés d'accès absentes : définissez CANOT_S3_ACCESS_KEY et CANOT_S3_SECRET_KEY.")
+            raise ValueError("Clés d'accès absentes : lancez `scw init`, ou définissez CANOT_S3_ACCESS_KEY et CANOT_S3_SECRET_KEY.")
         return Target("s3", f"{provider}:{region}/{bucket}", f"s3://{bucket}/canot", props, workdir)
     if spec.startswith("s3://"):
         u = urlparse(spec)

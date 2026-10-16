@@ -87,3 +87,14 @@ def test_fingerprint_is_order_independent():
     b = pa.table({"x": [3, 1, 2], "y": ["c", "a", None]})
     assert fingerprint(a) == fingerprint(b)
     assert fingerprint(a) != fingerprint(pa.table({"x": [1, 2, 4], "y": ["a", None, "c"]}))
+
+
+def test_scaleway_keys_from_scw_config(tmp_path, monkeypatch):
+    cfg = tmp_path / "config.yaml"
+    cfg.write_text("access_key: SCWTEST\nsecret_key: 'sekret'\ndefault_project_id: p\nprofiles:\n  other:\n    access_key: NOPE\n")
+    for v in ("CANOT_S3_ACCESS_KEY", "CANOT_S3_SECRET_KEY", "SCW_ACCESS_KEY", "SCW_SECRET_KEY", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"):
+        monkeypatch.delenv(v, raising=False)
+    monkeypatch.setenv("SCW_CONFIG_PATH", str(cfg))
+    t = parse_target("scaleway:fr-par", "b", tmp_path)
+    assert t.props["s3.access-key-id"] == "SCWTEST" and t.props["s3.secret-access-key"] == "sekret"
+    assert t.props["s3.endpoint"] == "https://s3.fr-par.scw.cloud"
