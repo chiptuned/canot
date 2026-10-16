@@ -53,7 +53,7 @@ Un même visiteur doit pouvoir aller du « pourquoi » à `uvx canot scan` en mo
 - Aucun formulaire ne collecte de données personnelles au-delà du nécessaire ; pas de pisteur tiers (cohérent avec « aucune télémétrie »).
 
 ## 8. Matériaux fournis
-- Dépôt : `~/repos/canot` (GitHub : chiptuned/canot, privé pour l'instant).
+- Dépôt : `~/repos/canot` (GitHub : chiptuned/canot).
 - `README.md` : version courte de la page. `docs/livrables.md` : ce que le client reçoit. `docs/cibles-ue.md` : hébergeurs et pays.
 - `examples/bigquery-thelook/report.html` et `examples/distributeur-fictif/report.html` : deux vrais rapports.
 - Briefing interne (contexte, vocabulaire, argumentaire) : `docs/briefing.html`.
