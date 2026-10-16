@@ -98,3 +98,17 @@ def test_scaleway_keys_from_scw_config(tmp_path, monkeypatch):
     t = parse_target("scaleway:fr-par", "b", tmp_path)
     assert t.props["s3.access-key-id"] == "SCWTEST" and t.props["s3.secret-access-key"] == "sekret"
     assert t.props["s3.endpoint"] == "https://s3.fr-par.scw.cloud"
+
+
+def test_scaleway_named_profile(tmp_path, monkeypatch):
+    cfg = tmp_path / "config.yaml"
+    cfg.write_text("access_key: TOPKEY\nsecret_key: topsecret\nprofiles:\n  canot:\n    access_key: CANOTKEY\n    secret_key: canotsecret\n    default_project_id: p\n")
+    for v in ("CANOT_S3_ACCESS_KEY", "CANOT_S3_SECRET_KEY", "SCW_ACCESS_KEY", "SCW_SECRET_KEY", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"):
+        monkeypatch.delenv(v, raising=False)
+    monkeypatch.setenv("SCW_CONFIG_PATH", str(cfg))
+    monkeypatch.setenv("SCW_PROFILE", "canot")
+    t = parse_target("scaleway:fr-par", "b", tmp_path)
+    assert t.props["s3.access-key-id"] == "CANOTKEY" and t.props["s3.secret-access-key"] == "canotsecret"
+    monkeypatch.delenv("SCW_PROFILE")
+    t = parse_target("scaleway:fr-par", "b", tmp_path)
+    assert t.props["s3.access-key-id"] == "TOPKEY"

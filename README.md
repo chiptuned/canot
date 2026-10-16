@@ -1,42 +1,80 @@
-<h1 align="center">canot</h1>
-<p align="center"><b>Prouvez que vous pouvez partir.</b><br><i>Prove you can leave.</i></p>
-
 <p align="center">
-  Exercice de sortie pour Snowflake, BigQuery et Databricks : copie vers Apache Iceberg sur un cloud que vous contrôlez,
-  comparaison ligne par ligne, dossier de preuve signé.<br>
-  Tout tourne dans vos comptes. Aucune télémétrie.
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
+    <img src="docs/assets/banner-light.svg" alt="Canot : prouvez que vous pouvez partir" width="100%">
+  </picture>
 </p>
 
-```bash
-uvx canot scan  --from "bigquery://MON-PROJET/mon_dataset?location=EU"        # gratuit, lecture seule
-uvx canot drill --from "bigquery://MON-PROJET/mon_dataset?location=EU" \
-                --to scaleway:fr-par --bucket mon-bucket --queries mes_requetes.sql
-```
+<p align="center">
+  <b>Prouvez que vous pouvez partir.</b> · <i>Prove you can leave.</i><br>
+  Copie, compare et signe : un exercice de sortie de votre plateforme de données, dans vos comptes.
+</p>
+
+<p align="center">
+  <img alt="licence Apache-2.0" src="https://img.shields.io/badge/licence-Apache--2.0-1F3A5F?style=flat-square">
+  <img alt="python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-1F3A5F?style=flat-square">
+  <img alt="statut alpha" src="https://img.shields.io/badge/statut-alpha-E8834F?style=flat-square">
+  <img alt="aucune télémétrie" src="https://img.shields.io/badge/télémétrie-aucune-2F7A4B?style=flat-square">
+  <img alt="Snowflake, BigQuery, Databricks vers Apache Iceberg" src="https://img.shields.io/badge/Snowflake%20·%20BigQuery%20·%20Databricks-→%20Iceberg-1F3A5F?style=flat-square">
+</p>
+
+<p align="center">
+  <a href="#-démonstration">Démonstration</a> ·
+  <a href="#-pourquoi">Pourquoi</a> ·
+  <a href="#%EF%B8%8F-comment-ça-marche">Comment ça marche</a> ·
+  <a href="#-démarrer">Démarrer</a> ·
+  <a href="#-où-en-est-le-projet">État</a> ·
+  <a href="docs/livrables.md">Livrables</a> ·
+  <a href="docs/cibles-ue.md">Hébergeurs</a>
+</p>
 
 ---
 
-## Pourquoi
+## ▶ Démonstration
 
-Les régulateurs demandent de plus en plus aux entreprises de **pouvoir prouver** qu'elles peuvent changer de fournisseur :
-DORA (plans de sortie testés pour la finance), Data Act (plus aucun frais de changement de cloud à partir du **12 janvier 2027**), exigences de souveraineté.
-Les fournisseurs offrent des outils gratuits pour *entrer* chez eux. Personne n'offre l'outil pour **vérifier la sortie**.
+<p align="center">
+  <img src="docs/assets/demo.svg" alt="canot drill copie 7 tables BigQuery vers Iceberg, compare tout, et signale une requête qui diverge" width="860">
+</p>
 
-Canot fait cette répétition de départ, sans que vous quittiez votre fournisseur.
+Sur un jeu public BigQuery : **3,3 millions de lignes** copiées en moins d'une minute, 7 tables identiques ligne par ligne, 3 requêtes sur 4 qui rendent le même résultat. La 4<sup>e</sup> rend une date chez BigQuery et une date avec heure ailleurs. C'est le genre d'écart qu'on veut découvrir **avant** de partir.
 
-## Ce que ça fait
+## 🧭 Pourquoi
 
-| Étape | Commande | Ce que vous obtenez |
+|  |  |  |
 |---|---|---|
-| Radiographie | `canot scan` | tables, volumes, consommation sur 90 jours, colonnes à type propre à la plateforme, objets qui ne partent pas seuls (vues, routines, modèles ML…), durée et coût de sortie estimés |
-| Exercice | `canot drill` | copie en Iceberg v2, puis comparaison table par table (schéma, lignes, min/max/sommes, empreinte de chaque ligne) et **rejeu de vos requêtes des deux côtés** avec tolérances écrites à l'avance |
-| Preuve | `report.html`, `evidence.jsonl` | parité, conversions de types avec perte possible, débit mesuré, temps de reprise en fourchette, coût estimé. Journal chaîné par empreintes et signé (Ed25519) avec une clé créée chez vous |
-| Contrôle | `canot verify-evidence` | toute modification du dossier après coup se voit |
-| Nettoyage | `canot teardown` | supprime ce qui a été copié |
+| **Le déséquilibre** | **La pression** | **Le risque caché** |
+| Snowflake et Databricks offrent des outils gratuits pour *entrer*. Personne n'offre l'outil qui vérifie la *sortie*. | DORA demande un plan de sortie **testé** aux entités financières. Le Data Act supprime les frais de changement de cloud le **12 janvier 2027**. | Un plan de sortie sur papier n'a jamais été exécuté : sa durée, son coût et ses écarts sont inconnus. |
 
-Un exemple sur données inventées : [`examples/distributeur-fictif/`](https://github.com/chiptuned/canot/tree/main/examples/distributeur-fictif/). Un exemple réel sur BigQuery (jeu public `thelook_ecommerce`) : [`examples/bigquery-thelook/`](https://github.com/chiptuned/canot/tree/main/examples/bigquery-thelook/), où Canot repère une requête qui diverge (`DATE_TRUNC` rend une `DATE` chez BigQuery, un horodatage ailleurs).
-Ce que le client reçoit, offre par offre : [`docs/livrables.md`](https://github.com/chiptuned/canot/blob/main/docs/livrables.md).
+Canot fait la répétition de départ. Vous restez chez votre fournisseur.
 
-## Essayer en 2 minutes, sans compte
+## ⚙️ Comment ça marche
+
+```mermaid
+flowchart LR
+  subgraph vos["Vos comptes : rien n'est envoyé à q4o"]
+    direction LR
+    S[("Snowflake<br/>BigQuery<br/>Databricks")] -- lecture seule --> C{{"canot drill"}}
+    C --> I[("Apache Iceberg<br/>Scaleway · OVHcloud · …")]
+    C --> R["Dossier de preuve<br/>report.html + journal signé"]
+  end
+```
+
+| | |
+|---|---|
+| 🔒 **Dans vos comptes** | Lecture seule sur la source, écriture dans un stockage à vous. Aucune télémétrie. |
+| 🔬 **Comparaison ligne par ligne** | Schéma, volumes, min/max/sommes par colonne, et empreinte de chaque ligne. |
+| 🧪 **Rejeu de vos requêtes** | Vos requêtes clés sont exécutées des deux côtés (traduites avec SQLGlot), avec des tolérances écrites à l'avance. |
+| ✍️ **Preuve signée** | Journal chaîné par empreintes et signé (Ed25519) avec une clé créée chez vous. Toute modification se voit. |
+| 🇪🇺 **Hébergeurs souverains** | Scaleway, OVHcloud, Outscale, IONOS, STACKIT, AWS : tout stockage compatible S3. |
+| 🆓 **Libre** | Apache-2.0. Vous lisez tout ce que l'outil fait avant de le lancer. |
+
+<p align="center">
+  <img src="docs/assets/report-preview.png" alt="Aperçu d'un dossier de preuve Canot" width="720">
+</p>
+
+## 🚀 Démarrer
+
+**Essayer en deux minutes, sans compte :**
 
 ```bash
 pip install canot            # ou : uvx canot ...
@@ -45,36 +83,50 @@ canot drill --from maison.duckdb --to ./lac --queries maison.queries.sql
 canot verify-evidence canot-out
 ```
 
-## Sources et cibles
+**Sur votre plateforme** (lecture seule) :
 
-| Sources | Cibles (stockage compatible S3) |
+```bash
+canot scan  --from "bigquery://MON-PROJET/mon_dataset?location=EU"       # radiographie, ne copie rien
+canot drill --from "bigquery://MON-PROJET/mon_dataset?location=EU" \
+            --to scaleway:fr-par --bucket mon-bucket --queries mes_requetes.sql
+canot teardown --to scaleway:fr-par --bucket mon-bucket                   # supprime ce qui a été copié
+```
+
+| Source | Accès à préparer |
 |---|---|
-| Snowflake, BigQuery, Databricks, DuckDB (démo) | Scaleway, OVHcloud, Outscale, IONOS, STACKIT, AWS, ou un dossier local |
+| **BigQuery** `bigquery://PROJET/dataset?location=EU` | Identifiants Google applicatifs ; rôles `BigQuery Data Viewer`, `Job User`, `Resource Viewer`. `pip install 'canot[bigquery]'` |
+| **Snowflake** `snowflake://COMPTE/BASE?user=…&schemas=…` | `canot snowflake-setup` affiche le script SQL à relire (rôle lecture seule, petit entrepôt, plafond de crédits, clé publique). `pip install 'canot[snowflake]'` |
+| **Databricks** `databricks://HÔTE/chemin-du-warehouse?catalog=…` | Jeton en lecture seule dans `DATABRICKS_TOKEN`. `pip install 'canot[databricks]'` |
 
-Détails, pays de l'UE et qualifications : [`docs/cibles-ue.md`](https://github.com/chiptuned/canot/blob/main/docs/cibles-ue.md).
+Les identifiants passent par des variables d'environnement ou la configuration de la CLI Scaleway (`scw init`), jamais par la ligne de commande.
 
-## Sécurité
+## 🧪 Où en est le projet
 
-- Lecture seule sur la source, avec les droits minimaux (script SQL fourni : `canot snowflake-setup`).
-- Identifiants uniquement par variables d'environnement. Aucune donnée ne passe par q4o.
-- Versions signées et liste des composants (SBOM) pour votre équipe sécurité.
+Canot est jeune. Voici ce qui est testé et ce qui ne l'est pas encore.
 
-## État du projet
-
-| | |
+| Brique | État |
 |---|---|
-| Source DuckDB, cible locale Iceberg | testées de bout en bout (`pytest`) |
-| Source BigQuery | testée sur un vrai projet Google (jeu public, 3,3 M de lignes copiées en 20 s, 7 tables identiques) : [`examples/bigquery-thelook/`](https://github.com/chiptuned/canot/tree/main/examples/bigquery-thelook/) |
-| Source Snowflake | testée sur un compte d'essai (TPC-H, 8,7 M de lignes copiées en 15 s pour le plus gros fichier, 8 tables identiques ; une requête diverge : `AVG` d'un décimal) |
-| Source Databricks | écrite, **pas encore testée sur un vrai compte** |
-| Cibles S3 souveraines | écrites, à essayer |
-| Module OpenTofu Scaleway | validé, jamais appliqué |
+| Source **BigQuery** | ✅ testée sur un projet réel (jeu public, 3,3 M de lignes) |
+| Source **Snowflake** | ✅ testée sur un compte d'essai (TPC-H, 8,7 M de lignes) |
+| Source DuckDB, cible Iceberg locale | ✅ testées (`pytest`) |
+| Source **Databricks** | ⚠️ écrite, pas encore testée sur un vrai compte |
+| Cibles **Scaleway**, OVHcloud et autres S3 | ⚠️ écrites, essai en cours |
 
-Canot n'est pas une certification, et ne dit rien de la conformité juridique de vos contrats.
+Exemples complets : [`examples/`](examples/). Ce que reçoit un client, offre par offre : [`docs/livrables.md`](docs/livrables.md).
 
-## Contribuer, licence
+> **Canot n'est pas une certification.** Le dossier est un relevé de mesures pour votre propre évaluation : il ne dit rien de la conformité de vos contrats ou de votre organisation.
 
-Apache-2.0. Les cas de types qui piègent (`VARIANT`, `TIMESTAMP_TZ`, `NUMERIC`, tri des `NULL`) alimentent une suite de tests publique : une contribution utile est un cas qui fait diverger deux moteurs.
-**Canot Vigie** (abonnement : dossiers signés planifiés, modèles réglementaires, support) et les missions de [q4o](https://q4o.com) sont proposés séparément.
+## 🛠 Contribuer
 
-<sub>Un nom provisoire : la marque n'a pas encore été vérifiée.</sub>
+```bash
+git clone https://github.com/chiptuned/canot && cd canot
+uv venv && uv pip install -e ".[dev]" && .venv/bin/pytest
+```
+
+La contribution la plus utile : **un cas qui fait diverger deux moteurs** (`VARIANT`, `TIMESTAMP_TZ`, `NUMERIC`, tri des `NULL`, `AVG` d'un décimal…). Chacun rejoint une suite de tests publique.
+
+## Licence
+
+Apache-2.0. Canot est un outil libre ; les missions et l'abonnement (dossiers signés planifiés, modèles réglementaires, support) sont proposés séparément par [q4o](https://q4o.com).
+
+<p align="center"><sub>Fait à Paris. Aucun pisteur, aucune télémétrie.</sub></p>

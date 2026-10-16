@@ -54,20 +54,30 @@ class Target:
 
 
 def _scw_config() -> tuple[str | None, str | None]:
-    """Clés de la CLI Scaleway (`scw init`) : ~/.config/scw/config.yaml, profil par défaut."""
+    """Clés de la CLI Scaleway (`scw init`) : ~/.config/scw/config.yaml.
+    Profil par défaut, ou le profil nommé par SCW_PROFILE (voir `scw init profile=NOM`)."""
     path = Path(os.environ.get("SCW_CONFIG_PATH", Path.home() / ".config" / "scw" / "config.yaml"))
+    wanted = os.environ.get("SCW_PROFILE")
     ak = sk = None
+    section = None  # None = haut du fichier ; sinon nom du profil en cours
     try:
-        for line in path.read_text().splitlines():
-            if line.startswith((" ", "\t")) or ":" not in line:
-                if line.strip().startswith("profiles:"):
-                    break
+        for raw in path.read_text().splitlines():
+            if not raw.strip() or raw.lstrip().startswith("#"):
                 continue
-            k, v = (x.strip().strip("'\"") for x in line.split(":", 1))
-            if k == "access_key":
-                ak = v
-            elif k == "secret_key":
-                sk = v
+            indent = len(raw) - len(raw.lstrip())
+            line = raw.strip()
+            if indent == 0:
+                section = "__profiles__" if line.startswith("profiles:") else None
+                if section is None and not wanted and ":" in line:
+                    k, v = (x.strip().strip("'\"") for x in line.split(":", 1))
+                    ak, sk = (v if k == "access_key" else ak), (v if k == "secret_key" else sk)
+                continue
+            if section == "__profiles__" and indent <= 2 and line.endswith(":"):
+                section = line[:-1]
+                continue
+            if wanted and section == wanted and ":" in line:
+                k, v = (x.strip().strip("'\"") for x in line.split(":", 1))
+                ak, sk = (v if k == "access_key" else ak), (v if k == "secret_key" else sk)
     except OSError:
         pass
     return ak, sk
