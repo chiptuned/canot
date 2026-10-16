@@ -9,3 +9,4 @@ canot-out/
 private/
 .DS_Store
 dist/
+.wrangler/
