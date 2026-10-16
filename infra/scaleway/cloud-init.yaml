@@ -1,0 +1,25 @@
+#cloud-config
+# Worker Canot : Docker + catalogue Iceberg (Lakekeeper) derrière le réseau privé uniquement. Aucun port public ouvert.
+package_update: true
+packages: [docker.io, docker-compose-v2, python3-pip, pipx]
+write_files:
+  - path: /opt/canot/docker-compose.yml
+    content: |
+      services:
+        db:
+          image: postgres:16
+          environment: { POSTGRES_PASSWORD: canot, POSTGRES_DB: lakekeeper }
+          volumes: [pgdata:/var/lib/postgresql/data]
+        lakekeeper:
+          image: quay.io/lakekeeper/catalog:latest-main
+          depends_on: [db]
+          environment:
+            LAKEKEEPER__PG_DATABASE_URL_READ: postgresql://postgres:canot@db:5432/lakekeeper
+            LAKEKEEPER__PG_DATABASE_URL_WRITE: postgresql://postgres:canot@db:5432/lakekeeper
+            LAKEKEEPER__PG_ENCRYPTION_KEY: change-me-at-first-boot
+          ports: ["127.0.0.1:8181:8181"]
+      volumes: { pgdata: {} }
+runcmd:
+  - systemctl enable --now docker
+  - [bash, -c, "cd /opt/canot && docker compose up -d"]
+  - [bash, -c, "pipx install canot || true"]

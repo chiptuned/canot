@@ -1,0 +1,163 @@
+from __future__ import annotations
+
+import os
+from collections.abc import Iterator
+from urllib.parse import parse_qs, urlparse
+
+import pyarrow as pa
+
+from ..model import ColumnInfo, TableInfo, q
+from .base import Source
+
+SETUP_SQL = """\
+-- Canot : accès en lecture seule. À relire puis à lancer par un administrateur (rôle ACCOUNTADMIN ou SECURITYADMIN).
+-- Remplacez les valeurs entre <> avant de lancer.
+CREATE ROLE IF NOT EXISTS CANOT_READER;
+CREATE WAREHOUSE IF NOT EXISTS CANOT_WH WITH WAREHOUSE_SIZE = 'XSMALL' AUTO_SUSPEND = 60 AUTO_RESUME = TRUE INITIALLY_SUSPENDED = TRUE;
+GRANT USAGE ON WAREHOUSE CANOT_WH TO ROLE CANOT_READER;
+-- Plafond de crédits pour l'exercice (ajustez si besoin)
+CREATE RESOURCE MONITOR IF NOT EXISTS CANOT_MONITOR WITH CREDIT_QUOTA = 25
+  TRIGGERS ON 100 PERCENT DO SUSPEND;
+ALTER WAREHOUSE CANOT_WH SET RESOURCE_MONITOR = CANOT_MONITOR;
+-- Lecture seule sur la base à copier
+GRANT USAGE ON DATABASE <BASE> TO ROLE CANOT_READER;
+GRANT USAGE ON ALL SCHEMAS IN DATABASE <BASE> TO ROLE CANOT_READER;
+GRANT SELECT ON ALL TABLES IN DATABASE <BASE> TO ROLE CANOT_READER;
+GRANT SELECT ON FUTURE TABLES IN DATABASE <BASE> TO ROLE CANOT_READER;
+-- Optionnel : consommation sur 90 jours pour `canot scan` (donne accès aux métadonnées de compte)
+-- GRANT IMPORTED PRIVILEGES ON DATABASE SNOWFLAKE TO ROLE CANOT_READER;
+-- Utilisateur technique, connexion par paire de clés (pas de mot de passe)
+CREATE USER IF NOT EXISTS CANOT_USER DEFAULT_ROLE = CANOT_READER DEFAULT_WAREHOUSE = CANOT_WH
+  RSA_PUBLIC_KEY = '<clé publique, sans les lignes BEGIN/END>';
+GRANT ROLE CANOT_READER TO USER CANOT_USER;
+"""
+
+
+class SnowflakeSource(Source):
+    dialect = "snowflake"
+    kind = "snowflake"
+
+    def __init__(self, url: str):
+        import snowflake.connector  # optional extra
+
+        u = urlparse(url)
+        qs = {k: v[0] for k, v in parse_qs(u.query).items()}
+        self.account = u.netloc
+        self.database = u.path.strip("/") or qs.get("database", "")
+        if not self.database:
+            raise ValueError("URL Snowflake attendue : snowflake://COMPTE/BASE?user=...&warehouse=...&role=...")
+        args: dict = dict(
+            account=self.account,
+            user=qs.get("user") or os.environ.get("SNOWFLAKE_USER"),
+            warehouse=qs.get("warehouse") or os.environ.get("SNOWFLAKE_WAREHOUSE", "CANOT_WH"),
+            role=qs.get("role") or os.environ.get("SNOWFLAKE_ROLE", "CANOT_READER"),
+            database=self.database,
+            session_parameters={"QUERY_TAG": "canot"},
+        )
+        key_path = os.environ.get("SNOWFLAKE_PRIVATE_KEY_PATH")
+        if key_path:
+            from cryptography.hazmat.primitives import serialization
+
+            pw = os.environ.get("SNOWFLAKE_PRIVATE_KEY_PASSPHRASE")
+            with open(key_path, "rb") as f:
+                key = serialization.load_pem_private_key(f.read(), password=pw.encode() if pw else None)
+            args["private_key"] = key.private_bytes(
+                serialization.Encoding.DER,
+                serialization.PrivateFormat.PKCS8,
+                serialization.NoEncryption(),
+            )
+        elif os.environ.get("SNOWFLAKE_PASSWORD"):
+            args["password"] = os.environ["SNOWFLAKE_PASSWORD"]
+        else:
+            raise ValueError("Définissez SNOWFLAKE_PRIVATE_KEY_PATH (recommandé) ou SNOWFLAKE_PASSWORD.")
+        self.con = snowflake.connector.connect(**args)
+
+    def describe(self) -> str:
+        return f"snowflake:{self.account}/{self.database}"
+
+    def _rows(self, sql: str) -> list[tuple]:
+        cur = self.con.cursor()
+        try:
+            cur.execute(sql)
+            return cur.fetchall()
+        finally:
+            cur.close()
+
+    def tables(self) -> list[TableInfo]:
+        db = q(self.database)
+        trs = self._rows(
+            f"select table_schema, table_name, row_count, bytes from {db}.information_schema.tables "
+            "where table_type='BASE TABLE' and table_schema <> 'INFORMATION_SCHEMA' order by 1,2"
+        )
+        cols: dict[tuple[str, str], list[ColumnInfo]] = {}
+        for s, t, c, d in self._rows(
+            f"select table_schema, table_name, column_name, data_type from {db}.information_schema.columns "
+            "where table_schema <> 'INFORMATION_SCHEMA' order by table_schema, table_name, ordinal_position"
+        ):
+            cols.setdefault((s, t), []).append(ColumnInfo(c, d))
+        return [TableInfo(s, t, r, b, cols.get((s, t), [])) for s, t, r, b in trs]
+
+    def read(self, table: TableInfo, batch_rows: int = 100_000) -> Iterator[pa.RecordBatch]:
+        cur = self.con.cursor()
+        try:
+            cur.execute(f"select * from {q(self.database)}.{table.sql}")
+            for chunk in cur.fetch_arrow_batches():
+                yield from chunk.to_batches(max_chunksize=batch_rows)
+        finally:
+            cur.close()
+
+    def query(self, sql: str) -> pa.Table:
+        cur = self.con.cursor()
+        try:
+            cur.execute(sql)
+            return cur.fetch_arrow_all() or pa.table({})
+        finally:
+            cur.close()
+
+    def history_queries(self, limit: int = 20) -> list[str]:
+        try:
+            rows = self._rows(
+                "select query_text, sum(total_elapsed_time) t from table(information_schema.query_history("
+                "end_time_range_start=>dateadd('day',-7,current_timestamp()), result_limit=>10000)) "
+                "where query_type='SELECT' and execution_status='SUCCESS' "
+                "and coalesce(query_tag,'') <> 'canot' "
+                "and lower(query_text) not like '%information_schema%' and lower(query_text) not like '%snowflake.account_usage%' "
+                f"group by query_text order by t desc limit {int(limit)}"
+            )
+            return [r[0] for r in rows]
+        except Exception:
+            return []
+
+    def objects(self) -> dict[str, list[str]]:
+        db = q(self.database)
+        out: dict[str, list[str]] = {}
+
+        def grab(key: str, sql: str):
+            try:
+                out[key] = [".".join(str(x) for x in r) for r in self._rows(sql)]
+            except Exception:
+                out[key] = []
+
+        grab("views", f"select table_schema, table_name from {db}.information_schema.views where table_schema <> 'INFORMATION_SCHEMA'")
+        grab("procedures", f"select procedure_schema, procedure_name from {db}.information_schema.procedures")
+        grab("functions", f"select function_schema, function_name from {db}.information_schema.functions where function_schema <> 'INFORMATION_SCHEMA'")
+        for key, show in (("tasks", "tasks"), ("streams", "streams"), ("pipes", "pipes"), ("dynamic_tables", "dynamic tables")):
+            try:
+                rows = self._rows(f"show {show} in database {db}")
+                out[key] = [str(r[1]) for r in rows]
+            except Exception:
+                out[key] = []
+        return out
+
+    def usage_90d(self) -> dict | None:
+        try:
+            r = self._rows(
+                "select coalesce(sum(credits_used),0) from snowflake.account_usage.metering_history "
+                "where start_time > dateadd(day,-90,current_timestamp())"
+            )
+            return {"credits_90d": float(r[0][0])}
+        except Exception:
+            return None
+
+    def close(self) -> None:
+        self.con.close()
