@@ -25,7 +25,10 @@ class BigQuerySource(Source):
         u = urlparse(url)
         qs = {k: v[0] for k, v in parse_qs(u.query).items()}
         self.project = u.netloc
-        self.datasets = [d for d in u.path.strip("/").split(",") if d]
+        raw = [d for d in u.path.strip("/").split(",") if d]
+        # "bigquery://FACTURATION/projet-donnees.dataset" : lire un dataset d'un autre projet (jeux publics inclus)
+        self.data_project = next((d.rsplit(".", 1)[0] for d in raw if "." in d), self.project)
+        self.datasets = [d.rsplit(".", 1)[-1] for d in raw]
         self.location = qs.get("location", "EU")
         if client is None:
             from google.cloud import bigquery  # extra optionnel
@@ -37,7 +40,7 @@ class BigQuerySource(Source):
         return f"bigquery:{self.project}" + (f"/{','.join(self.datasets)}" if self.datasets else "")
 
     def table_ref(self, table: TableInfo) -> str:
-        return f"{q(self.project, 'bigquery')}.{table.sql_for('bigquery')}"
+        return f"{q(self.data_project, 'bigquery')}.{table.sql_for('bigquery')}"
 
     def _rows(self, sql: str) -> list[tuple]:
         return [tuple(r.values()) for r in self.client.query(sql).result()]
@@ -48,7 +51,7 @@ class BigQuerySource(Source):
     def tables(self) -> list[TableInfo]:
         out = []
         for ds in self._datasets():
-            info = f"{q(self.project, 'bigquery')}.{q(ds, 'bigquery')}.INFORMATION_SCHEMA"
+            info = f"{q(self.data_project, 'bigquery')}.{q(ds, 'bigquery')}.INFORMATION_SCHEMA"
             cols: dict[str, list[ColumnInfo]] = {}
             for t, c, d in self._rows(
                 f"select table_name, column_name, data_type from {info}.COLUMNS order by table_name, ordinal_position"
@@ -65,11 +68,17 @@ class BigQuerySource(Source):
                 pass
             for (t,) in self._rows(f"select table_name from {info}.TABLES where table_type='BASE TABLE' order by 1"):
                 n, b = sizes.get(t, (None, None))
+                if n is None:  # projet de données différent ou droits limités : métadonnées de la table
+                    try:
+                        meta = self.client.get_table(f"{self.data_project}.{ds}.{t}")
+                        n, b = meta.num_rows, meta.num_bytes
+                    except Exception:
+                        pass
                 out.append(TableInfo(ds, t, n, b, cols.get(t, [])))
         return out
 
     def read(self, table: TableInfo, batch_rows: int = 100_000) -> Iterator[pa.RecordBatch]:
-        ref = f"{self.project}.{table.schema}.{table.name}"
+        ref = f"{self.data_project}.{table.schema}.{table.name}"
         yield from self.client.list_rows(ref, page_size=batch_rows).to_arrow_iterable()
 
     def query(self, sql: str) -> pa.Table:
@@ -104,13 +113,13 @@ class BigQuerySource(Source):
                 try:
                     cols = {"TABLES": "table_name", "ROUTINES": "routine_name", "ROW_ACCESS_POLICIES": "row_access_policy_id"}[view]
                     found += [f"{ds}.{r[0]}" for r in self._rows(
-                        f"select {cols} from {q(self.project, 'bigquery')}.{q(ds, 'bigquery')}.INFORMATION_SCHEMA.{view} {extra}")]
+                        f"select {cols} from {q(self.data_project, 'bigquery')}.{q(ds, 'bigquery')}.INFORMATION_SCHEMA.{view} {extra}")]
                 except Exception:
                     pass
             out[key] = found
         try:  # BigQuery ML models
             out["ml_models"] = [f"{m.dataset_id}.{m.model_id}" for ds in self._datasets()
-                                for m in self.client.list_models(f"{self.project}.{ds}")]
+                                for m in self.client.list_models(f"{self.data_project}.{ds}")]
         except Exception:
             out["ml_models"] = []
         return out
