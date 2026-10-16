@@ -246,3 +246,23 @@ textarea{padding:11px 12px;border-radius:6px;border:1px solid var(--line-2);back
 .rot .w{grid-area:1/1;transform:translateY(100%);opacity:0}
 .rot .w.d0{transform:none;opacity:1;transition:transform .55s cubic-bezier(.2,.7,.2,1),opacity .45s}
 .rot .w.d2{transform:translateY(-100%);opacity:0;transition:transform .55s cubic-bezier(.2,.7,.2,1),opacity .45s}
+
+/* bandeau q4o : le style de q4o.com (noir, libellés en capitales espacées, turquoise et magenta, lignes ondulantes) dans le site de Canot */
+.q4o-band{border-bottom:0}.q4o-band .wrap{padding-block:clamp(40px,6vw,72px) 0}
+.q4o-card{position:relative;overflow:hidden;background:#0a0a0a;color:#fff;border-radius:18px}
+.q4o-lines{position:absolute;inset:0;width:100%;height:100%}
+.q4o-inner{position:relative;padding:clamp(28px,5vw,56px);display:flex;flex-direction:column;gap:22px}
+.q4o-top{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.q4o-logo{height:30px;width:auto;filter:invert(1)}
+.mono{font:600 11.5px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:#8a8a94}
+.q4o-card h2{margin:0;color:#fff;font-size:clamp(30px,4.6vw,56px);line-height:1.05;letter-spacing:-.03em;max-width:20ch;text-wrap:balance}
+.q4o-card h2 em{color:#4cb3bf;font-style:italic;font-weight:600}.q4o-card h2 .mg{color:#d07ba0}
+.q4o-card p{margin:0;color:#c9c9d1;font-size:17px;line-height:1.6;max-width:56ch}
+.q4o-cta{display:flex;gap:12px;flex-wrap:wrap}
+.pill{display:inline-block;text-decoration:none;font-weight:600;border-radius:999px;padding:13px 22px}
+.pill-w{background:#fff;color:#0a0a0a}.pill-w:hover{background:#e5e5e5;color:#0a0a0a}
+.pill-g{border:1px solid #4a4a52;color:#fff}.pill-g:hover{border-color:#fff;color:#fff}
+.by{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;font:600 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;padding:4px 10px;border-radius:999px;margin-bottom:4px}
+.by-q4o{background:#0a0a0a;color:#fff}.by-q4o img{height:11px;width:auto;filter:invert(1)}
+.by-free{background:var(--ok-wash);color:var(--ok)}
+.offers h2{margin-bottom:28px}

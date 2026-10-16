@@ -28,19 +28,19 @@ def banner(dark: bool) -> str:
     word = logo_part("255 722 745 205", ink).replace('<svg ', '<svg x="0" y="0" width="372" height="102" ', 1)
     return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 300" width="1280" height="300" role="img" aria-label="Canot : prouvez que vous pouvez partir">
 <style>
-@keyframes houle{{0%,100%{{transform:translateY(0) rotate(-.6deg)}}50%{{transform:translateY(-7px) rotate(.6deg)}}}}
+@keyframes houle{{0%,100%{{transform:translateY(0) rotate(-.6deg)}}50%{{transform:translateY(-4px) rotate(.4deg)}}}}
 @keyframes vague{{from{{transform:translateX(0)}}to{{transform:translateX(-1440px)}}}}
 @keyframes entre{{from{{opacity:0;transform:translateY(8px)}}to{{opacity:1;transform:none}}}}
-.boat{{transform-box:fill-box;transform-origin:50% 85%;animation:houle 9s ease-in-out infinite}}
+.boat{{transform-box:fill-box;transform-origin:50% 85%;animation:houle 17s ease-in-out infinite}}
 .w1{{animation:vague 40s linear infinite}}.w2{{animation:vague 26s linear infinite reverse}}
 .t1{{animation:entre .8s .2s both}}
 text{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}}
 @media (prefers-reduced-motion:reduce){{.boat,.w1,.w2,.t1{{animation:none}}}}
 </style>
 <g transform="translate(0 110)"><g class="w1"><path d="{wave_path(150, 22)}" fill="{w1}"/></g></g>
-<g transform="translate(249 52)"><g class="boat">{boat}</g></g>
+<g transform="translate(249 80)"><g class="boat">{boat}</g></g>
 <g transform="translate(0 146)"><g class="w2"><path d="{wave_path(110, 12)}" fill="{w2}"/></g></g>
-<g transform="translate(659 85)"><g class="t1">{word}</g></g>
+<g transform="translate(659 88)"><g class="t1">{word}</g></g>
 </svg>
 '''
 
