@@ -6,6 +6,11 @@
   // Mot qui change dans l'accroche : le sortant monte, l'entrant arrive du bas (fixe si l'utilisateur préfère moins de mouvement)
   var rot = document.getElementById("rot");
   if (rot && !reduce) {
+    ["BigQuery", "Databricks"].forEach(function (name, k) {
+      var s = document.createElement("span");
+      s.className = "w d" + (k + 1); s.textContent = name; s.setAttribute("aria-hidden", "true");
+      rot.appendChild(s);
+    });
     var ws = rot.querySelectorAll(".w"), cur = 0;
     setInterval(function () {
       cur = (cur + 1) % ws.length;

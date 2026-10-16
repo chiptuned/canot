@@ -33,3 +33,21 @@ for name, (title, desc, parts) in PAGES.items():
     body = "\n\n".join((root / "sections" / f"{p}.html").read_text() for p in parts).replace("@@q4olines@@", Q4O_LINES)
     (root.parent / "site" / f"{name}.html").write_text(hd + "\n" + body + "\n" + strip + "\n" + tail)
 print("pages écrites : index," + ", ".join(PAGES))
+
+
+import hashlib
+
+
+def busting():
+    """Ajoute ?v=<empreinte> aux liens vers style.css et app.js dans toutes les pages."""
+    site = root.parent / "site"
+    tag = {n: hashlib.sha256((site / n).read_bytes()).hexdigest()[:10] for n in ("style.css", "app.js")}
+    for page in site.glob("*.html"):
+        x = page.read_text()
+        for n, v in tag.items():
+            x = re.sub(rf'((?:href|src)="){re.escape(n)}(?:\?v=[0-9a-f]+)?"', rf'\g<1>{n}?v={v}"', x)
+        page.write_text(x)
+    print("empreintes :", tag)
+
+
+busting()
