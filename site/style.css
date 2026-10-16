@@ -32,7 +32,7 @@ nav.main a{text-decoration:none}
 h1{margin:0;font-weight:700;font-size:clamp(40px,7vw,88px);line-height:1;letter-spacing:-.025em;max-width:11ch;text-wrap:balance}
 .hero-copy{display:flex;flex-direction:column;gap:12px;max-width:640px}
 .hero-copy .big{margin:0;font-size:clamp(18px,2.2vw,27px);line-height:1.25;font-weight:600;text-wrap:balance}
-.hero-copy .big .rot{color:var(--accent-ink)}
+.hero-copy .big .rot{color:var(--accent-ink);display:inline-grid;vertical-align:bottom;overflow:hidden}
 .hero-copy .sub{margin:0;font-size:17px;line-height:1.55;color:var(--muted);text-wrap:pretty}
 .cmd{align-self:flex-start;max-width:100%;display:flex;align-items:center;gap:14px;background:var(--ink);border:0;border-radius:8px;padding:14px 18px;cursor:pointer;color:#fff;font-family:var(--mono);text-align:left}
 .cmd:hover{background:var(--ink-2)}
@@ -56,7 +56,8 @@ h1{margin:0;font-weight:700;font-size:clamp(40px,7vw,88px);line-height:1;letter-
 section.s{border-bottom:1px solid var(--line)}
 section.s .wrap{padding-block:clamp(56px,8vw,96px)}
 h2{margin:0;font-weight:700;font-size:clamp(28px,3.4vw,44px);line-height:1.1;letter-spacing:-.015em;text-wrap:balance}
-.why h2{max-width:20ch}
+.why h2{max-width:none}
+.why h2.two{font-size:clamp(26px,3.2vw,40px)}
 .why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;margin:36px 0 20px}
 .why-card{background:var(--paper);border:1px solid var(--line-2);border-radius:8px;padding:22px;display:flex;flex-direction:column;gap:10px}
 .why-card .k{font:600 12px var(--mono);color:var(--accent-ink);letter-spacing:.04em;text-transform:uppercase}
@@ -229,3 +230,19 @@ table{border-collapse:collapse;width:100%;min-width:480px;font-size:16px}
 
 .seals{overflow:hidden}
 html,body{overflow-x:clip}
+
+.cmd-note{margin:-6px 0 0;font-size:15px;color:var(--muted);max-width:60ch}
+.foot-links{display:flex;gap:8px;flex-wrap:wrap}
+.partner{display:flex;gap:20px 32px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin:36px 0 8px;padding:22px 24px;background:var(--accent-wash);border-radius:10px}
+.partner div{display:flex;flex-direction:column;gap:4px;max-width:62ch}.partner b{font-size:18px}.partner span{color:var(--muted);font-size:15.5px;line-height:1.5}
+textarea{padding:11px 12px;border-radius:6px;border:1px solid var(--line-2);background:#fff;color:var(--ink);font-size:15px;resize:vertical;min-width:0;font-family:inherit}
+.prose{max-width:760px;padding-block:48px 80px}.prose h1{font-size:clamp(30px,5vw,44px);max-width:none;line-height:1.1;margin:0 0 8px}
+.prose h2{font-size:22px;margin:36px 0 8px}.prose p{font-size:16.5px;line-height:1.65;color:var(--muted)}.prose b{color:var(--ink)}
+
+.contact-strip .wrap{padding-block:56px}.contact-strip p{margin:0;font-size:19px;font-weight:600;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+@media (min-width:900px){.why h2.two{white-space:nowrap}}
+
+/* le mot qui change : le sortant monte, l'entrant arrive du bas (même mécanique que la maquette) */
+.rot .w{grid-area:1/1;transform:translateY(100%);opacity:0}
+.rot .w.d0{transform:none;opacity:1;transition:transform .55s cubic-bezier(.2,.7,.2,1),opacity .45s}
+.rot .w.d2{transform:translateY(-100%);opacity:0;transition:transform .55s cubic-bezier(.2,.7,.2,1),opacity .45s}

@@ -27,7 +27,7 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--to", dest="dst", required=True, help="dossier local, s3://..., ou scaleway:fr-par, ovh:gra, outscale:eu-west-2, ionos:de..., avec --bucket")
     d.add_argument("--bucket")
     d.add_argument("--out", default="canot-out")
-    d.add_argument("--queries", help="fichier SQL (requêtes séparées par ;). Sinon, les plus coûteuses de l'historique.")
+    d.add_argument("--queries", help="optionnel : fichier SQL à rejouer. Par défaut, les requêtes les plus coûteuses de l'historique de la plateforme.")
     d.add_argument("--top", type=int, default=20)
     d.add_argument("--tolerances", help="fichier TOML (voir `canot init-tolerances`)")
     d.add_argument("--tables", nargs="*", help="limiter à ces tables (SCHEMA.TABLE)")
@@ -42,7 +42,13 @@ def main(argv: list[str] | None = None) -> int:
     v = sub.add_parser("verify-evidence", help="vérifie la chaîne et la signature d'un dossier")
     v.add_argument("dir")
 
-    sub.add_parser("snowflake-setup", help="affiche le script SQL d'accès en lecture seule à relire")
+    ss = sub.add_parser("snowflake-setup", help="affiche le script SQL d'accès en lecture seule à relire")
+    ss.add_argument("--generate-key", action="store_true", help="crée la paire de clés ici et met la clé publique dans le script")
+    ss.add_argument("--base", default="<BASE>", help="base Snowflake à copier")
+    dm = sub.add_parser("demo", help="démonstration complète en 30 secondes, sans compte : distributeur fictif, exercice, dossier de preuve")
+    dm.add_argument("--out", default="canot-demo")
+    dm.add_argument("--rows", type=int, default=50_000)
+    dm.add_argument("--no-open", action="store_true", help="n'ouvre pas le rapport dans le navigateur")
     it = sub.add_parser("init-tolerances", help="écrit un fichier de tolérances à relire avec le client")
     it.add_argument("path", nargs="?", default="tolerances.toml")
     dd = sub.add_parser("demo-data", help="crée une base DuckDB de démonstration")
@@ -56,7 +62,58 @@ def main(argv: list[str] | None = None) -> int:
     if a.cmd == "snowflake-setup":
         from .sources.snowflake_src import SETUP_SQL
 
-        _p(SETUP_SQL)
+        sql = SETUP_SQL.replace("<BASE>", a.base)
+        if a.generate_key:
+            from cryptography.hazmat.primitives import serialization
+            from cryptography.hazmat.primitives.asymmetric import rsa
+            import os
+
+            kp = Path.home() / ".canot" / "snowflake_rsa_key.p8"
+            if kp.exists():
+                key = serialization.load_pem_private_key(kp.read_bytes(), password=None)
+            else:
+                kp.parent.mkdir(parents=True, exist_ok=True)
+                key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+                kp.write_bytes(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
+                os.chmod(kp, 0o600)
+            pub = key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode()
+            pub = "".join(l for l in pub.splitlines() if not l.startswith("-----"))
+            sql = sql.replace("<clé publique, sans les lignes BEGIN/END>", pub)
+            print(f"-- Clé privée : {kp} (reste sur cette machine). Puis : export SNOWFLAKE_PRIVATE_KEY_PATH={kp}", file=sys.stderr)
+        _p(sql)
+        return 0
+    if a.cmd == "demo":
+        import webbrowser
+
+        from .demo import RETAIL_QUERIES, make_retail
+        from .drill import run_drill
+        from .report import write_report
+        from .source_loader import open_demo
+        from .target import parse_target
+        from .tolerances import Tolerances
+
+        work = Path(a.out)
+        work.mkdir(parents=True, exist_ok=True)
+        db = work / "maison.duckdb"
+        if db.exists():
+            db.unlink()
+        _p("Canot : démonstration sur un distributeur fictif (données inventées)\n")
+        make_retail(str(db), a.rows)
+        qf = work / "requetes.sql"
+        qf.write_text(RETAIL_QUERIES)
+        src = open_demo(str(db))
+        try:
+            res = run_drill(src, parse_target(str(work / "lac"), None, work), work / "dossier", Path.home() / ".canot" / "evidence.key", str(qf), Tolerances(), log=_p)
+        finally:
+            src.close()
+        rep = write_report(res, work / "dossier")
+        _p(f"\n{res['summary']['parity'] == 'complète' and 'Parité complète' or 'Des écarts ont été trouvés'} : {res['summary']['tables_ok']}/{res['summary']['tables_total']} tables, {res['summary']['queries_match']}/{res['summary']['queries_total']} requêtes.")
+        _p(f"Dossier de preuve : {rep}")
+        _p("Vérifier qu'il n'a pas été modifié : canot verify-evidence " + str(work / "dossier"))
+        _p("\nEt maintenant, sur vos données (lecture seule) :  canot scan --from \"bigquery://MON-PROJET/mon_dataset?location=EU\"")
+        _p("Besoin d'aide pour l'exécuter sur votre périmètre ? https://canot.io/#contact")
+        if not a.no_open:
+            webbrowser.open(rep.resolve().as_uri())
         return 0
     if a.cmd == "init-tolerances":
         from .tolerances import DEFAULT_TOML

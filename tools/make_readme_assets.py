@@ -8,13 +8,13 @@ LOGO = (ROOT / "site" / "assets" / "canot-logo.svg").read_text()
 NAVY, ORANGE = "#062E60", "#FF6B16"
 
 
-def wave_path(h, amp, period=720, periods=4):
+def wave_path(h, amp, period=720, periods=4, extra=140):
     y = h - amp * 2 - 4
     d = f"M0 {y}"
     for i in range(periods * 2):
         x = i * period // 2
         d += f" Q{x + period // 4} {y + (amp if i % 2 else -amp)} {x + period // 2} {y}"
-    return d + f" V{h} H0 Z"
+    return d + f" V{h + extra} H0 Z"
 
 
 def logo_part(viewbox, navy):
@@ -26,23 +26,21 @@ def banner(dark: bool) -> str:
     ink, sub, w1, w2, blocks = ("#EAF1F8", "#9FB3C8", "#14304B", "#1B4468", "#7FB0FF") if dark else ("#062E60", "#4B6070", "#E6ECF2", "#D3DEE8", NAVY)
     boat = logo_part("239 361 776 362", blocks).replace('<svg ', '<svg x="0" y="0" width="360" height="167" ', 1)
     word = logo_part("255 722 745 205", ink).replace('<svg ', '<svg x="0" y="0" width="372" height="102" ', 1)
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 380" width="1280" height="380" role="img" aria-label="Canot : prouvez que vous pouvez partir">
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 300" width="1280" height="300" role="img" aria-label="Canot : prouvez que vous pouvez partir">
 <style>
 @keyframes houle{{0%,100%{{transform:translateY(0) rotate(-.6deg)}}50%{{transform:translateY(-7px) rotate(.6deg)}}}}
 @keyframes vague{{from{{transform:translateX(0)}}to{{transform:translateX(-1440px)}}}}
 @keyframes entre{{from{{opacity:0;transform:translateY(8px)}}to{{opacity:1;transform:none}}}}
 .boat{{transform-box:fill-box;transform-origin:50% 85%;animation:houle 9s ease-in-out infinite}}
 .w1{{animation:vague 40s linear infinite}}.w2{{animation:vague 26s linear infinite reverse}}
-.t1{{animation:entre .8s .2s both}}.t2{{animation:entre .8s .5s both}}.t3{{animation:entre .8s .8s both}}
+.t1{{animation:entre .8s .2s both}}
 text{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}}
-@media (prefers-reduced-motion:reduce){{.boat,.w1,.w2,.t1,.t2,.t3{{animation:none}}}}
+@media (prefers-reduced-motion:reduce){{.boat,.w1,.w2,.t1{{animation:none}}}}
 </style>
-<g transform="translate(0 230)"><g class="w1"><path d="{wave_path(150, 22)}" fill="{w1}"/></g></g>
-<g transform="translate(110 70)"><g class="boat">{boat}</g></g>
-<g transform="translate(0 270)"><g class="w2"><path d="{wave_path(110, 12)}" fill="{w2}"/></g></g>
-<g transform="translate(520 82)"><g class="t1">{word}</g></g>
-<text class="t2" x="522" y="228" font-size="34" font-weight="750" fill="{ink}" letter-spacing="-.4">Prouvez que vous pouvez partir.</text>
-<text class="t3" x="522" y="266" font-size="19" fill="{sub}">Exercice de sortie pour Snowflake, BigQuery et Databricks, dans vos comptes.</text>
+<g transform="translate(0 110)"><g class="w1"><path d="{wave_path(150, 22)}" fill="{w1}"/></g></g>
+<g transform="translate(249 52)"><g class="boat">{boat}</g></g>
+<g transform="translate(0 146)"><g class="w2"><path d="{wave_path(110, 12)}" fill="{w2}"/></g></g>
+<g transform="translate(659 85)"><g class="t1">{word}</g></g>
 </svg>
 '''
 

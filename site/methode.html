@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Méthode | Canot</title>
+<meta name="description" content="Comment Canot teste la sortie de votre plateforme de données, dans vos propres comptes, et ce qu'il vous remet.">
+<link rel="canonical" href="https://canot.io/methode.html">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f4f6f7">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="Canot, accueil"><img src="assets/canot-symbole.svg" alt="" width="52" height="27"><span>canot</span></a>
+    <nav class="main" aria-label="Navigation principale">
+      <a class="hide-s" href="pourquoi.html">Pourquoi</a>
+      <a class="hide-s" href="methode.html">Méthode</a>
+      <a class="hide-s" href="offres.html">Offres</a>
+      <a href="rapport.html">Exemple de rapport</a>
+      <a class="btn btn-dark" href="https://github.com/chiptuned/canot">Tester gratuitement</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<section class="s method" id="methode">
+  <div class="wrap">
+    <h2>Une répétition de départ, dans vos comptes.</h2>
+    <p class="lead-p">Votre administrateur prépare un accès en lecture seule, puis une commande lance tout. Vous ne quittez pas votre fournisseur et vous n'avez aucune démarche à faire auprès de lui.</p>
+    <div class="perimeter">
+      <span class="plabel">Tout se passe dans vos comptes : votre plateforme de données, et l'hébergeur que vous choisissez</span>
+      <ol class="steps">
+        <li><b>Installer</b><span>Un petit entrepôt ouvert est créé chez l'hébergeur choisi : une machine, un stockage, un catalogue de tables Iceberg.</span></li>
+        <li><b>Copier</b><span>Vos données sont lues sans pouvoir être modifiées, puis écrites au format Iceberg dans un autre de vos comptes.</span></li>
+        <li><b>Rejouer</b><span>Les 20 requêtes les plus importantes, choisies avec vous, sont exécutées des deux côtés.</span></li>
+        <li><b>Comparer</b><span>Tables et résultats sont comparés ligne par ligne, avec des tolérances écrites à l'avance.</span></li>
+        <li><b>Signer</b><span>Un dossier de preuve est produit : parité, durée, coût, et ce qui ne part pas tel quel.</span></li>
+      </ol>
+    </div>
+    <p class="outside">Canot n'envoie rien à q4o : pas de télémétrie, pas de serveur.</p>
+    <ul class="cmds">
+      <li><code>canot scan</code><span>Radiographie gratuite, en lecture seule : volumes, objets qui ne partent pas seuls, durée et coût de sortie estimés.</span></li>
+      <li><code>canot drill</code><span>L'exercice complet et le dossier de preuve.</span></li>
+      <li><code>canot teardown</code><span>Supprime ce qui a été copié.</span></li>
+    </ul>
+  </div>
+</section>
+
+<section class="s hosts">
+  <div class="wrap">
+    <h2>Vous choisissez l'hébergeur.</h2>
+    <p class="lead-p">Canot écrit sur tout stockage compatible S3. Des raccourcis existent pour les hébergeurs français et européens.</p>
+    <ul class="host-list">
+      <li><b>Scaleway</b><span>France · Pays-Bas · Pologne</span></li>
+      <li><b>OVHcloud</b><span>France</span></li>
+      <li><b>Outscale</b><span>France</span></li>
+      <li><b>IONOS</b><span>Allemagne</span></li>
+      <li><b>STACKIT</b><span>Allemagne</span></li>
+      <li><b>AWS</b><span>Paris et autres régions</span></li>
+    </ul>
+    <p class="sources">La qualification SecNumCloud, quand elle compte pour vous, dépend de l'offre précise de l'hébergeur : à vérifier sur la liste de l'ANSSI. Le Data Act est le même dans toute l'Union européenne.</p>
+  </div>
+</section>
+<section class="s contact-strip"><div class="wrap"><p>Une question, ou un test à proposer ? <a class="btn btn-accent" href="/#contact">Nous écrire</a></p></div></section>
+</main>
+
+<footer class="bot">
+  <div class="wrap">
+    <span>Canot · un outil libre (Apache-2.0) et des missions de <a href="https://q4o.com">q4o</a>. Ce n'est pas une certification.</span>
+    <span class="foot-links"><a href="faq.html">Questions fréquentes</a> · <a href="mentions-legales.html">Mentions légales et confidentialité</a> · <a href="https://github.com/chiptuned/canot">Code source</a></span>
+  </div>
+</footer>
+<script src="app.js" defer></script>
+</body>
+</html>

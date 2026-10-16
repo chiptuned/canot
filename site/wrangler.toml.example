@@ -1,0 +1,10 @@
+# Copiez en wrangler.toml (ignoré par git) et renseignez l'identifiant de votre base D1 :
+#   wrangler d1 create canot-leads --jurisdiction eu
+name = "canot-site"
+pages_build_output_dir = "."
+compatibility_date = "2026-10-01"
+
+[[d1_databases]]
+binding = "LEADS"
+database_name = "canot-leads"
+database_id = "REMPLACER"

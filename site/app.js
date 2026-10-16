@@ -3,11 +3,18 @@
   document.documentElement.classList.add("js");
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Mot qui change dans l'accroche (fixe si l'utilisateur préfère moins de mouvement)
+  // Mot qui change dans l'accroche : le sortant monte, l'entrant arrive du bas (fixe si l'utilisateur préfère moins de mouvement)
   var rot = document.getElementById("rot");
   if (rot && !reduce) {
-    var words = ["Snowflake", "BigQuery", "Databricks"], i = 0;
-    setInterval(function () { i = (i + 1) % words.length; rot.textContent = words[i]; }, 2200);
+    var ws = rot.querySelectorAll(".w"), cur = 0;
+    setInterval(function () {
+      cur = (cur + 1) % ws.length;
+      ws.forEach(function (w, i) {
+        var d = (i - cur + ws.length) % ws.length; // 0 : affiché, 1 : en attente (en bas), 2 : sorti (en haut)
+        w.className = "w d" + d;
+        w.setAttribute("aria-hidden", d === 0 ? "false" : "true");
+      });
+    }, 2200);
   }
 
   // Copier la commande
@@ -62,6 +69,7 @@
     fail.hidden = true;
     if (!validate()) return;
     var data = {}; Object.keys(checks).forEach(function (k) { data[k] = form.elements[k].value.trim(); });
+    data.message = (form.elements.message.value || "").trim();
     data.website = form.elements.website.value;
     send.disabled = true;
     fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })

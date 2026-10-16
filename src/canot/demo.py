@@ -72,6 +72,7 @@ def make_retail(path: str, tickets: int = 50_000) -> None:
         select i as ticket_id, 1 + (i * 7 % 300) as store_id,
                case when i % 4 = 0 then null else 1 + (i * 11 % 8000) end as customer_id,
                timestamp '2026-03-01 08:00:00' + to_seconds((i * 53) % 2500000) as sold_at,
+               cast(timestamp '2026-03-01 08:00:00' + to_seconds((i * 53) % 2500000) + to_microseconds(i % 997) as timestamp_ns) as scanned_at,
                cast(((i * 97) % 20000) / 100.0 + 1 as decimal(12,2)) as total,
                [struct_pack(product_id := 1 + (i * 3 % 2000), qty := 1 + i % 4),
                 struct_pack(product_id := 1 + (i * 5 % 2000), qty := 1 + i % 2)] as lines

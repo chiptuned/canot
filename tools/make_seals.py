@@ -3,7 +3,7 @@ Usage : python3 tools/make_seals.py  (affiche le HTML des quatre macarons)"""
 import math
 
 CX = CY = 100
-SEALS = [("rgpd", "RGPD", 27), ("dora", "DORA", 27), ("dataact", "Data Act", 21), ("snc", "SecNumCloud", 15)]
+SEALS = [("rgpd", "RGPD", 27), ("dora", "DORA", 27), ("dataact", "Data Act", 24), ("snc", ("SecNum", "Cloud"), 24)]
 
 
 def scalloped(n=44, outer=96, hole=3.7):
@@ -15,10 +15,20 @@ def scalloped(n=44, outer=96, hole=3.7):
     return d + "Z"
 
 
+def centre(label, size):
+    lines = label if isinstance(label, tuple) else (label,)
+    if len(lines) == 1:
+        return f'<text x="100" y="{100 + size * 0.35:.1f}" text-anchor="middle" font-size="{size}" font-weight="800" letter-spacing="-.5" fill="#1F3A5F">{lines[0]}</text>'
+    gap = size * 1.05
+    y0 = 100 + size * 0.35 - gap / 2
+    return "".join(f'<text x="100" y="{y0 + i * gap:.1f}" text-anchor="middle" font-size="{size}" font-weight="800" letter-spacing="-.5" fill="#1F3A5F">{ln}</text>' for i, ln in enumerate(lines))
+
+
 def seal(key, label, size):
+    name = "".join(label) if isinstance(label, tuple) else label
     top = f"M{CX-66},{CY} A66,66 0 0 1 {CX+66},{CY}"
     bot = f"M{CX-76},{CY} A76,76 0 0 0 {CX+76},{CY}"
-    return f'''<svg class="stamp reveal-stamp" viewBox="0 0 200 200" role="img" aria-label="{label} : élément de preuve, pas une certification" width="150" height="150">
+    return f'''<svg class="stamp reveal-stamp" viewBox="0 0 200 200" role="img" aria-label="{name} : élément de preuve, pas une certification" width="150" height="150">
   <defs><path id="t-{key}" d="{top}"/><path id="b-{key}" d="{bot}"/></defs>
   <g transform="rotate(-4 100 100)">
     <path d="{scalloped()}" fill="#fff" stroke="#1F3A5F" stroke-width="2.2" stroke-linejoin="round"/>
@@ -27,7 +37,7 @@ def seal(key, label, size):
     <text font-size="11.5" font-weight="700" letter-spacing="2.4" fill="#1F3A5F"><textPath href="#t-{key}" startOffset="50%" text-anchor="middle">ÉLÉMENT DE PREUVE</textPath></text>
     <text font-size="11.5" font-weight="700" letter-spacing="2.4" fill="#1F3A5F"><textPath href="#b-{key}" startOffset="50%" text-anchor="middle">CANOT · DOSSIER SIGNÉ</textPath></text>
     <circle cx="19" cy="100" r="3.4" fill="#E8834F"/><circle cx="181" cy="100" r="3.4" fill="#E8834F"/>
-    <text x="100" y="{100 + size * 0.35:.1f}" text-anchor="middle" font-size="{size}" font-weight="800" letter-spacing="-.5" fill="#1F3A5F">{label}</text>
+    {centre(label, size)}
   </g>
 </svg>'''
 

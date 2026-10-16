@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Canot : prouvez que vous pouvez partir</title>
-<meta name="description" content="Canot teste la sortie de votre plateforme de données (Snowflake, BigQuery, Databricks) dans vos propres comptes, vers un format ouvert, et vous remet un dossier de preuve signé.">
+<meta name="description" content="Canot teste la sortie de votre plateforme de données (Snowflake, BigQuery, Databricks) dans vos propres comptes et vous remet un dossier de preuve signé.">
 <link rel="canonical" href="https://canot.io/">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <meta property="og:title" content="Canot : votre plan de sortie, exécuté et mesuré">
@@ -21,8 +21,9 @@
   <div class="wrap">
     <a class="brand" href="/" aria-label="Canot, accueil"><img src="assets/canot-symbole.svg" alt="" width="52" height="27"><span>canot</span></a>
     <nav class="main" aria-label="Navigation principale">
-      <a class="hide-s" href="#methode">Méthode</a>
-      <a class="hide-s" href="#offres">Offres</a>
+      <a class="hide-s" href="pourquoi.html">Pourquoi</a>
+      <a class="hide-s" href="methode.html">Méthode</a>
+      <a class="hide-s" href="offres.html">Offres</a>
       <a href="rapport.html">Exemple de rapport</a>
       <a class="btn btn-dark" href="https://github.com/chiptuned/canot">Tester gratuitement</a>
     </nav>
@@ -37,16 +38,15 @@
   <div class="wrap">
     <h1>Votre plan de sortie, exécuté et mesuré.</h1>
     <div class="hero-copy">
-      <p class="big">Enfermé chez <span class="rot" id="rot" aria-live="off">Snowflake</span>&nbsp;? Prouvez le contraire.</p>
-      <p class="sub">Nous testons la sortie de votre plateforme de données, dans vos propres comptes, vers un format ouvert (Apache Iceberg). Vous recevez un dossier signé que votre comité et vos achats peuvent lire. L'outil est libre et ne nous envoie rien.</p>
+      <p class="big">Enfermé chez <span class="rot" id="rot"><span class="w d0">Snowflake</span><span class="w d1" aria-hidden="true">BigQuery</span><span class="w d2" aria-hidden="true">Databricks</span></span>&nbsp;? Prouvez le contraire.</p>
+      <p class="sub">Nous testons la sortie de votre plateforme de données, dans vos propres comptes. Vous recevez un dossier signé que votre comité et vos achats peuvent lire. L'outil est libre et ne nous envoie rien.</p>
     </div>
     <button class="cmd" id="copy" type="button" aria-label="Copier la commande">
       <span class="p" aria-hidden="true">$</span>
-      <code id="cmd">uvx canot drill --from "bigquery://MON-PROJET/mon_dataset?location=EU" \
-    --to scaleway:fr-par --bucket mon-bucket \
-    --queries mes_requetes.sql</code>
+      <code id="cmd">uvx canot demo</code>
       <span class="c" id="copy-label">copier</span>
     </button>
+    <p class="cmd-note">Trente secondes, sans compte ni données : un distributeur fictif, un exercice de sortie complet, et le dossier de preuve s'ouvre dans votre navigateur.</p>
     <div class="ctas">
       <a class="btn btn-accent" href="https://github.com/chiptuned/canot">Tester gratuitement</a>
       <a class="btn btn-line" href="rapport.html">Voir un exemple de rapport</a>
@@ -90,7 +90,7 @@
     <text font-size="11.5" font-weight="700" letter-spacing="2.4" fill="#1F3A5F"><textPath href="#t-dataact" startOffset="50%" text-anchor="middle">ÉLÉMENT DE PREUVE</textPath></text>
     <text font-size="11.5" font-weight="700" letter-spacing="2.4" fill="#1F3A5F"><textPath href="#b-dataact" startOffset="50%" text-anchor="middle">CANOT · DOSSIER SIGNÉ</textPath></text>
     <circle cx="19" cy="100" r="3.4" fill="#E8834F"/><circle cx="181" cy="100" r="3.4" fill="#E8834F"/>
-    <text x="100" y="107.3" text-anchor="middle" font-size="21" font-weight="800" letter-spacing="-.5" fill="#1F3A5F">Data Act</text>
+    <text x="100" y="108.4" text-anchor="middle" font-size="24" font-weight="800" letter-spacing="-.5" fill="#1F3A5F">Data Act</text>
   </g>
 </svg><span class="d">Vous savez ce que coûte un changement de fournisseur.</span></li>
       <li class="seal"><svg class="stamp reveal-stamp" viewBox="0 0 200 200" role="img" aria-label="SecNumCloud : élément de preuve, pas une certification" width="150" height="150">
@@ -102,56 +102,11 @@
     <text font-size="11.5" font-weight="700" letter-spacing="2.4" fill="#1F3A5F"><textPath href="#t-snc" startOffset="50%" text-anchor="middle">ÉLÉMENT DE PREUVE</textPath></text>
     <text font-size="11.5" font-weight="700" letter-spacing="2.4" fill="#1F3A5F"><textPath href="#b-snc" startOffset="50%" text-anchor="middle">CANOT · DOSSIER SIGNÉ</textPath></text>
     <circle cx="19" cy="100" r="3.4" fill="#E8834F"/><circle cx="181" cy="100" r="3.4" fill="#E8834F"/>
-    <text x="100" y="105.2" text-anchor="middle" font-size="15" font-weight="800" letter-spacing="-.5" fill="#1F3A5F">SecNumCloud</text>
+    <text x="100" y="95.8" text-anchor="middle" font-size="24" font-weight="800" letter-spacing="-.5" fill="#1F3A5F">SecNum</text><text x="100" y="121.0" text-anchor="middle" font-size="24" font-weight="800" letter-spacing="-.5" fill="#1F3A5F">Cloud</text>
   </g>
 </svg><span class="d">Vous choisissez un hébergeur qualifié, selon son offre.</span></li>
     </ul>
     <p class="note">Le dossier de preuve sert d'élément pour ces exigences. Ce n'est pas une certification, et il ne dit rien de la conformité de vos contrats.</p>
-  </div>
-</section>
-
-<section class="s why">
-  <div class="wrap">
-    <h2>Vos fournisseurs vous ont aidé à entrer. Personne ne vous aide à vérifier la sortie.</h2>
-    <div class="why-grid">
-      <div class="why-card"><span class="k">Le déséquilibre</span><p>Snowflake et Databricks offrent des outils de migration gratuits pour y entrer. Aucun n'offre l'outil qui vérifie que vous pouvez en sortir.</p></div>
-      <div class="why-card"><span class="k">La pression</span><p>DORA demande aux entités financières un plan de sortie testé. Le Data Act supprime les frais de changement de cloud en janvier 2027, sauf pour les services faits sur mesure.</p></div>
-      <div class="why-card"><span class="k">Le risque caché</span><p>Un plan de sortie sur papier n'a jamais été exécuté. Sa durée, son coût et ses écarts restent inconnus jusqu'au jour où il faut s'en servir.</p></div>
-    </div>
-    <ol class="dates" aria-label="Dates clés">
-      <li><b>17 janvier 2025</b><span>DORA s'applique : un plan de sortie réaliste, revu et testé, pour chaque contrat informatique qui soutient une fonction critique.</span></li>
-      <li><b>12 septembre 2025</b><span>Le Data Act s'applique : les contrats cloud doivent prévoir la sortie.</span></li>
-      <li class="key"><b>12 janvier 2027</b><span>Plus de frais de changement de fournisseur cloud. Le travail de sortie, lui, reste à votre charge.</span></li>
-    </ol>
-    <p class="sources">Sources :
-      <a href="https://eur-lex.europa.eu/eli/reg/2023/2854/oj/eng">Data Act, art. 29 et 31</a> ·
-      <a href="https://eur-lex.europa.eu/eli/reg_del/2024/1773/oj/eng">DORA, règlement délégué 2024/1773, art. 10</a> ·
-      <a href="https://www.snowflake.com/en/blog/free-snowconvert-migrations">SnowConvert (Snowflake)</a> ·
-      <a href="https://databrickslabs.github.io/lakebridge/docs/transpile/">Lakebridge (Databricks)</a>.
-    </p>
-  </div>
-</section>
-
-<section class="s method" id="methode">
-  <div class="wrap">
-    <h2>Une répétition de départ, dans vos comptes.</h2>
-    <p class="lead-p">Votre administrateur prépare un accès en lecture seule, puis une commande lance tout. Vous ne quittez pas votre fournisseur et vous n'avez aucune démarche à faire auprès de lui.</p>
-    <div class="perimeter">
-      <span class="plabel">Tout se passe dans vos comptes : votre plateforme de données, et l'hébergeur que vous choisissez</span>
-      <ol class="steps">
-        <li><b>Installer</b><span>Un petit entrepôt ouvert est créé chez l'hébergeur choisi : une machine, un stockage, un catalogue de tables Iceberg.</span></li>
-        <li><b>Copier</b><span>Vos données sont lues sans pouvoir être modifiées, puis écrites au format Iceberg dans un autre de vos comptes.</span></li>
-        <li><b>Rejouer</b><span>Les 20 requêtes les plus importantes, choisies avec vous, sont exécutées des deux côtés.</span></li>
-        <li><b>Comparer</b><span>Tables et résultats sont comparés ligne par ligne, avec des tolérances écrites à l'avance.</span></li>
-        <li><b>Signer</b><span>Un dossier de preuve est produit : parité, durée, coût, et ce qui ne part pas tel quel.</span></li>
-      </ol>
-    </div>
-    <p class="outside">Canot n'envoie rien à q4o : pas de télémétrie, pas de serveur.</p>
-    <ul class="cmds">
-      <li><code>canot scan</code><span>Radiographie gratuite, en lecture seule : volumes, objets qui ne partent pas seuls, durée et coût de sortie estimés.</span></li>
-      <li><code>canot drill</code><span>L'exercice complet et le dossier de preuve.</span></li>
-      <li><code>canot teardown</code><span>Supprime ce qui a été copié.</span></li>
-    </ul>
   </div>
 </section>
 
@@ -175,25 +130,6 @@
   </div>
 </section>
 
-<section class="s proof">
-  <div class="wrap">
-    <h2>Testé sur de vraies plateformes. Et il trouve des écarts.</h2>
-    <div class="proof-grid">
-      <div class="proof-card">
-        <span class="k">BigQuery · données publiques</span>
-        <div class="big-n">3,3 M<small> de lignes</small></div>
-        <p>7 tables copiées en moins d'une minute, identiques ligne par ligne. Sur 4 requêtes de reporting, 3 donnent le même résultat. La 4<sup>e</sup> rend une date chez BigQuery et une date avec heure ailleurs.</p>
-      </div>
-      <div class="proof-card">
-        <span class="k">Snowflake · jeu d'essai TPC-H</span>
-        <div class="big-n">8,7 M<small> de lignes</small></div>
-        <p>8 tables copiées en moins d'une minute, identiques ligne par ligne. Sur 4 requêtes, 3 donnent le même résultat. La moyenne d'un montant décimal est arrondie différemment dans la copie.</p>
-      </div>
-    </div>
-    <p class="sources">Dans les deux cas, l'écart ne se voit pas à l'œil nu. C'est ce qu'on veut apprendre avant de partir, pas le lendemain. Les rapports complets sont dans le <a href="https://github.com/chiptuned/canot/tree/main/examples">dépôt</a>.</p>
-  </div>
-</section>
-
 <section class="s who">
   <div class="wrap">
     <h2>Pour qui.</h2>
@@ -201,68 +137,6 @@
       <div class="who-card"><span class="k">Risques et conformité</span><p>Votre plan de sortie DORA, exécuté et mesuré, avec une fiche de test prête pour votre registre.</p></div>
       <div class="who-card"><span class="k">DSI et directions data</span><p>Un coût de sortie mesuré avant de négocier votre renouvellement, au lieu d'une estimation à la louche.</p></div>
       <div class="who-card"><span class="k">Ingénieurs data</span><p>Une commande, du code Apache-2.0, des tests. Vous voyez tout ce qu'elle fait avant de la lancer.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="s hosts">
-  <div class="wrap">
-    <h2>Vous choisissez l'hébergeur.</h2>
-    <p class="lead-p">Canot écrit sur tout stockage compatible S3. Des raccourcis existent pour les hébergeurs français et européens.</p>
-    <ul class="host-list">
-      <li><b>Scaleway</b><span>France · Pays-Bas · Pologne</span></li>
-      <li><b>OVHcloud</b><span>France</span></li>
-      <li><b>Outscale</b><span>France</span></li>
-      <li><b>IONOS</b><span>Allemagne</span></li>
-      <li><b>STACKIT</b><span>Allemagne</span></li>
-      <li><b>AWS</b><span>Paris et autres régions</span></li>
-    </ul>
-    <p class="sources">La qualification SecNumCloud, quand elle compte pour vous, dépend de l'offre précise de l'hébergeur : à vérifier sur la liste de l'ANSSI. Le Data Act est le même dans toute l'Union européenne.</p>
-  </div>
-</section>
-
-<section class="s offers" id="offres">
-  <div class="wrap">
-    <h2>Quatre façons de commencer.</h2>
-    <ul class="offer-list">
-      <li><div><span class="t">L'outil, seul</span><span class="d">Vos équipes lancent l'exercice elles-mêmes, sans nous.</span></div><span class="p">Libre</span></li>
-      <li><div><span class="t">Diagnostic de réversibilité</span><span class="d">Trois semaines. L'exercice sur un périmètre convenu, la radiographie de votre plateforme, le dossier signé, trois scénarios de coût de sortie, la liste de ce qui ne part pas tel quel, la marche à suivre et un dossier pour votre renouvellement. Restitution en atelier.</span></div><span class="p">dès 22 k€ HT</span></li>
-      <li><div><span class="t">Test de sortie DORA</span><span class="d">Pour les entités financières : un test rattaché à vos scénarios réglementaires, une fiche de test et une synthèse pour votre comité.</span></div><span class="p">dès 25 k€ HT</span></li>
-      <li><div><span class="t">Canot Vigie</span><span class="d">Refaire l'exercice chaque trimestre : dossier signé, comparaison avec le précédent, alerte quand un nouvel objet ne part pas tel quel.</span></div><span class="p">15 k€ HT par an</span></li>
-    </ul>
-    <p class="sources">Nous ne donnons pas d'avis juridique : l'analyse de vos contrats reste celle de votre avocat. Prix indicatifs, hors périmètres particuliers.</p>
-  </div>
-</section>
-
-<section class="s status">
-  <div class="wrap">
-    <h2>Où en est le projet.</h2>
-    <p class="lead-p">Canot est jeune. Voici ce qui est testé et ce qui ne l'est pas encore.</p>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th scope="col">Brique</th><th scope="col">État</th></tr></thead>
-        <tbody>
-          <tr><th scope="row">Source BigQuery</th><td><span class="st ok">Testée</span> sur un projet réel, données publiques</td></tr>
-          <tr><th scope="row">Source Snowflake</th><td><span class="st ok">Testée</span> sur un compte d'essai</td></tr>
-          <tr><th scope="row">Cible Iceberg locale</th><td><span class="st ok">Testée</span></td></tr>
-          <tr><th scope="row">Source Databricks</th><td><span class="st todo">Écrite, pas encore testée</span></td></tr>
-          <tr><th scope="row">Cibles Scaleway, OVHcloud et autres hébergeurs</th><td><span class="st todo">Écrites, essai en cours</span></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<section class="s faq">
-  <div class="wrap">
-    <h2>Questions fréquentes.</h2>
-    <div class="faq-list">
-      <details><summary>Si l'outil est gratuit, pourquoi payer ?</summary><p>L'outil donne des chiffres bruts. Nous choisissons avec vous les rapports qui comptent, nous expliquons chaque écart, nous chiffrons le coût réel d'un départ et nous rédigeons un dossier que votre audit accepte.</p></details>
-      <details><summary>Que voyez-vous de nos données ?</summary><p>Rien avec l'outil seul : il tourne dans vos comptes et ne nous envoie rien. Pendant une mission, nous intervenons avec des accès limités que vous accordez, sous un contrat de sous-traitance RGPD.</p></details>
-      <details><summary>Est-ce une certification ?</summary><p>Non. C'est un relevé de mesures pour votre propre évaluation. Il ne dit rien de la conformité de vos contrats ou de votre organisation.</p></details>
-      <details><summary>Pouvez-vous relire nos contrats cloud ?</summary><p>Non, c'est un travail d'avocat. Nous faisons le relevé factuel (dates, préavis, frais facturés) et toute la partie technique. Nous travaillons avec un cabinet partenaire, sous un contrat séparé du vôtre.</p></details>
-      <details><summary>Nous ne voulons pas partir de notre plateforme.</summary><p>L'exercice ne vous fait pas partir. Vous gardez votre plateforme et obtenez un coût de sortie mesuré pour négocier votre renouvellement, et la preuve que votre plan de sortie a été testé.</p></details>
-      <details><summary>Combien de temps prend un exercice ?</summary><p>La copie et la comparaison prennent quelques minutes sur les jeux d'essai. Sur votre périmètre, un diagnostic complet prend trois semaines, restitution comprise.</p></details>
     </div>
   </div>
 </section>
@@ -285,10 +159,11 @@
             </select><span class="err" data-for="platform"></span></label>
           <label>Date de renouvellement<input name="renewal" type="month" required><span class="err" data-for="renewal"></span></label>
         </div>
+        <label>Un mot sur votre contexte (facultatif)<textarea name="message" rows="3" maxlength="500"></textarea></label>
         <div class="hp" aria-hidden="true"><label>Ne pas remplir<input name="website" tabindex="-1" autocomplete="off"></label></div>
         <div class="fail" id="fail" role="alert" hidden></div>
         <button class="send" id="send" type="submit">Envoyer</button>
-        <p class="legal">Ces informations servent uniquement à vous répondre. Aucun pisteur sur cette page. Responsable du traitement : q4o. Pour exercer vos droits, écrivez à vincent@q4o.com.</p>
+        <p class="legal">Ces informations servent uniquement à vous répondre. Aucun pisteur sur cette page. Responsable du traitement : q4o. Détails et droits : <a href="mentions-legales.html#confidentialite">confidentialité</a>.</p>
       </form>
       <div class="thanks" id="thanks" hidden>
         <img src="assets/canot-symbole.svg" alt="" width="160" height="82">
@@ -304,7 +179,7 @@
 <footer class="bot">
   <div class="wrap">
     <span>Canot · un outil libre (Apache-2.0) et des missions de <a href="https://q4o.com">q4o</a>. Ce n'est pas une certification.</span>
-    <a href="https://github.com/chiptuned/canot">Code source</a>
+    <span class="foot-links"><a href="faq.html">Questions fréquentes</a> · <a href="mentions-legales.html">Mentions légales et confidentialité</a> · <a href="https://github.com/chiptuned/canot">Code source</a></span>
   </div>
 </footer>
 <script src="app.js" defer></script>

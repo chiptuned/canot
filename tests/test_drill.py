@@ -112,3 +112,31 @@ def test_scaleway_named_profile(tmp_path, monkeypatch):
     monkeypatch.delenv("SCW_PROFILE")
     t = parse_target("scaleway:fr-par", "b", tmp_path)
     assert t.props["s3.access-key-id"] == "TOPKEY"
+
+
+def test_demo_command_end_to_end_and_synthesis(tmp_path, capsys):
+    from canot.cli import main
+    from canot.evidence import verify_dir
+
+    assert main(["demo", "--out", str(tmp_path / "d"), "--rows", "2000", "--no-open"]) == 0
+    html = (tmp_path / "d" / "dossier" / "report.html").read_text()
+    assert "Sortie faisable sur ce périmètre" in html and "canot.io/#contact" in html
+    assert "perte possible" in html  # le piège des nanosecondes est signalé
+    assert verify_dir(tmp_path / "d" / "dossier")[0]
+
+
+def test_synthesis_flags_corruption(demo, tmp_path):
+    from canot.report import synthese
+
+    res, _ = drill(LossySource(str(demo[0])), tmp_path, demo[1])
+    assert synthese(res)["verdict"].startswith("Sortie non prouvée")
+
+
+def test_snowflake_setup_generates_key(tmp_path, monkeypatch, capsys):
+    from canot.cli import main
+
+    monkeypatch.setenv("HOME", str(tmp_path))
+    assert main(["snowflake-setup", "--generate-key", "--base", "MABASE"]) == 0
+    out = capsys.readouterr().out
+    assert "MABASE" in out and "RSA_PUBLIC_KEY = '" in out and "<clé publique" not in out
+    assert (tmp_path / ".canot" / "snowflake_rsa_key.p8").stat().st_mode & 0o077 == 0
