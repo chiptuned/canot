@@ -43,6 +43,7 @@ class SnowflakeSource(Source):
         u = urlparse(url)
         qs = {k: v[0] for k, v in parse_qs(u.query).items()}
         self.account = u.netloc
+        self.schemas = [x.upper() for x in qs.get("schemas", "").split(",") if x]
         self.database = u.path.strip("/") or qs.get("database", "")
         if not self.database:
             raise ValueError("URL Snowflake attendue : snowflake://COMPTE/BASE?user=...&warehouse=...&role=...")
@@ -78,6 +79,9 @@ class SnowflakeSource(Source):
     def table_ref(self, table: TableInfo) -> str:
         return f"{q(self.database, 'snowflake')}.{table.sql_for('snowflake')}"
 
+    def _schema_filter(self) -> str:
+        return (" and table_schema in (" + ",".join("'" + x.replace("'", "''") + "'" for x in self.schemas) + ")") if self.schemas else ""
+
     def _rows(self, sql: str) -> list[tuple]:
         cur = self.con.cursor()
         try:
@@ -90,12 +94,12 @@ class SnowflakeSource(Source):
         db = q(self.database, 'snowflake')
         trs = self._rows(
             f"select table_schema, table_name, row_count, bytes from {db}.information_schema.tables "
-            "where table_type='BASE TABLE' and table_schema <> 'INFORMATION_SCHEMA' order by 1,2"
+            "where table_type='BASE TABLE' and table_schema <> 'INFORMATION_SCHEMA'" + self._schema_filter() + " order by 1,2"
         )
         cols: dict[tuple[str, str], list[ColumnInfo]] = {}
         for s, t, c, d in self._rows(
             f"select table_schema, table_name, column_name, data_type from {db}.information_schema.columns "
-            "where table_schema <> 'INFORMATION_SCHEMA' order by table_schema, table_name, ordinal_position"
+            "where table_schema <> 'INFORMATION_SCHEMA'" + self._schema_filter() + " order by table_schema, table_name, ordinal_position"
         ):
             cols.setdefault((s, t), []).append(ColumnInfo(c, d))
         return [TableInfo(s, t, r, b, cols.get((s, t), [])) for s, t, r, b in trs]
