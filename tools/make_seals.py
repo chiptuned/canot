@@ -18,7 +18,7 @@ def scalloped(n=44, outer=96, hole=3.7):
 def seal(key, label, size):
     top = f"M{CX-66},{CY} A66,66 0 0 1 {CX+66},{CY}"
     bot = f"M{CX-76},{CY} A76,76 0 0 0 {CX+76},{CY}"
-    return f'''<svg class="stamp" viewBox="0 0 200 200" role="img" aria-label="{label} : élément de preuve, pas une certification" width="150" height="150">
+    return f'''<svg class="stamp reveal-stamp" viewBox="0 0 200 200" role="img" aria-label="{label} : élément de preuve, pas une certification" width="150" height="150">
   <defs><path id="t-{key}" d="{top}"/><path id="b-{key}" d="{bot}"/></defs>
   <g transform="rotate(-4 100 100)">
     <path d="{scalloped()}" fill="#fff" stroke="#1F3A5F" stroke-width="2.2" stroke-linejoin="round"/>
@@ -30,6 +30,18 @@ def seal(key, label, size):
     <text x="100" y="{100 + size * 0.35:.1f}" text-anchor="middle" font-size="{size}" font-weight="800" letter-spacing="-.5" fill="#1F3A5F">{label}</text>
   </g>
 </svg>'''
+
+
+def wave(height, amp, fill):
+    """Une vague qui se répète : le SVG fait 4 périodes et défile de la moitié, donc sans couture."""
+    P = 720
+    y = height - amp * 2 - 4
+    d = f"M0 {y}"
+    for i in range(8):
+        x = i * P // 2
+        d += f" Q{x + P // 4} {y + (amp if i % 2 else -amp)} {x + P // 2} {y}"
+    d += f" V{height} H0 Z"
+    return f'<svg viewBox="0 0 {P * 4} {height}" preserveAspectRatio="none" focusable="false"><path d="{d}" fill="{fill}"/></svg>'
 
 
 if __name__ == "__main__":

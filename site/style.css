@@ -28,8 +28,7 @@ nav.main a{text-decoration:none}
 
 /* hero */
 .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
-.hero-mark{position:absolute;right:-80px;top:96px;width:min(44vw,540px);height:auto;pointer-events:none}
-.hero .wrap{position:relative;padding-block:clamp(56px,10vw,112px) clamp(56px,9vw,104px);display:flex;flex-direction:column;gap:32px}
+.hero .wrap{position:relative;z-index:2;padding-block:clamp(56px,10vw,112px) clamp(120px,14vw,150px);display:flex;flex-direction:column;gap:32px}
 h1{margin:0;font-weight:700;font-size:clamp(40px,7vw,88px);line-height:1;letter-spacing:-.025em;max-width:11ch;text-wrap:balance}
 .hero-copy{display:flex;flex-direction:column;gap:12px;max-width:640px}
 .hero-copy .big{margin:0;font-size:clamp(18px,2.2vw,27px);line-height:1.25;font-weight:600;text-wrap:balance}
@@ -198,3 +197,35 @@ table{border-collapse:collapse;width:100%;min-width:480px;font-size:16px}
 .faq-list summary::after{content:"+";position:absolute;right:6px;top:12px;font-size:26px;font-weight:600;color:var(--accent-ink);transition:transform .15s}
 .faq-list details[open] summary::after{transform:rotate(45deg)}
 .faq-list p{margin:0;padding:0 0 20px;font-size:16px;line-height:1.6;color:var(--muted);text-wrap:pretty}
+
+/* motion : mer, canot, apparitions (tout est visible sans JS ; tout s'arrête si l'utilisateur réduit les animations) */
+@keyframes houle{0%,100%{transform:translateY(0) rotate(-.6deg)}50%{transform:translateY(-5px) rotate(.5deg)}}
+@keyframes vague{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.sea{position:absolute;left:0;right:0;bottom:0;overflow:hidden;pointer-events:none}
+.sea svg{position:absolute;left:0;bottom:0;width:200%;display:block}
+.sea-back{height:90px;z-index:1}.sea-back svg{height:90px;animation:vague 38s linear infinite}
+.sea-front{height:52px;z-index:3}.sea-front svg{height:52px;animation:vague 26s linear infinite reverse}
+.boat{position:absolute;right:7%;bottom:12px;width:min(28vw,320px);z-index:2;pointer-events:none}
+.boat img{width:100%;height:auto;display:block;transform-origin:50% 80%;animation:houle 11s ease-in-out infinite}
+
+.reveal-stamp{transition:transform .55s cubic-bezier(.3,1.5,.5,1),opacity .25s}
+.js .seal-grid:not(.in) .reveal-stamp{opacity:0;transform:scale(1.35) rotate(-10deg)}
+.seal:nth-child(2) .reveal-stamp{transition-delay:.12s}.seal:nth-child(3) .reveal-stamp{transition-delay:.24s}.seal:nth-child(4) .reveal-stamp{transition-delay:.36s}
+
+.reveal-row{transition:opacity .4s,transform .5s cubic-bezier(.2,.7,.2,1)}
+.js .card:not(.in) .reveal-row{opacity:0;transform:translateY(10px)}
+.card .reveal-row:nth-child(1){transition-delay:.2s}.card .reveal-row:nth-child(2){transition-delay:.5s}.card .reveal-row:nth-child(3){transition-delay:.8s}
+.card .foot{display:flex;align-items:center;gap:14px}
+.signed{border:2px solid var(--accent-ink);color:var(--accent-ink);font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;padding:5px 12px;border-radius:6px;transform:scale(1) rotate(-4deg);transition:transform .5s cubic-bezier(.3,1.6,.5,1) 1.3s,opacity .2s 1.3s}
+.js .card:not(.in) .signed{opacity:0;transform:scale(1.8) rotate(-14deg)}
+
+@media (prefers-reduced-motion:reduce){
+  .sea svg,.boat img{animation:none}
+  .reveal-stamp,.reveal-row,.signed{transition:none}
+  .js .seal-grid:not(.in) .reveal-stamp,.js .card:not(.in) .reveal-row,.js .card:not(.in) .signed{opacity:1;transform:none}
+  .js .card:not(.in) .signed{transform:rotate(-4deg)}
+}
+@media (max-width:560px){.boat{right:4%;width:34vw}}
+
+.seals{overflow:hidden}
+html,body{overflow-x:clip}

@@ -1,5 +1,6 @@
 (function () {
   "use strict";
+  document.documentElement.classList.add("js");
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // Mot qui change dans l'accroche (fixe si l'utilisateur préfère moins de mouvement)
@@ -22,6 +23,17 @@
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
       else fallback();
     });
+  }
+
+  // Apparitions au défilement (le texte reste lisible sans ce script ; rien ne bouge si l'on réduit les animations)
+  var targets = document.querySelectorAll(".seal-grid, .card");
+  if (reduce || !("IntersectionObserver" in window)) {
+    targets.forEach(function (t) { t.classList.add("in"); });
+  } else {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+    }, { threshold: 0.35 });
+    targets.forEach(function (t) { io.observe(t); });
   }
 
   // Formulaire

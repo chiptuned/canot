@@ -31,7 +31,9 @@
 
 <main>
 <section class="hero">
-  <img class="hero-mark" src="assets/canot-symbole.svg" alt="" aria-hidden="true" width="694" height="357">
+  <div class="sea sea-back" aria-hidden="true">@@wave_back@@</div>
+  <div class="boat" aria-hidden="true"><img src="assets/canot-symbole.svg" alt="" width="694" height="357"></div>
+  <div class="sea sea-front" aria-hidden="true">@@wave_front@@</div>
   <div class="wrap">
     <h1>Votre plan de sortie, exécuté et mesuré.</h1>
     <div class="hero-copy">
@@ -120,11 +122,11 @@
       <div class="meta"><span>Synthèse de l'exercice</span><span>Exemple</span></div>
       <div class="verdict">Sortie faisable sur ce périmètre. Un point à traiter avant de partir.</div>
       <ul class="rows">
-        <li><span>Données copiées et comparées</span><b class="c-ok">Identiques</b></li>
-        <li><span>Rapports rejoués</span><b class="c-ink">3 sur 4 identiques</b></li>
-        <li><span>Point à traiter</span><b class="c-warn">1 format de date</b></li>
+        <li class="reveal-row"><span>Données copiées et comparées</span><b class="c-ok">Identiques</b></li>
+        <li class="reveal-row"><span>Rapports rejoués</span><b class="c-ink">3 sur 4 identiques</b></li>
+        <li class="reveal-row"><span>Point à traiter</span><b class="c-warn">1 format de date</b></li>
       </ul>
-      <div class="foot">Journal signé · vérifiable à tout moment</div>
+      <div class="foot"><span class="signed">Signé</span><span>Journal signé · vérifiable à tout moment</span></div>
     </a>
   </div>
 </section>
