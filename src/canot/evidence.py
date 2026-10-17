@@ -33,8 +33,8 @@ class EvidenceLog:
         self.prev = e["hash"]
         self.entries.append(e)
 
-    def seal(self, key_path: Path) -> dict:
-        key = load_or_create_key(key_path)
+    def seal(self, key_path: Path, announce=None) -> dict:
+        key = load_or_create_key(key_path, announce)
         sig = key.sign(self.prev.encode())
         pub = key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
         self.path.write_text("\n".join(json.dumps(e, sort_keys=True, default=str) for e in self.entries) + "\n")
@@ -43,9 +43,11 @@ class EvidenceLog:
         return {"last_hash": self.prev, "signature": sig.hex(), "entries": len(self.entries)}
 
 
-def load_or_create_key(path: Path) -> Ed25519PrivateKey:
+def load_or_create_key(path: Path, announce=None) -> Ed25519PrivateKey:
     if path.exists():
         return serialization.load_pem_private_key(path.read_bytes(), password=None)  # type: ignore[return-value]
+    if announce:
+        announce(f"Clé de signature créée : {path}. Conservez-la : sans elle, deux dossiers ne sont pas signés par la même clé (voir CANOT_EVIDENCE_KEY_PATH).")
     path.parent.mkdir(parents=True, exist_ok=True)
     key = Ed25519PrivateKey.generate()
     path.write_bytes(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
@@ -53,8 +55,10 @@ def load_or_create_key(path: Path) -> Ed25519PrivateKey:
     return key
 
 
-def verify_dir(d: Path) -> tuple[bool, str]:
+def verify_dir(d: Path, expect_pub: Path | None = None) -> tuple[bool, str]:
     try:
+        if expect_pub is not None and (d / "evidence.pub").read_bytes().strip() != expect_pub.read_bytes().strip():
+            return False, "la clé publique du dossier n'est pas celle attendue"
         lines = [json.loads(l) for l in (d / "evidence.jsonl").read_text().splitlines() if l.strip()]
         prev = "0" * 64
         for e in lines:

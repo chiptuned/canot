@@ -151,3 +151,23 @@ def test_errors_are_readable():
     assert "canot[bigquery]" in msg and "uvx --from" in msg
     assert "gcloud auth application-default login" in explain(type("DefaultCredentialsError", (Exception,), {})("x"), [])
     assert explain(RuntimeError("autre chose"), []) is None
+
+
+def test_relire_sql_runs_with_plain_duckdb(tmp_path):
+    """La copie doit se relire sans Canot : on exécute vraiment relire.sql avec DuckDB."""
+    import duckdb
+    from canot.cli import main
+
+    assert main(["demo", "--out", str(tmp_path / "d"), "--rows", "1000", "--no-open"]) == 0
+    sql = (tmp_path / "d" / "dossier" / "relire.sql").read_text()
+    con = duckdb.connect()
+    try:
+        con.execute("INSTALL iceberg; LOAD iceberg;")
+    except Exception as e:  # hors ligne : l'extension ne peut pas être téléchargée
+        pytest.skip(f"extension iceberg indisponible : {e}")
+    counts = {}
+    for line in sql.splitlines():
+        if line.startswith("SELECT"):
+            name, n = con.execute(line.rstrip(";")).fetchone()
+            counts[name] = n
+    assert counts["distrib.stores"] == 300 and counts["distrib.tickets"] == 1000

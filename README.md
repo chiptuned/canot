@@ -19,6 +19,8 @@
 
 <p align="center">
   <a href="https://canot.io"><b>canot.io</b></a> ·
+  <a href="docs/ecarts.md">Écarts mesurés</a> ·
+  <a href="README.en.md">English</a> ·
   <a href="#-essayer">Essayer</a> ·
   <a href="#-pourquoi">Pourquoi</a>
 </p>

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from . import prices
 from .convert import target_schema
 from .sources.base import Source
 
@@ -32,9 +33,19 @@ def scan(src: Source, credit_price: float | None = 3.90) -> dict:
         "assumed_throughput_mb_s": list(THROUGHPUT_MBPS),
         "note": "estimation de planification ; remplacée par la mesure après un `canot drill`",
     }
-    if credit_price and src.dialect == "snowflake":
-        est["credit_price"] = credit_price
-        est["cost_usd"] = [round(est["credits"][0] * credit_price, 2), round(est["credits"][1] * credit_price, 2)]
+    if src.dialect == "snowflake":
+        lo, basis = prices.snowflake_cost(est["credits"][0], credit_price)
+        hi, _ = prices.snowflake_cost(est["credits"][1], credit_price)
+        est["cost_usd"] = [lo[0], hi[1]]
+        est["cost_basis"] = basis
+    n_objects = sum(len(v) for v in objs.values())
+    exit_cost = {
+        "reading_usd": est.get("cost_usd"),
+        "reading_basis": est.get("cost_basis") or ("BigQuery : la lecture facture l'API Storage Read (par Tio lu) : tarif à renseigner, non inclus ici." if src.dialect == "bigquery" else None),
+        "rework_days": prices.rework_days(n_objects, len(risky)),
+        "rework_basis": f"{n_objects} objet(s) à reconstruire et {len(risky)} colonne(s) à type propre à la plateforme ; hypothèses de q4o ({prices.REWORK_DAYS_PER_OBJECT[0]} à {prices.REWORK_DAYS_PER_OBJECT[1]} jour par objet, {prices.REWORK_DAYS_PER_NONPORTABLE_COLUMN[0]} à {prices.REWORK_DAYS_PER_NONPORTABLE_COLUMN[1]} par colonne), à discuter.",
+        "not_included": "Tarif de votre contrat, stockage d'arrivée, double exploitation, coût de fonctionnement après la sortie : ils dépendent de votre contrat et de votre architecture, et ne sont pas estimés ici.",
+    }
     return {
         "source": src.describe(),
         "tables": [{"name": t.fqn, "rows": t.rows, "bytes": t.bytes, "columns": len(t.columns)} for t in tables],
@@ -44,5 +55,6 @@ def scan(src: Source, credit_price: float | None = 3.90) -> dict:
         "object_counts": movable,
         "usage_90d": src.usage_90d(),
         "exit_estimate": est,
+        "exit_cost": exit_cost,
         "egress_note": EGRESS_NOTES.get(src.dialect, ""),
     }

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -62,28 +63,31 @@ def run(argv: list[str] | None = None) -> int:
     s = sub.add_parser("scan", help="radiographie en lecture seule : inventaire, enfermement, coût de sortie estimé")
     s.add_argument("--from", dest="src", required=True)
     s.add_argument("--out", default="canot-out")
-    s.add_argument("--credit-price", type=float, default=3.90, help="prix du crédit Snowflake (est. Enterprise, AWS Paris)")
+    s.add_argument("--credit-price", type=float, default=None, help="prix du crédit Snowflake de votre contrat, en USD. Sans lui : fourchette du prix catalogue (voir canot/prices.py)")
 
     d = sub.add_parser("drill", help="exercice de sortie complet : copie, comparaison, dossier de preuve")
     d.add_argument("--from", dest="src", required=True)
     d.add_argument("--to", dest="dst", required=True, help="dossier local, s3://..., ou scaleway:fr-par, ovh:gra, outscale:eu-west-2, ionos:de..., avec --bucket")
     d.add_argument("--bucket")
+    d.add_argument("--catalog", help="catalogue Iceberg : URI SQLAlchemy (postgresql://… avec canot[postgres]) ou env:NOM_DE_VARIABLE. Défaut : un fichier SQLite dans le dossier de sortie")
     d.add_argument("--out", default="canot-out")
     d.add_argument("--queries", help="optionnel : fichier SQL à rejouer. Par défaut, les requêtes les plus coûteuses de l'historique de la plateforme.")
     d.add_argument("--top", type=int, default=20)
     d.add_argument("--tolerances", help="fichier TOML (voir `canot init-tolerances`)")
     d.add_argument("--tables", nargs="*", help="limiter à ces tables (SCHEMA.TABLE)")
-    d.add_argument("--key", default=str(Path.home() / ".canot" / "evidence.key"))
-    d.add_argument("--credit-price", type=float, default=3.90)
+    d.add_argument("--key", default=os.environ.get("CANOT_EVIDENCE_KEY_PATH", str(Path.home() / ".canot" / "evidence.key")), help="clé de signature (défaut : variable CANOT_EVIDENCE_KEY_PATH, sinon ~/.canot/evidence.key)")
+    d.add_argument("--credit-price", type=float, default=None, help="prix du crédit Snowflake de votre contrat, en USD (défaut : fourchette du prix catalogue)")
     d.add_argument("--replay-max-gb", type=float, default=2.0, help="taille maximale d'une table chargée en mémoire pour rejouer les requêtes")
 
     t = sub.add_parser("teardown", help="supprime les données copiées")
     t.add_argument("--to", dest="dst", required=True)
     t.add_argument("--bucket")
+    t.add_argument("--catalog", help="le même catalogue que pour drill")
     t.add_argument("--out", default="canot-out")
 
     v = sub.add_parser("verify-evidence", help="vérifie la chaîne et la signature d'un dossier")
     v.add_argument("dir")
+    v.add_argument("--expect-pub", help="fichier .pub de la clé attendue : refuse un dossier signé par une autre clé")
 
     ss = sub.add_parser("snowflake-setup", help="affiche le script SQL d'accès en lecture seule à relire")
     ss.add_argument("--generate-key", action="store_true", help="crée la paire de clés ici et met la clé publique dans le script")
@@ -109,7 +113,6 @@ def run(argv: list[str] | None = None) -> int:
         if a.generate_key:
             from cryptography.hazmat.primitives import serialization
             from cryptography.hazmat.primitives.asymmetric import rsa
-            import os
 
             kp = Path.home() / ".canot" / "snowflake_rsa_key.p8"
             if kp.exists():
@@ -178,14 +181,14 @@ def run(argv: list[str] | None = None) -> int:
     if a.cmd == "verify-evidence":
         from .evidence import verify_dir
 
-        ok, msg = verify_dir(Path(a.dir))
+        ok, msg = verify_dir(Path(a.dir), Path(a.expect_pub) if a.expect_pub else None)
         _p(("OK : " if ok else "ÉCHEC : ") + msg)
         return 0 if ok else 2
 
     if a.cmd == "teardown":
         from .target import parse_target
 
-        _p(parse_target(a.dst, a.bucket, out).teardown())
+        _p(parse_target(a.dst, a.bucket, out, a.catalog).teardown())
         return 0
 
     from .sources import open_source
@@ -205,6 +208,10 @@ def run(argv: list[str] | None = None) -> int:
             _p(f"Sortie estimée : {e['duration_hours'][0]} à {e['duration_hours'][1]} h de copie ({e['assumed_throughput_mb_s'][0]}-{e['assumed_throughput_mb_s'][1]} Mo/s, est.)")
             if "cost_usd" in e:
                 _p(f"Coût de lecture estimé : {e['cost_usd'][0]} à {e['cost_usd'][1]} $ ({e['credits'][0]}-{e['credits'][1]} crédits)")
+                _p(f"  base : {e['cost_basis']}")
+            ec = res["exit_cost"]
+            _p(f"Travail de reprise estimé : {ec['rework_days'][0]} à {ec['rework_days'][1]} jours ({ec['rework_basis']})")
+            _p(f"Non inclus : {ec['not_included']}")
             if res["egress_note"]:
                 _p(res["egress_note"])
             if res["usage_90d"]:
@@ -222,7 +229,7 @@ def run(argv: list[str] | None = None) -> int:
             from .target import parse_target
             from .tolerances import Tolerances
 
-            target = parse_target(a.dst, a.bucket, out)
+            target = parse_target(a.dst, a.bucket, out, a.catalog)
             res = run_drill(src, target, out, Path(a.key), a.queries, Tolerances.load(a.tolerances), a.top, a.tables, a.credit_price, a.replay_max_gb, _p)
             rep = write_report(res, out)
             s = res["summary"]

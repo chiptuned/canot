@@ -159,8 +159,8 @@ class SnowflakeSource(Source):
     def usage_90d(self) -> dict | None:
         try:
             r = self._rows(
-                "select coalesce(sum(credits_used),0) from snowflake.account_usage.metering_history "
-                "where start_time > dateadd(day,-90,current_timestamp())"
+                "select coalesce(sum(credits_billed),0) from snowflake.account_usage.metering_daily_history "
+                "where usage_date >= dateadd(day,-90,current_date())"
             )
             return {"credits_90d": float(r[0][0])}
         except Exception:

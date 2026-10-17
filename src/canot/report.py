@@ -88,6 +88,32 @@ def _key_fingerprint(out: Path) -> str:
         return "non disponible"
 
 
+def write_relire_sql(res: dict, out: Path) -> Path:
+    """Un fichier SQL pour relire la copie avec DuckDB, sans Canot : preuve qu'elle ne dépend pas de l'outil."""
+    loc = res.get("copy_location") or {}
+    lines = ["-- Relire la copie sans Canot, avec DuckDB (https://duckdb.org).", "-- Lancez : duckdb < relire.sql", "INSTALL iceberg; LOAD iceberg;"]
+    if loc.get("kind") == "s3":
+        lines += ["-- Stockage compatible S3 : créez d'abord un secret avec VOS clés (ne les collez jamais dans un fichier partagé).",
+                  "-- CREATE SECRET (TYPE S3, KEY_ID '...', SECRET '...', ENDPOINT 'hôte-s3', URL_STYLE 'path');"]
+    for fqn, meta in sorted((loc.get("metadata") or {}).items()):
+        path = meta[len("file://"):] if meta.startswith("file://") else meta
+        lines.append(f"SELECT '{fqn}' AS table_name, count(*) AS lignes FROM iceberg_scan('{path}');")
+    p = out / "relire.sql"
+    p.write_text("\n".join(lines) + "\n")
+    return p
+
+
+def _fmt_cost(c) -> str:
+    if isinstance(c, (list, tuple)):
+        return f"{c[0]}" if c[0] == c[1] else f"{c[0]} à {c[1]}"
+    return str(c)
+
+
+def _clean_path(p: str) -> str:
+    """Un chemin local devient « …/dossier » : pas d'identifiant d'utilisateur dans un dossier transmis."""
+    return re.sub(r"^file://(?:/[^/ ]+)*/([^/ ]+/[^/ ]+)$", r"…/\1", str(p))
+
+
 def _clean(label: str) -> str:
     """Pas de chemins locaux dans un dossier qu'on transmet."""
     return re.sub(r"(local|duckdb):[^ ]*/([^/ ]+)", r"\1:\2", str(label))
@@ -123,15 +149,23 @@ def write_report(res: dict, out: Path) -> Path:
 <h2>Mesures de cet exercice</h2><ul>
 {('<li>Débit de copie mesuré : ' + str(s['throughput_mb_s']) + ' Mo/s</li>') if s['throughput_mb_s'] else ''}
 {('<li>Temps de reprise estimé (fourchette) : ' + _e(f"{rto['seconds'][0]} à {rto['seconds'][1]} s — {rto['basis']}") + '</li>') if rto else ''}
-{('<li>Crédits d\'entrepôt consommés (est.) : ' + str(s['warehouse_credits_used_est']) + (' · coût (est.) : ' + str(s['cost_usd_est']) + ' $' if s['cost_usd_est'] is not None else '') + '</li>') if s['warehouse_credits_used_est'] is not None else ''}
+{('<li>Crédits d\'entrepôt consommés (est.) : ' + str(s['warehouse_credits_used_est']) + (' · coût : ' + _fmt_cost(s['cost_usd_est']) + ' $ (' + _e(s.get('cost_basis') or '') + ')' if s['cost_usd_est'] else '') + '</li>') if s['warehouse_credits_used_est'] is not None else ''}
 <li>Durée totale de l'exercice : {s['duration_s']} s</li></ul>
 <p class="small">Ces mesures décrivent cet exercice, sur ce périmètre. Elles ne comparent pas deux plateformes.</p>
+<h2>Où est la copie</h2>
+<p>Destination : <code>{_e(_clean(res['copy_location']['target']))}</code> · emplacement : <code>{_e(_clean_path(res['copy_location']['warehouse']))}</code> · catalogue : {_e(res['copy_location']['catalog'])}.<br>
+La copie est au format Apache Iceberg : vous pouvez la relire sans Canot. Le fichier <code>relire.sql</code> à côté de ce dossier contient les commandes DuckDB pour le faire.</p>
 <h2>Tables</h2><table><tr><th>Table</th><th>Lignes source</th><th>Lignes cible</th><th>Résultat</th><th>Détail</th></tr>{rows}</table>
 <h2>Requêtes rejouées des deux côtés</h2><table><tr><th>Requête</th><th>Résultat</th><th>Détail</th></tr>{qrows or '<tr><td colspan=3>aucune</td></tr>'}</table>
 <h2>Conversions de types</h2><table>{crows or '<tr><td>aucune</td></tr>'}</table>
 <h2>Ce qui ne part pas tel quel</h2>
 <p>Colonnes à type propre à la plateforme : {len(nonp)}. Objets à reconstruire (vues, procédures, tâches…) :</p>
 <table><tr><th>Type</th><th>Nombre</th><th>Exemples</th></tr>{objrows or '<tr><td colspan=3>aucun détecté</td></tr>'}</table>
+<h2>Ce que ces chiffres ne disent pas</h2>
+<ul><li>Ils concernent le périmètre exécuté, à la date du constat. Ils ne disent rien des autres tables ni de demain.</li>
+<li>Ils ne comparent pas deux plateformes : ni durées, ni coûts, ni performances.</li>
+<li>Ils ne couvrent ni les droits d'accès, ni les vues, ni les tâches planifiées, ni les applications branchées sur la plateforme.</li>
+<li>Ce n'est pas une certification et ce n'est pas un avis juridique sur vos contrats.</li></ul>
 <h2>Tolérances appliquées</h2><p><code>{_e(json.dumps(res['tolerances'], ensure_ascii=False))}</code></p>
 <h2>Intégrité du dossier</h2>
 <p>Journal chaîné : {res['seal']['entries']} entrées, dernière empreinte <code>{_e(res['seal']['last_hash'])}</code>.
@@ -142,6 +176,7 @@ La signature garantit l'intégrité du journal. Elle n'établit ni l'identité d
 </html>"""
     page = page.replace("@@VERDICT@@", _e(sy["verdict"])).replace("@@FINDINGS@@", finds)
     page = page.replace("</html>", '''<div class="cta">Ce dossier couvre le périmètre que vous avez choisi. Pour l'obtenir sur votre environnement, avec trois scénarios de coût de sortie et la marche à suivre : <a href="https://canot.io/#contact">canot.io</a>.</div></html>''')
+    write_relire_sql(res, out)
     p = out / "report.html"
     p.write_text(page)
     return p

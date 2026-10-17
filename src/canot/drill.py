@@ -9,7 +9,7 @@ import pyarrow
 import pyiceberg
 import sqlglot
 
-from . import __version__
+from . import __version__, prices
 from .copy import copy_table
 from .evidence import EvidenceLog
 from .scan import scan as run_scan
@@ -21,7 +21,7 @@ from .verify import check_table, replay_queries, split_sql
 
 def run_drill(src: Source, target: Target, out: Path, key_path: Path, queries_file: str | None,
               tol: Tolerances, top_n: int = 20, only: list[str] | None = None,
-              credit_price: float | None = 3.90, replay_max_gb: float = 2.0, log=print) -> dict:
+              credit_price: float | None = None, replay_max_gb: float = 2.0, log=print) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     ev = EvidenceLog(out)
     t_start = time.monotonic()
@@ -79,6 +79,7 @@ def run_drill(src: Source, target: Target, out: Path, key_path: Path, queries_fi
         center = total_bytes / 1e6 / mbps
         rto = {"seconds": [round(center * 0.7, 1), round(center * 1.5, 1)], "basis": "débit mesuré ±, hors validation humaine et reprise des applications"}
     credits = round(copy_seconds / 3600 * src.credits_per_hour, 4) if src.dialect == "snowflake" else None
+    cost, cost_basis = (prices.snowflake_cost(credits, credit_price) if credits is not None else (None, None))
     summary = {
         "tables_total": len(tables),
         "tables_ok": sum(1 for c in checks if c.ok),
@@ -94,13 +95,23 @@ def run_drill(src: Source, target: Target, out: Path, key_path: Path, queries_fi
         "throughput_mb_s": round(mbps, 2) if mbps else None,
         "rto": rto,
         "warehouse_credits_used_est": credits,
-        "cost_usd_est": round(credits * credit_price, 2) if credits is not None and credit_price else None,
+        "cost_usd_est": cost,
+        "cost_basis": cost_basis,
         "duration_s": round(time.monotonic() - t_start, 1),
     }
     summary["parity"] = ("complète" if summary["tables_ok"] == summary["tables_total"] and not summary["tables_error"]
                          and not summary["queries_mismatch"] else "écarts")
     ev.add("summary", summary)
-    seal = ev.seal(key_path)
-    return {"summary": summary, "scan": scan_res, "checks": [asdict(c) | {"ok": c.ok} for c in checks],
+    seal = ev.seal(key_path, log)
+    locations = {}
+    for t in tables:
+        if not copies[t.fqn].error:
+            try:
+                locations[t.fqn] = cat.load_table((t.schema, t.name)).metadata_location
+            except Exception:
+                pass
+    copy_location = {"target": target.label, "warehouse": target.warehouse, "kind": target.kind,
+                     "catalog": "personnalisé" if target.catalog_uri else "SQLite (catalog.db dans le dossier de sortie)", "metadata": locations}
+    return {"summary": summary, "copy_location": copy_location, "scan": scan_res, "checks": [asdict(c) | {"ok": c.ok} for c in checks],
             "queries": [asdict(q) for q in qres], "conversions": [asdict(c) for c in conversions],
             "env": env, "seal": seal, "source": src.describe(), "target": target.label, "tolerances": tol.to_dict()}

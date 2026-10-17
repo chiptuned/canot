@@ -141,13 +141,19 @@ class BigQuerySource(Source):
         return out
 
     def usage_90d(self) -> dict | None:
+        """Consommation sur 90 jours. La facturation à la demande (octets facturés) et la capacité réservée (slots) sont séparées :
+        additionner les deux n'aurait pas de sens."""
         try:
             r = self._rows(
-                "select coalesce(sum(total_bytes_billed),0), count(*), coalesce(sum(total_slot_ms),0) from "
+                "select coalesce(sum(if(reservation_id is null, total_bytes_billed, 0)),0), "
+                "count(*), "
+                "coalesce(sum(if(reservation_id is not null, total_slot_ms, 0)),0), "
+                "countif(reservation_id is not null) from "
                 f"`region-{self.location.lower()}`.INFORMATION_SCHEMA.JOBS_BY_PROJECT "
                 "where job_type='QUERY' and creation_time > timestamp_sub(current_timestamp(), interval 90 day)"
             )[0]
-            return {"tib_billed_90d": round(r[0] / TIB, 3), "query_jobs_90d": int(r[1]), "slot_hours_90d": round(r[2] / 3.6e6, 1)}
+            return {"on_demand_tib_billed_90d": round(r[0] / TIB, 3), "query_jobs_90d": int(r[1]),
+                    "reserved_slot_hours_90d": round(r[2] / 3.6e6, 1), "reserved_jobs_90d": int(r[3])}
         except Exception:
             return None
 

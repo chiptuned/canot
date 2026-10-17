@@ -45,11 +45,33 @@ resource "scaleway_object_bucket" "data" {
   tags = { app = "canot", role = "data" }
 }
 
-# Preuves : verrouillé (object lock), on peut écrire mais personne ne modifie avant la fin de la rétention.
+# Preuves : bucket avec verrouillage d'objets (object lock) ET une rétention par défaut : sans rétention,
+# le verrouillage activé seul n'empêche rien. Canot n'y envoie pas encore le dossier automatiquement :
+# copiez-y le dossier de sortie (rapport, journal signé) avec l'outil de votre choix.
 resource "scaleway_object_bucket" "evidence" {
-  name               = "${var.name}-evidence-${var.project_id}"
+  name                = "${var.name}-evidence-${var.project_id}"
   object_lock_enabled = true
-  tags               = { app = "canot", role = "evidence" }
+  tags                = { app = "canot", role = "evidence" }
+}
+
+variable "evidence_lock_mode" {
+  description = "GOVERNANCE (modifiable par un compte autorisé) ou COMPLIANCE (personne, pendant la rétention)."
+  type        = string
+  default     = "GOVERNANCE"
+}
+variable "evidence_retention_days" {
+  type    = number
+  default = 365
+}
+
+resource "scaleway_object_bucket_lock_configuration" "evidence" {
+  bucket = scaleway_object_bucket.evidence.name
+  rule {
+    default_retention {
+      mode = var.evidence_lock_mode
+      days = var.evidence_retention_days
+    }
+  }
 }
 
 resource "scaleway_vpc_private_network" "pn" {

@@ -34,8 +34,9 @@ Issues = "https://github.com/chiptuned/canot/issues"
 snowflake = ["snowflake-connector-python[pandas]>=3.12"]
 bigquery = ["google-cloud-bigquery[bqstorage]>=3.25"]
 databricks = ["databricks-sql-connector>=3.5"]
-all = ["snowflake-connector-python[pandas]>=3.12", "google-cloud-bigquery[bqstorage]>=3.25", "databricks-sql-connector>=3.5"]
-dev = ["pytest>=8"]
+postgres = ["psycopg2-binary>=2.9"]
+all = ["snowflake-connector-python[pandas]>=3.12", "google-cloud-bigquery[bqstorage]>=3.25", "databricks-sql-connector>=3.5", "psycopg2-binary>=2.9"]
+dev = ["pytest>=8", "moto[server,s3]>=5"]
 
 [project.scripts]
 canot = "canot.cli:main"

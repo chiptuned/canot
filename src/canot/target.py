@@ -25,12 +25,13 @@ class Target:
     warehouse: str
     props: dict[str, str] = field(default_factory=dict)
     workdir: Path = Path(".")
+    catalog_uri: str | None = None  # défaut : un fichier SQLite dans le dossier de travail
 
     def catalog(self):
         from pyiceberg.catalog.sql import SqlCatalog
 
         self.workdir.mkdir(parents=True, exist_ok=True)
-        props = {"uri": f"sqlite:///{self.workdir / 'catalog.db'}", "warehouse": self.warehouse, **self.props}
+        props = {"uri": self.catalog_uri or f"sqlite:///{self.workdir / 'catalog.db'}", "warehouse": self.warehouse, **self.props}
         return SqlCatalog("canot", **props)
 
     def teardown(self) -> str:
@@ -44,6 +45,7 @@ class Target:
         u = urlparse(self.warehouse)
         s3 = fs.S3FileSystem(
             endpoint_override=self.props.get("s3.endpoint"),
+            proxy_options=self.props.get("s3.proxy-uri"),
             region=self.props.get("s3.region"),
             access_key=self.props.get("s3.access-key-id"),
             secret_key=self.props.get("s3.secret-access-key"),
@@ -93,7 +95,20 @@ def _creds() -> dict[str, str]:
     return out
 
 
-def parse_target(spec: str, bucket: str | None, workdir: Path) -> Target:
+def _catalog_uri(value: str | None) -> str | None:
+    """--catalog postgresql://... ou env:NOM : la seconde forme évite de mettre un mot de passe sur la ligne de commande."""
+    if not value:
+        return None
+    if value.startswith("env:"):
+        got = os.environ.get(value[4:])
+        if not got:
+            raise ValueError(f"Variable d'environnement vide ou absente : {value[4:]}")
+        return got
+    return value
+
+
+def parse_target(spec: str, bucket: str | None, workdir: Path, catalog: str | None = None) -> Target:
+    uri = _catalog_uri(catalog)
     if "://" not in spec and ":" in spec and spec.split(":", 1)[0] in PROVIDERS:
         provider, region = spec.split(":", 1)
         if not bucket:
@@ -102,7 +117,7 @@ def parse_target(spec: str, bucket: str | None, workdir: Path) -> Target:
         props = {"s3.endpoint": endpoint, "s3.region": region, **_creds()}
         if not props.get("s3.access-key-id"):
             raise ValueError("Clés d'accès absentes : lancez `scw init`, ou définissez CANOT_S3_ACCESS_KEY et CANOT_S3_SECRET_KEY.")
-        return Target("s3", f"{provider}:{region}/{bucket}", f"s3://{bucket}/canot", props, workdir)
+        return Target("s3", f"{provider}:{region}/{bucket}", f"s3://{bucket}/canot", props, workdir, uri)
     if spec.startswith("s3://"):
         u = urlparse(spec)
         qs = {k: v[0] for k, v in parse_qs(u.query).items()}
@@ -111,6 +126,11 @@ def parse_target(spec: str, bucket: str | None, workdir: Path) -> Target:
             props["s3.endpoint"] = qs["endpoint"]
         if "region" in qs:
             props["s3.region"] = qs["region"]
-        return Target("s3", f"s3://{u.netloc}{u.path}", f"s3://{u.netloc}{u.path}".rstrip("/"), props, workdir)
+        if "proxy" in qs:  # proxy d'entreprise
+            props["s3.proxy-uri"] = qs["proxy"]
+        if "ca" in qs:  # autorité de certification interne : transmise au SDK AWS par ses variables d'environnement habituelles
+            os.environ.setdefault("AWS_CA_BUNDLE", qs["ca"])
+            os.environ.setdefault("SSL_CERT_FILE", qs["ca"])
+        return Target("s3", f"s3://{u.netloc}{u.path}", f"s3://{u.netloc}{u.path}".rstrip("/"), props, workdir, uri)
     path = Path(spec.replace("file://", "")).expanduser().resolve()
-    return Target("local", f"local:{path}", f"file://{path / 'warehouse'}", {}, workdir)
+    return Target("local", f"local:{path}", f"file://{path / 'warehouse'}", {}, workdir, uri)
