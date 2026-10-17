@@ -300,3 +300,4 @@ input[type=file]{font:inherit;padding:8px 0}
 .onprem .term code{font-family:var(--mono);white-space:pre}
 .onprem .cmds code{overflow-wrap:anywhere}
 [hidden]{display:none!important}
+.sov .note{max-width:62ch;margin:20px 0 8px;color:var(--muted);font-size:15px}
