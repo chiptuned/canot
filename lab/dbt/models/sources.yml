@@ -1,0 +1,10 @@
+version: 2
+sources:
+  - name: raw
+    database: "{{ target.project if target.type == 'bigquery' else target.database }}"
+    schema: "{{ 'lab_raw' if target.type == 'bigquery' else 'RAW' }}"
+    tables:
+      - name: customers
+      - name: orders
+      - name: order_lines
+      - name: products

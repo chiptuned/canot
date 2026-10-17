@@ -1,0 +1,21 @@
+# Banc de test : authentification par les identifiants applicatifs Google / la clé Snowflake du laboratoire. Aucun secret ici.
+canot_lab:
+  target: bigquery
+  outputs:
+    bigquery:
+      type: bigquery
+      method: oauth
+      project: canot-511503
+      dataset: lab_dbt
+      location: EU
+      threads: 4
+    snowflake:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: CANOT_LAB_USER
+      private_key_path: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH') }}"
+      role: CANOT_LAB
+      database: CANOT_LAB
+      warehouse: CANOT_WH
+      schema: DBT
+      threads: 4

@@ -11,3 +11,7 @@ private/
 dist/
 .wrangler/
 site/wrangler.toml
+lab/.venv/
+lab/dbt/target/
+lab/dbt/logs/
+lab/dbt/dbt_packages/

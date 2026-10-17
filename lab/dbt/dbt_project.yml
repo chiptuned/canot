@@ -1,0 +1,13 @@
+name: canot_lab
+version: "1.0"
+profile: canot_lab
+model-paths: ["models"]
+test-paths: ["tests"]
+models:
+  canot_lab:
+    staging:
+      +materialized: view
+      +schema: dbt_stg
+    marts:
+      +materialized: table
+      +schema: dbt_mart
