@@ -24,10 +24,16 @@ GRANT USAGE ON DATABASE <BASE> TO ROLE CANOT_READER;
 GRANT USAGE ON ALL SCHEMAS IN DATABASE <BASE> TO ROLE CANOT_READER;
 GRANT SELECT ON ALL TABLES IN DATABASE <BASE> TO ROLE CANOT_READER;
 GRANT SELECT ON FUTURE TABLES IN DATABASE <BASE> TO ROLE CANOT_READER;
--- Optionnel : consommation sur 90 jours pour `canot scan` (donne accès aux métadonnées de compte)
--- GRANT IMPORTED PRIVILEGES ON DATABASE SNOWFLAKE TO ROLE CANOT_READER;
--- Utilisateur technique, connexion par paire de clés (pas de mot de passe)
-CREATE USER IF NOT EXISTS CANOT_USER DEFAULT_ROLE = CANOT_READER DEFAULT_WAREHOUSE = CANOT_WH
+-- `canot scan` : métadonnées du compte (SNOWFLAKE.ACCOUNT_USAGE) par les rôles de base en lecture seule.
+-- Gardez les lignes du niveau voulu et celles des niveaux inférieurs.
+GRANT DATABASE ROLE SNOWFLAKE.OBJECT_VIEWER TO ROLE CANOT_READER;     -- niveau 1 : inventaire, code, dépendances
+GRANT DATABASE ROLE SNOWFLAKE.USAGE_VIEWER TO ROLE CANOT_READER;      -- niveau 1 : volumes, consommation
+GRANT DATABASE ROLE SNOWFLAKE.GOVERNANCE_VIEWER TO ROLE CANOT_READER; -- niveau 2 : requêtes (formes normalisées), lectures par table, politiques
+GRANT DATABASE ROLE SNOWFLAKE.SECURITY_VIEWER TO ROLE CANOT_READER;   -- niveau 3 : droits et outils (pseudonymisés)
+-- Optionnel : paramètres de tous les entrepôts dans SHOW WAREHOUSES
+-- GRANT MONITOR ON WAREHOUSE <ENTREPOT> TO ROLE CANOT_READER;
+-- Utilisateur technique de service, connexion par paire de clés (pas de mot de passe)
+CREATE USER IF NOT EXISTS CANOT_USER TYPE = SERVICE DEFAULT_ROLE = CANOT_READER DEFAULT_WAREHOUSE = CANOT_WH
   RSA_PUBLIC_KEY = '<clé publique, sans les lignes BEGIN/END>';
 GRANT ROLE CANOT_READER TO USER CANOT_USER;
 """
@@ -81,6 +87,19 @@ class SnowflakeSource(Source):
 
     def _schema_filter(self) -> str:
         return (" and table_schema in (" + ",".join("'" + x.replace("'", "''") + "'" for x in self.schemas) + ")") if self.schemas else ""
+
+    def run_readonly(self, sql: str) -> list[dict]:
+        """Exécute une lecture du scan (garde lecture seule d'abord) ; lignes en dict, noms de colonnes en MAJUSCULES."""
+        from ..scanner.guard import check_readonly
+
+        sql = check_readonly(sql, "snowflake")
+        cur = self.con.cursor()
+        try:
+            cur.execute(sql)
+            cols = [d[0].upper() for d in cur.description or []]
+            return [dict(zip(cols, r)) for r in cur.fetchall()]
+        finally:
+            cur.close()
 
     def _rows(self, sql: str) -> list[tuple]:
         cur = self.con.cursor()

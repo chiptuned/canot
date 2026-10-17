@@ -6,13 +6,37 @@ from urllib.parse import parse_qs, urlparse
 import pyarrow as pa
 
 from ..model import ColumnInfo, TableInfo, q
+from ..scanner.guard import check_readonly
 from .base import Source
 
 TIB = 1024**4
+MIN_BILLED = 10 * 1024**2  # BigQuery facture au moins 10 Mo par vue INFORMATION_SCHEMA citée, sans cache
+DEFAULT_MAX_BYTES = 10 * 1024**3
+LABELS = {"tool": "canot"}
+
+
+class BytesCapExceeded(Exception):
+    def __init__(self, estimated: int, cap: int):
+        super().__init__(f"estimated {estimated} bytes, cap {cap}")
+        self.estimated, self.cap = estimated, cap
+
+
+def _job_config(**kw):
+    try:
+        from google.cloud import bigquery
+
+        return bigquery.QueryJobConfig(**kw)
+    except ImportError:  # client de test
+        from types import SimpleNamespace
+
+        return SimpleNamespace(**kw)
 
 
 class BigQuerySource(Source):
-    """bigquery://PROJET/DATASET1,DATASET2?location=EU  (sans dataset : tous ceux du projet).
+    """bigquery://PROJET/DATASET1,DATASET2[?location=EU]  (sans dataset : tous ceux du projet).
+
+    Sans `location`, la région de chaque dataset est lue sur le dataset lui-même : les régions ne sont pas
+    hiérarchiques (EU ne couvre pas europe-west1).
 
     Authentification : identifiants applicatifs Google (GOOGLE_APPLICATION_CREDENTIALS ou
     `gcloud auth application-default login`). Droits minimaux : BigQuery Data Viewer sur les datasets,
@@ -29,12 +53,47 @@ class BigQuerySource(Source):
         # "bigquery://FACTURATION/projet-donnees.dataset" : lire un dataset d'un autre projet (jeux publics inclus)
         self.data_project = next((d.rsplit(".", 1)[0] for d in raw if "." in d), self.project)
         self.datasets = [d.rsplit(".", 1)[-1] for d in raw]
-        self.location = qs.get("location", "EU")
+        self.location = qs.get("location")
+        self.max_bytes_billed = DEFAULT_MAX_BYTES
+        self.cost = {"requetes": 0, "dry_runs": 0, "octets_estimes": 0, "octets_factures": None}
+        self._locations: dict[str, str | None] = {}
         if client is None:
             from google.cloud import bigquery  # extra optionnel
 
             client = bigquery.Client(project=self.project, location=self.location)
         self.client = client
+
+    def run_readonly(self, sql: str, location: str | None = None, *, max_bytes: int | None = None) -> list[dict]:
+        """Exécuteur du scan : garde lecture seule, dry-run d'abord, refus si l'estimation dépasse le plafond,
+        puis exécution étiquetée tool=canot avec maximum_bytes_billed. Lève sans rien exécuter en cas de refus."""
+        check_readonly(sql, "bigquery")
+        loc = location or self.location
+        cap = max(max_bytes or self.max_bytes_billed, MIN_BILLED)
+        dry = self.client.query(sql, location=loc, job_config=_job_config(dry_run=True, use_query_cache=False, labels=dict(LABELS)))
+        est = int(getattr(dry, "total_bytes_processed", None) or 0)
+        self.cost["dry_runs"] += 1
+        self.cost["octets_estimes"] += est
+        if est > cap:
+            raise BytesCapExceeded(est, cap)
+        job = self.client.query(sql, location=loc, job_config=_job_config(labels=dict(LABELS), maximum_bytes_billed=cap))
+        rows = [r if isinstance(r, dict) else dict(r.items()) for r in job.result()]
+        self.cost["requetes"] += 1
+        billed = getattr(job, "total_bytes_billed", None)
+        if billed is not None:
+            self.cost["octets_factures"] = (self.cost["octets_factures"] or 0) + int(billed)
+        return rows
+
+    def _location(self, ds: str) -> str | None:
+        if self.location:
+            return self.location
+        if ds not in self._locations:
+            self._locations[ds] = self.client.get_dataset(f"{self.data_project}.{ds}").location
+        return self._locations[ds]
+
+    def _regions(self) -> list[str]:
+        if self.location:
+            return [self.location]
+        return sorted({loc for ds in self._datasets() if (loc := self._location(ds))})
 
     def describe(self) -> str:
         return f"bigquery:{self.project}" + (f"/{','.join(self.datasets)}" if self.datasets else "")
@@ -68,7 +127,7 @@ class BigQuerySource(Source):
             sizes = {}
             try:
                 for t, n, b in self._rows(
-                    f"select table_name, total_rows, total_logical_bytes from `region-{self.location.lower()}`."
+                    f"select table_name, total_rows, total_logical_bytes from `region-{self._location(ds).lower()}`."
                     f"INFORMATION_SCHEMA.TABLE_STORAGE where table_schema='{ds}'"
                 ):
                     sizes[t] = (n, b)
@@ -101,17 +160,19 @@ class BigQuerySource(Source):
 
     def history_queries(self, limit: int = 20) -> list[str]:
         try:
-            rows = self._rows(
-                "select query, sum(total_bytes_billed) b from "
-                f"`region-{self.location.lower()}`.INFORMATION_SCHEMA.JOBS_BY_PROJECT "
-                "where job_type='QUERY' and state='DONE' and error_result is null "
-                "and creation_time > timestamp_sub(current_timestamp(), interval 30 day) "
-                "and statement_type='SELECT' and cache_hit is not true "
-                "and lower(query) not like '%information_schema%' "
-                "and not exists (select 1 from unnest(labels) l where l.key='tool' and l.value='canot') "
-                f"group by query order by b desc limit {int(limit)}"
-            )
-            return [r[0] for r in rows]
+            rows = []
+            for loc in self._regions():
+                rows += self._rows(
+                    "select query, sum(total_bytes_billed) b from "
+                    f"`region-{loc.lower()}`.INFORMATION_SCHEMA.JOBS_BY_PROJECT "
+                    "where job_type='QUERY' and state='DONE' and error_result is null "
+                    "and creation_time > timestamp_sub(current_timestamp(), interval 30 day) "
+                    "and statement_type='SELECT' and cache_hit is not true "
+                    "and lower(query) not like '%information_schema%' "
+                    "and not exists (select 1 from unnest(labels) l where l.key='tool' and l.value='canot') "
+                    f"group by query order by b desc limit {int(limit)}"
+                )
+            return [r[0] for r in sorted(rows, key=lambda r: r[1] or 0, reverse=True)[:limit]]
         except Exception:
             return []
 
@@ -144,16 +205,19 @@ class BigQuerySource(Source):
         """Consommation sur 90 jours. La facturation à la demande (octets facturés) et la capacité réservée (slots) sont séparées :
         additionner les deux n'aurait pas de sens."""
         try:
-            r = self._rows(
-                "select coalesce(sum(if(reservation_id is null, total_bytes_billed, 0)),0), "
-                "count(*), "
-                "coalesce(sum(if(reservation_id is not null, total_slot_ms, 0)),0), "
-                "countif(reservation_id is not null) from "
-                f"`region-{self.location.lower()}`.INFORMATION_SCHEMA.JOBS_BY_PROJECT "
-                "where job_type='QUERY' and creation_time > timestamp_sub(current_timestamp(), interval 90 day)"
-            )[0]
-            return {"on_demand_tib_billed_90d": round(r[0] / TIB, 3), "query_jobs_90d": int(r[1]),
-                    "reserved_slot_hours_90d": round(r[2] / 3.6e6, 1), "reserved_jobs_90d": int(r[3])}
+            tot = [0, 0, 0, 0]
+            for loc in self._regions():
+                r = self._rows(
+                    "select coalesce(sum(if(reservation_id is null, total_bytes_billed, 0)),0), "
+                    "count(*), "
+                    "coalesce(sum(if(reservation_id is not null, total_slot_ms, 0)),0), "
+                    "countif(reservation_id is not null) from "
+                    f"`region-{loc.lower()}`.INFORMATION_SCHEMA.JOBS_BY_PROJECT "
+                    "where job_type='QUERY' and creation_time > timestamp_sub(current_timestamp(), interval 90 day)"
+                )[0]
+                tot = [a + (b or 0) for a, b in zip(tot, r)]
+            return {"on_demand_tib_billed_90d": round(tot[0] / TIB, 3), "query_jobs_90d": int(tot[1]),
+                    "reserved_slot_hours_90d": round(tot[2] / 3.6e6, 1), "reserved_jobs_90d": int(tot[3])}
         except Exception:
             return None
 

@@ -1,0 +1,352 @@
+{
+ "schema": "canot.scan/1",
+ "plateforme": "snowflake",
+ "as_of": "2026-10-17T10:00:00Z",
+ "perimetre": "compte ab98765, base PROD",
+ "edition": null,
+ "niveau_droits": 1,
+ "mode_sql": "lecture seule",
+ "versions": {
+  "canot": "0.1.0",
+  "sqlglot": "30.22.0",
+  "duckdb": "1.5.6"
+ },
+ "lectures": [
+  {
+   "id": "S01",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLES",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": 1.5
+  },
+  {
+   "id": "S02",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.COLUMNS",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "S03",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_STORAGE_METRICS",
+   "statut": "non_lu",
+   "raison": "droit absent",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "S04",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.STORAGE_USAGE",
+   "statut": "non_lu",
+   "raison": "droit absent",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "S05",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.METERING_DAILY_HISTORY",
+   "statut": "non_lu",
+   "raison": "droit absent",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "S06",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY",
+   "statut": "non_lu",
+   "raison": "droit absent",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "S07",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_DML_HISTORY",
+   "statut": "non_lu",
+   "raison": "droit absent",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "S08",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_QUERY_PRUNING_HISTORY",
+   "statut": "non_lu",
+   "raison": "droit absent",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "S09",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.VIEWS",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "S10",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.PROCEDURES",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "S11",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASKS",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "S12",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASK_HISTORY",
+   "statut": "non_lu",
+   "raison": "délai dépassé",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "S13",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY",
+   "statut": "non_lu",
+   "raison": "niveau de droits non demandé",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "S14",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY",
+   "statut": "non_lu",
+   "raison": "niveau de droits non demandé",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "S15",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.POLICY_REFERENCES",
+   "statut": "non_lu",
+   "raison": "niveau de droits non demandé",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "S16",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.TAG_REFERENCES",
+   "statut": "non_lu",
+   "raison": "niveau de droits non demandé",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "S17",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_ROLES",
+   "statut": "non_lu",
+   "raison": "niveau de droits non demandé",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "S18",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_USERS",
+   "statut": "non_lu",
+   "raison": "niveau de droits non demandé",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "S19",
+   "vue": "SNOWFLAKE.ACCOUNT_USAGE.SHARES",
+   "statut": "non_lu",
+   "raison": "niveau de droits non demandé",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  }
+ ],
+ "tables": [
+  {
+   "id": "PROD.RAW.ARCHIVE_2019",
+   "base": "PROD",
+   "schema": "RAW",
+   "nom": "ARCHIVE_2019",
+   "type": "TABLE",
+   "flags": [],
+   "lignes": null,
+   "octets_actifs": null,
+   "octets_historique": null,
+   "clone_de": null,
+   "colonnes": [
+    {
+     "nom": "id",
+     "type": "NUMBER(38,0)"
+    }
+   ],
+   "retention_jours": 1,
+   "derniere_ddl": "2019-05-01T00:00:00Z",
+   "derniere_ecriture": null,
+   "derniere_lecture": null,
+   "n_lectures": null,
+   "n_ecritures": null,
+   "proprietaire": "LEGACY_OWNER",
+   "politiques": [],
+   "etiquettes": [],
+   "supprimee_le": null,
+   "externe_uri": null,
+   "partitionnement": null,
+   "clustering": []
+  },
+  {
+   "id": "PROD.RAW.ORDERS",
+   "base": "PROD",
+   "schema": "RAW",
+   "nom": "ORDERS",
+   "type": "TABLE",
+   "flags": [],
+   "lignes": null,
+   "octets_actifs": null,
+   "octets_historique": null,
+   "clone_de": null,
+   "colonnes": [
+    {
+     "nom": "id",
+     "type": "NUMBER"
+    },
+    {
+     "nom": "doc",
+     "type": "VARIANT"
+    }
+   ],
+   "retention_jours": 1,
+   "derniere_ddl": "2026-03-01T00:00:00Z",
+   "derniere_ecriture": null,
+   "derniere_lecture": null,
+   "n_lectures": null,
+   "n_ecritures": null,
+   "proprietaire": "SYSADMIN",
+   "politiques": [],
+   "etiquettes": [],
+   "supprimee_le": null,
+   "externe_uri": null,
+   "partitionnement": null,
+   "clustering": []
+  },
+  {
+   "id": "PROD.MART.KPI",
+   "base": "PROD",
+   "schema": "MART",
+   "nom": "KPI",
+   "type": "TABLE",
+   "flags": [],
+   "lignes": null,
+   "octets_actifs": null,
+   "octets_historique": null,
+   "clone_de": null,
+   "colonnes": [
+    {
+     "nom": "id",
+     "type": "NUMBER(38,0)"
+    }
+   ],
+   "retention_jours": 1,
+   "derniere_ddl": "2026-10-16T03:00:00Z",
+   "derniere_ecriture": null,
+   "derniere_lecture": null,
+   "n_lectures": null,
+   "n_ecritures": null,
+   "proprietaire": "SYSADMIN",
+   "politiques": [],
+   "etiquettes": [],
+   "supprimee_le": null,
+   "externe_uri": null,
+   "partitionnement": null,
+   "clustering": []
+  }
+ ],
+ "objets": [
+  {
+   "kind": "vue",
+   "id": "PROD.MART.V_REVENUE",
+   "schema": "MART",
+   "langage": null,
+   "proprietaire": "SYSADMIN",
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [
+    "PROD.MART.KPI"
+   ],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {}
+  },
+  {
+   "kind": "procedure",
+   "id": "PROD.MART.SP_HIDDEN",
+   "schema": "MART",
+   "langage": null,
+   "proprietaire": "SYSADMIN",
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {}
+  },
+  {
+   "kind": "tache",
+   "id": "PROD.OPS.T_NIGHTLY",
+   "schema": "OPS",
+   "langage": null,
+   "proprietaire": "SYSADMIN",
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": "started",
+   "planification": "USING CRON 0 1 * * * UTC",
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {}
+  }
+ ],
+ "familles": [],
+ "metering": {
+  "par_service": [],
+  "par_entrepot": [],
+  "stockage_octets_moyens": null,
+  "transferts": [],
+  "a_la_demande": null,
+  "reserve": null,
+  "fenetre_jours": 365
+ },
+ "rejouabilite": null
+}

@@ -88,16 +88,19 @@ end""", desc="procédure stockée")
 run(f"""create or replace table {P}.lab_mart.fct_orders
 partition by order_date cluster by customer_id, status
 options(description="Faits commandes", labels=[("layer","mart")]) as
-select o.order_id, o.customer_id, o.order_ts, o.order_date, o.total, o.status, c.country, c.segment,
+select o.order_id, o.customer_id, o.order_ts, date_sub(current_date(), interval mod(o.order_id, 55) day) as order_date, o.total, o.status, c.country, c.segment,
        {P}.lab_mart.fx_to_cents(o.total) as total_cents
 from {P}.lab_stg.stg_orders o join {P}.lab_stg.stg_customers c using (customer_id)""", desc="fct_orders (partitionnée, clusterisée)")
 run(f"create or replace table {P}.lab_mart.dim_customers as select * from {P}.lab_stg.stg_customers", desc="dim_customers")
 run(f"""create or replace materialized view {P}.lab_mart.mv_daily_revenue as
 select order_date, status, count(*) as orders, sum(total) as revenue from {P}.lab_mart.fct_orders group by order_date, status""", desc="vue matérialisée")
+# sans facturation, les partitions de plus de 60 jours expirent : les dates de fct_orders sont donc relatives à aujourd'hui
+for t in ("fct_orders_snapshot", "fct_orders_dev"):
+    c.delete_table(f"{project}.lab_mart.{t}", not_found_ok=True)
 run(f"create snapshot table if not exists {P}.lab_mart.fct_orders_snapshot clone {P}.lab_mart.fct_orders", desc="snapshot")
 run(f"create table if not exists {P}.lab_mart.fct_orders_dev clone {P}.lab_mart.fct_orders", desc="clone")
 run(f"""create or replace row access policy only_owner on {P}.lab_mart.fct_orders
-grant to ('user:{EMAIL}') filter using (true)""", desc="politique d'accès aux lignes")
+grant to ('user:{EMAIL}') filter using (status <> 'returned')""", desc="politique d'accès aux lignes (filtre partiel : la copie sous cette identité serait incomplète)")
 run(f"""create or replace external table {P}.lab_ext.us_states
 options(format='CSV', uris=['gs://cloud-samples-data/bigquery/us-states/us-states.csv'], skip_leading_rows=1)""", desc="table externe (GCS public)")
 

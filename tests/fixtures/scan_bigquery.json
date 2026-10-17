@@ -1,0 +1,859 @@
+{
+ "schema": "canot.scan/1",
+ "plateforme": "bigquery",
+ "as_of": "2026-10-17T10:00:00Z",
+ "perimetre": "projets lab-a (données) ; régions EU, europe-west1, US",
+ "edition": null,
+ "niveau_droits": 2,
+ "mode_sql": "lecture seule",
+ "versions": {
+  "canot": "0.1.0",
+  "sqlglot": "30.22.0",
+  "duckdb": "1.5.6"
+ },
+ "lectures": [
+  {
+   "id": "B01",
+   "vue": "API datasets.list",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B02",
+   "vue": "API datasets.get",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B03",
+   "vue": "`region-eu`.INFORMATION_SCHEMA.TABLES",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B04",
+   "vue": "`region-europe-west1`.INFORMATION_SCHEMA.TABLES",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B05",
+   "vue": "`region-us`.INFORMATION_SCHEMA.TABLES",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B06",
+   "vue": "`region-eu`.INFORMATION_SCHEMA.TABLE_STORAGE",
+   "statut": "non_lu",
+   "raison": "absent ou non exposé",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B07",
+   "vue": "API tables.get",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B08",
+   "vue": "`region-eu`.INFORMATION_SCHEMA.TABLE_OPTIONS",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B09",
+   "vue": "`region-eu`.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B10",
+   "vue": "`region-eu`.INFORMATION_SCHEMA.JOBS",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": {
+    "du": "2026-04-20T00:00:00Z",
+    "au": "2026-10-17T09:00:00Z"
+   },
+   "latence_max_h": 0.1
+  },
+  {
+   "id": "B11",
+   "vue": "`region-europe-west1`.INFORMATION_SCHEMA.JOBS",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": {
+    "du": "2026-04-20T00:00:00Z",
+    "au": "2026-10-17T09:00:00Z"
+   },
+   "latence_max_h": 0.1
+  },
+  {
+   "id": "B12",
+   "vue": "`region-us`.INFORMATION_SCHEMA.JOBS",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": {
+    "du": "2026-04-20T00:00:00Z",
+    "au": "2026-10-17T09:00:00Z"
+   },
+   "latence_max_h": 0.1
+  },
+  {
+   "id": "B13",
+   "vue": "API transferConfigs.list",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B14",
+   "vue": "API rowAccessPolicies.list",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B15",
+   "vue": "API connections.list",
+   "statut": "non_lu",
+   "raison": "droit absent",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B16",
+   "vue": "`region-eu`.INFORMATION_SCHEMA.SCHEMATA_LINKS",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B17",
+   "vue": "`region-eu`.INFORMATION_SCHEMA.SHARED_DATASET_USAGE",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B18",
+   "vue": "`region-eu`.INFORMATION_SCHEMA.RESERVATIONS",
+   "statut": "non_lu",
+   "raison": "niveau de droits non demandé",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B19",
+   "vue": "`region-eu`.INFORMATION_SCHEMA.ROUTINES",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B20",
+   "vue": "`region-eu`.INFORMATION_SCHEMA.VIEWS",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B21",
+   "vue": "API models.list",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 10,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "B22",
+   "vue": "`region-eu`.INFORMATION_SCHEMA.JOBS_BY_ORGANIZATION",
+   "statut": "non_lu",
+   "raison": "niveau de droits non demandé",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  }
+ ],
+ "tables": [
+  {
+   "id": "lab-a.archive.archive_2023",
+   "base": "lab-a",
+   "schema": "archive",
+   "nom": "archive_2023",
+   "type": "TABLE",
+   "flags": [],
+   "lignes": 1000,
+   "octets_actifs": 3000000000,
+   "octets_historique": 0,
+   "clone_de": null,
+   "colonnes": [
+    {
+     "nom": "id",
+     "type": "NUMBER(38,0)"
+    }
+   ],
+   "retention_jours": 7,
+   "derniere_ddl": "2025-03-01T00:00:00Z",
+   "derniere_ecriture": "2025-03-01T00:00:00Z",
+   "derniere_lecture": null,
+   "n_lectures": 0,
+   "n_ecritures": 0,
+   "proprietaire": null,
+   "politiques": [],
+   "etiquettes": [],
+   "supprimee_le": null,
+   "externe_uri": null,
+   "partitionnement": null,
+   "clustering": []
+  },
+  {
+   "id": "lab-a.raw.read_by_api_only",
+   "base": "lab-a",
+   "schema": "raw",
+   "nom": "read_by_api_only",
+   "type": "TABLE",
+   "flags": [],
+   "lignes": 1000,
+   "octets_actifs": 700000000,
+   "octets_historique": 0,
+   "clone_de": null,
+   "colonnes": [
+    {
+     "nom": "id",
+     "type": "NUMBER(38,0)"
+    }
+   ],
+   "retention_jours": 1,
+   "derniere_ddl": "2025-06-01T00:00:00Z",
+   "derniere_ecriture": "2026-09-01T00:00:00Z",
+   "derniere_lecture": null,
+   "n_lectures": 0,
+   "n_ecritures": 30,
+   "proprietaire": null,
+   "politiques": [],
+   "etiquettes": [],
+   "supprimee_le": null,
+   "externe_uri": null,
+   "partitionnement": null,
+   "clustering": []
+  },
+  {
+   "id": "lab-a.raw.events_20261001",
+   "base": "lab-a",
+   "schema": "raw",
+   "nom": "events_20261001",
+   "type": "TABLE",
+   "flags": [],
+   "lignes": 1000,
+   "octets_actifs": 120000000,
+   "octets_historique": 0,
+   "clone_de": null,
+   "colonnes": [
+    {
+     "nom": "payload",
+     "type": "JSON"
+    },
+    {
+     "nom": "ctx",
+     "type": "STRUCT<a INT64, b STRING>"
+    }
+   ],
+   "retention_jours": 1,
+   "derniere_ddl": "2025-06-01T00:00:00Z",
+   "derniere_ecriture": "2026-10-15T08:00:00Z",
+   "derniere_lecture": "2026-10-16T08:00:00Z",
+   "n_lectures": 14,
+   "n_ecritures": 30,
+   "proprietaire": null,
+   "politiques": [],
+   "etiquettes": [],
+   "supprimee_le": null,
+   "externe_uri": null,
+   "partitionnement": "_PARTITIONTIME",
+   "clustering": []
+  },
+  {
+   "id": "lab-a.raw.orders",
+   "base": "lab-a",
+   "schema": "raw",
+   "nom": "orders",
+   "type": "TABLE",
+   "flags": [],
+   "lignes": 1000,
+   "octets_actifs": 900000000,
+   "octets_historique": 250000000,
+   "clone_de": null,
+   "colonnes": [
+    {
+     "nom": "id",
+     "type": "NUMBER(38,0)"
+    }
+   ],
+   "retention_jours": 7,
+   "derniere_ddl": "2025-06-01T00:00:00Z",
+   "derniere_ecriture": "2026-10-15T08:00:00Z",
+   "derniere_lecture": "2026-10-16T08:00:00Z",
+   "n_lectures": 80,
+   "n_ecritures": 30,
+   "proprietaire": null,
+   "politiques": [],
+   "etiquettes": [],
+   "supprimee_le": null,
+   "externe_uri": null,
+   "partitionnement": null,
+   "clustering": []
+  },
+  {
+   "id": "lab-a.raw.orders_snap",
+   "base": "lab-a",
+   "schema": "raw",
+   "nom": "orders_snap",
+   "type": "SNAPSHOT",
+   "flags": [],
+   "lignes": 1000,
+   "octets_actifs": 10000000,
+   "octets_historique": 0,
+   "clone_de": "lab-a.raw.orders",
+   "colonnes": [
+    {
+     "nom": "id",
+     "type": "NUMBER(38,0)"
+    }
+   ],
+   "retention_jours": 1,
+   "derniere_ddl": "2025-06-01T00:00:00Z",
+   "derniere_ecriture": "2026-10-15T08:00:00Z",
+   "derniere_lecture": "2026-10-16T08:00:00Z",
+   "n_lectures": 1,
+   "n_ecritures": 30,
+   "proprietaire": null,
+   "politiques": [],
+   "etiquettes": [],
+   "supprimee_le": null,
+   "externe_uri": null,
+   "partitionnement": null,
+   "clustering": []
+  },
+  {
+   "id": "lab-a.raw.customers",
+   "base": "lab-a",
+   "schema": "raw",
+   "nom": "customers",
+   "type": "TABLE",
+   "flags": [],
+   "lignes": 1000,
+   "octets_actifs": 200000000,
+   "octets_historique": 0,
+   "clone_de": null,
+   "colonnes": [
+    {
+     "nom": "email",
+     "type": "STRING"
+    },
+    {
+     "nom": "geo",
+     "type": "GEOGRAPHY"
+    }
+   ],
+   "retention_jours": 1,
+   "derniere_ddl": "2025-06-01T00:00:00Z",
+   "derniere_ecriture": "2026-10-15T08:00:00Z",
+   "derniere_lecture": "2026-10-16T08:00:00Z",
+   "n_lectures": 33,
+   "n_ecritures": 30,
+   "proprietaire": null,
+   "politiques": [
+    "pt-pii",
+    "rap_country"
+   ],
+   "etiquettes": [],
+   "supprimee_le": null,
+   "externe_uri": null,
+   "partitionnement": null,
+   "clustering": []
+  },
+  {
+   "id": "lab-a.ext.gcs_events",
+   "base": "lab-a",
+   "schema": "ext",
+   "nom": "gcs_events",
+   "type": "EXTERNE",
+   "flags": [],
+   "lignes": 1000,
+   "octets_actifs": null,
+   "octets_historique": null,
+   "clone_de": null,
+   "colonnes": [
+    {
+     "nom": "id",
+     "type": "NUMBER(38,0)"
+    }
+   ],
+   "retention_jours": 1,
+   "derniere_ddl": "2025-06-01T00:00:00Z",
+   "derniere_ecriture": "2026-10-15T08:00:00Z",
+   "derniere_lecture": "2026-10-16T08:00:00Z",
+   "n_lectures": 4,
+   "n_ecritures": 30,
+   "proprietaire": null,
+   "politiques": [],
+   "etiquettes": [],
+   "supprimee_le": null,
+   "externe_uri": "gs://lab-bucket/events/2026/*.parquet",
+   "partitionnement": null,
+   "clustering": []
+  },
+  {
+   "id": "lab-a.ext.sheet_targets",
+   "base": "lab-a",
+   "schema": "ext",
+   "nom": "sheet_targets",
+   "type": "EXTERNE",
+   "flags": [],
+   "lignes": 1000,
+   "octets_actifs": null,
+   "octets_historique": null,
+   "clone_de": null,
+   "colonnes": [
+    {
+     "nom": "id",
+     "type": "NUMBER(38,0)"
+    }
+   ],
+   "retention_jours": 1,
+   "derniere_ddl": "2025-06-01T00:00:00Z",
+   "derniere_ecriture": "2026-10-15T08:00:00Z",
+   "derniere_lecture": "2026-10-16T08:00:00Z",
+   "n_lectures": 2,
+   "n_ecritures": 30,
+   "proprietaire": null,
+   "politiques": [],
+   "etiquettes": [],
+   "supprimee_le": null,
+   "externe_uri": "https://docs.google.com/spreadsheets/d/1AbCdEfGh/edit",
+   "partitionnement": null,
+   "clustering": []
+  },
+  {
+   "id": "lab-a._tmp.scratch",
+   "base": "lab-a",
+   "schema": "_tmp",
+   "nom": "scratch",
+   "type": "TABLE",
+   "flags": [],
+   "lignes": 1000,
+   "octets_actifs": 50000000,
+   "octets_historique": 0,
+   "clone_de": null,
+   "colonnes": [
+    {
+     "nom": "id",
+     "type": "NUMBER(38,0)"
+    }
+   ],
+   "retention_jours": 1,
+   "derniere_ddl": "2025-06-01T00:00:00Z",
+   "derniere_ecriture": "2026-10-15T08:00:00Z",
+   "derniere_lecture": "2026-10-16T08:00:00Z",
+   "n_lectures": 6,
+   "n_ecritures": 30,
+   "proprietaire": null,
+   "politiques": [],
+   "etiquettes": [],
+   "supprimee_le": null,
+   "externe_uri": null,
+   "partitionnement": null,
+   "clustering": []
+  }
+ ],
+ "objets": [
+  {
+   "kind": "vue",
+   "id": "lab-a.mart.v_legacy",
+   "schema": "mart",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [
+    "lab-a.raw.orders"
+   ],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {
+    "sql_herite": true
+   }
+  },
+  {
+   "kind": "vue",
+   "id": "lab-a.mart.v_sheet",
+   "schema": "mart",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [
+    "lab-a.ext.sheet_targets"
+   ],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {}
+  },
+  {
+   "kind": "vue_materialisee",
+   "id": "lab-a.mart.mv_daily",
+   "schema": "mart",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [
+    "lab-a.raw.orders"
+   ],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {}
+  },
+  {
+   "kind": "fonction",
+   "id": "lab-a.mart.js_clean",
+   "schema": "mart",
+   "langage": "JAVASCRIPT",
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": false,
+   "detail": {}
+  },
+  {
+   "kind": "procedure",
+   "id": "lab-a.mart.sp_rebuild",
+   "schema": "mart",
+   "langage": "SQL",
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": true,
+   "detail": {}
+  },
+  {
+   "kind": "modele_ml",
+   "id": "lab-a.ml.churn",
+   "schema": "ml",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {}
+  },
+  {
+   "kind": "politique_lignes",
+   "id": "lab-a.raw.rap_country",
+   "schema": "raw",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [
+    "lab-a.raw.customers"
+   ],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {}
+  },
+  {
+   "kind": "requete_planifiee",
+   "id": "lab-a.sq_daily_kpi",
+   "schema": "lab-a",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": "actif",
+   "planification": "every 24 hours",
+   "executions_n": 180,
+   "echecs_n": 3,
+   "derniere_execution": "2026-10-17T06:00:00Z",
+   "sql_dynamique": null,
+   "detail": {}
+  },
+  {
+   "kind": "requete_planifiee",
+   "id": "lab-a.sq_export",
+   "schema": "lab-a",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [
+    "gs://lab-exports/kpi/"
+   ],
+   "reference": [],
+   "etat": "actif",
+   "planification": "every day 05:00",
+   "executions_n": 180,
+   "echecs_n": 0,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {
+    "ecriture_externe": true
+   }
+  },
+  {
+   "kind": "requete_planifiee",
+   "id": "lab-a.sq_weekly",
+   "schema": "lab-a",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": "actif",
+   "planification": "every monday 06:00",
+   "executions_n": 26,
+   "echecs_n": 0,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {}
+  },
+  {
+   "kind": "requete_planifiee",
+   "id": "lab-a.sq_old",
+   "schema": "lab-a",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": "désactivée",
+   "planification": "every 1 hours",
+   "executions_n": 0,
+   "echecs_n": 0,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {}
+  },
+  {
+   "kind": "partage",
+   "id": "lab-a.hub.listing_sales",
+   "schema": "hub",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [
+    "lab-a.raw.orders"
+   ],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {
+    "abonnes": 1
+   }
+  }
+ ],
+ "familles": [
+  {
+   "empreinte": "1111111111111111111111111111111111111111111111111111111111111111",
+   "hash_plateforme": null,
+   "n_exec": 900,
+   "temps_ms": 108000.0,
+   "credits": null,
+   "octets": 2000000000000,
+   "app": null,
+   "outil": "looker",
+   "utilisateur": "u-1a2b3c4d",
+   "role": "r-5e6f7a8b",
+   "entrepot": null,
+   "tables": [],
+   "fonctions": [],
+   "categorie": "C0",
+   "sql_normalise": "SELECT * FROM `lab-a.raw.orders` WHERE d >= ?",
+   "ecriture_externe": false
+  },
+  {
+   "empreinte": "2222222222222222222222222222222222222222222222222222222222222222",
+   "hash_plateforme": null,
+   "n_exec": 40,
+   "temps_ms": 4800.0,
+   "credits": null,
+   "octets": 500000000000,
+   "app": null,
+   "outil": "notebook",
+   "utilisateur": "u-1a2b3c4d",
+   "role": "r-5e6f7a8b",
+   "entrepot": null,
+   "tables": [],
+   "fonctions": [],
+   "categorie": "C4",
+   "sql_normalise": "SELECT * FROM `lab-a.raw.events_*` WHERE _TABLE_SUFFIX = ?",
+   "ecriture_externe": false
+  },
+  {
+   "empreinte": "3333333333333333333333333333333333333333333333333333333333333333",
+   "hash_plateforme": null,
+   "n_exec": 180,
+   "temps_ms": 21600.0,
+   "credits": null,
+   "octets": 10000000000,
+   "app": "scheduled_query",
+   "outil": null,
+   "utilisateur": "u-1a2b3c4d",
+   "role": "r-5e6f7a8b",
+   "entrepot": null,
+   "tables": [],
+   "fonctions": [],
+   "categorie": "C7",
+   "sql_normalise": "EXPORT DATA OPTIONS (uri = ?, format = ?) AS SELECT * FROM `lab-a.mart.kpi`",
+   "ecriture_externe": true,
+   "compartiments": [
+    "gs://lab-exports/kpi/*.csv"
+   ]
+  }
+ ],
+ "metering": {
+  "par_service": [],
+  "par_entrepot": [],
+  "stockage_octets_moyens": null,
+  "transferts": [],
+  "a_la_demande": {
+   "octets_factures": 3848290697216,
+   "requetes": 1200
+  },
+  "reserve": {
+   "slot_heures": 820.5,
+   "requetes": 300
+  },
+  "fenetre_jours": 180
+ },
+ "rejouabilite": {
+  "categories": {
+   "C0": {
+    "familles": 1,
+    "executions": 900,
+    "poids": 2000000000000.0
+   },
+   "C1": {
+    "familles": 0,
+    "executions": 0,
+    "poids": 0
+   },
+   "C2": {
+    "familles": 0,
+    "executions": 0,
+    "poids": 0
+   },
+   "C3": {
+    "familles": 0,
+    "executions": 0,
+    "poids": 0
+   },
+   "C4": {
+    "familles": 1,
+    "executions": 40,
+    "poids": 500000000000.0
+   },
+   "C5": {
+    "familles": 0,
+    "executions": 0,
+    "poids": 0
+   },
+   "C6": {
+    "familles": 0,
+    "executions": 0,
+    "poids": 0
+   },
+   "C7": {
+    "familles": 1,
+    "executions": 180,
+    "poids": 10000000000.0
+   }
+  },
+  "base": "3/3 familles, du 20/04/2026 au 17/10/2026, sqlglot 30.22.0, duckdb 1.5.6",
+  "mention": "accepté ≠ résultat identique"
+ }
+}

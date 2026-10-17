@@ -64,6 +64,8 @@ def run(argv: list[str] | None = None) -> int:
     s.add_argument("--from", dest="src", required=True)
     s.add_argument("--out", default="canot-out")
     s.add_argument("--credit-price", type=float, default=None, help="prix du crédit Snowflake de votre contrat, en USD. Sans lui : fourchette du prix catalogue (voir canot/prices.py)")
+    s.add_argument("--level", type=int, choices=(1, 2, 3), default=3, help="jusqu'où lire : 1 inventaire et consommation ; 2 + requêtes (formes normalisées) et lectures par table ; 3 + droits et outils (pseudonymisés). Ce que vos droits ne permettent pas est consigné « non lu »")
+    s.add_argument("--include-sql-text", action="store_true", help="écrit aussi le texte SQL brut dans scan-sql-brut.json (droits 0600). Par défaut il n'est jamais écrit : seules les formes normalisées le sont")
 
     d = sub.add_parser("drill", help="exercice de sortie complet : copie, comparaison, dossier de preuve")
     d.add_argument("--from", dest="src", required=True)
@@ -195,6 +197,28 @@ def run(argv: list[str] | None = None) -> int:
 
     src = open_source(a.src)
     try:
+        if a.cmd == "scan" and src.dialect in ("snowflake", "bigquery"):
+            from collections import Counter
+
+            from .scanner.run import LEVELS, scan_full
+
+            _p(f"Canot scan en lecture seule (niveau {a.level} : {LEVELS[a.level]})")
+            res = scan_full(src, out, level=a.level, credit_price=a.credit_price, include_sql_text=a.include_sql_text, log=_p)
+            _p(f"Source : {res['perimetre']}")
+            for role, lines in res["resume"].items():
+                for line in lines:
+                    _p(f"  {role} : {line}")
+            codes = Counter(f["code"] for f in res["drapeaux"])
+            if codes:
+                _p("À examiner : " + ", ".join(f"{c} ×{n}" for c, n in sorted(codes.items())))
+            nl = [l for l in res["lectures"] if l["statut"] == "non_lu"]
+            _p(f"Lectures : {len(res['lectures']) - len(nl)} faites, {len(nl)} non lues (détail et raisons dans le rapport)")
+            _p(f"Rapport à transmettre : {out / 'scan.html'}")
+            _p(f"Données : {out / 'scan.json'} et les CSV du même dossier")
+            if a.include_sql_text:
+                _p(f"ATTENTION : {out / 'scan-sql-brut.json'} contient le texte SQL brut de votre historique. Ne le diffusez pas.")
+            _p("Besoin d'aide pour lire ce rapport ou préparer la suite ? https://canot.io/#contact")
+            return 0
         if a.cmd == "scan":
             from .scan import scan
 
