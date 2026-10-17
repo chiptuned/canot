@@ -553,3 +553,70 @@ def test_f12_se_tait_quand_l_api_remplace_la_vue_regionale():
 
     for vue in ("TABLES", "TABLE_OPTIONS", "COLUMNS", "COLUMN_FIELD_PATHS", "VIEWS", "MATERIALIZED_VIEWS"):
         assert FALLBACKS[vue] == ("tables.get",)
+
+
+# --- fraîcheur : tables vues seulement en temps réel (absentes d'ACCOUNT_USAGE) -----------------------------------------
+
+
+def _with_recent(s: dict, n: int = 2) -> dict:
+    """Comme le collecteur : n tables vues seulement en temps réel, historique inconnu, et le bloc `fraicheur` du snapshot."""
+    base = next(t for t in s["tables"] if t["id"] == "CANOT_LAB.RAW.ARCHIVE_2")
+    for i in range(n):
+        s["tables"].append({**base, "id": f"CANOT_LAB.LAB.NEW_{i}", "schema": "LAB", "nom": f"NEW_{i}", "flags": ["recente"],
+                            "octets_historique": None, "n_lectures": None, "n_ecritures": None, "derniere_ecriture": None,
+                            "derniere_ddl": "2026-10-17T09:30:00Z",
+                            "detail": {"source": "information_schema", "creee_le": "2026-10-17T09:30:00Z",
+                                       "historique_non_lu": "table trop récente pour ACCOUNT_USAGE"}})
+    s["fraicheur"] = {"recents_seulement_temps_reel": {"tables": n, "objets": 1}, "latence_max_h": 48,
+                      "texte": f"{n} tables et 1 objet vus seulement en temps réel : absents d'ACCOUNT_USAGE."}
+    return s
+
+
+def test_fraicheur_exposee_et_resume_dsi():
+    res = analyze(_with_recent(snap("snowflake")))
+    f = res["fraicheur"]
+    assert f["recents_seulement_temps_reel"] == {"tables": 2, "objets": 1} and f["latence_max_h"] == 48
+    assert f["tables_sans_historique"] == 2 and f["latence_historique_h"] == 3 and f["texte"].startswith("2 tables et 1 objet")
+    dsi = res["resume"]["DSI"]
+    assert len(dsi) == 3 and all(p.endswith(".") for p in dsi)
+    assert ("2 tables vues seulement en temps réel : absentes d'ACCOUNT_USAGE, dont la latence peut atteindre 3 h ; "
+            "leur historique (volumes facturés, lectures) n'est pas encore disponible.") in dsi[0]
+    one = analyze(_with_recent(snap("snowflake"), 1))["resume"]["DSI"][0]
+    assert "1 table vue seulement en temps réel : absente d'ACCOUNT_USAGE" in one and "son historique" in one
+
+
+def test_fraicheur_absente_ou_nulle_rien_dans_le_resume():
+    res = analyze(snap("snowflake"))
+    assert res["fraicheur"] is None and "temps réel" not in " ".join(res["resume"]["DSI"])
+    s = snap("snowflake")
+    s["fraicheur"] = {"recents_seulement_temps_reel": {"tables": 0, "objets": 0}, "latence_max_h": 3, "texte": "aucun objet absent."}
+    res = analyze(s)
+    assert res["fraicheur"]["tables_sans_historique"] == 0 and "temps réel" not in " ".join(res["resume"]["DSI"])
+    assert analyze(snap("bigquery"))["fraicheur"] is None
+
+
+def test_tables_recentes_sans_conclusion_f05_f06_f07():
+    s = _with_recent(snap("snowflake"))
+    for t in s["tables"]:
+        if t["id"].startswith("CANOT_LAB.LAB.NEW_"):
+            t["n_lectures"], t["octets_historique"] = 0, 10 ** 9  # même avec des valeurs : aucune conclusion pour une table récente
+    res = analyze(s)
+    for code in ("F05", "F06", "F07"):
+        assert not {k for k in flags(res, code) if str(k).startswith("CANOT_LAB.LAB.NEW_")}, code
+    assert "CANOT_LAB.RAW.ARCHIVE_2" in flags(res, "F05")
+
+
+def test_f05_se_tait_pour_une_table_creee_depuis_moins_que_la_latence_d_access_history():
+    s = snap("snowflake")
+    t = next(t for t in s["tables"] if t["id"] == "CANOT_LAB.RAW.ARCHIVE_2")
+    t["detail"] = {"creee_le": "2026-10-17T06:00:00Z"}  # ACCESS_HISTORY lue jusqu'à 07:00, latence 3 h : lectures pas encore visibles
+    assert "CANOT_LAB.RAW.ARCHIVE_2" not in flags(analyze(s), "F05")
+    t["detail"] = {"creee_le": "2026-10-16T00:00:00Z"}  # créée bien avant la latence : le constat reste
+    assert "CANOT_LAB.RAW.ARCHIVE_2" in flags(analyze(s), "F05")
+
+
+def test_volume_sous_estime_dit_dans_le_resume():
+    s = snap("snowflake")
+    s["fraicheur"] = {"recents_seulement_temps_reel": {"tables": 0, "objets": 0}, "volumes_en_retard": 7, "latence_max_h": 48, "texte": "x."}
+    dsi = analyze(s)["resume"]["DSI"]
+    assert len(dsi) == 3 and dsi[0].endswith("Volume sous-estimé : métriques de stockage pas encore à jour pour 7 tables.")

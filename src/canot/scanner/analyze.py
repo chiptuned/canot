@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from .. import prices
 from ..scan import NON_PORTABLE, THROUGHPUT_MBPS
@@ -549,8 +549,9 @@ def _read_sources(ctx: _Ctx) -> list[dict]:
             non_vus.remove("requêtes lancées depuis d'autres projets")
         du, au = r.window(name)
         partiel = r.partial(name)
+        lat = [lec["latence_max_h"] for lec in r.find(name) if lec["statut"] == "lu" and lec["latence_max_h"] is not None]
         out.append({"vue": name, "label": label, "confiance": "basse" if partiel or not du else conf, "non_vus": non_vus,
-                    "ids": r.ids(name), "du": du, "au": au, "partiel": partiel, "get": get})
+                    "ids": r.ids(name), "du": du, "au": au, "partiel": partiel, "get": get, "latence_h": max(lat, default=None)})
     return out
 
 
@@ -562,14 +563,26 @@ def _source_for(t: dict, sources: list[dict]) -> tuple[dict | None, int | None]:
     return None, None
 
 
+def _too_recent(t: dict, src: dict, as_of: datetime) -> bool:
+    """Table vue seulement en temps réel, ou créée depuis moins que la latence de la source des lectures : son absence de
+    lecture n'est pas encore observable."""
+    if "recente" in t["flags"]:
+        return True
+    created = parse_dt(t["detail"].get("creee_le"))
+    lat = src.get("latence_h")
+    return bool(created and lat is not None and created > (src["au"] or as_of) - timedelta(hours=lat))
+
+
 def _f05(ctx: _Ctx, sources: list[dict], shared: dict[str, int]) -> list[dict]:
-    """Aucune source lue, ou valeur inconnue pour la table : F05 se tait (F12 le dit)."""
+    """Aucune source lue, ou valeur inconnue pour la table : F05 se tait (F12 le dit). Table trop récente : F05 se tait aussi."""
     horizon = HORIZON_JOURS.get(ctx.plat, 365)
     flags = []
     for t in ctx.present:
         src, n = _source_for(t, sources)
         octets = t["octets_actifs"]
         if src is None or t["type"] in ("EXTERNE", "TEMPORAIRE") or n != 0 or not octets or octets <= 0 or (t["lectures"]["partage"] or 0) > 0:
+            continue
+        if _too_recent(t, src, ctx.as_of):
             continue
         if src["du"] and src["au"]:
             jours = (src["au"] - src["du"]).days
@@ -599,6 +612,8 @@ def _f06_f07(ctx: _Ctx) -> list[dict]:
     flags = []
     for t in ctx.tables:
         h, a = t["octets_historique"], t["octets_actifs"]
+        if "recente" in t["flags"]:  # historique facturé pas encore dans ACCOUNT_USAGE : aucune conclusion
+            continue
         if t["supprimee_le"]:
             if h is None and a is None:
                 continue
@@ -1005,13 +1020,48 @@ def _attempted(raison: str | None) -> bool:
 # --- synthèse --------------------------------------------------------------------------------------------
 
 
+def _fraicheur(ctx: _Ctx) -> dict | None:
+    """Recoupement temps réel de la collecte (Snowflake) : objets plus récents que la latence d'ACCOUNT_USAGE. None si non transmis."""
+    f = ctx.snap.get("fraicheur")
+    if not isinstance(f, dict):
+        return None
+    rec = f.get("recents_seulement_temps_reel") or {}
+    n_t = sum("recente" in t["flags"] for t in ctx.present)
+    lat = [lec["latence_max_h"] for lec in ctx.reads.find("TABLES", *STORAGE_SOURCES, "ACCESS_HISTORY")
+           if lec["statut"] == "lu" and lec["latence_max_h"]]
+    return {"recents_seulement_temps_reel": {"tables": rec.get("tables") if isinstance(rec.get("tables"), int) else n_t,
+                                             "objets": rec.get("objets") if isinstance(rec.get("objets"), int) else None},
+            "volumes_en_retard": f.get("volumes_en_retard") if isinstance(f.get("volumes_en_retard"), int) else None,
+            "latence_max_h": f.get("latence_max_h"), "texte": scrub(f.get("texte")),
+            "tables_sans_historique": n_t, "latence_historique_h": max(lat, default=None)}
+
+
+def _fraicheur_phrase(fr: dict | None) -> str | None:
+    """Phrases du résumé DSI : tables vues seulement en temps réel, volumes pas encore calculés par TABLE_STORAGE_METRICS."""
+    if not fr:
+        return None
+    out = []
+    n, h, v = fr["tables_sans_historique"], fr["latence_historique_h"], fr.get("volumes_en_retard") or 0
+    lat = f", dont la latence peut atteindre {fr_num(h, 1).removesuffix(',0')} h" if h else ""
+    if n == 1:
+        out.append(f"1 table vue seulement en temps réel : absente d'ACCOUNT_USAGE{lat} ; "
+                   "son historique (volumes facturés, lectures) n'est pas encore disponible.")
+    elif n > 1:
+        out.append(f"{fr_num(n)} tables vues seulement en temps réel : absentes d'ACCOUNT_USAGE{lat} ; "
+                   "leur historique (volumes facturés, lectures) n'est pas encore disponible.")
+    if v:
+        out.append(f"Volume sous-estimé : métriques de stockage pas encore à jour pour {pl(v, 'table')}.")
+    return " ".join(out) or None
+
+
 def _resume(ctx: _Ctx, res: dict, by_code: Counter) -> dict:
     r, couts, fr = ctx.reads, res["couts"], res["fourchettes"]
     vol = fr["volume"]["valeur"]
     n_obj = sum(o["kind"] in REBUILD_KINDS for o in ctx.objets)
     mv = res["mouvements"]
+    fraiche = _fraicheur_phrase(res.get("fraicheur"))  # dans la première phrase : l'encadré garde trois entrées
     dsi = [f"{pl(len(ctx.present), 'table présente', 'tables présentes')} ({fr_bytes(vol) if vol is not None else 'volume non lu'}) "
-           f"et {pl(n_obj, 'objet')} à reconstruire hors tables.",
+           f"et {pl(n_obj, 'objet')} à reconstruire hors tables." + (f" {fraiche}" if fraiche else ""),
            f"Mouvement : {fr_num(mv['figée'])} figée(s), {fr_num(mv['vivante'])} vivante(s), {fr_num(mv['recréée'])} recréée(s), "
            f"{fr_num(mv['non_determine'])} non déterminée(s)."]
     rj = res["rejouabilite"]
@@ -1179,6 +1229,7 @@ def analyze(snapshot: dict, *, credit_price: float | None = None) -> dict:
         "couts": couts, "fourchettes": fourchettes, "dependances": dependances, "rejouabilite": rejouabilite,
         "mouvements": mouvements, "ne_part_pas": ne_part_pas, "non_estime": ne.items, "cout_du_scan": _cout_du_scan(ctx),
         "latence_max_h": max((lec["latence_max_h"] for lec in lectures if lec["statut"] == "lu" and lec["latence_max_h"] is not None), default=None),
+        "fraicheur": _fraicheur(ctx),
         "f04_lu": bool(f04) or (all(reads.status(n) == "lu" for n in GRANT_SOURCES) and (snapshot.get("droits") or {}).get("roles") is not None),
         "regles": {"vivante_jours": VIVANTE_JOURS, "recreee_jours": RECREEE_JOURS, "horizon_lectures_jours": HORIZON_JOURS.get(plat, 365),
                    "debit_mo_s": list(THROUGHPUT_MBPS)},

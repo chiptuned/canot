@@ -188,3 +188,43 @@ def test_csv_fichiers_et_contenu(tmp_path):
 def test_csv_valeur_non_lue_vide_jamais_zero(tmp_path):
     rows = list(csv.DictReader(write_csv(result("degrade"), tmp_path)[0].open(encoding="utf-8")))
     assert all(x["octets_actifs"] == "" and x["n_lectures"] == "" for x in rows)
+
+
+def _recent_result(n: int = 2) -> dict:
+    s = json.loads((FIX / "scan_snowflake.json").read_text(encoding="utf-8"))
+    base = next(t for t in s["tables"] if t["id"] == "CANOT_LAB.RAW.ARCHIVE_2")
+    for i in range(n):
+        s["tables"].append({**base, "id": f"CANOT_LAB.LAB.NEW_{i}", "nom": f"NEW_{i}", "flags": ["recente"], "octets_historique": None,
+                            "n_lectures": None, "detail": {"source": "information_schema", "creee_le": "2026-10-17T09:30:00Z"}})
+    s["fraicheur"] = {"recents_seulement_temps_reel": {"tables": n, "objets": 0}, "latence_max_h": 48,
+                      "texte": f"{n} tables vues seulement en temps réel : absentes d'ACCOUNT_USAGE."}
+    r = analyze(s)
+    r["avec_sql_brut"] = False
+    return r
+
+
+def test_fraicheur_dans_le_perimetre_les_couts_et_les_mouvements():
+    t = text(render_html(_recent_result()))
+    per = t[t.index("Périmètre"):t.index("Coûts observés")]
+    assert "Fraîcheur : 2 tables vues seulement en temps réel : absentes d'ACCOUNT_USAGE." in per
+    couts = t[t.index("Coûts observés"):t.index("Mouvements")]
+    assert "2 tables récentes sans historique dans ACCOUNT_USAGE" in couts
+    mv = t[t.index("Mouvements"):t.index("Ce qui ne part pas")]
+    assert "2 tables vues seulement en temps réel : écritures et lectures pas encore disponibles dans ACCOUNT_USAGE" in mv
+    assert render_html(_recent_result()).encode() == render_html(_recent_result()).encode()
+    for w in FORBIDDEN:
+        assert w not in t.lower(), w
+    plain = text(render_html(result("snowflake")))
+    assert "Fraîcheur" not in plain and "récentes sans historique" not in plain and "Inventaire vide" not in plain
+
+
+def test_inventaire_vide_avec_requetes_ou_credits_lus_le_dit():
+    s = json.loads((FIX / "scan_snowflake.json").read_text(encoding="utf-8"))
+    s["tables"] = []
+    r = analyze(s)
+    r["avec_sql_brut"] = False
+    t = text(render_html(r))
+    per = t[t.index("Périmètre"):t.index("Coûts observés")]
+    assert ("Inventaire vide alors que des requêtes ou des crédits ont été lus : vérifier la base scannée et les droits du rôle "
+            "sur ses objets") in per
+    assert "Inventaire vide" not in text(render_html(result("degrade")))

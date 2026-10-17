@@ -186,6 +186,29 @@ DATA = {
                {"NAME": "S_OTHER_DB", "OWNER": "ACCOUNTADMIN", "DATABASE_NAME": "OTHER", "TARGET_ACCOUNTS": "ORG.ACC1", "LISTING_GLOBAL_NAME": None}],
 }
 
+
+def _rt_mirror() -> dict:
+    """Vues temps réel du banc : les mêmes objets vivants qu'ACCOUNT_USAGE (cas « présent des deux côtés »)."""
+    live = [r for r in DATA["TABLES"] if not r["DELETED"]]
+    names = {r["TABLE_ID"]: (r["TABLE_SCHEMA"], r["TABLE_NAME"]) for r in live}
+    return {
+        "IS.TABLES": [{k: v for k, v in r.items() if k not in ("TABLE_ID", "DELETED", "IS_HYBRID")} | {"LAST_ALTERED": D} for r in live],
+        "IS.COLUMNS": [{"TABLE_CATALOG": "CANOT_LAB", "TABLE_SCHEMA": names[c["TABLE_ID"]][0], "TABLE_NAME": names[c["TABLE_ID"]][1],
+                        **{k: v for k, v in c.items() if k != "TABLE_ID"}} for c in DATA["COLUMNS"]],
+        "IS.VIEWS": [dict(r) for r in DATA["VIEWS"]], "IS.FUNCTIONS": [dict(r) for r in DATA["FUNCTIONS"]],
+        "IS.PROCEDURES": [dict(r) for r in DATA["PROCEDURES"]], "IS.STAGES": [dict(r) for r in DATA["STAGES"]],
+        "IS.PIPES": [dict(r) for r in DATA["PIPES"]],
+        "SHOW TASKS": [{"NAME": r["TASK_NAME"], "DATABASE_NAME": r["TASK_DATABASE"], "SCHEMA_NAME": r["TASK_SCHEMA"], "OWNER": r["TASK_OWNER"],
+                        "WAREHOUSE": r["WAREHOUSE"] or "", "SCHEDULE": r["SCHEDULE"] or "", "PREDECESSORS": r["PREDECESSORS"], "STATE": r["STATE"],
+                        "DEFINITION": r["DEFINITION"], "CONDITION": r["CONDITION"] or "", "LAST_SUSPENDED_REASON": r["LAST_SUSPENDED_REASON"] or ""}
+                       for r in DATA["TASKS"]],
+    }
+
+
+DATA.update(_rt_mirror())
+RT_KEYS = ["IS.TABLES", "IS.COLUMNS", "IS.VIEWS", "IS.FUNCTIONS", "IS.PROCEDURES", "IS.STAGES", "IS.PIPES", "SHOW TASKS"]
+NEW = datetime(2026, 10, 17, 9, 30, tzinfo=timezone.utc)  # 30 min avant le scan : invisible dans ACCOUNT_USAGE
+
 DENIED = "SQL access control error: Insufficient privileges to operate on schema 'ACCOUNT_USAGE'"
 
 
@@ -206,6 +229,9 @@ class FakeSnowflake:
             return "QH_SESSIONS"
         if "GRANTED_ON IN ('ROLE'" in sql:
             return "GRANTS_TO_ROLES_TREE"
+        m = re.search(r'FROM "[^"]+"\.INFORMATION_SCHEMA\.(\w+)', sql)
+        if m:
+            return "IS." + m.group(1)
         return re.search(r"FROM SNOWFLAKE\.ACCOUNT_USAGE\.(\w+)", sql).group(1)
 
     def __call__(self, sql: str):
@@ -348,7 +374,8 @@ def test_everything_denied_still_returns_a_snapshot():
             "OBJECT_DEPENDENCIES", "VIEWS", "FUNCTIONS", "PROCEDURES", "TASKS", "TASK_HISTORY", "SERVERLESS_TASK_HISTORY", "STREAMS",
             "PIPES", "COPY_HISTORY", "STAGES", "DATABASES", "DATA_TRANSFER_HISTORY", "DYNAMIC_TABLE_REFRESH_HISTORY", "QUERY_HISTORY",
             "ACCESS_HISTORY", "POLICY_REFERENCES", "TAG_REFERENCES", "SHOW WAREHOUSES", "SHOW DYNAMIC TABLES", "SHOW ICEBERG TABLES",
-            "SHOW EXTERNAL TABLES", "SHOW STREAMS", "GRANTS_TO_ROLES_TREE", "GRANTS_TO_ROLES", "GRANTS_TO_USERS", "USERS", "SESSIONS", "SHARES"]
+            "SHOW EXTERNAL TABLES", "SHOW STREAMS", "GRANTS_TO_ROLES_TREE", "GRANTS_TO_ROLES", "GRANTS_TO_USERS", "USERS", "SESSIONS", "SHARES",
+            *RT_KEYS]
     _, snap, raw = scan(fail={k: "Object does not exist or not authorized." for k in keys})
     json.dumps(snap)
     assert all(x["statut"] == "non_lu" and x["raison"] for x in snap["lectures"])
@@ -361,9 +388,12 @@ def test_streams_view_refused_falls_back_to_show_streams():
     fake, snap, _ = scan(fail={"STREAMS": "Object 'SNOWFLAKE.ACCOUNT_USAGE.STREAMS' does not exist or not authorized."})
     assert lecture(snap, AU + "STREAMS")["raison"] == "droit absent"
     assert lecture(snap, "SHOW STREAMS")["statut"] == "lu"
-    assert by_id(snap["objets"], "CANOT_LAB.OPS.ORDERS_STREAM")["reference"] == ["CANOT_LAB.RAW.ORDERS"]
-    fake, snap, _ = scan()
-    assert not any(s.startswith("SHOW STREAMS") for s in fake.sql)
+    o = by_id(snap["objets"], "CANOT_LAB.OPS.ORDERS_STREAM")
+    assert o["reference"] == ["CANOT_LAB.RAW.ORDERS"] and o["detail"]["inventaire"] == "show" and "recent" not in o["detail"]  # repli
+    fake, snap, _ = scan()  # vue lue : SHOW STREAMS sert de recoupement temps réel, sans doublon
+    assert sum(s.startswith("SHOW STREAMS") for s in fake.sql) == 1
+    assert [x["id"] for x in snap["objets"] if x["kind"] == "flux"] == ["CANOT_LAB.OPS.ORDERS_STREAM"]
+    assert "inventaire" not in by_id(snap["objets"], "CANOT_LAB.OPS.ORDERS_STREAM")["detail"]
 
 
 def test_code_views_marked_as_filtered_by_rights():
@@ -661,3 +691,211 @@ def test_setup_sql_uses_database_roles_never_imported_privileges():
     for role in ("OBJECT_VIEWER", "USAGE_VIEWER", "GOVERNANCE_VIEWER", "SECURITY_VIEWER"):
         assert f"GRANT DATABASE ROLE SNOWFLAKE.{role} TO ROLE CANOT_READER;" in SETUP_SQL
     assert "TYPE = SERVICE" in SETUP_SQL and "<clé publique, sans les lignes BEGIN/END>" in SETUP_SQL
+
+
+# --- recoupement en temps réel (INFORMATION_SCHEMA, SHOW) : objets plus récents que la latence d'ACCOUNT_USAGE ------------------
+
+def _recent_data(**extra):
+    """Banc + objets créés 30 min avant le scan : visibles en temps réel, absents d'ACCOUNT_USAGE."""
+    new_t = {"TABLE_CATALOG": "CANOT_LAB", "TABLE_SCHEMA": "LAB", "TABLE_NAME": "NEW_T", "TABLE_OWNER": "LAB_ENGINEER", "TABLE_TYPE": "BASE TABLE",
+             "IS_TRANSIENT": "NO", "CLUSTERING_KEY": "LINEAR(D)", "AUTO_CLUSTERING_ON": "YES", "ROW_COUNT": 1500, "BYTES": 4096,
+             "RETENTION_TIME": 7, "CREATED": NEW, "LAST_ALTERED": NEW, "LAST_DDL": NEW, "IS_ICEBERG": "NO", "IS_DYNAMIC": "NO"}
+    new_dt = {**new_t, "TABLE_NAME": "NEW_DT", "IS_DYNAMIC": "YES", "CLUSTERING_KEY": None, "AUTO_CLUSTERING_ON": "NO", "BYTES": 0}
+    new_mv = {**new_t, "TABLE_NAME": "NEW_MV", "TABLE_TYPE": "MATERIALIZED VIEW", "CLUSTERING_KEY": None}
+    cols = [{"TABLE_CATALOG": "CANOT_LAB", "TABLE_SCHEMA": "LAB", "TABLE_NAME": "NEW_T", "COLUMN_NAME": "ID", "DATA_TYPE": "NUMBER",
+             "NUMERIC_PRECISION": 38, "NUMERIC_SCALE": 0, "ORDINAL_POSITION": 1},
+            {"TABLE_CATALOG": "CANOT_LAB", "TABLE_SCHEMA": "LAB", "TABLE_NAME": "NEW_T", "COLUMN_NAME": "DOC", "DATA_TYPE": "VARIANT",
+             "NUMERIC_PRECISION": None, "NUMERIC_SCALE": None, "ORDINAL_POSITION": 2}]
+    view = {"TABLE_CATALOG": "CANOT_LAB", "TABLE_SCHEMA": "LAB", "TABLE_NAME": "V_NEW", "TABLE_OWNER": "LAB_ENGINEER", "IS_SECURE": "NO",
+            "LAST_ALTERED": NEW, "VIEW_DEFINITION": f"create view V_NEW as select * from LAB.NEW_T where x <> '{CANARI}'"}
+    mv_view = {**view, "TABLE_NAME": "NEW_MV"}  # une vue matérialisée peut aussi figurer dans VIEWS : pas de doublon
+    fn = {**DATA["FUNCTIONS"][0], "FUNCTION_SCHEMA": "LAB", "FUNCTION_NAME": "FN_NEW", "LAST_ALTERED": NEW}
+    proc = {**DATA["PROCEDURES"][2], "PROCEDURE_SCHEMA": "LAB", "PROCEDURE_NAME": "SP_NEW", "LAST_ALTERED": NEW}
+    stage = {**DATA["STAGES"][1], "STAGE_SCHEMA": "LAB", "STAGE_NAME": "STG_NEW", "URL3": "new-bucket"}
+    pipe = {**DATA["PIPES"][0], "PIPE_SCHEMA": "LAB", "PIPE_NAME": "P_NEW", "DEFINITION": "COPY INTO LAB.NEW_T FROM @LAB.STG_NEW/x/"}
+    task = {"NAME": "T_NEW", "DATABASE_NAME": "CANOT_LAB", "SCHEMA_NAME": "LAB", "OWNER": "LAB_ENGINEER", "WAREHOUSE": "", "SCHEDULE": "5 MINUTE",
+            "PREDECESSORS": "[]", "STATE": "started", "DEFINITION": f"insert into LAB.NEW_T select 1, '{CANARI}'", "CONDITION": "",
+            "LAST_SUSPENDED_REASON": ""}
+    stream = {"NAME": "S_NEW", "DATABASE_NAME": "CANOT_LAB", "SCHEMA_NAME": "LAB", "OWNER": "LAB_ENGINEER", "TABLE_NAME": "CANOT_LAB.LAB.NEW_T",
+              "SOURCE_TYPE": "Table", "MODE": "DEFAULT", "STALE_AFTER": NOW}
+    show_dt = {"NAME": "NEW_DT", "DATABASE_NAME": "CANOT_LAB", "SCHEMA_NAME": "LAB", "OWNER": "LAB_ENGINEER", "TARGET_LAG": "1 minute",
+               "REFRESH_MODE": "FULL", "WAREHOUSE": "CANOT_WH", "SCHEDULING_STATE": "RUNNING", "TEXT": f"select '{CANARI}'"}
+    data = {"IS.TABLES": DATA["IS.TABLES"] + [new_t, new_dt, new_mv], "IS.COLUMNS": DATA["IS.COLUMNS"] + cols,
+            "IS.VIEWS": DATA["IS.VIEWS"] + [view, mv_view], "IS.FUNCTIONS": DATA["IS.FUNCTIONS"] + [fn],
+            "IS.PROCEDURES": DATA["IS.PROCEDURES"] + [proc], "IS.STAGES": DATA["IS.STAGES"] + [stage], "IS.PIPES": DATA["IS.PIPES"] + [pipe],
+            "SHOW TASKS": DATA["SHOW TASKS"] + [task], "SHOW STREAMS": DATA["SHOW STREAMS"] + [stream],
+            "SHOW DYNAMIC TABLES": DATA["SHOW DYNAMIC TABLES"] + [show_dt]}
+    data.update(extra)
+    return data
+
+
+def test_realtime_reads_are_logged_with_zero_latency():
+    fake, snap, _ = scan()
+    for leaf in ("TABLES", "COLUMNS", "VIEWS", "FUNCTIONS", "PROCEDURES", "STAGES", "PIPES"):
+        x = lecture(snap, f"CANOT_LAB.INFORMATION_SCHEMA.{leaf}")
+        assert x["statut"] == "lu" and x["latence_max_h"] == 0 and "temps réel" in x["raison"] and x["fenetre"] is None
+    for vue in ("SHOW TASKS", "SHOW STREAMS"):
+        assert lecture(snap, vue)["latence_max_h"] == 0
+    assert any(s.startswith('SELECT TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME, TABLE_OWNER') and '"CANOT_LAB".INFORMATION_SCHEMA.TABLES' in s
+               for s in fake.sql)
+
+
+def test_table_only_in_realtime_is_added_as_recent_with_unknown_history():
+    _, snap, _ = scan(data=_recent_data())
+    t = by_id(snap["tables"], "CANOT_LAB.LAB.NEW_T")
+    assert "recente" in t["flags"] and t["detail"]["source"] == "information_schema"
+    assert (t["lignes"], t["octets_actifs"], t["retention_jours"], t["proprietaire"], t["type"]) == (1500, 4096, 7, "LAB_ENGINEER", "TABLE")
+    assert t["clustering"] == ["LINEAR(D)"] and "clustering_auto" in t["flags"]
+    assert t["detail"]["creee_le"] == "2026-10-17T09:30:00Z" and t["detail"]["modifiee_le"] == "2026-10-17T09:30:00Z"
+    assert t["derniere_ddl"] == "2026-10-17T09:30:00Z"
+    assert [c["type"] for c in t["colonnes"]] == ["NUMBER(38,0)", "VARIANT"]
+    # ce qui dépend d'ACCOUNT_USAGE reste inconnu : None, jamais 0
+    for k in ("octets_historique", "n_lectures", "n_ecritures", "derniere_lecture", "derniere_ecriture", "clone_de"):
+        assert t[k] is None, k
+    d = t["detail"]
+    assert d["historique_non_lu"] == "table trop récente pour ACCOUNT_USAGE"
+    assert d["requetes_pruning_n"] is None and d["jamais_lu_pruning"] is None and d["jamais_lu"] is None
+    assert d.get("fichiers_charges_n") is None and d.get("octets_retenus_clone") is None and d["table_id"] is None
+    dt = by_id(snap["tables"], "CANOT_LAB.LAB.NEW_DT")
+    assert {"recente", "dynamique"} <= set(dt["flags"]) and dt["octets_actifs"] == 0  # 0 lu en temps réel reste un 0 mesuré
+    assert "CANOT_LAB.LAB.NEW_MV" not in {x["id"] for x in snap["tables"]}
+
+
+def test_objects_only_in_realtime_are_added_and_marked():
+    _, snap, _ = scan(data=_recent_data())
+    o = {(x["kind"], x["id"]): x for x in snap["objets"]}
+    assert len(o) == len(snap["objets"])  # aucun doublon
+    expected = {("vue", "CANOT_LAB.LAB.V_NEW"): "information_schema", ("vue_materialisee", "CANOT_LAB.LAB.NEW_MV"): "information_schema",
+                ("fonction", "CANOT_LAB.LAB.FN_NEW"): "information_schema", ("procedure", "CANOT_LAB.LAB.SP_NEW"): "information_schema",
+                ("stage", "CANOT_LAB.LAB.STG_NEW"): "information_schema", ("pipe", "CANOT_LAB.LAB.P_NEW"): "information_schema",
+                ("tache", "CANOT_LAB.LAB.T_NEW"): "show", ("flux", "CANOT_LAB.LAB.S_NEW"): "show",
+                ("table_dynamique", "CANOT_LAB.LAB.NEW_DT"): "information_schema"}
+    for k, src in expected.items():
+        assert o[k]["detail"]["inventaire"] == src and o[k]["detail"]["recent"] is True, k
+    assert ("vue", "CANOT_LAB.LAB.NEW_MV") not in o
+    assert o[("vue", "CANOT_LAB.LAB.V_NEW")]["reference"] == ["CANOT_LAB.LAB.NEW_T"]  # OBJECT_DEPENDENCIES ne la connaît pas encore
+    assert o[("stage", "CANOT_LAB.LAB.STG_NEW")]["dependances_externes"] == ["s3://new-bucket"]
+    task, pipe, dt = o[("tache", "CANOT_LAB.LAB.T_NEW")], o[("pipe", "CANOT_LAB.LAB.P_NEW")], o[("table_dynamique", "CANOT_LAB.LAB.NEW_DT")]
+    assert task["reference"] == ["CANOT_LAB.LAB.NEW_T"] and task["detail"]["serverless"] is True
+    for x in (task, pipe, dt):  # historique pas encore disponible : inconnu, pas 0
+        assert x["executions_n"] is None and x["echecs_n"] is None
+    assert task["detail"]["credits_serverless"] is None
+    assert dt["planification"] == "1 minute"
+    assert sum(1 for x in snap["objets"] if x["detail"].get("recent")) == 9
+
+
+def test_present_in_both_no_recent_flag_no_duplicate():
+    fake, snap, _ = scan()
+    assert not any("recente" in t["flags"] or t["detail"].get("source") for t in snap["tables"])
+    assert not any("inventaire" in o["detail"] or "recent" in o["detail"] for o in snap["objets"])
+    ids = [(o["kind"], o["id"]) for o in snap["objets"]]
+    assert len(ids) == len(set(ids))
+    cust = by_id(snap["tables"], "CANOT_LAB.RAW.CUSTOMERS")
+    assert cust["detail"]["vue_temps_reel"] is True and "ecart_colonnes" not in cust["detail"] and "ecart_type" not in cust["detail"]
+    assert cust["n_lectures"] == 5 and by_id(snap["tables"], "CANOT_LAB.RAW.ARCHIVE_1")["detail"]["jamais_lu"] is True
+    f = snap["fraicheur"]
+    assert f["recents_seulement_temps_reel"] == {"tables": 0, "objets": 0} and f["latence_max_h"] == 48
+    assert f["texte"] == "Recoupement en temps réel (INFORMATION_SCHEMA, SHOW) : aucun objet absent d'ACCOUNT_USAGE."
+
+
+def test_columns_and_type_differences_are_reported_and_present_state_kept():
+    cols = [dict(c) for c in DATA["IS.COLUMNS"]]
+    cols[1]["DATA_TYPE"] = "VARIANT"                       # EMAIL_ADDR : type changé
+    cols = cols[:3] + [{**cols[0], "COLUMN_NAME": "NOUVELLE", "ORDINAL_POSITION": 5}]  # GEO retirée, NOUVELLE ajoutée
+    tabs = [dict(r, TABLE_TYPE="EVENT TABLE") if r["TABLE_NAME"] == "ARCHIVE_1" else r for r in DATA["IS.TABLES"]]
+    _, snap, _ = scan(data={"IS.COLUMNS": cols, "IS.TABLES": tabs})
+    cust = by_id(snap["tables"], "CANOT_LAB.RAW.CUSTOMERS")
+    assert cust["detail"]["ecart_colonnes"] == "colonnes en temps réel : 1 ajoutée(s), 1 retirée(s), 1 de type changé"
+    assert [c["nom"] for c in cust["colonnes"]] == ["CUSTOMER_ID", "EMAIL_ADDR", "PROFILE", "NOUVELLE"]
+    assert by_id(snap["tables"], "CANOT_LAB.RAW.ARCHIVE_1")["detail"]["ecart_type"] == "BASE TABLE dans ACCOUNT_USAGE, EVENT TABLE en temps réel"
+
+
+def test_table_dropped_and_recreated_within_latency():
+    tabs = [r for r in DATA["IS.TABLES"]] + [{**DATA["IS.TABLES"][0], "TABLE_NAME": "TMP_DROPPED", "CREATED": NEW, "LAST_DDL": NEW}]
+    _, snap, _ = scan(data={"IS.TABLES": tabs})
+    live, old = by_id(snap["tables"], "CANOT_LAB.RAW.TMP_DROPPED"), by_id(snap["tables"], "CANOT_LAB.RAW.TMP_DROPPED#5")
+    assert {"recente", "recreee"} <= set(live["flags"]) and live["supprimee_le"] is None
+    assert old["supprimee_le"] == "2026-10-10T08:00:00Z" and old["octets_historique"] == 1000
+
+
+def test_realtime_denied_is_non_lu_with_reason_and_inventory_kept():
+    fail = {k: "SQL access control error: Insufficient privileges to operate on schema 'INFORMATION_SCHEMA'" for k in RT_KEYS}
+    _, snap, _ = scan(fail=fail, data=_recent_data())
+    for leaf in ("TABLES", "COLUMNS", "VIEWS", "FUNCTIONS", "PROCEDURES", "STAGES", "PIPES"):
+        x = lecture(snap, f"CANOT_LAB.INFORMATION_SCHEMA.{leaf}")
+        assert x["statut"] == "non_lu" and x["raison"] == "droit absent" and x["lignes"] is None
+    assert lecture(snap, "SHOW TASKS")["raison"] == "droit absent"
+    assert "CANOT_LAB.LAB.NEW_T" not in {t["id"] for t in snap["tables"]} and by_id(snap["tables"], "CANOT_LAB.RAW.CUSTOMERS")
+    assert snap["fraicheur"]["texte"].startswith("Recoupement en temps réel non lu (droit absent)")
+    # SHOW STREAMS restait lisible : le flux récent est vu
+    assert by_id(snap["objets"], "CANOT_LAB.LAB.S_NEW")["detail"]["recent"] is True
+
+
+def test_account_usage_tables_refused_realtime_is_a_fallback_not_recent():
+    _, snap, _ = scan(fail={"TABLES": DENIED}, data=_recent_data())
+    t = by_id(snap["tables"], "CANOT_LAB.LAB.NEW_T")
+    assert "recente" not in t["flags"] and t["detail"]["source"] == "information_schema"
+    assert t["detail"]["historique_non_lu"] == "ACCOUNT_USAGE.TABLES non lue"
+    cust = by_id(snap["tables"], "CANOT_LAB.RAW.CUSTOMERS")  # connue des métriques de stockage : complétée, pas « récente »
+    assert cust["detail"]["inventaire"] == "information_schema" and "type_non_lu" not in cust["detail"] and "recente" not in cust["flags"]
+    assert cust["proprietaire"] == "LAB_ENGINEER" and cust["octets_actifs"] == 1000 and cust["n_lectures"] == 5
+    assert len({t["id"] for t in snap["tables"]}) == len(snap["tables"])
+
+
+def test_fraicheur_counts_and_text():
+    _, snap, _ = scan(data=_recent_data())
+    f = snap["fraicheur"]
+    assert f["recents_seulement_temps_reel"] == {"tables": 2, "objets": 9} and f["latence_max_h"] == 48
+    assert f["texte"] == ("2 tables et 9 objets vus seulement en temps réel : absents d'ACCOUNT_USAGE, dont la latence va jusqu'à 48 h "
+                          "selon les vues ; leur historique (volumes facturés, lectures) n'est pas encore disponible.")
+    _, snap, _ = scan(base="*")
+    assert snap["fraicheur"]["texte"].startswith("Recoupement en temps réel non fait")
+    assert not any("INFORMATION_SCHEMA" in x["vue"] for x in snap["lectures"])
+    _, snap, _ = scan(level=1)
+    assert snap["fraicheur"]["latence_max_h"] == 48 and lecture(snap, "CANOT_LAB.INFORMATION_SCHEMA.TABLES")["statut"] == "lu"
+
+
+def test_realtime_never_reads_table_data_and_stays_readonly():
+    import sqlglot
+    from sqlglot import exp
+
+    fake, snap, _ = scan(data=_recent_data(), schemas=["raw", "lab"])
+    rt = [s for s in fake.sql if ".INFORMATION_SCHEMA." in s]
+    assert len(rt) == 7
+    for s in fake.sql:
+        assert check_readonly(s, "snowflake") == s
+        if s.startswith(("SHOW", "ALTER")):
+            continue
+        for t in sqlglot.parse_one(s, read="snowflake").find_all(exp.Table):  # métadonnées seulement : jamais une table du client
+            assert (t.catalog, t.db) == ("SNOWFLAKE", "ACCOUNT_USAGE") or t.db == "INFORMATION_SCHEMA", s[:100]
+    assert all("TABLE_SCHEMA IN ('RAW', 'LAB')" in s or "_SCHEMA IN ('RAW', 'LAB')" in s for s in rt)
+    assert all("STAGE_URL" not in s or "SPLIT_PART(STAGE_URL" in s for s in rt)
+
+
+def test_realtime_canary_and_forbidden_words_absent():
+    _, snap, _ = scan(data=_recent_data())
+    out = json.dumps(snap, ensure_ascii=False, default=str)
+    for leak in (CANARI, "canari-7f3a", "exemple.test", "/x/", "select ", "insert into"):
+        assert leak not in out, leak
+    low = out.lower()
+    for w in FORBIDDEN_WORDS:
+        assert w not in low, w
+
+
+def test_materialized_view_listed_in_views_is_described_once():
+    views = DATA["VIEWS"] + [{"TABLE_CATALOG": "CANOT_LAB", "TABLE_SCHEMA": "MART", "TABLE_NAME": "MV_DAILY", "TABLE_OWNER": "LAB_ENGINEER",
+                              "IS_SECURE": "NO", "LAST_ALTERED": D, "VIEW_DEFINITION": None}]
+    _, snap, _ = scan(data={"VIEWS": views, "IS.VIEWS": views})
+    assert [o["kind"] for o in snap["objets"] if o["id"] == "CANOT_LAB.MART.MV_DAILY"] == ["vue_materialisee"]
+
+
+def test_storage_metrics_not_yet_computed_is_said():
+    tsm = [dict(m, ACTIVE_BYTES=0) if m["ID"] == 1 else m for m in DATA["TABLE_STORAGE_METRICS"]]
+    _, snap, _ = scan(data={"TABLE_STORAGE_METRICS": tsm})
+    cust = by_id(snap["tables"], "CANOT_LAB.RAW.CUSTOMERS")
+    assert cust["octets_actifs"] == 0 and cust["detail"]["octets_temps_reel"] == 2048 and cust["detail"]["volume_en_retard"] is True
+    f = snap["fraicheur"]
+    assert f["volumes_en_retard"] == 1 and f["texte"].endswith(
+        "1 table à 0 octet dans TABLE_STORAGE_METRICS mais non vide en temps réel : métriques de stockage pas encore à jour, volume sous-estimé.")
+    _, snap, _ = scan()
+    assert snap["fraicheur"]["volumes_en_retard"] == 0 and "volume_en_retard" not in by_id(snap["tables"], "CANOT_LAB.RAW.CUSTOMERS")["detail"]

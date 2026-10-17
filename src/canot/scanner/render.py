@@ -144,6 +144,11 @@ def _section(sid: str, title: str, body: str) -> str:
     return f'<section id="{sid}"><h2>{_e(title)}</h2>{body}</section>'
 
 
+def _recentes(r: dict) -> int:
+    """Tables vues seulement en temps réel (absentes d'ACCOUNT_USAGE) : leur historique n'est pas encore disponible."""
+    return sum(1 for t in r["tables"] if not t["supprimee_le"] and "recente" in t["flags"])
+
+
 # --- sections ----------------------------------------------------------------------------------------------
 
 
@@ -176,6 +181,12 @@ def _perimetre(r: dict) -> str:
     ]
     if r.get("schemas_caches"):
         items.append(f"Schémas ou datasets cachés lus : {', '.join(r['schemas_caches'])}")
+    if (r.get("fraicheur") or {}).get("texte"):
+        items.append(f"Fraîcheur : {r['fraicheur']['texte']}")
+    credits = (r["couts"].get("credits") or {}).get("valeur") or 0
+    if not any(not t["supprimee_le"] for t in r["tables"]) and (r["familles"] or credits > 0):
+        items.append("Inventaire vide alors que des requêtes ou des crédits ont été lus : vérifier la base scannée et les droits du rôle "
+                     "sur ses objets")
     v = r.get("versions") or {}
     items.append("Versions : " + ", ".join(f"{k} {v[k]}" for k in sorted(v)))
     return _section("perimetre", "Périmètre", "<ul>" + "".join(f"<li>{_e(i)}</li>" for i in items) + "</ul>")
@@ -201,6 +212,10 @@ def _couts(r: dict) -> str:
     if c.get("transferts"):
         body += "<h3>Transferts sortants</h3>" + _list_table(["Cible", "Volume"], [[_e(t["cible"]), _e(fig_text(t["octets"]))] for t in c["transferts"]],
                                                              "scan.json", (1,))
+    n = _recentes(r)
+    if n:
+        body += (f"<p class=mut>{_e(pl(n, 'table récente', 'tables récentes'))} sans historique dans ACCOUNT_USAGE : "
+                 "leur stockage et leur consommation ne figurent pas encore dans ces chiffres.</p>")
     return _section("couts", "Coûts observés", f"<p class=mut>{_e(jours + c.get('note', ''))}</p>{body}")
 
 
@@ -212,6 +227,10 @@ def _mouvements(r: dict) -> str:
     body = (f"<p>{fr_num(m['figée'])} figée(s), {fr_num(m['vivante'])} vivante(s), {fr_num(m['recréée'])} recréée(s), "
             f"{fr_num(m['non_determine'])} non déterminée(s).</p><p class=mut>{_e(m['regle'])}. Base : {_e(_base(m['base']) or 'aucune lecture')}.</p>"
             + _list_table(["Table", "Type", "Volume", "Mouvement", "Preuve"], rows, "tables.csv", (2,)))
+    n = _recentes(r)
+    if n:
+        body += (f"<p class=mut>{_e(pl(n, 'table vue', 'tables vues'))} seulement en temps réel : écritures et lectures pas encore "
+                 "disponibles dans ACCOUNT_USAGE ; volume lu dans INFORMATION_SCHEMA.</p>")
     return _section("mouvements", "Mouvements", body)
 
 
