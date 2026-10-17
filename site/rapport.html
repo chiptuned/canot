@@ -7,7 +7,7 @@
 <meta name="description" content="Un exemple de synthèse d'exercice de sortie produite par Canot, sur des données publiques BigQuery.">
 <link rel="canonical" href="https://canot.io/rapport.html">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="style.css?v=b186438f48">
+<link rel="stylesheet" href="style.css?v=239329a8f2">
 </head>
 <body class="rp">
 <div class="page">
@@ -28,7 +28,7 @@
       </dl>
     </div>
     <ul class="findings">
-      <li><span class="tag ok">Identique</span><div><span class="t">Vos données arrivent intactes.</span><span class="d">Les 7 tables, soit 3,3 millions de lignes, ont été copiées puis comparées ligne par ligne. Aucune différence.</span></div></li>
+      <li><span class="tag ok">Identique</span><div><span class="t">Le contenu arrive à l'identique.</span><span class="d">Les 7 tables ont été copiées puis comparées : nombre de lignes, statistiques par colonne et empreinte du contenu. Aucune différence.</span></div></li>
       <li><span class="tag info">3 sur 4</span><div><span class="t">Vos rapports donnent les mêmes chiffres.</span><span class="d">Quatre requêtes de reporting ont été rejouées des deux côtés. Trois rendent exactement le même résultat.</span></div></li>
       <li><span class="tag warn">À traiter</span><div><span class="t">Un rapport mensuel change de format de date.</span><span class="d">BigQuery rend une date, la destination rend une date avec une heure. Les chiffres sont justes, la présentation diffère. Mieux vaut le savoir avant le départ que le lendemain.</span></div></li>
       <li><span class="tag info">Signé</span><div><span class="t">Toute modification de la preuve se voit.</span><span class="d">Chaque étape est enregistrée dans un journal signé avec une clé créée chez vous. Si quelqu'un le modifie après coup, la vérification échoue.</span></div></li>

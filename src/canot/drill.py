@@ -21,7 +21,7 @@ from .verify import check_table, replay_queries, split_sql
 
 def run_drill(src: Source, target: Target, out: Path, key_path: Path, queries_file: str | None,
               tol: Tolerances, top_n: int = 20, only: list[str] | None = None,
-              credit_price: float | None = 3.90, log=print) -> dict:
+              credit_price: float | None = 3.90, replay_max_gb: float = 2.0, log=print) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     ev = EvidenceLog(out)
     t_start = time.monotonic()
@@ -55,7 +55,7 @@ def run_drill(src: Source, target: Target, out: Path, key_path: Path, queries_fi
         r = copies[t.fqn]
         if r.error:
             continue
-        c = check_table(src, t, cat.load_table((t.schema, t.name)), r.fingerprint, tol)
+        c = check_table(src, t, cat.load_table((t.schema, t.name)), r.fingerprint, tol, {cv.column for cv in r.conversions if cv.lossy})
         checks.append(c)
         log(f"   {t.fqn}: {'OK' if c.ok else 'ÉCART'}")
         ev.add("table_check", asdict(c) | {"ok": c.ok})
@@ -64,7 +64,8 @@ def run_drill(src: Source, target: Target, out: Path, key_path: Path, queries_fi
     qres = []
     if queries:
         log(f"→ rejeu de {len(queries)} requête(s) des deux côtés")
-        qres = replay_queries(src, queries[:top_n], cat, [t for t in tables if not copies[t.fqn].error], tol)
+        qres = replay_queries(src, queries[:top_n], cat, [t for t in tables if not copies[t.fqn].error], tol,
+                              {k: v.bytes for k, v in copies.items()}, int(replay_max_gb * 1e9))
         for q in qres:
             log(f"   [{q.status}] {q.sql[:70].replace(chr(10), ' ')}")
             ev.add("query", asdict(q))
@@ -86,6 +87,8 @@ def run_drill(src: Source, target: Target, out: Path, key_path: Path, queries_fi
         "queries_match": sum(1 for q in qres if q.status == "match"),
         "queries_mismatch": sum(1 for q in qres if q.status == "mismatch"),
         "queries_untranslatable": sum(1 for q in qres if q.status in ("untranslatable", "error")),
+        "queries_skipped": sum(1 for q in qres if q.status == "skipped"),
+        "tables_precision_only": sum(1 for c in checks if c.precision_only),
         "queries_order_differs": sum(1 for q in qres if q.order_differs),
         "lossy_conversions": sum(1 for c in conversions if c.lossy),
         "throughput_mb_s": round(mbps, 2) if mbps else None,

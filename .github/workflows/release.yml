@@ -1,0 +1,19 @@
+name: publication PyPI
+# Publication par « Trusted Publishing » : aucun jeton PyPI n'est stocké dans GitHub.
+# À configurer une fois sur pypi.org : projet canot, Publishing, Add a trusted publisher (GitHub : chiptuned/canot, workflow release.yml).
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv build
+      - uses: pypa/gh-action-pypi-publish@release/v1

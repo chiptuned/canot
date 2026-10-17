@@ -121,7 +121,9 @@ def test_demo_command_end_to_end_and_synthesis(tmp_path, capsys):
     assert main(["demo", "--out", str(tmp_path / "d"), "--rows", "2000", "--no-open"]) == 0
     html = (tmp_path / "d" / "dossier" / "report.html").read_text()
     assert "Sortie faisable sur ce périmètre" in html and "canot.io/#contact" in html
-    assert "perte possible" in html  # le piège des nanosecondes est signalé
+    assert "perdent de la précision" in html and "TIMESTAMP_NS" in html  # le piège des nanosecondes est signalé comme point à traiter
+    assert "/tmp" not in html and "/private" not in html and "None" not in html  # pas de chemin local ni de « None » dans un dossier transmis
+    assert "Empreinte de la clé publique" in html
     assert verify_dir(tmp_path / "d" / "dossier")[0]
 
 
@@ -140,3 +142,12 @@ def test_snowflake_setup_generates_key(tmp_path, monkeypatch, capsys):
     out = capsys.readouterr().out
     assert "MABASE" in out and "RSA_PUBLIC_KEY = '" in out and "<clé publique" not in out
     assert (tmp_path / ".canot" / "snowflake_rsa_key.p8").stat().st_mode & 0o077 == 0
+
+
+def test_errors_are_readable():
+    from canot.cli import explain
+
+    msg = explain(ModuleNotFoundError("x", name="google.cloud"), ["scan", "--from", "bigquery://p/d"])
+    assert "canot[bigquery]" in msg and "uvx --from" in msg
+    assert "gcloud auth application-default login" in explain(type("DefaultCredentialsError", (Exception,), {})("x"), [])
+    assert explain(RuntimeError("autre chose"), []) is None

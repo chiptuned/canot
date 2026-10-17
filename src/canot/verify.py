@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import time
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -25,6 +24,12 @@ class TableCheck:
     stats_diffs: list[str] = field(default_factory=list)
     fingerprint_ok: bool = True
     bad_buckets: list[int] = field(default_factory=list)
+    precision_cols: list[str] = field(default_factory=list)  # colonnes dont la valeur diffère parce que le type d'arrivée est moins précis
+
+    @property
+    def precision_only(self) -> bool:
+        """Seules des colonnes à conversion avec perte diffèrent : les lignes, les autres colonnes et l'empreinte sont identiques."""
+        return bool(self.precision_cols) and self.rows_source == self.rows_target and self.fingerprint_ok and self.schema_ok and len(self.stats_diffs) == sum(1 for _ in self.stats_diffs if _.split(".")[0] in self.precision_cols)
 
     @property
     def ok(self) -> bool:
@@ -57,24 +62,53 @@ def _stats_sql(table_sql: str, schema: pa.Schema, dialect: str = "duckdb") -> tu
     return f"select {', '.join(exprs)} from {table_sql}", keys
 
 
+def _arrow(rel) -> pa.Table:
+    return rel.to_arrow_table() if hasattr(rel, "to_arrow_table") else rel.fetch_arrow_table()
+
+
+def _combine(acc: dict, part: dict) -> dict:
+    """Fusionne les statistiques de deux lots : n, nn, sum s'additionnent ; min, max se comparent."""
+    for k, v in part.items():
+        if v is None:
+            acc.setdefault(k, None)
+            continue
+        cur = acc.get(k)
+        if k == "n" or k.startswith(("nn__", "sum__")):
+            acc[k] = v if cur is None else cur + v
+        elif k.startswith("min__"):
+            acc[k] = v if cur is None else min(cur, v)
+        elif k.startswith("max__"):
+            acc[k] = v if cur is None else max(cur, v)
+        else:
+            acc[k] = v
+    return acc
+
+
 def _row(tbl: pa.Table) -> dict:
     return {k.lower(): v[0] for k, v in tbl.to_pydict().items()}
 
 
-def check_table(src: Source, t: TableInfo, ice_table, source_fp: dict[int, list[int]], tol: Tolerances) -> TableCheck:
+def check_table(src: Source, t: TableInfo, ice_table, source_fp: dict[int, list[int]], tol: Tolerances,
+                lossy_cols: set[str] | frozenset[str] = frozenset()) -> TableCheck:
+    """Compare une table copiée à sa source. La copie est lue par lots : la mémoire reste bornée, quelle que soit la taille."""
     schema = ice_table.schema().as_arrow()
     src_names = [c.name.lower() for c in t.columns]
     schema_ok = [n.lower() for n in schema.names] == src_names if src_names else True
 
-    # one pass over the Iceberg data: fingerprint + stats via DuckDB
-    con = duckdb.connect()
-    reader = ice_table.scan().to_arrow_batch_reader()
-    arrow_t = pa.Table.from_batches(reader, schema=schema)
-    fp = merge_fp({}, fingerprint(arrow_t))
-    con.register("tgt", arrow_t)
     sql_t, keys = _stats_sql("tgt", schema)
-    tgt = _row(con.execute(sql_t).fetch_arrow_table())
-    con.close()
+    tgt: dict = {}
+    fp: dict[int, list[int]] = {}
+    for batch in ice_table.scan().to_arrow_batch_reader():
+        tb = pa.Table.from_batches([batch], schema=schema)
+        fp = merge_fp(fp, fingerprint(tb))
+        con = duckdb.connect()
+        con.register("tgt", tb)
+        _combine(tgt, _row(_arrow(con.execute(sql_t))))
+        con.close()
+    tgt.setdefault("n", 0)
+    for col, what in keys:  # table vide : aucun lot, les compteurs valent 0
+        if what == "nn":
+            tgt.setdefault(f"nn__{col}".lower(), 0)
 
     sql_s, _ = _stats_sql(src.table_ref(t), schema, src.dialect)
     srow = _row(src.query(sql_s))
@@ -83,14 +117,17 @@ def check_table(src: Source, t: TableInfo, ice_table, source_fp: dict[int, list[
     rows_src = int(srow.get("n", -1))
     if rows_src != int(tgt["n"]):
         diffs.append(f"nombre de lignes : {rows_src} / {tgt['n']}")
+    precision_cols: list[str] = []
     for col, what in keys:
         key = f"{what}__{col}".lower()
         a, b = srow.get(key), tgt.get(key)
         ov = tol.abs_for(t.fqn, col)
         if not equal(a, b, tol, ov):
             diffs.append(f"{col}.{what} : {a!r} / {b!r}")
+            if col in lossy_cols and col not in precision_cols:
+                precision_cols.append(col)
     bad = sorted(k for k in set(fp) | set(source_fp) if fp.get(k) != source_fp.get(k))
-    return TableCheck(t.fqn, t.rows, int(tgt["n"]), schema_ok, not diffs, diffs[:20], not bad, bad)
+    return TableCheck(t.fqn, t.rows, int(tgt["n"]), schema_ok, not diffs, diffs[:20], not bad, bad, precision_cols)
 
 
 def src_db(src: Source) -> str:
@@ -108,8 +145,6 @@ class QueryCheck:
     rows_source: int | None = None
     rows_target: int | None = None
     order_differs: bool = False
-    seconds_source: float = 0.0
-    seconds_target: float = 0.0
 
 
 def split_sql(text: str) -> list[str]:
@@ -159,7 +194,8 @@ def compare_results(a: pa.Table, b: pa.Table, tol: Tolerances, ordered: bool) ->
     return True, "", order_differs
 
 
-def replay_queries(src: Source, queries: list[str], catalog, tables: list[TableInfo], tol: Tolerances) -> list[QueryCheck]:
+def replay_queries(src: Source, queries: list[str], catalog, tables: list[TableInfo], tol: Tolerances,
+                   sizes: dict[str, int] | None = None, max_bytes: int = 2_000_000_000) -> list[QueryCheck]:
     by_name = {(t.schema.lower(), t.name.lower()): t for t in tables}
     by_bare: dict[str, list[TableInfo]] = {}
     for t in tables:
@@ -193,9 +229,15 @@ def replay_queries(src: Source, queries: list[str], catalog, tables: list[TableI
                     t = c[0] if len(c) >= 1 else None
                 if t is None:
                     raise LookupError(f"table inconnue de la copie : {name}")
+                if sizes and sizes.get(t.fqn, 0) > max_bytes:
+                    raise MemoryError(f"{t.fqn} pèse {sizes[t.fqn] / 1e9:.1f} Go : trop pour le rejeu en mémoire (limite {max_bytes / 1e9:.0f} Go, voir --replay-max-gb)")
                 load(t)
         except LookupError as e:
             qc.status, qc.detail = "untranslatable", str(e)
+            out.append(qc)
+            continue
+        except MemoryError as e:
+            qc.status, qc.detail = "skipped", str(e)
             out.append(qc)
             continue
         except Exception as e:
@@ -203,12 +245,8 @@ def replay_queries(src: Source, queries: list[str], catalog, tables: list[TableI
             out.append(qc)
             continue
         try:
-            t0 = time.monotonic()
             a = src.query(sql)
-            qc.seconds_source = time.monotonic() - t0
-            t0 = time.monotonic()
-            b = con.execute(qc.translated).fetch_arrow_table()
-            qc.seconds_target = time.monotonic() - t0
+            b = _arrow(con.execute(qc.translated))
             qc.rows_source, qc.rows_target = a.num_rows, b.num_rows
             ordered = bool(sqlglot.parse_one(sql, read=src.dialect).find(exp.Order))
             ok, detail, od = compare_results(a, b, tol, ordered)

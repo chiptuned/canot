@@ -37,14 +37,14 @@ uvx canot demo
   <img src="https://raw.githubusercontent.com/chiptuned/canot/main/docs/assets/demo.svg" alt="canot copie des tables BigQuery, compare tout, et signale une requête qui diverge" width="860">
 </p>
 
-Sur un jeu public BigQuery : 7 tables identiques ligne par ligne, 3 requêtes sur 4 qui rendent le même résultat. La 4<sup>e</sup> rend une date chez BigQuery et une date avec heure ailleurs. C'est le genre d'écart qu'on veut découvrir **avant** de partir.
+Sur un jeu public BigQuery : 7 tables au contenu identique, 3 requêtes sur 4 qui rendent le même résultat. La 4<sup>e</sup> rend une date chez BigQuery et une date avec heure ailleurs. C'est le genre d'écart qu'on veut découvrir **avant** de partir.
 
 ## 🧭 Pourquoi
 
 |  |  |  |
 |---|---|---|
 | **Le déséquilibre** | **La pression** | **Le risque caché** |
-| Snowflake et Databricks offrent des outils gratuits pour *entrer*. Personne n'offre l'outil qui vérifie la *sortie*. | DORA demande un plan de sortie **testé** aux entités financières. Le Data Act supprime les frais de changement de cloud le **12 janvier 2027**. | Un plan de sortie sur papier n'a jamais été exécuté : sa durée, son coût et ses écarts sont inconnus. |
+| Snowflake et Databricks offrent des outils gratuits pour *entrer*. Personne n'offre l'outil qui vérifie la *sortie*. | DORA demande un plan de sortie **testé** aux entités financières. En France, le transfert de données lors d'un changement de cloud est déjà à 0 € ; le **12 janvier 2027**, tous les frais de changement disparaissent (Data Act). | Le travail, lui, reste : durée, écarts et ce qui ne part pas tel quel sont inconnus tant que personne n'a exécuté la sortie. |
 
 Canot fait la répétition de départ. Vous restez chez votre fournisseur.
 

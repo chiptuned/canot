@@ -12,7 +12,49 @@ def _p(*a):
     print(*a, flush=True)
 
 
+HINTS = {
+    "google.cloud": ("BigQuery", "bigquery"), "snowflake": ("Snowflake", "snowflake"), "databricks": ("Databricks", "databricks"),
+}
+
+
+def explain(exc: BaseException, argv: list[str]) -> str | None:
+    """Une phrase claire pour les erreurs que tout premier utilisateur rencontre (connecteur absent, identifiants absents)."""
+    name = type(exc).__name__
+    if isinstance(exc, ModuleNotFoundError) and exc.name:
+        for prefix, (label, extra) in HINTS.items():
+            if exc.name.startswith(prefix):
+                return (f"Il manque le connecteur {label}. Lancez : uvx --from \"canot[{extra}]\" canot {' '.join(argv)}\n"
+                        f"ou installez-le : pip install 'canot[{extra}]'  (ou 'canot[all]' pour les trois).")
+    if name == "DefaultCredentialsError":
+        return "Identifiants Google introuvables. Lancez : gcloud auth application-default login"
+    if name in ("Forbidden", "PermissionDenied") or "403" in str(exc)[:40]:
+        return "Accès refusé. Vérifiez les rôles en lecture seule demandés (voir la documentation de la source)."
+    if isinstance(exc, ValueError) and ("SNOWFLAKE_" in str(exc) or "DATABRICKS_" in str(exc) or "URL " in str(exc)):
+        return str(exc)
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
+    import warnings
+
+    warnings.filterwarnings("ignore", message=".*end user credentials.*")
+    argv_list = list(sys.argv[1:] if argv is None else argv)
+    debug = "--debug" in argv_list
+    argv_list = [a for a in argv_list if a != "--debug"]
+    try:
+        return run(argv_list)
+    except KeyboardInterrupt:
+        print("Interrompu.", file=sys.stderr)
+        return 130
+    except Exception as e:  # noqa: BLE001 : une phrase claire plutôt qu'une trace
+        if debug:
+            raise
+        msg = explain(e, argv_list) or f"{type(e).__name__} : {str(e).splitlines()[0][:300] if str(e) else ''}"
+        print(f"Erreur : {msg}\n(ajoutez --debug pour la trace complète)", file=sys.stderr)
+        return 1
+
+
+def run(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="canot", description="Prouvez que vous pouvez partir.")
     ap.add_argument("--version", action="version", version=__version__)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -33,6 +75,7 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--tables", nargs="*", help="limiter à ces tables (SCHEMA.TABLE)")
     d.add_argument("--key", default=str(Path.home() / ".canot" / "evidence.key"))
     d.add_argument("--credit-price", type=float, default=3.90)
+    d.add_argument("--replay-max-gb", type=float, default=2.0, help="taille maximale d'une table chargée en mémoire pour rejouer les requêtes")
 
     t = sub.add_parser("teardown", help="supprime les données copiées")
     t.add_argument("--to", dest="dst", required=True)
@@ -180,7 +223,7 @@ def main(argv: list[str] | None = None) -> int:
             from .tolerances import Tolerances
 
             target = parse_target(a.dst, a.bucket, out)
-            res = run_drill(src, target, out, Path(a.key), a.queries, Tolerances.load(a.tolerances), a.top, a.tables, a.credit_price, _p)
+            res = run_drill(src, target, out, Path(a.key), a.queries, Tolerances.load(a.tolerances), a.top, a.tables, a.credit_price, a.replay_max_gb, _p)
             rep = write_report(res, out)
             s = res["summary"]
             _p(f"\nParité : {s['parity']} — {s['tables_ok']}/{s['tables_total']} tables, {s['queries_match']}/{s['queries_total']} requêtes")

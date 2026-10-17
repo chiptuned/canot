@@ -266,3 +266,15 @@ textarea{padding:11px 12px;border-radius:6px;border:1px solid var(--line-2);back
 .by-q4o{background:#0a0a0a;color:#fff}.by-q4o img{height:11px;width:auto;filter:invert(1)}
 .by-free{background:var(--ok-wash);color:var(--ok)}
 .offers h2{margin-bottom:28px}
+
+/* catalogue des écarts */
+.ecarts .h2like{font:760 clamp(30px,4.4vw,52px)/1.08 var(--sans);letter-spacing:-.02em;margin:0 0 12px;max-width:none}
+.ecart{background:var(--paper);border:1px solid var(--line-2);border-radius:10px;padding:clamp(18px,3vw,28px);margin:24px 0}
+.ecart h2{font-size:clamp(20px,2.4vw,26px);margin:0 0 6px;max-width:none}
+.mono-line{font:12.5px var(--mono);color:var(--soft);margin:0 0 14px}
+.ecart pre{background:#0F2230;color:#EAF1F8;padding:14px 16px;border-radius:8px;overflow-x:auto;font:13.5px/1.55 var(--mono);margin:0 0 14px}
+.ecart pre code{background:none;border:0;padding:0;color:inherit}
+.duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px;margin:0 0 16px}
+.duo div{background:var(--bg);border-radius:8px;padding:12px 14px}.duo dt{font:600 11.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--soft);margin-bottom:4px}.duo dd{margin:0}
+.ecart p{font-size:16px;line-height:1.6;color:var(--muted);max-width:75ch;margin:0 0 10px}.ecart p b{color:var(--ink)}
+.todo-list{padding-left:1.1em;max-width:75ch;color:var(--muted)}.todo-list li{margin:6px 0}
