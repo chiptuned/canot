@@ -45,7 +45,7 @@ def dump(*objs) -> str:
 
 def test_corpus_size_and_coverage():
     assert len(corpus.CORPUS) >= 60
-    assert {c for *_, c in corpus.CORPUS} == set(replay.CATEGORIES)
+    assert {c for *_, c in corpus.CORPUS} - {None} == set(replay.CATEGORIES)  # None : non testée
 
 
 @pytest.mark.parametrize("dialect,qid,sql,attendu", corpus.CORPUS, ids=[e[1] for e in corpus.CORPUS])
@@ -62,7 +62,7 @@ def test_corpus_familles_memes_categories(dialect):
     for _, qid, sql, attendu in entries:
         fp = replay.normalize(sql, dialect)[1]["empreinte"]
         assert by_fp[fp]["categorie"] == attendu, qid
-    assert sum(c["familles"] for c in rej["categories"].values()) == len(familles)
+    assert sum(c["familles"] for c in rej["categories"].values()) + rej["non_testees"]["familles"] == len(familles)
     assert rej["secrets_ecartes"] == {"familles": 0, "executions": 0}
 
 
@@ -268,7 +268,7 @@ def test_taux_et_base():
     familles, rej = run("snowflake")
     cats = rej["categories"]
     testables = sum(cats[c]["familles"] for c in replay.BASE_TAUX)
-    assert testables == len(familles) - cats["C7"]["familles"]
+    assert testables == len(familles) - cats["C7"]["familles"] - rej["non_testees"]["familles"]
     assert rej["base"] == (f"{cats['C0']['familles']}/{testables} familles, du 18/10/2025 au 17/10/2026, "
                            f"sqlglot {sqlglot.__version__}, duckdb {rej['versions']['duckdb']}")
     assert rej["mention"] == "accepté ≠ résultat identique" and rej["libelle_c0"] == "traduit et accepté par DuckDB"
@@ -363,3 +363,21 @@ def test_requetes_de_metadonnees_comptees_a_part():
     for dialect, sql in (("snowflake", "select table_name from snowflake.account_usage.tables where deleted is null"),
                          ("bigquery", "select table_name from `p.d.INFORMATION_SCHEMA.TABLES`")):
         assert replay.classify(sql, dialect, {}, ()) == "C7"
+
+
+def test_table_hors_perimetre_n_abaisse_pas_le_taux():
+    """Une requête sur une table absente de l'inventaire n'est pas « non portable » : elle est non testée, hors taux."""
+    cols = {"DB.S.T": [{"nom": "A", "type": "NUMBER"}]}
+    assert replay.classify("select a from db.s.t", "snowflake", cols, ()) == "C0"
+    assert replay.classify("select a from autre_base.s.ailleurs", "snowflake", cols, ()) is None
+    # une construction propre à la plateforme reste C5 même si la table manque
+    assert replay.classify("select metadata$action from db.s.flux", "snowflake", cols, ()) == "C5"
+
+
+def test_texte_absent_n_est_pas_non_analysable():
+    """Une requête interne dont la plateforme ne donne pas le texte est non testée, pas « non analysable » (C1)."""
+    familles, rej = replay.process_familles(
+        [{"_sql": "", "hash_plateforme": "h", "n_exec": 6000, "temps_ms": 1, "credits": None, "octets": None, "query_type": "SELECT"}],
+        "snowflake", columns={}, known_functions=(), salt=b"s")
+    assert familles[0]["categorie"] is None and rej["categories"]["C1"]["familles"] == 0
+    assert rej["non_testees"] == {"familles": 1, "executions": 6000}

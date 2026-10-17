@@ -52,6 +52,7 @@ R_C3 = "traduction vers DuckDB impossible"
 R_C4 = "refusé par l'analyseur DuckDB"
 R_C6 = "variable de session"
 R_NON_TESTE = "colonnes non lues : EXPLAIN DuckDB non exécuté"
+R_HORS_PERIMETRE = "table hors du périmètre lu : non testée"
 
 
 @contextmanager
@@ -374,6 +375,7 @@ def _testable(tree: exp.Expression) -> exp.Expression | None:
     return inner
 
 
+_PROPRE = re.compile(r"metadata\$|_table_suffix|\w\*[`\"]", re.I)  # constructions propres à la plateforme : restent C5 même si la table manque
 _METADATA = re.compile(r"\b(INFORMATION_SCHEMA|ACCOUNT_USAGE|ORGANIZATION_USAGE|READER_ACCOUNT_USAGE)\b", re.I)
 
 
@@ -417,6 +419,8 @@ def _categorize(tree: exp.Expression | None, dialect: str, skel: _Skeleton | Non
     if skel is None:
         return None, R_NON_TESTE
     cat, raison = skel.check(sql, query.find(exp.Placeholder, exp.Parameter) is not None, udf)
+    if cat == "C5" and raison == "table absente des métadonnées" and not _PROPRE.search(sql):
+        return None, R_HORS_PERIMETRE  # une table qu'on n'a pas inventoriée ne dit rien de la portabilité de la requête
     if cat == "C0" and dialect == "snowflake" and any(isinstance(p.this, exp.Var) for p in query.find_all(exp.Parameter)):
         return "C6", R_C6
     return cat, raison
@@ -472,7 +476,10 @@ def _famille(empreinte: str, g: dict, dialect: str, skel: _Skeleton | None, know
              external: frozenset[str]) -> dict:
     rows, tree, infos = g["rows"], g["tree"], g["infos"]
     rep = rows[0]  # la plus exécutée (ordre de _row_key)
-    cat, raison = _categorize(tree, dialect, skel, known)
+    if not str(rep.get("_sql") or "").strip():
+        cat, raison = None, "texte non transmis par la plateforme : non testée"  # requêtes internes ou masquées
+    else:
+        cat, raison = _categorize(tree, dialect, skel, known)
     hashes = sorted({str(r["hash_plateforme"]) for r in rows if r.get("hash_plateforme")})
     exports = sorted(set(g["exports"]) | {s for s in g["cibles"] if s.upper() in external or any(e.endswith("." + s.upper()) for e in external)})
     dbt = infos["dbt"]

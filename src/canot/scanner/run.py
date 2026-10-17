@@ -80,6 +80,6 @@ def scan_full(src, out: Path, *, level: int = 3, credit_price: float | None = No
     write_csv(result, out)
     if include_sql_text:
         p = out / "scan-sql-brut.json"
-        p.write_text(json.dumps(replay.raw_text_export(raw), indent=2, ensure_ascii=False), encoding="utf-8")
+        p.write_text(json.dumps(replay.raw_text_export(raw, src.dialect), indent=2, ensure_ascii=False), encoding="utf-8")
         os.chmod(p, 0o600)
     return result

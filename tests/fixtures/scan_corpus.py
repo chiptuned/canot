@@ -108,7 +108,7 @@ SNOWFLAKE = [
     ("S38", "select customer_id, st_distance(location, st_makepoint(2.35, 48.85)) as d from raw.customers", "C5"),
     ("S39", "select current_warehouse(), current_account()", "C5"),
     ("S40", "select metadata$action, metadata$isupdate, order_id from raw.orders_stream where metadata$action = 'INSERT'", "C5"),
-    ("S41", "select * from raw.legacy_orders_2019", "C5"),
+    ("S41", "select * from raw.legacy_orders_2019", None),
     ("S42", "select hll(customer_id) from raw.orders", "C5"),
     ("S43", "select system$clustering_information('raw.orders')", "C5"),
     # spec : AT -> C4 ; DuckDB 1.5.6 analyse AT (TIMESTAMP => …) et refuse à la liaison (« Catalog type does not support time travel »)
