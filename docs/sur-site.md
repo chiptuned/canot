@@ -18,7 +18,7 @@ Les clés du stockage passent par `CANOT_S3_ACCESS_KEY` et `CANOT_S3_SECRET_KEY`
 Chaque exercice écrit un fichier `relire.sql` à côté du rapport. Il contient les commandes DuckDB qui comptent les lignes de chaque table copiée :
 
 ```bash
-duckdb < canot-out/dossier/relire.sql
+duckdb < canot-out/relire.sql
 ```
 
 La copie ne dépend donc pas de l'outil : n'importe quel moteur qui lit Iceberg (DuckDB, Spark, Trino) peut la lire. Pour un stockage S3, créez d'abord un secret DuckDB avec vos clés (voir le fichier).

@@ -46,7 +46,7 @@ text{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sa
 
 
 TERM = [
-    ("cmd", '$ canot drill --from "bigquery://MON-PROJET/thelook_ecommerce?location=US" --to ./lac'),
+    ("cmd", '$ canot drill "bigquery://MON-PROJET/thelook_ecommerce?location=US" ./lac'),
     ("dim", "→ inventaire"),
     ("dim", "→ copie de 7 table(s) vers local:./lac"),
     ("txt", "   events            2 423 210 lignes   437,7 Mo    7,2 s"),

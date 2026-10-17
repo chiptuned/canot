@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documentation | Canot</title>
+<meta name="description" content="La documentation de Canot : les commandes, la sortie en local ou on-prem, le scan en lecture seule, et l'accès pour un agent (MCP).">
+<link rel="canonical" href="https://canot.io/docs.html">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f4f6f7">
+<link rel="stylesheet" href="style.css?v=67369cf08e">
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="Canot, accueil"><img src="assets/canot-symbole.svg" alt="" width="52" height="27"><span>canot</span></a>
+    <nav class="main" aria-label="Navigation principale">
+      <a class="hide-s" href="pourquoi.html">Pourquoi</a>
+      <a class="hide-s" href="methode.html">Méthode</a>
+      <a class="hide-s" href="ecarts.html">Écarts</a>
+      <a class="hide-s" href="docs.html">Documentation</a>
+      <a class="hide-s" href="offres.html">Offres</a>
+      <a href="rapport.html">Exemple de rapport</a>
+      <a class="btn btn-dark" href="https://github.com/chiptuned/canot">Tester gratuitement</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<section class="s docs"><div class="wrap"><h1 class="h2like">Documentation</h1><p class="lead-p">Une commande, ses possibilités, et un accès pour votre agent. Le détail se demande à <a href="#avec-un-agent-mcp">l'agent MCP</a> ou se lit ici.</p><p class="toc"><a href="#commandes">Les commandes</a><a href="#sortie-en-local-ou-on-prem">Sortie en local</a><a href="#avec-un-agent-mcp">Avec un agent (MCP)</a><a href="#scan">Le scan</a><a href="#sur-site">Arrivée sur site</a><a href="#cibles">Hébergeurs</a></p><section id="commandes"><h2 id="canot-les-commandes">Canot : les commandes</h2>
+<p>Canot répète votre départ d'une plateforme de données, dans vos propres comptes. Une commande suffit :</p>
+<pre><code>uvx canot drill SOURCE DESTINATION</code></pre>
+<p><code>SOURCE</code> est la plateforme à quitter, <code>DESTINATION</code> l'endroit où la copie est écrite. Canot copie les tables en Apache Iceberg, compare tout, rejoue vos requêtes les plus coûteuses et écrit un dossier de preuve signé. Il ne vous envoie rien : pas de télémétrie.</p>
+<pre><code># BigQuery vers un dossier local
+uvx canot drill &quot;bigquery://MON-PROJET/mon_dataset?location=EU&quot; ./lac
+
+# Snowflake vers un stockage S3 de votre choix
+uvx canot drill &quot;snowflake://COMPTE/MA_BASE?user=CANOT_USER&quot; &quot;s3://coffre/canot?endpoint=https://s3.interne:9000&amp;region=us-east-1&quot;
+
+# Un fichier DuckDB vers l&#x27;hébergeur de votre choix
+uvx canot drill maison.duckdb scaleway:fr-par --bucket mon-coffre</code></pre>
+<p>Si un connecteur manque, Canot affiche la commande exacte à lancer (par exemple <code>uvx --from "canot[bigquery]" canot drill …</code>).</p>
+<h3 id="les-commandes">Les commandes</h3>
+<table><tr><th>Commande</th><th>Ce qu'elle fait</th></tr><tr><td><code>canot scan SOURCE</code></td><td>Radiographie en lecture seule : inventaire, volumes, consommation, ce qui ne part pas, rejouabilité des requêtes. Écrit <code>scan.html</code> (à transmettre), <code>scan.json</code> et des CSV. Voir <a href="#scan">scan</a>.</td></tr><tr><td><code>canot drill SOURCE DESTINATION</code></td><td>Exercice de sortie complet : copie, comparaison table par table, rejeu des requêtes, dossier de preuve signé.</td></tr><tr><td><code>canot demo</code></td><td>Démonstration de 30 secondes, sans compte ni données : un distributeur fictif et un exercice complet.</td></tr><tr><td><code>canot verify-evidence DOSSIER</code></td><td>Vérifie la chaîne et la signature d'un dossier de preuve. <code>--expect-pub</code> refuse un dossier signé par une autre clé.</td></tr><tr><td><code>canot teardown DESTINATION</code></td><td>Supprime les données copiées.</td></tr><tr><td><code>canot snowflake-setup</code></td><td>Écrit le script SQL d'accès en lecture seule à faire relire et lancer par un administrateur. <code>--generate-key</code> crée la paire de clés.</td></tr><tr><td><code>canot bigquery-setup</code></td><td>Écrit le script <code>gcloud</code> du rôle personnalisé en lecture seule.</td></tr><tr><td><code>canot init-tolerances</code></td><td>Écrit un fichier de tolérances de comparaison à relire avec vous.</td></tr><tr><td><code>canot demo-data CHEMIN</code></td><td>Crée une base DuckDB de démonstration.</td></tr><tr><td><code>canot mcp</code></td><td>Serveur MCP : la documentation et l'explication de vos rapports, pour un agent. Voir <a href="#avec-un-agent-mcp">Avec un agent</a>.</td></tr></table>
+<p>Toutes les commandes acceptent <code>--debug</code> (trace complète en cas d'erreur).</p>
+<h3 id="canot-drill"><code>canot drill</code></h3>
+<p>Options utiles :</p>
+<table><tr><th>Option</th><th>Rôle</th></tr><tr><td><code>--bucket NOM</code></td><td>Obligatoire avec un raccourci d'hébergeur (<code>scaleway:fr-par</code>, <code>ovh:gra</code>, <code>outscale:eu-west-2</code>, <code>ionos:eu-central-1</code>, <code>stackit:eu01</code>, <code>aws:eu-west-3</code>).</td></tr><tr><td><code>--catalog URI</code></td><td>Catalogue Iceberg : <code>sqlite:///…</code>, ou <code>env:NOM_DE_VARIABLE</code> pour PostgreSQL (<code>canot[postgres]</code>). Par défaut : un fichier SQLite dans le dossier de sortie.</td></tr><tr><td><code>--out DOSSIER</code></td><td>Où écrire le rapport et le dossier de preuve (défaut <code>canot-out</code>).</td></tr><tr><td><code>--tables SCHEMA.TABLE …</code></td><td>Limiter à certaines tables.</td></tr><tr><td><code>--queries FICHIER.sql</code></td><td>Rejouer vos propres requêtes. Par défaut : les plus coûteuses de l'historique de la plateforme.</td></tr><tr><td><code>--top N</code></td><td>Nombre de requêtes de l'historique à rejouer (défaut 20).</td></tr><tr><td><code>--tolerances FICHIER.toml</code></td><td>Tolérances de comparaison (arrondis, horodatages).</td></tr><tr><td><code>--credit-price USD</code></td><td>Prix du crédit Snowflake de votre contrat. Sans lui : une fourchette du prix catalogue, datée.</td></tr><tr><td><code>--replay-max-gb N</code></td><td>Taille maximale d'une table chargée en mémoire pour rejouer les requêtes (défaut 2).</td></tr><tr><td><code>--key CHEMIN</code></td><td>Clé de signature (défaut <code>~/.canot/evidence.key</code>, ou la variable <code>CANOT_EVIDENCE_KEY_PATH</code>).</td></tr></table>
+<p>Résultat dans <code>--out</code> : <code>report.html</code> (lisible par un comité), <code>report.json</code>, le dossier de preuve (<code>evidence.jsonl</code>, <code>evidence.sig</code>, <code>evidence.pub</code>) et <code>relire.sql</code>. La signature atteste que le dossier n'a pas été modifié depuis sa signature. Elle n'atteste ni l'auteur ni la date.</p>
+<h3 id="canot-scan"><code>canot scan</code></h3>
+<pre><code>uvx canot scan &quot;bigquery://MON-PROJET&quot; --level 2</code></pre>
+<p><code>--level 1|2|3</code> (défaut 3) règle jusqu'où lire ; <code>--credit-price</code> remplace le prix catalogue ; <code>--include-sql-text</code> écrit aussi le SQL brut dans un fichier à part (jamais par défaut). Détail des lectures, des droits et des garanties : <a href="#scan">scan</a>.</p>
+<h3 id="les-sources">Les sources</h3>
+<table><tr><th>Source</th><th>Forme</th><th>Authentification</th></tr><tr><td>BigQuery</td><td><code>bigquery://PROJET/dataset1,dataset2?location=EU</code> ; sans dataset : tous ceux du projet ; autre projet : <code>bigquery://FACTURATION/projet-donnees.dataset</code></td><td>identifiants applicatifs Google (<code>gcloud auth application-default login</code>)</td></tr><tr><td>Snowflake</td><td><code>snowflake://COMPTE/BASE?user=…&amp;warehouse=…&amp;role=…&amp;schemas=A,B</code></td><td>paire de clés : variable <code>SNOWFLAKE_PRIVATE_KEY_PATH</code> (recommandé) ou <code>SNOWFLAKE_PASSWORD</code></td></tr><tr><td>Databricks</td><td><code>databricks://…</code></td><td>variables <code>DATABRICKS_*</code> (connecteur non encore testé sur un vrai compte)</td></tr><tr><td>DuckDB</td><td><code>maison.duckdb</code></td><td>aucune</td></tr></table>
+<h3 id="sortie-en-local-ou-on-prem">Sortie en local ou on-prem</h3>
+<p>Pas de cloud à l'arrivée : un dossier suffit.</p>
+<pre><code>uvx canot drill &quot;bigquery://MON-PROJET/mon_dataset?location=EU&quot; ./lac</code></pre>
+<p>Canot écrit la copie au format Iceberg dans <code>./lac</code> et le dossier de preuve dans <code>canot-out/</code>. La copie ne dépend pas de l'outil : DuckDB, Spark ou Trino la lisent. Le fichier <code>relire.sql</code> donne les commandes DuckDB pour recompter chaque table :</p>
+<pre><code>duckdb &lt; canot-out/relire.sql</code></pre>
+<table><tr><th>Arrivée</th><th>Commande</th></tr><tr><td>Dossier local ou monté (disque, NAS, partage)</td><td><code>canot drill SOURCE /chemin/vers/le/dossier</code></td></tr><tr><td>Stockage compatible S3 chez vous (MinIO, Ceph, NetApp…)</td><td><code>canot drill SOURCE "s3://coffre/canot?endpoint=https://s3.interne:9000&amp;region=us-east-1"</code></td></tr><tr><td>Proxy d'entreprise, autorité de certification interne</td><td>ajoutez <code>&amp;proxy=http://proxy.interne:3128</code> et <code>&amp;ca=/chemin/ca.pem</code> à l'URL S3</td></tr><tr><td>Catalogue PostgreSQL</td><td><code>--catalog env:CANOT_CATALOG_URI</code> (mot de passe dans la variable, jamais sur la ligne de commande)</td></tr></table>
+<p>Les clés du stockage passent par <code>CANOT_S3_ACCESS_KEY</code> et <code>CANOT_S3_SECRET_KEY</code> (ou la configuration <code>scw</code>). État de chaque cas (testé ou seulement branché) : <a href="#sur-site">sur-site</a>.</p>
+<h3 id="les-hebergeurs">Les hébergeurs</h3>
+<p><code>scaleway:fr-par</code>, <code>ovh:gra</code>, <code>outscale:eu-west-2</code>, <code>ionos:eu-central-1</code>, <code>stackit:eu01</code>, <code>aws:eu-west-3</code>, avec <code>--bucket</code>. Vérifiez chaque point de terminaison dans la console de l'hébergeur. La qualification SecNumCloud, quand elle compte pour vous, dépend de l'offre précise : voir <a href="#cibles">cibles</a>.</p>
+<h3 id="avec-un-agent-mcp">Avec un agent (MCP)</h3>
+<p>Beaucoup d'équipes travaillent avec un agent. <code>canot mcp</code> lui donne la documentation de Canot et lui explique vos rapports, sans rien envoyer à personne : le serveur tourne sur votre machine.</p>
+<p>Installation dans Claude Code :</p>
+<pre><code>claude mcp add canot -- uvx --from &quot;canot[mcp]&quot; canot mcp</code></pre>
+<p>Ou dans la configuration MCP de votre client (Claude Desktop, Cursor, VS Code…) :</p>
+<pre><code>{
+  &quot;mcpServers&quot;: {
+    &quot;canot&quot;: { &quot;command&quot;: &quot;uvx&quot;, &quot;args&quot;: [&quot;--from&quot;, &quot;canot[mcp]&quot;, &quot;canot&quot;, &quot;mcp&quot;] }
+  }
+}</code></pre>
+<p>Outils exposés :</p>
+<table><tr><th>Outil</th><th>Ce qu'il fait</th></tr><tr><td><code>commandes</code></td><td>Liste les commandes et leurs options.</td></tr><tr><td><code>chercher_doc(requete)</code></td><td>Cherche dans la documentation et rend les passages.</td></tr><tr><td><code>lire_doc(sujet)</code></td><td>Rend une page entière : <code>commandes</code>, <code>scan</code>, <code>sur-site</code>, <code>cibles</code>, <code>ecarts</code>.</td></tr><tr><td><code>expliquer_scan(chemin)</code></td><td>Lit un <code>scan.json</code> et le résume : constats, lectures non faites, chiffres estimés, ce qui est à examiner.</td></tr><tr><td><code>expliquer_rapport(chemin)</code></td><td>Lit un <code>report.json</code> d'exercice : écarts, tables et requêtes en cause, causes connues du catalogue.</td></tr></table>
+<p>Les outils lisent des fichiers que vous désignez. Ils n'ouvrent aucune connexion à vos plateformes.</p>
+<p>Pour les agents qui lisent le web : <a href="https://canot.io/llms.txt">canot.io/llms.txt</a> et <a href="https://canot.io/llms-full.txt">canot.io/llms-full.txt</a>.</p>
+<h3 id="pour-aller-plus-loin">Pour aller plus loin</h3>
+<ul><li><a href="#scan">scan</a> : ce qui est lu, avec quels droits, et les garanties.</li><li><a href="#sur-site">sur-site</a> : arrivée locale ou sur votre stockage.</li><li><a href="#cibles">cibles</a> : hébergeurs et pays.</li><li><a href="ecarts.html">ecarts</a> : ce que deux moteurs rendent différemment, mesuré.</li><li>Une aide pour l'exécuter sur votre périmètre : <a href="https://canot.io/#contact">canot.io</a>.</li></ul></section>
+<section id="scan"><h2 id="canot-scan-ce-qui-est-lu-avec-quels-droits"><code>canot scan</code> : ce qui est lu, avec quels droits</h2>
+<p>Le scan produit <code>scan.html</code> (à transmettre), <code>scan.json</code> et des CSV. Il décrit votre plateforme ; il ne recommande ni de partir ni de rester.</p>
+<h3 id="garanties">Garanties</h3>
+<ul><li><b>Lecture seule.</b> Chaque requête passe par une garde avant d'être envoyée : seuls <code>SELECT</code>, <code>SHOW</code>, <code>DESCRIBE</code> et <code>ALTER SESSION SET</code> sont admis. Tout le reste est refusé sans rien envoyer. Les fonctions <code>SYSTEM$</code> sont refusées aussi.</li><li><b>Jamais le contenu des tables.</b> Le scan lit des métadonnées et l'historique d'exécution. Il ne demande aucun droit de lecture sur les données.</li><li><b>Le SQL brut n'est pas écrit.</b> Les littéraux sont masqués (<code>WHERE email = ?</code>), les requêtes qui contiennent un mot de passe ou un secret sont comptées puis jetées. Le texte brut n'est écrit qu'avec <code>--include-sql-text</code>, dans <code>scan-sql-brut.json</code> (droits 0600), et le rapport le signale.</li><li><b>Identités pseudonymisées.</b> Les utilisateurs et rôles de requêtes sont remplacés par un pseudonyme (HMAC, sel tiré à chaque scan et jamais écrit). Les e-mails, identifiants de connexion et adresses IP ne sont jamais lus. Les chemins de stockage sont réduits au nom du compartiment.</li><li><b>Aucune lecture silencieusement perdue.</b> Chaque lecture est consignée « lu » ou « non lu » avec sa raison. Une valeur non lue reste vide, jamais 0.</li></ul>
+<h3 id="niveaux-level-3-par-defaut">Niveaux (<code>--level</code>, 3 par défaut)</h3>
+<table><tr><th>Niveau</th><th>Contenu</th><th>Droits en plus</th></tr><tr><td>1</td><td>Inventaire, types de colonnes, volumes, historique facturé, consommation, objets (vues, routines, tâches, stages, partages…), dépendances</td><td>métadonnées et consommation</td></tr><tr><td>2</td><td>+ formes de requêtes normalisées et leur rejouabilité, lectures et écritures par table, politiques</td><td>accès à l'historique des requêtes</td></tr><tr><td>3</td><td>+ rôles propriétaires, outils clients, types d'utilisateurs, capacités réservées</td><td>droits et sessions</td></tr></table>
+<p>Ce que vos droits ne permettent pas est consigné « non lu » dans le rapport (constat F12) : le scan lit ce qui lui est ouvert et dit ce qu'il n'a pas vu.</p>
+<h3 id="snowflake">Snowflake</h3>
+<p><code>canot snowflake-setup --generate-key --base MA_BASE</code> écrit le script à relire et à lancer par un administrateur. Il crée un rôle, un entrepôt XS qui se suspend après 60 s, un plafond de crédits, et accorde les rôles de base de Snowflake :</p>
+<table><tr><th>Rôle de base</th><th>Niveau</th><th>Sert à</th></tr><tr><td><code>SNOWFLAKE.OBJECT_VIEWER</code></td><td>1</td><td>tables, colonnes, vues, routines, tâches, stages, dépendances</td></tr><tr><td><code>SNOWFLAKE.USAGE_VIEWER</code></td><td>1</td><td>volumes, crédits, historique, chargements</td></tr><tr><td><code>SNOWFLAKE.GOVERNANCE_VIEWER</code></td><td>2</td><td>historique des requêtes, lectures par table, politiques, étiquettes</td></tr><tr><td><code>SNOWFLAKE.SECURITY_VIEWER</code></td><td>3</td><td>rôles, utilisateurs (nom et type seulement), sessions</td></tr></table>
+<p>Jamais demandés : <code>IMPORTED PRIVILEGES</code>, <code>MANAGE GRANTS</code>, <code>IMPORT SHARE</code>, <code>USAGE</code> sur les fonctions, <code>READ</code> sur les stages.</p>
+<p>Limites connues : <code>ACCOUNT_USAGE</code> a une latence de 45 minutes à 3 heures (jusqu'à 2 jours pour l'historique de chargement). Le rapport affiche la latence de chaque lecture. <code>ACCESS_HISTORY</code> exige l'édition Enterprise ; sans elle, les lectures par table se déduisent de <code>TABLE_QUERY_PRUNING_HISTORY</code> avec une confiance moyenne.</p>
+<h3 id="bigquery">BigQuery</h3>
+<p><code>canot bigquery-setup --project MON_PROJET --member user:…</code> écrit le script <code>gcloud</code> d'un rôle personnalisé <code>canotScanner</code>. Permissions obligatoires : <code>bigquery.jobs.create</code>, <code>bigquery.jobs.listAll</code>, <code>bigquery.datasets.get</code>, <code>bigquery.tables.list</code>, <code>bigquery.tables.get</code>, <code>bigquery.tables.getIamPolicy</code>, <code>bigquery.routines.list</code>, <code>bigquery.routines.get</code>, <code>bigquery.models.list</code>, <code>bigquery.models.getMetadata</code>, <code>bigquery.reservations.list</code>, <code>bigquery.reservationAssignments.list</code>, <code>bigquery.capacityCommitments.list</code>, <code>bigquery.bireservations.get</code>, <code>bigquery.config.get</code>. Optionnelles : <code>bigquery.rowAccessPolicies.list</code>, <code>bigquery.transfers.get</code>, <code>bigquery.connections.list</code>, <code>bigquery.dataPolicies.list</code>.</p>
+<p>Jamais : <code>bigquery.tables.getData</code>, ni les rôles <code>bigquery.user</code> ou <code>jobUser</code>.</p>
+<p>Points de méthode :</p>
+<ul><li>Une requête <code>INFORMATION_SCHEMA</code> par région (les régions ne sont pas hiérarchiques : <code>EU</code> ne couvre pas <code>europe-west1</code>). BigQuery facture au moins 10 Mo par requête de ce type, sans cache : le scan plafonne chaque requête et fait un essai à blanc avant.</li><li>Les volumes viennent de <code>TABLE_STORAGE</code> quand elle est lisible, sinon de l'API <code>tables.get</code>. Canot ne modifie jamais le paramétrage du projet pour l'activer.</li><li>Sous une politique de lignes, <code>total_bytes_billed</code> est vide : le rapport le dit au lieu d'afficher 0.</li><li>Le palier gratuit est partagé par le compte de facturation : il n'est pas imputable par projet.</li></ul>
+<h3 id="lire-les-chiffres">Lire les chiffres</h3>
+<p>Chaque chiffre porte sa nature : <b>mesuré</b> (lu tel quel), <b>calculé</b> (déduit de mesures, formule donnée), <b>estimé</b> (fourchette et hypothèses), <b>non lu</b> ou <b>non estimé</b> (avec la raison). Les prix sont des repères datés et sourcés ; passez <code>--credit-price</code> avec le prix de votre contrat pour les remplacer. Le coût de lecture et la durée d'une copie sont des estimations de planification : <code>canot drill</code> les remplace par des mesures.</p>
+<p>La rejouabilité mesure combien de formes de requêtes sont traduites vers DuckDB <b>et acceptées</b> par lui, sur un squelette vide typé à partir de vos colonnes. <b>Accepté ne veut pas dire résultat identique</b> : seul <code>canot drill</code> compare les résultats. Les requêtes sur des tables hors du périmètre lu, les requêtes dont la plateforme ne donne pas le texte et les requêtes de métadonnées sont comptées à part, hors taux.</p>
+<h3 id="ce-que-le-scan-ne-voit-pas">Ce que le scan ne voit pas</h3>
+<p>Les lectures par l'API Storage Read et les requêtes lancées depuis d'autres projets (BigQuery), les consommateurs de partages et <code>RESULT_SCAN</code> (Snowflake), les traitements plus rares que la fenêtre lue (365 jours sur Snowflake, 90 à 180 jours sur BigQuery). La fenêtre réelle est affichée à côté de chaque constat.</p></section>
+<section id="sur-site"><h2 id="arrivee-sur-site">Arrivée sur site</h2>
+<p>Canot écrit la copie au format Apache Iceberg. L'arrivée peut être un dossier de votre réseau, ou un stockage compatible S3 que vous hébergez.</p>
+<table><tr><th>Destination</th><th>Commande</th><th>État</th></tr><tr><td>Dossier local ou monté (NAS, disque, partage)</td><td><code>--to /chemin/vers/le/dossier</code></td><td>testé</td></tr><tr><td>Stockage compatible S3 hébergé chez vous</td><td><code>--to "s3://coffre/canot?endpoint=https://s3.interne:9000&amp;region=us-east-1"</code></td><td>testé sur un serveur S3 local (moto)</td></tr><tr><td>Catalogue personnalisé (SQLite ailleurs)</td><td><code>--catalog sqlite:///chemin/catalogue.db</code></td><td>testé</td></tr><tr><td>Catalogue PostgreSQL</td><td><code>--catalog env:CANOT_CATALOG_URI</code> avec <code>pip install 'canot[postgres]'</code></td><td>branché, pas encore testé contre un vrai PostgreSQL</td></tr><tr><td>Proxy d'entreprise</td><td><code>...?proxy=http://proxy.interne:3128</code> dans l'URL S3</td><td>branché, pas encore testé</td></tr><tr><td>Autorité de certification interne</td><td><code>...?ca=/chemin/ca.pem</code> dans l'URL S3 (transmise par <code>AWS_CA_BUNDLE</code>)</td><td>branché, pas encore testé</td></tr></table>
+<p>Les clés du stockage passent par <code>CANOT_S3_ACCESS_KEY</code> et <code>CANOT_S3_SECRET_KEY</code> (ou la configuration <code>scw</code>). Un mot de passe de catalogue se met dans une variable d'environnement, jamais sur la ligne de commande : <code>--catalog env:NOM_DE_LA_VARIABLE</code>.</p>
+<h3 id="relire-la-copie-sans-canot">Relire la copie sans Canot</h3>
+<p>Chaque exercice écrit un fichier <code>relire.sql</code> à côté du rapport. Il contient les commandes DuckDB qui comptent les lignes de chaque table copiée :</p>
+<pre><code>duckdb &lt; canot-out/relire.sql</code></pre>
+<p>La copie ne dépend donc pas de l'outil : n'importe quel moteur qui lit Iceberg (DuckDB, Spark, Trino) peut la lire. Pour un stockage S3, créez d'abord un secret DuckDB avec vos clés (voir le fichier).</p>
+<h3 id="ce-qui-n-est-pas-pris-en-charge">Ce qui n'est pas pris en charge</h3>
+<p>Écrire directement dans PostgreSQL, ClickHouse ou un autre moteur de base : la copie reste en Iceberg, que ces moteurs savent lire. Pas d'installation hors ligne documentée pour l'instant.</p>
+<h3 id="nettoyer">Nettoyer</h3>
+<pre><code>canot teardown --to &quot;s3://coffre/canot?endpoint=https://s3.interne:9000&amp;region=us-east-1&quot;</code></pre></section>
+<section id="cibles"><h2 id="cibles-hebergeurs-souverains-et-pays">Cibles : hébergeurs souverains et pays</h2>
+<p>Canot écrit sur tout stockage compatible S3. Raccourcis intégrés (<code>--to &lt;hébergeur&gt;:&lt;région&gt; --bucket &lt;nom&gt;</code>). <b>Vérifiez chaque point de terminaison dans la console de l'hébergeur avant usage : ils sont à confirmer.</b></p>
+<table><tr><th>Raccourci</th><th>Hébergeur</th><th>Pays</th><th>Remarque</th></tr><tr><td><code>scaleway:fr-par</code> (aussi <code>nl-ams</code>, <code>pl-waw</code>)</td><td>Scaleway</td><td>FR, NL, PL</td><td>pas qualifié SecNumCloud (à vérifier)</td></tr><tr><td><code>ovh:gra</code></td><td>OVHcloud</td><td>FR</td><td>offre SNC qualifiée SecNumCloud (à vérifier sur la liste ANSSI)</td></tr><tr><td><code>outscale:eu-west-2</code></td><td>Outscale</td><td>FR</td><td>qualification à renouveler fin 2026 (à vérifier)</td></tr><tr><td><code>ionos:eu-central-1</code></td><td>IONOS</td><td>DE</td><td></td></tr><tr><td><code>stackit:eu01</code></td><td>STACKIT (groupe Schwarz)</td><td>DE</td><td></td></tr><tr><td><code>aws:eu-west-3</code></td><td>AWS</td><td>FR</td><td>pas un cloud souverain ; AWS European Sovereign Cloud existe aussi</td></tr></table>
+<h3 id="le-meme-principe-dans-d-autres-pays-de-l-ue">Le même principe dans d'autres pays de l'UE</h3>
+<p>Le Data Act s'applique dans toute l'UE : mêmes règles de changement de fournisseur (art. 23 à 31), mêmes frais à zéro à partir du 12 janvier 2027. Ce qui change d'un pays : le superviseur financier qui applique DORA, l'autorité qui contrôle le Data Act, et les exigences nationales de souveraineté.</p>
+<table><tr><th>Pays</th><th>Pourquoi c'est intéressant</th><th>Hébergeurs locaux</th></tr><tr><td>Allemagne</td><td>plus gros marché ; BaFin applique DORA ; forte culture souveraineté</td><td>STACKIT, IONOS, Open Telekom Cloud</td></tr><tr><td>Pays-Bas</td><td>place financière, beaucoup de scale-ups sur Snowflake</td><td>Leaseweb</td></tr><tr><td>Italie</td><td>banques et assurances nombreuses</td><td>Aruba, Seeweb</td></tr><tr><td>Espagne</td><td>banques ; Data Act via la CNMC</td><td>IONOS, Arsys</td></tr><tr><td>Pologne, pays nordiques</td><td>fort usage du cloud, hébergeurs locaux</td><td>Scaleway Varsovie, UpCloud</td></tr></table>
+<p>À confirmer avant de vendre : l'autorité compétente désignée dans chaque pays et les listes de qualification nationales (équivalents de SecNumCloud : C5 en Allemagne, ACN en Italie, ENS en Espagne).</p></section></div></section>
+<section class="s contact-strip"><div class="wrap"><p>Une question, ou un test à proposer ? <a class="btn btn-accent" href="/#contact">Nous écrire</a></p></div></section>
+</main>
+
+<footer class="bot">
+  <div class="wrap">
+    <span>Canot · un outil libre (Apache-2.0) et des missions de <a href="https://q4o.com">Q4O</a>. Ce n'est pas une certification.</span>
+    <span class="foot-links"><a href="docs.html">Documentation</a> · <a href="faq.html">Questions fréquentes</a> · <a href="mentions-legales.html">Mentions légales et confidentialité</a> · <a href="https://github.com/chiptuned/canot">Code source</a></span>
+  </div>
+</footer>
+<script src="app.js?v=acbada3d51" defer></script>
+</body>
+</html>

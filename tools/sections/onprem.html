@@ -1,0 +1,13 @@
+<section class="s onprem" id="sortie-locale">
+  <div class="wrap">
+    <h2>Sortie en local, sur votre infrastructure.</h2>
+    <p class="lead-p">Pas besoin d'un cloud à l'arrivée : un dossier suffit. Canot écrit la copie au format Apache Iceberg sur votre disque, votre NAS ou un stockage S3 que vous hébergez, et le dossier de preuve à côté.</p>
+    <pre class="term"><code>uvx canot drill "snowflake://COMPTE/BASE?user=CANOT_USER" /donnees/lac</code></pre>
+    <ul class="cmds">
+      <li><code>/chemin/dossier</code><span>Disque local, partage réseau ou NAS monté.</span></li>
+      <li><code>s3://coffre/canot?endpoint=https://s3.interne:9000</code><span>Votre stockage compatible S3 (MinIO, Ceph, NetApp…), avec proxy et autorité de certification internes si besoin.</span></li>
+      <li><code>--catalog env:CANOT_CATALOG_URI</code><span>Un catalogue PostgreSQL à vous ; le mot de passe reste dans une variable d'environnement.</span></li>
+    </ul>
+    <p class="sources">La copie ne dépend pas de Canot : DuckDB, Spark ou Trino la lisent, et le fichier <code>relire.sql</code> recompte chaque table sans l'outil. Le détail est dans la <a href="docs.html#sortie-en-local-ou-on-prem">documentation</a>.</p>
+  </div>
+</section>

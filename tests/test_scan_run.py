@@ -48,3 +48,14 @@ def test_texte_brut_seulement_sur_demande(monkeypatch, tmp_path):
     brut = p.read_text(encoding="utf-8")
     assert CANARI in brut and "hunter2" not in brut  # le texte demandé est là, jamais celui d'une requête à secret
     assert "avec_sql_brut" in (out / "scan.json").read_text(encoding="utf-8")
+
+
+def test_fichier_de_partage_sans_nom_ni_sql(monkeypatch, tmp_path):
+    src, _ = _src(monkeypatch, "bigquery")
+    res = run.scan_full(src, tmp_path, level=3)
+    p = json.loads((tmp_path / "scan-partage.json").read_text(encoding="utf-8"))
+    assert p["schema"] == "canot.partage/1" and p["tables"] == len(res["tables"])
+    brut = (tmp_path / "scan-partage.json").read_text(encoding="utf-8")
+    assert CANARI not in brut
+    for t in res["tables"]:
+        assert t["nom"] not in brut or len(t["nom"]) < 4  # aucun nom de table (les noms très courts peuvent coïncider avec un mot)

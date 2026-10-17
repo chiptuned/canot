@@ -13,7 +13,7 @@
 <meta property="og:url" content="https://canot.io/">
 <meta property="og:image" content="https://canot.io/assets/canot-symbole.png">
 <meta name="theme-color" content="#f4f6f7">
-<link rel="stylesheet" href="style.css?v=239329a8f2">
+<link rel="stylesheet" href="style.css?v=67369cf08e">
 </head>
 <body>
 <a class="skip" href="#contact">Aller au contact</a>
@@ -44,10 +44,10 @@
     </div>
     <button class="cmd" id="copy" type="button" aria-label="Copier la commande">
       <span class="p" aria-hidden="true">$</span>
-      <code id="cmd">uvx canot demo</code>
+      <code id="cmd">uvx canot drill "bigquery://MON-PROJET/dataset" ./lac</code>
       <span class="c" id="copy-label">copier</span>
     </button>
-    <p class="cmd-note">Trente secondes, sans compte ni données : un distributeur fictif, un exercice de sortie complet, et le dossier de preuve s'ouvre dans votre navigateur.</p>
+    <p class="cmd-note">Votre plateforme en entrée, un dossier en sortie (ou le stockage de votre choix). Canot copie, compare tout, rejoue vos requêtes les plus coûteuses et écrit un dossier de preuve signé. Pas encore de données sous la main ? <code>uvx canot demo</code> : trente secondes, sans compte.</p>
     <div class="ctas">
       <a class="btn btn-accent" href="https://github.com/chiptuned/canot">Tester gratuitement</a>
       <a class="btn btn-line" href="rapport.html">Voir un exemple de rapport</a>
@@ -149,7 +149,7 @@
       <p>Mesurez votre coût de sortie avant de négocier. Indiquez votre plateforme et votre date de renouvellement, nous revenons vers vous avec un créneau.</p>
     </div>
     <div class="form-box">
-      <form id="form" novalidate>
+      <form id="form" data-lead="contact" novalidate>
         <div class="fields">
           <label>Nom<input name="name" autocomplete="name" required><span class="err" data-for="name"></span></label>
           <label>Société<input name="company" autocomplete="organization" required><span class="err" data-for="company"></span></label>
@@ -164,7 +164,7 @@
         <div class="hp" aria-hidden="true"><label>Ne pas remplir<input name="website" tabindex="-1" autocomplete="off"></label></div>
         <div class="fail" id="fail" role="alert" hidden></div>
         <button class="send" id="send" type="submit">Envoyer</button>
-        <p class="legal">Ces informations servent uniquement à vous répondre. Aucun pisteur sur cette page. Responsable du traitement : q4o. Détails et droits : <a href="mentions-legales.html#confidentialite">confidentialité</a>.</p>
+        <p class="legal">Ces informations servent uniquement à vous répondre. Aucun pisteur sur cette page. Responsable du traitement : Q4O. Détails et droits : <a href="mentions-legales.html#confidentialite">confidentialité</a>.</p>
       </form>
       <div class="thanks" id="thanks" hidden>
         <img src="assets/canot-symbole.svg" alt="" width="160" height="82">
@@ -179,10 +179,10 @@
 
 <footer class="bot">
   <div class="wrap">
-    <span>Canot · un outil libre (Apache-2.0) et des missions de <a href="https://q4o.com">q4o</a>. Ce n'est pas une certification.</span>
-    <span class="foot-links"><a href="faq.html">Questions fréquentes</a> · <a href="mentions-legales.html">Mentions légales et confidentialité</a> · <a href="https://github.com/chiptuned/canot">Code source</a></span>
+    <span>Canot · un outil libre (Apache-2.0) et des missions de <a href="https://q4o.com">Q4O</a>. Ce n'est pas une certification.</span>
+    <span class="foot-links"><a href="docs.html">Documentation</a> · <a href="faq.html">Questions fréquentes</a> · <a href="mentions-legales.html">Mentions légales et confidentialité</a> · <a href="https://github.com/chiptuned/canot">Code source</a></span>
   </div>
 </footer>
-<script src="app.js?v=9dcfcba1f3" defer></script>
+<script src="app.js?v=acbada3d51" defer></script>
 </body>
 </html>

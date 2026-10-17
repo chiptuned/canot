@@ -6,7 +6,7 @@
         <div class="q4o-top"><img class="q4o-logo" src="assets/q4o-logo.svg" alt="q4o" width="120" height="39"><span class="mono">Paris, France · modern data studio</span></div>
         <h2><em>Canot est libre.</em><br>Les prestations sont assurées <span class="mg">par q4o.</span></h2>
         <p>q4o est un studio data parisien. Diagnostic, test de sortie, abonnement : le contrat, la facturation et la responsabilité sont ceux de q4o.</p>
-        <div class="q4o-cta"><a class="pill pill-w" href="https://q4o.com">Découvrir q4o ↗</a><a class="pill pill-g" href="/#contact">Nous écrire</a></div>
+        <div class="q4o-cta"><a class="pill pill-w" href="https://q4o.com">Découvrir q4o ↗</a><a class="pill pill-g" href="#demarrer">Démarrer avec votre rapport</a></div>
       </div>
     </div>
   </div>
@@ -22,9 +22,49 @@
       <li><div><span class="by by-q4o"><img src="assets/q4o-logo.svg" alt="" width="40" height="13">Assuré par q4o</span><span class="t">Canot Vigie</span><span class="d">Refaire l'exercice chaque trimestre : dossier signé, comparaison avec le précédent, alerte quand un nouvel objet ne part pas tel quel.</span></div><span class="p">15 k€ HT par an</span></li>
     </ul>
     <div class="partner">
-      <div><b>Premiers clients : devenez partenaire de conception.</b><span>Vous testez Canot tôt et vous donnez vos retours à q4o ; en échange, le premier exercice se fait à des conditions avantageuses, à discuter, et q4o peut vous citer avec votre accord.</span></div>
-      <a class="btn btn-dark" href="#contact">Proposer un test</a>
+      <div><b>Devenez partenaire de conception.</b><span>Vous façonnez Canot avec nous : vos retours orientent l'outil. En échange, l'exercice se fait à des conditions avantageuses, à discuter, et q4o peut vous citer avec votre accord.</span></div>
+      <a class="btn btn-dark" href="#demarrer">Démarrer avec votre rapport</a>
     </div>
     <p class="sources">Contrat, facturation et responsabilité : <a href="https://q4o.com">q4o</a>, société par actions simplifiée au capital de 1 000 €, RCS Paris 105 371 835. q4o ne donne pas d'avis juridique : l'analyse de vos contrats reste celle de votre avocat. Prix indicatifs, hors périmètres particuliers.</p>
+  </div>
+</section>
+
+<section class="s contact" id="demarrer">
+  <div class="wrap">
+    <div class="lead">
+      <h2>Démarrez avec votre rapport.</h2>
+      <ol class="steps">
+        <li><b>Lancez le scan</b>, en lecture seule, dans vos comptes : <code>uvx canot scan SOURCE</code>. Il ne lit jamais le contenu de vos tables et ne nous envoie rien.</li>
+        <li><b>Décrivez votre projet</b> en quelques lignes : plateforme, échéance, ce qui vous préoccupe.</li>
+        <li><b>Joignez le fichier <code>scan-partage.json</code></b> (facultatif, mais il nous permet de préparer une offre adaptée). Il ne contient que des comptes et des fourchettes : ni nom de table, ni SQL, ni identité. Vous voyez exactement ce qui part avant d'envoyer.</li>
+      </ol>
+      <p>Nous revenons vers vous par e-mail ou par un appel, avec une offre taillée pour votre périmètre. Pas encore de rapport ? Écrivez-nous quand même, nous vous guidons.</p>
+    </div>
+    <div class="form-box">
+      <form id="form-offre" data-lead="offre" novalidate>
+        <div class="fields">
+          <label>Nom<input name="name" autocomplete="name" required><span class="err" data-for="name"></span></label>
+          <label>Société<input name="company" autocomplete="organization" required><span class="err" data-for="company"></span></label>
+          <label>E-mail professionnel<input name="email" type="email" autocomplete="email" required><span class="err" data-for="email"></span></label>
+          <label>Plateforme actuelle
+            <select name="platform" required>
+              <option value="">Choisir…</option><option>Snowflake</option><option>BigQuery</option><option>Databricks</option><option value="Autre">Autre</option>
+            </select><span class="err" data-for="platform"></span></label>
+          <label>Échéance ou renouvellement (facultatif)<input name="renewal" type="month"></label>
+        </div>
+        <label>Votre projet<textarea name="message" rows="5" maxlength="2000" required placeholder="Ce que vous voulez vérifier ou décider, le calendrier, les contraintes (DORA, souveraineté, contrat)."></textarea><span class="err" data-for="message"></span></label>
+        <label>Votre rapport Canot (facultatif) : <code>scan-partage.json</code><input name="partage" type="file" accept="application/json,.json"><span class="err" data-for="partage"></span></label>
+        <details class="preview" id="preview" hidden><summary>Ce qui sera envoyé avec votre message</summary><pre id="preview-body"></pre></details>
+        <div class="hp" aria-hidden="true"><label>Ne pas remplir<input name="website" tabindex="-1" autocomplete="off"></label></div>
+        <div class="fail" id="fail-offre" role="alert" hidden></div>
+        <button class="send" type="submit">Envoyer ma demande</button>
+        <p class="legal">Ces informations servent uniquement à vous répondre. Aucun pisteur sur cette page. Responsable du traitement : q4o. Détails et droits : <a href="mentions-legales.html#confidentialite">confidentialité</a>.</p>
+      </form>
+      <div class="thanks" id="thanks-offre" hidden>
+        <img src="assets/canot-symbole.svg" alt="" width="160" height="82">
+        <span class="h">Demande reçue.</span>
+        <p>Merci. Nous revenons vers vous avec une offre adaptée à votre périmètre.</p>
+      </div>
+    </div>
   </div>
 </section>

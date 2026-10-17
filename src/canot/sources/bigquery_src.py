@@ -10,6 +10,45 @@ from ..scanner.guard import check_readonly
 from .base import Source
 
 TIB = 1024**4
+
+SCAN_PERMISSIONS = (
+    "bigquery.jobs.create", "bigquery.jobs.listAll", "bigquery.datasets.get", "bigquery.tables.list", "bigquery.tables.get",
+    "bigquery.tables.getIamPolicy", "bigquery.routines.list", "bigquery.routines.get", "bigquery.models.list", "bigquery.models.getMetadata",
+    "bigquery.reservations.list", "bigquery.reservationAssignments.list", "bigquery.capacityCommitments.list", "bigquery.bireservations.get",
+    "bigquery.config.get",
+)
+# optionnelles : sans elles, ces lectures sont consignées « non lu » dans le rapport
+SCAN_OPTIONAL_PERMISSIONS = ("bigquery.rowAccessPolicies.list", "bigquery.transfers.get", "bigquery.connections.list", "bigquery.dataPolicies.list")
+
+SETUP_SH = """\
+# Canot : accès en lecture seule à BigQuery. À relire puis à lancer par un administrateur du projet.
+# Le rôle ne contient aucune permission de lecture du contenu des tables (ni tables.getData, ni les rôles bigquery.user / jobUser).
+PROJECT=<PROJET>
+MEMBER=<user:prenom.nom@exemple.fr  ou  serviceAccount:canot@<PROJET>.iam.gserviceaccount.com>
+
+gcloud iam roles create canotScanner --project="$PROJECT" \\
+  --title="Canot : lecture des métadonnées" \\
+  --description="Inventaire, volumes, historique des jobs, objets et politiques. Aucune lecture du contenu des tables." \\
+  --permissions="{perms}"
+
+gcloud projects add-iam-policy-binding "$PROJECT" --member="$MEMBER" --role="projects/$PROJECT/roles/canotScanner"
+
+# Optionnel : politiques de lignes, requêtes planifiées, connexions, politiques de données (sinon : « non lu » dans le rapport).
+# gcloud iam roles update canotScanner --project="$PROJECT" --add-permissions="{optional}"
+
+# Pour un exercice de sortie complet (canot drill), qui lit les données : sur les seuls datasets à copier,
+# roles/bigquery.dataViewer, et sur le projet roles/bigquery.readSessionUser. Pas pour le scan.
+"""
+
+
+def setup_script(project: str | None = None, member: str | None = None) -> str:
+    sh = SETUP_SH.format(perms=",".join(SCAN_PERMISSIONS), optional=",".join(SCAN_OPTIONAL_PERMISSIONS))
+    if project:
+        sh = sh.replace("<PROJET>", project)
+    if member:
+        sh = sh.replace("<user:prenom.nom@exemple.fr  ou  serviceAccount:canot@" + (project or "<PROJET>") + ".iam.gserviceaccount.com>", member)
+    return sh
+
 MIN_BILLED = 10 * 1024**2  # BigQuery facture au moins 10 Mo par vue INFORMATION_SCHEMA citée, sans cache
 DEFAULT_MAX_BYTES = 10 * 1024**3
 LABELS = {"tool": "canot"}

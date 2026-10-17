@@ -14,11 +14,12 @@
   <img alt="licence Apache-2.0" src="https://img.shields.io/badge/licence-Apache--2.0-1F3A5F?style=flat-square">
   <img alt="python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-1F3A5F?style=flat-square">
   <img alt="aucune télémétrie" src="https://img.shields.io/badge/télémétrie-aucune-2F7A4B?style=flat-square">
-  <img alt="Snowflake, BigQuery, Databricks" src="https://img.shields.io/badge/Snowflake%20·%20BigQuery%20·%20Databricks-1F3A5F?style=flat-square">
+  <img alt="Snowflake, BigQuery" src="https://img.shields.io/badge/Snowflake%20·%20BigQuery-1F3A5F?style=flat-square">
 </p>
 
 <p align="center">
   <a href="https://canot.io"><b>canot.io</b></a> ·
+  <a href="docs/commandes.md">Documentation</a> ·
   <a href="docs/ecarts.md">Écarts mesurés</a> ·
   <a href="README.en.md">English</a> ·
   <a href="#-essayer">Essayer</a> ·
@@ -29,11 +30,13 @@
 
 ## ▶ Essayer
 
-Trente secondes, sans compte ni données. Un distributeur fictif, un exercice de sortie complet, et le dossier de preuve s'ouvre dans votre navigateur.
+Une commande : la source, la destination. Un dossier local suffit.
 
 ```bash
-uvx canot demo
+uvx canot drill "bigquery://MON-PROJET/mon_dataset?location=EU" ./lac
 ```
+
+Canot copie les tables en Apache Iceberg, compare tout, rejoue vos requêtes les plus coûteuses et écrit un dossier de preuve signé. Pas de données sous la main : `uvx canot demo` (trente secondes, sans compte).
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/chiptuned/canot/main/docs/assets/demo.svg" alt="canot copie des tables BigQuery, compare tout, et signale une requête qui diverge" width="860">
@@ -53,9 +56,10 @@ Canot fait la répétition de départ. Vous restez chez votre fournisseur.
 ## ▶ À vous
 
 ```bash
-uvx canot demo
+uvx canot scan "bigquery://MON-PROJET"                      # radiographie en lecture seule
+uvx canot drill "bigquery://MON-PROJET/mon_dataset" ./lac   # exercice de sortie complet, en local
 ```
 
-Puis sur vos données, en lecture seule : `canot scan --from "bigquery://MON-PROJET/mon_dataset?location=EU"`. Le site, [canot.io](https://canot.io), explique le reste.
+Sortie sur votre infrastructure (dossier, NAS, stockage S3 maison), commandes, droits et accès pour un agent (MCP) : la [documentation](docs/commandes.md). Le site, [canot.io](https://canot.io), explique le reste.
 
 <sub>Apache-2.0 · Aucun pisteur, aucune télémétrie · [q4o](https://q4o.com)</sub>

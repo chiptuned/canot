@@ -14,7 +14,7 @@ def _p(*a):
 
 
 HINTS = {
-    "google.cloud": ("BigQuery", "bigquery"), "snowflake": ("Snowflake", "snowflake"), "databricks": ("Databricks", "databricks"),
+    "mcp": ("MCP", "mcp"), "google.cloud": ("BigQuery", "bigquery"), "snowflake": ("Snowflake", "snowflake"), "databricks": ("Databricks", "databricks"),
 }
 
 
@@ -61,15 +61,18 @@ def run(argv: list[str] | None = None) -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("scan", help="radiographie en lecture seule : inventaire, enfermement, coût de sortie estimé")
-    s.add_argument("--from", dest="src", required=True)
+    s.add_argument("source", nargs="?", help="la source : bigquery://PROJET/dataset, snowflake://COMPTE/BASE, un fichier .duckdb")
+    s.add_argument("--from", dest="src", help="équivalent de l'argument source")
     s.add_argument("--out", default="canot-out")
     s.add_argument("--credit-price", type=float, default=None, help="prix du crédit Snowflake de votre contrat, en USD. Sans lui : fourchette du prix catalogue (voir canot/prices.py)")
     s.add_argument("--level", type=int, choices=(1, 2, 3), default=3, help="jusqu'où lire : 1 inventaire et consommation ; 2 + requêtes (formes normalisées) et lectures par table ; 3 + droits et outils (pseudonymisés). Ce que vos droits ne permettent pas est consigné « non lu »")
     s.add_argument("--include-sql-text", action="store_true", help="écrit aussi le texte SQL brut dans scan-sql-brut.json (droits 0600). Par défaut il n'est jamais écrit : seules les formes normalisées le sont")
 
     d = sub.add_parser("drill", help="exercice de sortie complet : copie, comparaison, dossier de preuve")
-    d.add_argument("--from", dest="src", required=True)
-    d.add_argument("--to", dest="dst", required=True, help="dossier local, s3://..., ou scaleway:fr-par, ovh:gra, outscale:eu-west-2, ionos:de..., avec --bucket")
+    d.add_argument("source", nargs="?", help="la source : bigquery://PROJET/dataset, snowflake://COMPTE/BASE, un fichier .duckdb")
+    d.add_argument("dest", nargs="?", help="la destination : un dossier local (./lac), s3://..., ou scaleway:fr-par, ovh:gra, outscale:eu-west-2, ionos:de..., avec --bucket")
+    d.add_argument("--from", dest="src", help="équivalent de l'argument source")
+    d.add_argument("--to", dest="dst", help="équivalent de l'argument dest")
     d.add_argument("--bucket")
     d.add_argument("--catalog", help="catalogue Iceberg : URI SQLAlchemy (postgresql://… avec canot[postgres]) ou env:NOM_DE_VARIABLE. Défaut : un fichier SQLite dans le dossier de sortie")
     d.add_argument("--out", default="canot-out")
@@ -94,6 +97,10 @@ def run(argv: list[str] | None = None) -> int:
     ss = sub.add_parser("snowflake-setup", help="affiche le script SQL d'accès en lecture seule à relire")
     ss.add_argument("--generate-key", action="store_true", help="crée la paire de clés ici et met la clé publique dans le script")
     ss.add_argument("--base", default="<BASE>", help="base Snowflake à copier")
+    sub.add_parser("mcp", help="serveur MCP (stdio) : la documentation et l'explication de vos rapports, pour un agent")
+    bs = sub.add_parser("bigquery-setup", help="affiche le script gcloud d'accès en lecture seule (rôle personnalisé) à relire")
+    bs.add_argument("--project", help="projet à scanner")
+    bs.add_argument("--member", help="user:... ou serviceAccount:... qui recevra le rôle")
     dm = sub.add_parser("demo", help="démonstration complète en 30 secondes, sans compte : distributeur fictif, exercice, dossier de preuve")
     dm.add_argument("--out", default="canot-demo")
     dm.add_argument("--rows", type=int, default=50_000)
@@ -106,6 +113,14 @@ def run(argv: list[str] | None = None) -> int:
     dd.add_argument("--retail", action="store_true", help="jeu fictif de distributeur (tickets avec lignes imbriquées)")
 
     a = ap.parse_args(argv)
+    if a.cmd in ("scan", "drill"):
+        a.src = a.src or a.source
+        if not a.src:
+            ap.error("indiquez la source : canot " + a.cmd + (" SOURCE DESTINATION" if a.cmd == "drill" else " SOURCE"))
+        if a.cmd == "drill":
+            a.dst = a.dst or a.dest
+            if not a.dst:
+                ap.error("indiquez la destination : canot drill SOURCE DESTINATION (un dossier local suffit : ./lac)")
     out = Path(getattr(a, "out", "canot-out"))
 
     if a.cmd == "snowflake-setup":
@@ -129,6 +144,16 @@ def run(argv: list[str] | None = None) -> int:
             sql = sql.replace("<clé publique, sans les lignes BEGIN/END>", pub)
             print(f"-- Clé privée : {kp} (reste sur cette machine). Puis : export SNOWFLAKE_PRIVATE_KEY_PATH={kp}", file=sys.stderr)
         _p(sql)
+        return 0
+    if a.cmd == "mcp":
+        from .agent import serve
+
+        serve()
+        return 0
+    if a.cmd == "bigquery-setup":
+        from .sources.bigquery_src import setup_script
+
+        _p(setup_script(a.project, a.member))
         return 0
     if a.cmd == "demo":
         import webbrowser
@@ -215,6 +240,7 @@ def run(argv: list[str] | None = None) -> int:
             _p(f"Lectures : {len(res['lectures']) - len(nl)} faites, {len(nl)} non lues (détail et raisons dans le rapport)")
             _p(f"Rapport à transmettre : {out / 'scan.html'}")
             _p(f"Données : {out / 'scan.json'} et les CSV du même dossier")
+            _p(f"Pour nous le transmettre : {out / 'scan-partage.json'} (des comptes seulement : ni nom de table, ni SQL, ni identité) sur https://canot.io/offres.html#demarrer")
             if a.include_sql_text:
                 _p(f"ATTENTION : {out / 'scan-sql-brut.json'} contient le texte SQL brut de votre historique. Ne le diffusez pas.")
             _p("Besoin d'aide pour lire ce rapport ou préparer la suite ? https://canot.io/#contact")

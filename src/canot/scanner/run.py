@@ -65,6 +65,23 @@ def collect(src, *, level: int, days: int | None = None, log: Callable[[str], No
     return snap, raw
 
 
+def partage(result: dict) -> dict:
+    """Synthèse transmissible à q4o ou à un conseil : des comptes et des fourchettes, jamais un nom de table, un SQL ni une identité."""
+    from collections import Counter
+
+    rj = (result.get("rejouabilite") or {}).get("taux", {}).get("familles") or {}
+    lectures = result.get("lectures", [])
+    return {
+        "schema": "canot.partage/1", "as_of": result.get("as_of"), "plateforme": result.get("plateforme"), "niveau_droits": result.get("niveau_droits"),
+        "resume": result.get("resume"),
+        "tables": len(result.get("tables", [])), "objets": dict(sorted(Counter(o["kind"] for o in result.get("objets", [])).items())),
+        "constats": dict(sorted(Counter(f["code"] for f in result.get("drapeaux", [])).items())),
+        "rejouabilite_familles_pct": rj.get("valeur") if rj.get("nature") == "calculé" else None,
+        "lectures": {"faites": sum(1 for l in lectures if l["statut"] == "lu"), "non_lues": sum(1 for l in lectures if l["statut"] == "non_lu")},
+        "versions": result.get("versions"),
+    }
+
+
 def scan_full(src, out: Path, *, level: int = 3, credit_price: float | None = None, include_sql_text: bool = False,
               log: Callable[[str], None] = lambda s: None) -> dict:
     from . import replay
@@ -78,6 +95,7 @@ def scan_full(src, out: Path, *, level: int = 3, credit_price: float | None = No
     (out / "scan.json").write_text(json.dumps(result, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
     (out / "scan.html").write_text(render_html(result), encoding="utf-8")
     write_csv(result, out)
+    (out / "scan-partage.json").write_text(json.dumps(partage(result), indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
     if include_sql_text:
         p = out / "scan-sql-brut.json"
         p.write_text(json.dumps(replay.raw_text_export(raw, src.dialect), indent=2, ensure_ascii=False), encoding="utf-8")

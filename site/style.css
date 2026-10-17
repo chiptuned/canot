@@ -278,3 +278,24 @@ textarea{padding:11px 12px;border-radius:6px;border:1px solid var(--line-2);back
 .duo div{background:var(--bg);border-radius:8px;padding:12px 14px}.duo dt{font:600 11.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--soft);margin-bottom:4px}.duo dd{margin:0}
 .ecart p{font-size:16px;line-height:1.6;color:var(--muted);max-width:75ch;margin:0 0 10px}.ecart p b{color:var(--ink)}
 .todo-list{padding-left:1.1em;max-width:75ch;color:var(--muted)}.todo-list li{margin:6px 0}
+
+/* demande qualifiée et documentation */
+.steps{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:12px;font-size:16.5px;line-height:1.55;color:var(--muted)}
+.steps b{color:var(--ink)}
+.steps code,.docs code{font-family:var(--mono,ui-monospace,Menlo,monospace);font-size:.92em;background:var(--wash);padding:1px 6px;border-radius:4px}
+input[type=file]{font:inherit;padding:8px 0}
+.preview{margin:4px 0 14px;font-size:14px}.preview summary{cursor:pointer;color:var(--ink);font-weight:600}
+.preview pre{max-height:220px;overflow:auto;background:var(--wash);padding:12px;border-radius:8px;font-size:12.5px;line-height:1.45;white-space:pre-wrap}
+.docs .wrap{max-width:860px}
+.docs h1{margin-bottom:8px}.docs h2{margin-top:56px}.docs h3{margin-top:36px;font-size:21px}.docs h4{margin-top:24px;font-size:17px}
+.docs p,.docs li{font-size:16.5px;line-height:1.65;color:var(--ink-2,var(--ink))}
+.docs pre{background:#0F1B26;color:#E6ECF2;padding:16px 18px;border-radius:10px;overflow:auto;font-size:14px;line-height:1.55}
+.docs pre code{background:none;padding:0;color:inherit}
+.docs table{width:100%;border-collapse:collapse;margin:16px 0;font-size:15px}
+.docs th,.docs td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line,#DCE4EC)}
+.docs th{font-weight:600}
+.docs .toc{display:flex;gap:10px 18px;flex-wrap:wrap;margin:18px 0 8px;font-weight:600}
+@media (max-width:640px){.docs table{display:block;overflow-x:auto}}
+.onprem .term{background:#0F1B26;color:#E6ECF2;padding:16px 18px;border-radius:10px;overflow:auto;font-size:14px;margin:18px 0}
+.onprem .term code{font-family:var(--mono);white-space:pre}
+.onprem .cmds code{overflow-wrap:anywhere}

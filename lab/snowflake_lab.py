@@ -86,7 +86,7 @@ def f(s):
        $$""", "UDF Python")
 run("""create or replace procedure MART.SP_REFRESH_MART() returns varchar language sql as
        $$ begin create or replace table MART.DIM_CUSTOMERS as select * from STAGING.STG_CUSTOMERS; return 'ok'; end; $$""", "procédure SQL")
-run("""create or replace procedure MART.SP_PURGE(days number) returns varchar language javascript as
+run("""create or replace procedure MART.SP_PURGE(days float) returns varchar language javascript as
        $$ var r = snowflake.execute({sqlText: "select count(*) from RAW.EVENTS where ts < dateadd(day, -" + DAYS + ", current_timestamp())"}); return "ok"; $$""", "procédure JavaScript")
 
 # --- flux, tâches, séquence, formats, stages, intégrations
@@ -103,8 +103,8 @@ run("create or replace table OPS.EVENTS_LOG (ts timestamp_ltz, msg varchar)", "j
 # --- gouvernance : politiques, étiquettes, rôles
 run("create or replace masking policy OPS.MASK_EMAIL as (v varchar) returns varchar -> case when current_role() in ('CANOT_LAB') then v else '***' end", "politique de masquage")
 run("alter table RAW.CUSTOMERS modify column email set masking policy OPS.MASK_EMAIL", "masquage appliqué")
-run("create or replace row access policy OPS.RAP_COUNTRY as (c varchar) returns boolean -> true", "politique d'accès aux lignes")
-run("alter table MART.FCT_ORDERS add row access policy OPS.RAP_COUNTRY on (country)", "politique d'accès appliquée")
+run("create or replace row access policy OPS.RAP_COUNTRY as (c varchar) returns boolean -> case when current_role() in ('CANOT_LAB', 'ACCOUNTADMIN') then true else c = 'FR' end", "politique d'accès aux lignes (filtre partiel pour les autres rôles)")
+run("alter table RAW.CUSTOMERS add row access policy OPS.RAP_COUNTRY on (country)", "politique d'accès appliquée")  # pas sur MART.FCT_ORDERS : la vue matérialisée l'interdit
 run("create or replace tag OPS.PII allowed_values 'oui', 'non'", "étiquette")
 run("alter table RAW.CUSTOMERS set tag OPS.PII = 'oui'", "étiquette posée")
 for r in ("LAB_ANALYST", "LAB_ENGINEER", "LAB_FINANCE"):
@@ -124,8 +124,7 @@ run("grant usage on schema CANOT_LAB.SHARED to share LAB_SHARE")
 for sql in ("grant usage on database CANOT_LAB to role CANOT_READER",
             "grant usage on all schemas in database CANOT_LAB to role CANOT_READER",
             "grant select on all tables in database CANOT_LAB to role CANOT_READER",
-            "grant select on all views in database CANOT_LAB to role CANOT_READER",
-            "grant select on future tables in database CANOT_LAB to role CANOT_READER"):
+            "grant select on all views in database CANOT_LAB to role CANOT_READER"):
     run(sql, "droit du lecteur Canot : " + sql.split(" to ")[0][6:60])
 
 # --- charge de travail réaliste : applications, étiquettes de requête, utilisateurs
@@ -138,7 +137,7 @@ work = [
     ("notebook", "select payload:ab.variant::string v, count(*) n from RAW.EVENTS group by v"),
     ("notebook", "select f.value:k::string k, count(*) n from RAW.EVENTS, lateral flatten(input => props) f group by k"),
     ("notebook", "select st_x(st_centroid(st_collect(geo))) lon from RAW.EVENTS"),
-    ("sql-console", "select * from RAW.ORDERS_CLONE at(offset => -60) limit 10"),
+    ("sql-console", "select * from RAW.ORDERS at(offset => -30) limit 10"),
 ]
 for _ in range(2):
     for app, q in work:
