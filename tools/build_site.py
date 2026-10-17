@@ -160,7 +160,7 @@ def q4o_caps(h):
 
 PAGES = {
     "pourquoi": ("Pourquoi", "Pourquoi vérifier la sortie de votre plateforme de données : ce que demandent DORA et le Data Act, et ce que coûte l'inconnu.", ["why"]),
-    "methode": ("Méthode", "Comment Canot teste la sortie de votre plateforme de données, dans vos propres comptes, et ce qu'il vous remet.", ["method", "onprem", "hosts"]),
+    "methode": ("Méthode", "Comment Canot teste la sortie de votre plateforme de données, dans vos propres comptes, et ce qu'il vous remet.", ["method", "platforms", "onprem", "hosts"]),
     "offres": ("Offres", "Quatre façons de commencer avec Canot : l'outil seul, le diagnostic de réversibilité, le test de sortie DORA, l'abonnement.", ["offers"]),
     "ecarts": ("Catalogue des écarts", "Ce que deux moteurs rendent différemment pour la même requête, mesuré avec Canot : requête, résultats, versions, date.", ["ecarts"]),
     "docs": ("Documentation", "La documentation de Canot : les commandes, la sortie en local ou on-prem, le scan en lecture seule, et l'accès pour un agent (MCP).", ["docs"]),
