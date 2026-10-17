@@ -8,17 +8,17 @@ Canot répète votre départ d'une plateforme de données, dans vos propres comp
 uvx canot drill SOURCE DESTINATION
 ```
 
-`SOURCE` est la plateforme à quitter, `DESTINATION` l'endroit où la copie est écrite. Canot copie les tables en Apache Iceberg, compare tout, rejoue vos requêtes les plus coûteuses et écrit un dossier de preuve signé. Il ne vous envoie rien : pas de télémétrie.
+`SOURCE` est la plateforme à quitter (Snowflake, Databricks, BigQuery), `DESTINATION` l'endroit où la copie est écrite. Les valeurs en `MY_…` sont à remplacer par les vôtres. Canot copie les tables en Apache Iceberg, compare tout, rejoue vos requêtes les plus coûteuses et écrit un dossier de preuve signé. Il ne vous envoie rien : pas de télémétrie.
 
 ```bash
-# BigQuery vers un dossier local
-uvx canot drill "bigquery://MON-PROJET/mon_dataset?location=EU" ./lac
+# Snowflake vers un dossier local
+uvx canot drill "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" ./iceberg
 
-# Snowflake vers un stockage S3 de votre choix
-uvx canot drill "snowflake://COMPTE/MA_BASE?user=CANOT_USER" "s3://coffre/canot?endpoint=https://s3.interne:9000&region=us-east-1"
+# Databricks vers un stockage S3 de votre choix
+uvx canot drill "databricks://MY_WORKSPACE.cloud.databricks.com/sql/1.0/warehouses/MY_WAREHOUSE_ID?catalog=MY_CATALOG" "s3://my-bucket/canot?endpoint=https://s3.internal:9000&region=us-east-1"
 
-# Un fichier DuckDB vers l'hébergeur de votre choix
-uvx canot drill maison.duckdb scaleway:fr-par --bucket mon-coffre
+# BigQuery vers un hébergeur européen
+uvx canot drill "bigquery://MY_PROJECT/MY_DATASET?location=EU" scaleway:fr-par --bucket my-bucket
 ```
 
 Si un connecteur manque, Canot affiche la commande exacte à lancer (par exemple `uvx --from "canot[bigquery]" canot drill …`).
@@ -62,7 +62,7 @@ Résultat dans `--out` : `report.html` (lisible par un comité), `report.json`, 
 ## `canot scan`
 
 ```bash
-uvx canot scan "bigquery://MON-PROJET" --level 2
+uvx canot scan "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" --level 2
 ```
 
 `--level 1|2|3` (défaut 3) règle jusqu'où lire ; `--credit-price` remplace le prix catalogue ; `--include-sql-text` écrit aussi le SQL brut dans un fichier à part (jamais par défaut). Détail des lectures, des droits et des garanties : [scan](scan.md).
@@ -73,7 +73,7 @@ uvx canot scan "bigquery://MON-PROJET" --level 2
 |---|---|---|
 | BigQuery | `bigquery://PROJET/dataset1,dataset2?location=EU` ; sans dataset : tous ceux du projet ; autre projet : `bigquery://FACTURATION/projet-donnees.dataset` | identifiants applicatifs Google (`gcloud auth application-default login`) |
 | Snowflake | `snowflake://COMPTE/BASE?user=…&warehouse=…&role=…&schemas=A,B` | paire de clés : variable `SNOWFLAKE_PRIVATE_KEY_PATH` (recommandé) ou `SNOWFLAKE_PASSWORD` |
-| Databricks | `databricks://…` | variables `DATABRICKS_*` (connecteur non encore testé sur un vrai compte) |
+| Databricks | `databricks://HÔTE/CHEMIN_HTTP_DE_L_ENTREPÔT?catalog=…` | variable `DATABRICKS_TOKEN` (jeton en lecture) ; connecteur non encore testé sur un vrai compte |
 | DuckDB | `maison.duckdb` | aucune |
 
 ## Sortie en local ou on-prem
@@ -81,10 +81,10 @@ uvx canot scan "bigquery://MON-PROJET" --level 2
 Pas de cloud à l'arrivée : un dossier suffit.
 
 ```bash
-uvx canot drill "bigquery://MON-PROJET/mon_dataset?location=EU" ./lac
+uvx canot drill "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" ./iceberg
 ```
 
-Canot écrit la copie au format Iceberg dans `./lac` et le dossier de preuve dans `canot-out/`. La copie ne dépend pas de l'outil : DuckDB, Spark ou Trino la lisent. Le fichier `relire.sql` donne les commandes DuckDB pour recompter chaque table :
+Canot écrit la copie au format Iceberg dans `./iceberg` et le dossier de preuve dans `canot-out/`. La copie ne dépend pas de l'outil : DuckDB, Spark ou Trino la lisent. Le fichier `relire.sql` donne les commandes DuckDB pour recompter chaque table :
 
 ```bash
 duckdb < canot-out/relire.sql

@@ -12,7 +12,7 @@
 Thirty seconds, no account, no data. A fictional retailer, a full exit exercise, and the evidence report opens in your browser.
 
 ```bash
-uvx canot drill "bigquery://MY-PROJECT/my_dataset?location=EU" ./lake
+uvx canot drill "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" ./iceberg
 ```
 
 No data at hand? `uvx canot demo` runs a fictional retailer in thirty seconds, no account. Canot copies tables from BigQuery, Snowflake or Databricks into Apache Iceberg on storage you control, compares each table (row counts, per-column statistics, content fingerprint), replays your key queries on both sides, and writes a report with a hash-chained, signed log.
@@ -22,7 +22,7 @@ It runs entirely in your accounts. No telemetry. It is **not** a certification: 
 ## On your data (read-only)
 
 ```bash
-uvx --from "canot[bigquery]" canot scan "bigquery://MY-PROJECT/my_dataset?location=EU"
+uvx --from "canot[bigquery]" canot scan "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER"
 ```
 
 Snowflake: `canot snowflake-setup --generate-key` prints the SQL a platform admin reviews and runs (read-only role, small warehouse, credit cap, public key).

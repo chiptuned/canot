@@ -33,7 +33,7 @@
 Une commande : la source, la destination. Un dossier local suffit.
 
 ```bash
-uvx canot drill "bigquery://MON-PROJET/mon_dataset?location=EU" ./lac
+uvx canot drill "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" ./iceberg
 ```
 
 Canot copie les tables en Apache Iceberg, compare tout, rejoue vos requêtes les plus coûteuses et écrit un dossier de preuve signé. Pas de données sous la main : `uvx canot demo` (trente secondes, sans compte).
@@ -42,7 +42,7 @@ Canot copie les tables en Apache Iceberg, compare tout, rejoue vos requêtes les
   <img src="https://raw.githubusercontent.com/chiptuned/canot/main/docs/assets/demo.svg" alt="canot copie des tables BigQuery, compare tout, et signale une requête qui diverge" width="860">
 </p>
 
-Sur un jeu public BigQuery : 7 tables au contenu identique, 3 requêtes sur 4 qui rendent le même résultat. La 4<sup>e</sup> rend une date chez BigQuery et une date avec heure ailleurs. C'est le genre d'écart qu'on veut découvrir **avant** de partir.
+Sur le jeu d'exemple TPC-H de Snowflake : 8 tables au contenu identique, 3 requêtes sur 4 qui rendent le même résultat. La 4<sup>e</sup> calcule une moyenne : décimale chez Snowflake, flottante ailleurs. C'est le genre d'écart qu'on veut découvrir **avant** de partir.
 
 ## 🧭 Pourquoi
 
@@ -56,8 +56,8 @@ Canot fait la répétition de départ. Vous restez chez votre fournisseur.
 ## ▶ À vous
 
 ```bash
-uvx canot scan "bigquery://MON-PROJET"                      # radiographie en lecture seule
-uvx canot drill "bigquery://MON-PROJET/mon_dataset" ./lac   # exercice de sortie complet, en local
+uvx canot scan "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER"    # radiographie en lecture seule
+uvx canot drill "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" ./iceberg   # exercice de sortie complet, en local
 ```
 
 Sortie sur votre infrastructure (dossier, NAS, stockage S3 maison), commandes, droits et accès pour un agent (MCP) : la [documentation](docs/commandes.md). Le site, [canot.io](https://canot.io), explique le reste.

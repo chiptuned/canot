@@ -70,7 +70,7 @@ def run(argv: list[str] | None = None) -> int:
 
     d = sub.add_parser("drill", help="exercice de sortie complet : copie, comparaison, dossier de preuve")
     d.add_argument("source", nargs="?", help="la source : bigquery://PROJET/dataset, snowflake://COMPTE/BASE, un fichier .duckdb")
-    d.add_argument("dest", nargs="?", help="la destination : un dossier local (./lac), s3://..., ou scaleway:fr-par, ovh:gra, outscale:eu-west-2, ionos:de..., avec --bucket")
+    d.add_argument("dest", nargs="?", help="la destination : un dossier local (./iceberg), s3://..., ou scaleway:fr-par, ovh:gra, outscale:eu-west-2, ionos:de..., avec --bucket")
     d.add_argument("--from", dest="src", help="équivalent de l'argument source")
     d.add_argument("--to", dest="dst", help="équivalent de l'argument dest")
     d.add_argument("--bucket")
@@ -120,7 +120,7 @@ def run(argv: list[str] | None = None) -> int:
         if a.cmd == "drill":
             a.dst = a.dst or a.dest
             if not a.dst:
-                ap.error("indiquez la destination : canot drill SOURCE DESTINATION (un dossier local suffit : ./lac)")
+                ap.error("indiquez la destination : canot drill SOURCE DESTINATION (un dossier local suffit : ./iceberg)")
     out = Path(getattr(a, "out", "canot-out"))
 
     if a.cmd == "snowflake-setup":
@@ -183,7 +183,7 @@ def run(argv: list[str] | None = None) -> int:
         _p(f"\n{res['summary']['parity'] == 'complète' and 'Parité complète' or 'Des écarts ont été trouvés'} : {res['summary']['tables_ok']}/{res['summary']['tables_total']} tables, {res['summary']['queries_match']}/{res['summary']['queries_total']} requêtes.")
         _p(f"Dossier de preuve : {rep}")
         _p("Vérifier qu'il n'a pas été modifié : canot verify-evidence " + str(work / "dossier"))
-        _p("\nEt maintenant, sur vos données (lecture seule) :  canot scan --from \"bigquery://MON-PROJET/mon_dataset?location=EU\"")
+        _p("\nEt maintenant, sur vos données (lecture seule) :  canot scan \"snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER\"")
         _p("Besoin d'aide pour l'exécuter sur votre périmètre ? https://canot.io/#contact")
         if not a.no_open:
             webbrowser.open(rep.resolve().as_uri())

@@ -2,7 +2,7 @@
   <div class="wrap">
     <h2>Sortie en local, sur votre infrastructure.</h2>
     <p class="lead-p">Pas besoin d'un cloud à l'arrivée : un dossier suffit. Canot écrit la copie au format Apache Iceberg sur votre disque, votre NAS ou un stockage S3 que vous hébergez, et le dossier de preuve à côté.</p>
-    <pre class="term"><code>uvx canot drill "snowflake://COMPTE/BASE?user=CANOT_USER" /donnees/lac</code></pre>
+    <pre class="term"><code>uvx canot drill "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" /data/iceberg</code></pre>
     <ul class="cmds">
       <li><code>/chemin/dossier</code><span>Disque local, partage réseau ou NAS monté.</span></li>
       <li><code>s3://coffre/canot?endpoint=https://s3.interne:9000</code><span>Votre stockage compatible S3 (MinIO, Ceph, NetApp…), avec proxy et autorité de certification internes si besoin.</span></li>

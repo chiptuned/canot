@@ -46,21 +46,21 @@ text{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sa
 
 
 TERM = [
-    ("cmd", '$ canot drill "bigquery://MON-PROJET/thelook_ecommerce?location=US" ./lac'),
+    ("cmd", '$ canot drill "snowflake://MY_ACCOUNT/SNOWFLAKE_SAMPLE_DATA?schemas=TPCH_SF1&user=MY_USER" ./iceberg'),
     ("dim", "→ inventaire"),
-    ("dim", "→ copie de 7 table(s) vers local:./lac"),
-    ("txt", "   events            2 423 210 lignes   437,7 Mo    7,2 s"),
-    ("txt", "   inventory_items     488 835 lignes    88,5 Mo    3,5 s"),
-    ("txt", "   order_items         181 071 lignes    16,8 Mo    3,3 s"),
+    ("dim", "→ copie de 8 table(s) vers local:./iceberg"),
+    ("txt", "   lineitem   6 001 215 lignes"),
+    ("txt", "   orders     1 500 000 lignes"),
+    ("txt", "   partsupp     800 000 lignes"),
     ("dim", "→ comparaison des tables"),
-    ("ok", "   events            OK    orders        OK    users      OK"),
-    ("ok", "   inventory_items   OK    order_items   OK    products   OK"),
+    ("ok", "   lineitem   OK    orders     OK    partsupp   OK    part     OK"),
+    ("ok", "   customer   OK    supplier   OK    nation     OK    region   OK"),
     ("dim", "→ rejeu de 4 requêtes des deux côtés"),
-    ("ok", "   [match]     select status, count(*) as n from orders …"),
-    ("ok", "   [match]     select p.category, round(sum(oi.sale_price), 2) …"),
-    ("warn", "   [mismatch]  select date_trunc(date(created_at), month) …"),
-    ("ok", "   [match]     select country, count(*) as users, avg(age) …"),
-    ("bold", "Parité : écarts — 7/7 tables, 3/4 requêtes"),
+    ("warn", "   [mismatch]  select l_returnflag, l_linestatus, sum(l_quantity) …"),
+    ("ok", "   [match]     select n_name, sum(l_extendedprice * (1 - l_discount)) …"),
+    ("ok", "   [match]     select sum(l_extendedprice * l_discount) as revenue …"),
+    ("ok", "   [match]     select o_orderpriority, count(*) as order_count …"),
+    ("bold", "Parité : écarts — 8/8 tables, 3/4 requêtes"),
     ("dim", "Dossier : canot-out/report.html   (journal signé, vérifiable)"),
 ]
 
@@ -77,7 +77,7 @@ def terminal() -> str:
         weight = ' font-weight="700"' if k in ("bold", "cmd") else ""
         txt = html.escape(t).replace("[match]", '<tspan fill="#56D364">[match]</tspan>').replace("[mismatch]", '<tspan fill="#FF9A55">[mismatch]</tspan>')
         rows.append(f'<text class="l{i}" x="{X0}" y="{Y0 + i * LH}" fill="{colors[k]}"{weight} xml:space="preserve">{txt}</text>')
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" aria-label="Démonstration : canot drill copie 7 tables BigQuery vers Iceberg, compare tout et signale une requête qui diverge">
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" aria-label="Démonstration : canot drill copie 8 tables Snowflake vers Iceberg, compare tout et signale une requête qui diverge">
 <style>
 text{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:15px}}
 {''.join(css)}
