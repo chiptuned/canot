@@ -396,3 +396,6 @@ input[type=file]{font:inherit;padding:8px 0}
 .nobr{white-space:nowrap}
 .hero h1{max-width:none}
 .hero-copy{max-width:760px}
+/* the title drum shows one neighbour above and one below, inside the spacing around the line: it never overlaps the text */
+.hero-copy .big{margin:36px 0}
+.cs-drum--title.is-open .cs-drum__item[data-dist="2"]{opacity:0;pointer-events:none}
