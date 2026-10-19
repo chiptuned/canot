@@ -205,7 +205,6 @@
     var destRestEls = root.querySelectorAll('[data-cs-dest-rest]');
     var prefixEls = root.querySelectorAll('[data-cs-dest-prefix]');
     var textEls = root.querySelectorAll('[data-cs-action-text]');
-    var soonEls = root.querySelectorAll('[data-cs-soon]');
     var picks = [['data-cs-pick', 'src'], ['data-cs-pick-out', 'dst'], ['data-cs-pick-act', 'act']].map(function (x) { return { attr: x[0], kind: x[1], els: root.querySelectorAll('[' + x[0] + ']') }; });
     var copyEls = root.querySelectorAll('[data-cs-copy]');
     var drums = Array.prototype.map.call(root.querySelectorAll('[data-cs-drum]'), buildDrum);
@@ -248,17 +247,7 @@
       destRestEls.forEach(function (el) { el.textContent = a.id === 'replay' ? '' : DESTS[st.dst].rest; });
       prefixEls.forEach(function (el) { el.textContent = a.id === 'replay' ? ' --iceberg ' : ' '; });
       textEls.forEach(function (el) { el.textContent = a.text; });
-      var soon = a.src && SOURCES[st.src].soon;
-      soonEls.forEach(function (el) {
-        el.hidden = !soon;
-        if (soon) {
-          var l = SOURCES[st.src].label, href = EN ? '/en/review.html' : '/revue.html';
-          el.innerHTML = '';
-          el.appendChild(document.createTextNode(tr(l + " : connecteur sur demande, il s'écrit et se valide avec vous sur votre compte. ", l + ': connector on request, written and validated with you on your account. ')));
-          var link = document.createElement('a'); link.href = href; link.textContent = tr('Dites-nous ce que vous utilisez', 'Tell us what you run'); el.appendChild(link);
-        }
-      });
-      copyEls.forEach(function (b) { b.hidden = !!soon; });
+
       picks.forEach(function (p) {
         p.els.forEach(function (el) {
           var j = LISTS[p.kind].findIndex(function (x) { return x.id === norm(el.getAttribute(p.attr)); });
@@ -313,7 +302,7 @@
           var v = vis(), pos = Math.max(0, v.indexOf(st[kind]));
           if (!v.length) return; // no possible value for this action: the part is hidden
           items.forEach(function (it, j) { it.hidden = v.indexOf(j) < 0; });
-          var first = items[v[0]], h = first.offsetHeight;
+          var first = items[v[0]], h = first.getBoundingClientRect().height; // fractional: offsetHeight rounds, which drifts with the index
           el.style.height = h + 'px';
           el.style.width = items[v[pos]].offsetWidth + 'px';
           col.style.transform = 'translateY(' + (-pos * h) + 'px)';

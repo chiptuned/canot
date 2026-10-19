@@ -393,3 +393,6 @@ input[type=file]{font:inherit;padding:8px 0}
 .cs-drum__col{pointer-events:none}
 .cs-drum__item[data-dist="0"]{pointer-events:auto}
 .cs-drum.is-open .cs-drum__item[data-dist="1"],.cs-drum.is-open .cs-drum__item[data-dist="2"]{pointer-events:auto}
+.nobr{white-space:nowrap}
+.hero h1{max-width:none}
+.hero-copy{max-width:760px}

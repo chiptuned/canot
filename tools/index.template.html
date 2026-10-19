@@ -37,19 +37,20 @@
   <div class="boat" aria-hidden="true"><img src="assets/canot-symbole.svg" alt="" width="694" height="357"></div>
   <div class="sea sea-front" aria-hidden="true">@@wave_front@@</div>
   <div class="wrap" data-cs-root>
-    <h1>Votre plan de sortie, exécuté et mesuré.</h1>
+    <h1>Votre plan de sortie,<br>exécuté et mesuré.</h1>
     <div class="hero-copy">
-      <p class="big">Enfermé chez <span class="cs-drum--title" data-cs-drum="label">Snowflake</span>&nbsp;? Prouvez le contraire.</p>
+      <p class="big">Enfermé chez <span class="nobr"><span class="cs-drum--title" data-cs-drum="label">Snowflake</span>&nbsp;?</span> Prouvez le contraire.</p>
       <p class="sub">Canot répète votre retour vers l'hébergeur de votre choix, en France, en Europe ou chez vous. L'outil est libre et ne nous envoie rien.</p>
     </div>
     <div class="cmd">
       <span class="p" aria-hidden="true">$</span>
-      <code><span class="cs-drum--code" data-cs-drum="runner">uvx canot</span> <span class="cs-drum--code">drill</span> "<span class="cs-drum--code" data-cs-drum="scheme">snowflake</span><span data-cs-rest>://MY_ACCOUNT/MY_DATABASE?user=MY_USER</span>" <span class="cs-drum--code">./iceberg</span></code>
+      <code><span class="cs-drum--code" data-cs-drum="runner">uvx canot</span> <span class="cs-drum--code" data-cs-drum="action">drill</span><span data-cs-show="scan drill rejeu"> "<span class="cs-drum--code" data-cs-drum="scheme">snowflake</span><span data-cs-rest>://MY_ACCOUNT/MY_DATABASE?user=MY_USER</span>"</span><span data-cs-show="demo drill rejeu"><span data-cs-dest-prefix> </span><span class="cs-drum--code" data-cs-drum="dest">./iceberg</span><span data-cs-dest-rest></span></span></code>
       <button class="c" type="button" data-cs-copy aria-label="Copier la commande">copier</button>
     </div>
-    <p class="cmd-note"><span>En entrée <a href="?source=snowflake" data-cs-pick="snowflake">Snowflake</a>, <a href="?source=bigquery" data-cs-pick="bigquery">BigQuery</a>, <a href="?source=databricks" data-cs-pick="databricks">Databricks</a> ou <a href="?source=dbt" data-cs-pick="dbt">dbt</a>.</span> <span data-cs-show="scan drill">Sur demande : <a href="?source=fabric" data-cs-pick="fabric">Fabric</a>, <a href="?source=redshift" data-cs-pick="redshift">Redshift</a>, <a href="?source=teradata" data-cs-pick="teradata">Teradata</a>, <a href="?source=oracle" data-cs-pick="oracle">Oracle</a>, <a href="?source=sap" data-cs-pick="sap">SAP</a>, <a href="?source=clickhouse" data-cs-pick="clickhouse">ClickHouse</a>.</span><br>
+    <p class="cmd-note">Au choix : <a href="?action=demo" data-cs-pick-act="demo">démo</a>, <a href="?action=scan" data-cs-pick-act="scan">scan</a> (lecture seule), <a href="?action=drill" data-cs-pick-act="drill">drill</a> (copie et preuve) ou <a href="?action=rejeu" data-cs-pick-act="rejeu">rejeu dbt</a>.<br>
+    <span data-cs-show="scan drill rejeu">En entrée <a href="?source=snowflake" data-cs-pick="snowflake">Snowflake</a>, <a href="?source=bigquery" data-cs-pick="bigquery">BigQuery</a>, <a href="?source=databricks" data-cs-pick="databricks">Databricks</a> ou <a href="?source=dbt" data-cs-pick="dbt">dbt</a>.</span>
+    <span data-cs-show="demo drill rejeu">En sortie un <a href="?sortie=local" data-cs-pick-out="local">dossier local</a>, <a href="?sortie=scaleway" data-cs-pick-out="scaleway">Scaleway</a>, <a href="?sortie=ovh" data-cs-pick-out="ovh">OVHcloud</a>, <a href="?sortie=outscale" data-cs-pick-out="outscale">Outscale</a>, <a href="?sortie=ionos" data-cs-pick-out="ionos">IONOS</a>, <a href="?sortie=stackit" data-cs-pick-out="stackit">STACKIT</a>, <a href="?sortie=aws" data-cs-pick-out="aws">AWS</a> ou <a href="?sortie=onprem" data-cs-pick-out="onprem">un S3 sur site</a>.</span><br>
     <span data-cs-action-text>Copie, compare tout, rejoue vos requêtes les plus coûteuses et écrit un dossier de preuve signé.</span></p>
-    <p class="cmd-note soon" data-cs-soon hidden></p>
     <div class="ctas">
       <a class="btn btn-accent" href="https://github.com/chiptuned/canot">Tester gratuitement</a>
       <a class="btn btn-line" href="rapport.html">Voir un exemple de rapport</a>@@booking@@
