@@ -1,4 +1,4 @@
-"""Which elements of a Canot report can support your own work on GDPR, DORA, the Data Act and SecNumCloud.
+"""Which elements of a Canot report can support your own work on GDPR, DORA, NIS2, the Data Act, SecNumCloud and the EBA outsourcing guidelines.
 
 Canot does not assess compliance and certifies nothing. This table says where an element of the report can serve as evidence, and what it
 does not cover. References are to the texts as of 2026-10-19: check the current versions before relying on them."""
@@ -46,9 +46,21 @@ ROWS = (
      "The qualification concerns the provider's offer, and its referential includes reversibility requirements.",
      "Where the copy lands (provider, region) so you can check that offer against the ANSSI list of qualified offers, and an open-format copy.",
      "Canot does not assess or certify an offer. Qualification depends on the precise offer and is decided by ANSSI.", ("drill",)),
+    ("NIS2 (Directive (EU) 2022/2555)",
+     "Art. 21(2)(c): business continuity, including backup management and recovery.",
+     "Evidence that the data can be restored in an open format elsewhere: a copy compared with the source, and a recovery time range.",
+     "Not a backup or disaster-recovery plan. One exercise on one scope.", ("drill",)),
+    ("NIS2 (Directive (EU) 2022/2555)",
+     "Art. 21(2)(d): security of the supply chain, including your relationship with each direct service provider.",
+     "What ties you to this provider: external dependencies and objects that do not move as is, with the evidence behind each finding.",
+     "Does not assess the provider's security measures.", ("drill", "scan")),
+    ("EBA Guidelines on outsourcing arrangements (EBA/GL/2019/02)",
+     "Exit strategies: documented, realistic, sufficiently tested and reviewed periodically for the outsourcing the guidelines target.",
+     "The exit exercise (drill) and the inventory of what does not move (scan), as test evidence in your exit file.",
+     "One exercise. Alternative providers, the business side and the periodic review are yours. Check which text applies to you alongside DORA.", ("drill", "scan")),
 )
 
-INTRO = ("These elements can support your own work on GDPR, DORA, the Data Act or SecNumCloud. They are evidence, not a finding: "
+INTRO = ("These elements can support your own work on GDPR, DORA, NIS2, the Data Act, SecNumCloud or the EBA outsourcing guidelines. They are evidence, not a finding: "
          "this report is not a certification, it is not legal advice, and it does not say whether your contracts or your organization meet any regulation.")
 
 
@@ -60,6 +72,6 @@ def section(kind: str, *, tag: str = "section") -> str:
     """HTML block for a report ('drill' or 'scan'): self-contained, no script, no link."""
     e = html.escape
     body = "".join(f"<tr><td>{e(fw)}</td><td>{e(req)}</td><td>{e(got)}</td><td>{e(lim)}</td></tr>" for fw, req, got, lim, _ in rows_for(kind))
-    return (f'<{tag} id="regulatory"><h2>Using this report for GDPR, DORA, the Data Act and SecNumCloud</h2><p>{e(INTRO)}</p>'
+    return (f'<{tag} id="regulatory"><h2>Using this report for your regulatory work (GDPR, DORA, NIS2, Data Act, SecNumCloud, EBA)</h2><p>{e(INTRO)}</p>'
             f"<table><tr><th>Framework</th><th>What it asks, in short</th><th>What this report gives you</th><th>What it does not cover</th></tr>{body}</table>"
             f'<p class="small">References as of {AS_OF}. Check the current texts: they evolve, and their application depends on your situation.</p></{tag}>')

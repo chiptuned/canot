@@ -8,7 +8,7 @@ FORBIDDEN = ("compliant", "certified", "guaranteed", "savings", "waste", "unused
 def test_chaque_cadre_cite_est_present_et_aucune_promesse_de_conformite():
     for kind in ("drill", "scan"):
         sec = regulatory.section(kind).lower()
-        for fw in ("dora", "data act", "gdpr", "secnumcloud") if kind == "drill" else ("dora", "data act", "gdpr"):
+        for fw in ("dora", "data act", "gdpr", "secnumcloud", "nis2", "eba") if kind == "drill" else ("dora", "data act", "gdpr", "nis2", "eba"):
             assert fw in sec, (kind, fw)
         for w in FORBIDDEN:
             assert w not in sec, (kind, w)
@@ -31,4 +31,4 @@ def test_le_rapport_du_drill_et_celui_du_scan_contiennent_la_section(tmp_path):
     from canot.scanner.analyze import analyze
 
     page = render_html(analyze(snap))
-    assert 'id="regulatory"' in page and "Using this report for GDPR, DORA" in page
+    assert 'id="regulatory"' in page and "GDPR, DORA, NIS2, Data Act, SecNumCloud, EBA" in page
