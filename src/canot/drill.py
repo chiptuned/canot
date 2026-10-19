@@ -21,9 +21,13 @@ from .verify import check_table, replay_queries, split_sql
 
 def run_drill(src: Source, target: Target, out: Path, key_path: Path, queries_file: str | None,
               tol: Tolerances, top_n: int = 20, only: list[str] | None = None,
-              credit_price: float | None = None, replay_max_gb: float = 2.0, log=print) -> dict:
+              credit_price: float | None = None, replay_max_gb: float = 2.0, log=print,
+              tables: list | None = None, ev: EvidenceLog | None = None) -> dict:
+    """`tables`: the source's table list when the caller already read it (canot drill dbt://). `ev`: an evidence log owned
+    by the caller, which adds its own entries and seals it (the returned "seal" is then None)."""
     out.mkdir(parents=True, exist_ok=True)
-    ev = EvidenceLog(out)
+    own_log = ev is None
+    ev = ev if ev is not None else EvidenceLog(out)
     t_start = time.monotonic()
     env = {"canot": __version__, "duckdb": duckdb.__version__, "pyarrow": pyarrow.__version__,
            "pyiceberg": pyiceberg.__version__, "sqlglot": sqlglot.__version__}
@@ -32,7 +36,7 @@ def run_drill(src: Source, target: Target, out: Path, key_path: Path, queries_fi
     log("→ inventory")
     scan_res = run_scan(src, credit_price)
     ev.add("scan", {"totals": scan_res["totals"], "objects": scan_res["object_counts"]})
-    tables = [t for t in src.tables() if not only or t.fqn.lower() in {o.lower() for o in only}]
+    tables = [t for t in (src.tables() if tables is None else tables) if not only or t.fqn.lower() in {o.lower() for o in only}]
 
     cat = target.catalog()
     log(f"→ copying {len(tables)} table(s) to {target.label}")
@@ -108,7 +112,7 @@ def run_drill(src: Source, target: Target, out: Path, key_path: Path, queries_fi
     summary["parity"] = ("complete" if summary["tables_ok"] == summary["tables_total"] and not summary["tables_error"]
                          and not summary["queries_mismatch"] else "mismatch")
     ev.add("summary", summary)
-    seal = ev.seal(key_path, log)
+    seal = ev.seal(key_path, log) if own_log else None
     locations = {}
     for t in tables:
         if not copies[t.fqn].error:

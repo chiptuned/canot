@@ -77,8 +77,10 @@ def _connexion() -> duckdb.DuckDBPyConnection:
     return duckdb.connect(config={"autoinstall_known_extensions": False, "autoload_known_extensions": False})
 
 
-def ouvrir_copie(base: str | None = None, lac: str | None = None, drill_out: str | None = None, catalog: str | None = None):
-    """(in-memory DuckDB connection, index (SCHEMA, NAME) -> (schema, name) of the copy's tables, description)."""
+def ouvrir_copie(base: str | None = None, lac: str | None = None, drill_out: str | None = None, catalog: str | None = None,
+                 cat=None):
+    """(in-memory DuckDB connection, index (SCHEMA, NAME) -> (schema, name) of the copy's tables, description).
+    `cat`: the Iceberg catalog already opened by the caller (canot drill dbt://), with `lac` as its label."""
     con = _connexion()
     if base:
         chemin = str(Path(base).expanduser()).replace("'", "''")
@@ -86,10 +88,11 @@ def ouvrir_copie(base: str | None = None, lac: str | None = None, drill_out: str
         rows = con.execute(f"select table_schema, table_name from information_schema.tables where table_catalog = '{COPIE}' "
                            "and table_type = 'BASE TABLE'").fetchall()
         desc = f"DuckDB database {Path(base).name}"
-    elif lac:
-        from .target import parse_target
+    elif lac or cat is not None:
+        if cat is None:
+            from .target import parse_target
 
-        cat = parse_target(lac, None, Path(drill_out or "canot-out"), catalog).catalog()
+            cat = parse_target(lac, None, Path(drill_out or "canot-out"), catalog).catalog()
         con.execute(f"ATTACH ':memory:' AS {COPIE}")
         rows = []
         for ns in cat.list_namespaces():
@@ -333,14 +336,18 @@ def rejouer(projet: dbt_scan.ProjetDbt, con, copie: dict, tol: Tolerances, log=l
 
 
 def run_rejeu(url: str, out: Path, key_path: Path, *, base: str | None = None, lac: str | None = None, drill_out: str | None = None,
-              catalog: str | None = None, tol: Tolerances | None = None, log=print) -> dict:
+              catalog: str | None = None, tol: Tolerances | None = None, log=print, cat=None, ev: EvidenceLog | None = None) -> dict:
+    """`cat` + `ev` (canot drill dbt://): replay on the catalog the drill just wrote and add the entries to the drill's evidence
+    log, prefixed `replay_`; the caller seals the log and writes replay-dbt.json (the returned "seal" is then None)."""
     tol = tol or Tolerances()
     t0 = time.monotonic()
     projet = dbt_scan.ProjetDbt(url)
-    con, copie, desc = ouvrir_copie(base, lac, drill_out, catalog)
-    ev = EvidenceLog(out)
+    con, copie, desc = ouvrir_copie(base, lac, drill_out, catalog, cat)
+    own_log = ev is None
+    ev = ev if ev is not None else EvidenceLog(out)
+    pre = "" if own_log else "replay_"
     env = {"canot": __version__, "duckdb": duckdb.__version__, "sqlglot": sqlglot.__version__}
-    ev.add("start", {"projet": projet.describe(), "copie": desc, "forme": "P3 pipeline replay", "env": env, "tolerances": tol.to_dict()})
+    ev.add(pre + "start", {"projet": projet.describe(), "copie": desc, "forme": "P3 pipeline replay", "env": env, "tolerances": tol.to_dict()})
     try:
         log(f"→ replaying the dbt models of {projet.describe()} on {desc}")
         res = rejouer(projet, con, copie, tol, log)
@@ -351,14 +358,21 @@ def run_rejeu(url: str, out: Path, key_path: Path, *, base: str | None = None, l
     compte = {s: sum(1 for r in res if r["statut"] == s) for s in STATUTS}
     summary = {"modeles": len(res), **compte, "duree_s": round(time.monotonic() - t0, 1),
                "preuve": "complete" if res and compte["identique"] == len(res) else ("mismatch" if compte["different"] else "partial")}
-    ev.add("summary", summary)
-    seal = ev.seal(key_path, log)
+    ev.add(pre + "summary", summary)
+    seal = ev.seal(key_path, log) if own_log else None
     rapport = {"schema": DOSSIER, "projet": projet.describe(), "copie": desc, "forme": "P3", "summary": summary, "modeles": res,
                "env": env, "tolerances": tol.to_dict(), "seal": seal,
                "regles": ["same compiled SQL, copied inputs, two runs: source platform and local DuckDB",
                           "types of the replayed output aligned on the original table before comparison; each conversion is logged",
                           "comparison: row count, per-column statistics, content fingerprint (canot drill criteria)",
                           "a view has no original table: replayed, not compared; its output feeds the next models"]}
-    out.mkdir(parents=True, exist_ok=True)
-    (out / REPORT_FILE).write_text(json.dumps(rapport, indent=2, ensure_ascii=False, sort_keys=True, default=str), encoding="utf-8")
+    if own_log:
+        write_rapport(rapport, out)
     return rapport
+
+
+def write_rapport(rapport: dict, out: Path) -> Path:
+    out.mkdir(parents=True, exist_ok=True)
+    p = out / REPORT_FILE
+    p.write_text(json.dumps(rapport, indent=2, ensure_ascii=False, sort_keys=True, default=str), encoding="utf-8")
+    return p

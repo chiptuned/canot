@@ -85,8 +85,8 @@ def test_banc_analyse_drapeaux_et_partage(tmp_path):
     codes = sorted((f["code"], f["cible"]) for f in r["drapeaux"])
     assert codes == [("F11", "dbt:canot_lab"), ("F12", "B03")]
     assert "schedule not read" in r["drapeaux"][0]["texte"] and "1 run, 0 failures" in r["drapeaux"][0]["texte"]
-    assert r["capacites"]["statut"] == "tested" and r["capacites"]["export"] == []
-    assert r["capacites"]["preuve"] == [{"forme": "P3", "libelle": "pipeline replay"}]
+    assert r["capacites"]["statut"] == "tested" and r["capacites"]["export"] == ["iceberg"]
+    assert [x["forme"] for x in r["capacites"]["preuve"]] == ["P1", "P2", "P3"]
     assert r["carte_sortie"] == {"portable_tel_quel": {"donnees": 4}, "traduisible": {"planification": 1, "traitement": 16}}
     assert r["mouvements"]["vivante"] + r["mouvements"]["figée"] == 4  # the 4 mart tables: write read from run_results
     p = partage(r)
@@ -278,7 +278,7 @@ def test_formes_d_url(tmp_path):
 def test_registre_et_niveau():
     c = connectors.get("dbt")
     assert c.famille == "fichiers" and c.status == "tested" and c.capabilities.inventaire == "complet"
-    assert c.capabilities.niveaux == (1,) and c.capabilities.export == () and c.capabilities.preuve == ("P3",)
+    assert c.capabilities.niveaux == (1,) and c.capabilities.export == ("iceberg",) and c.capabilities.preuve == ("P1", "P2", "P3")
     assert connectors.effective_level(dbt_scan.ProjetDbt(f"dbt://{FIX}"), 3) == 1
     assert "full (level 1)" in connectors.table()
 
@@ -300,8 +300,8 @@ def test_cli_scan_bout_en_bout(tmp_path, capsys):
 def test_cli_drill_refuse_un_projet_dbt(tmp_path, capsys):
     from canot.cli import main
 
-    assert main(["drill", f"dbt://{FIX}", str(tmp_path / "lac")]) == 1
-    assert "drill is not available for project files" in capsys.readouterr().err
+    assert main(["drill", f"dbt://{FIX}", str(tmp_path / "lac")]) == 1  # artifacts only: no dbt_project.yml, so no profile
+    assert "no dbt_project.yml next to target/" in capsys.readouterr().err
 
 
 def test_include_sql_text_sans_objet(tmp_path, capsys):

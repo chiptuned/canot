@@ -31,6 +31,10 @@ def explain(exc: BaseException, argv: list[str]) -> str | None:
 
     if isinstance(exc, NoConnector):
         return str(exc)
+    from .dbt_drill import DbtProfileError
+
+    if isinstance(exc, DbtProfileError):
+        return str(exc)
     if isinstance(exc, ValueError) and ("SNOWFLAKE_" in str(exc) or "DATABRICKS_" in str(exc) or "URL " in str(exc)):
         return str(exc)
     return None
@@ -73,7 +77,8 @@ def parser() -> argparse.ArgumentParser:
     s.add_argument("--include-sql-text", action="store_true", help="also write the raw SQL text to scan-sql-raw.json (mode 0600). By default it is never written: only normalized forms are")
 
     d = sub.add_parser("drill", help="full exit exercise: copy, comparison, evidence report")
-    d.add_argument("source", nargs="?", help="the source: bigquery://PROJECT/dataset, snowflake://ACCOUNT/DATABASE, a .duckdb file")
+    d.add_argument("source", nargs="?", help="the source: bigquery://PROJECT/dataset, snowflake://ACCOUNT/DATABASE, a .duckdb file, "
+                   "or dbt://PROJECT_PATH (copies the tables the dbt project uses, then replays its models)")
     d.add_argument("dest", nargs="?", help="the destination: a local folder (./iceberg), s3://..., or scaleway:fr-par, ovh:gra, outscale:eu-west-2, ionos:de..., with --bucket")
     d.add_argument("--from", dest="src", help="same as the source argument")
     d.add_argument("--to", dest="dst", help="same as the dest argument")
@@ -87,6 +92,8 @@ def parser() -> argparse.ArgumentParser:
     d.add_argument("--key", default=os.environ.get("CANOT_EVIDENCE_KEY_PATH", str(Path.home() / ".canot" / "evidence.key")), help=KEY_HELP)
     d.add_argument("--credit-price", type=float, default=None, help="Snowflake credit price in your contract, in USD (default: list-price range)")
     d.add_argument("--replay-max-gb", type=float, default=2.0, help="maximum size of a table loaded in memory to replay queries")
+    d.add_argument("--profiles-dir", help="with dbt://: the folder that holds profiles.yml (default: DBT_PROFILES_DIR, else the project folder, else ~/.dbt)")
+    d.add_argument("--target", help="with dbt://: the profile target to read (default: ?target=NAME in the URL, else the profile's default target)")
 
     t = sub.add_parser("teardown", help="delete the copied data")
     t.add_argument("--to", dest="dst", required=True)
@@ -279,10 +286,23 @@ def run(argv: list[str] | None = None) -> int:
 
     from .connectors import effective_level, for_url, open_url
 
-    conn = for_url(a.src)
+    conn = for_url(a.src.split("?", 1)[0])
+    if a.cmd == "drill" and conn is not None and conn.name == "dbt":
+        from .dbt_drill import resume, run_dbt_drill
+        from .tolerances import Tolerances
+
+        url = a.src if "://" in a.src else "dbt://" + a.src
+        r = run_dbt_drill(url, a.dst, out, Path(a.key), profiles_dir=a.profiles_dir, target=a.target, bucket=a.bucket, catalog=a.catalog,
+                          queries=a.queries, top=a.top, only=a.tables, tol=Tolerances.load(a.tolerances), credit_price=a.credit_price,
+                          replay_max_gb=a.replay_max_gb, log=_p)
+        for line in resume(r, out):
+            _p(line)
+        return 1 if r["dbt"]["verdict"] == "mismatch" else 0
     if a.cmd == "drill" and conn is not None and conn.famille == "fichiers":
-        raise ValueError(f"URL {conn.label}: drill is not available for project files; the tables live on the adapter's "
-                         "platform: canot drill on that platform copies and compares them (see canot scan for the command).")
+        raise ValueError(f"URL {conn.label}: drill is not available for these project files; the tables live on the platform "
+                         "that runs them: canot drill on that platform copies and compares them.")
+    if a.cmd == "drill" and (a.profiles_dir or a.target):
+        ap.error("--profiles-dir and --target apply to a dbt project only (canot drill dbt://PROJECT DESTINATION)")
     src = open_url(a.src)
     try:
         from .connectors import supports_full
@@ -310,6 +330,9 @@ def run(argv: list[str] | None = None) -> int:
             _p(f"Report to share: {out / 'scan.html'}")
             _p(f"Data: {out / 'scan.json'} and the CSV files in the same folder")
             _p(f"To send it to us: {out / 'scan-share.json'} (counts only: no table name, no SQL, no identity) at https://canot.io/offres.html#demarrer")
+            if conn is not None and conn.name == "dbt":
+                _p("Next step: canot drill dbt://PROJECT_PATH DESTINATION copies the tables this project uses to Apache Iceberg, "
+                   "compares them and replays the models on the copy (read-only, with the credentials of your dbt profile).")
             if a.include_sql_text:
                 _p(f"WARNING: {out / 'scan-sql-raw.json'} holds the raw SQL text of your history. Do not share it.")
             _p("Need help reading this report or planning the next step? https://canot.io/#contact")

@@ -121,7 +121,7 @@ def explain_scan(path: str, max_findings: int = 40) -> dict:
                          "The absence of a finding only holds for the reads that were done.",
                          "Accepted by DuckDB does not mean an identical result: only canot drill compares results.",
                          "A scan takes inventory: it exports nothing and proves nothing. Export and evidence are canot drill "
-                         "capabilities (canot replay-dbt for the P3 evidence of a dbt project)."],
+                         "capabilities (for a dbt project: canot drill dbt://PROJECT DESTINATION, P1 to P3)."],
     }
 
 
@@ -153,7 +153,8 @@ def capabilities(platform: str | None = None) -> dict:
     return {"connectors": items, "evidence_forms": connectors.PREUVES,
             "good_to_know": [f"status \"{connectors.TESTE}\": seen on a real platform; \"{connectors.NON_TESTE}\": code present, never run on a real account.",
                              "teste_sur: date and subject of the test recorded in the repository documentation; empty if no test is recorded there.",
-                             "Inventory = canot scan; export and evidence = canot drill (P3 for a dbt project: canot replay-dbt). "
+                             "Inventory = canot scan; export and evidence = canot drill (for a dbt project, canot drill dbt://PROJECT DESTINATION "
+                             "copies the tables and replays the models: P1 to P3; canot replay-dbt replays on an existing copy). "
                              "A missing evidence form is not replaced by any score."]}
 
 
@@ -183,7 +184,15 @@ def explain_report(path: str, max_rows: int = 30) -> dict:
         catalog = [l.lstrip("# ").strip() for l in read_doc("discrepancies").splitlines() if l.startswith("## ")]
     except OSError:
         catalog = []
+    d = r.get("dbt")  # canot drill dbt://: copy and replay of a dbt project in one folder
+    dbt = {"project": d.get("projet"), "target": d.get("cible"), "adapter": d.get("adaptateur"), "verdict": d.get("verdict"),
+           "replay": d.get("rejeu"), "not_copied": [{"relation": x.get("relation") or x.get("uid"), "reason": x.get("raison")}
+                                                     for x in d.get("non_copiees") or []][:max_rows],
+           "why_models_differ": [{"model": x.get("modele"), "causes": [c.get("texte") for c in x.get("causes") or []] or [x.get("explication")]}
+                                 for x in d.get("explications") or []][:max_rows],
+           "details": "replay-dbt.json in the same folder"} if isinstance(d, dict) else None
     return {"summary": r["summary"], "tables_with_mismatch": bad_t, "queries_with_mismatch": bad_q, "discrepancy_catalog": catalog,
+            **({"dbt": dbt} if dbt else {}),
             "good_to_know": ["The quoted queries come from your history: review them before sharing.",
                              "A precision-only mismatch (nanoseconds with Iceberg v2) needs a decision; it is not corruption.",
                              "The evidence signature attests its integrity, not the author nor the date."]}

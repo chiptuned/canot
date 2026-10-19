@@ -49,7 +49,7 @@ class SnowflakeSource(Source):
         import snowflake.connector  # optional extra
 
         u = urlparse(url)
-        qs = {k: v[0] for k, v in parse_qs(u.query).items()}
+        qs = {k: v[0] for k, v in parse_qs(u.query, keep_blank_values=True).items()}
         self.account = u.netloc
         self.schemas = [x.upper() for x in qs.get("schemas", "").split(",") if x]
         self.database = u.path.strip("/") or qs.get("database", "")
@@ -63,6 +63,9 @@ class SnowflakeSource(Source):
             database=self.database,
             session_parameters={"QUERY_TAG": "canot"},
         )
+        for k in ("warehouse", "role"):  # "role=" (present, empty): the user's default, as dbt does for a profile without a role
+            if qs.get(k) == "":
+                del args[k]
         key_path = os.environ.get("SNOWFLAKE_PRIVATE_KEY_PATH")
         if key_path:
             from cryptography.hazmat.primitives import serialization

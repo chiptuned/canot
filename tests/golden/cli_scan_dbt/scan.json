@@ -2,7 +2,9 @@
   "as_of": "2026-10-19T10:00:00Z",
   "avec_sql_brut": false,
   "capacites": {
-    "export": [],
+    "export": [
+      "iceberg"
+    ],
     "famille": "fichiers",
     "inventaire": "complet",
     "libelle": "dbt",
@@ -12,12 +14,20 @@
     "plateforme": "dbt",
     "preuve": [
       {
+        "forme": "P1",
+        "libelle": "data parity"
+      },
+      {
+        "forme": "P2",
+        "libelle": "query replay"
+      },
+      {
         "forme": "P3",
         "libelle": "pipeline replay"
       }
     ],
     "statut": "tested",
-    "teste_sur": "2026-10-19: canot scan dbt://lab/dbt (test bench dbt project, dbt 1.12.6 manifest, Snowflake adapter); canot replay-dbt on these artifacts and a local DuckDB copy built by the tests (docs/scan.md)"
+    "teste_sur": "2026-10-19: canot scan dbt://lab/dbt (test bench dbt project, dbt 1.12.6 manifest, Snowflake adapter); canot drill dbt://lab/dbt --target snowflake on the Snowflake trial account: 8 relations copied and identical, 8 models replayed (docs/scan.md); BigQuery and Databricks profiles written, untested"
   },
   "carte_sortie": {
     "portable_tel_quel": {

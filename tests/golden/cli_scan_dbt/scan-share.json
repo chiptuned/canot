@@ -1,9 +1,13 @@
 {
   "as_of": "2026-10-19T10:00:00Z",
   "capacites": {
-    "export": [],
+    "export": [
+      "iceberg"
+    ],
     "inventaire": "complet",
     "preuve": [
+      "P1",
+      "P2",
       "P3"
     ],
     "statut": "tested"

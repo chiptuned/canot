@@ -125,6 +125,29 @@ def _clean(label: str) -> str:
     return re.sub(r"(local|duckdb):[^ ]*/([^/ ]+)", r"\1:\2", str(label))
 
 
+def _dbt_section(res: dict) -> str:
+    """canot drill dbt://: what was copied, what was not and why, the replay of the models, the explanation of each difference."""
+    d = res.get("dbt")
+    if not d:
+        return ""
+    rj = d["rejeu"]
+    nc = "".join(f"<tr><td>{_e(x.get('relation') or x['uid'])}</td><td>{_e(x.get('materialisation') or x['nature'])}</td><td>{_e(x['raison'])}</td></tr>"
+                 for x in d["non_copiees"])
+    ex = "".join(f"<tr><td>{_e(x['modele'])}</td><td>{_e(x.get('raison') or '')}</td><td>{_e(x['explication'])}</td></tr>" for x in d["explications"])
+    pol = d.get("politiques") or {}
+    poltxt = ("; ".join(f"{t}: " + ", ".join(f"{i['kind']} {i['policy']}" for i in v) for t, v in (pol.get("tables") or {}).items())
+              or ("none on the copied tables" if pol.get("lu") else (pol.get("raison") or "not read")))
+    return (f"<h2>dbt project</h2><p>Project <code>{_e(d['projet'])}</code>, profile <code>{_e(d['profil'])}</code>, target "
+            f"<code>{_e(d['cible'])}</code>, adapter {_e(d['adaptateur'])}. {_e(d['lecture'])}: nothing was written to the warehouse.</p>"
+            f"<p>Relations copied: {len(d['copiees'])} (sources, seeds, snapshots, table and incremental models). "
+            f"Row access and masking policies: {_e(poltxt)}.</p>"
+            f"<p>Replay of the models on the copy (P3): {rj['identique']} identical, {rj['different']} different, "
+            f"{rj['non_compare']} replayed but not compared (no table to compare: views), {rj['non_rejouable']} not replayable, out of {rj['modeles']}. "
+            f"Details per model: <code>replay-dbt.json</code>.</p>"
+            + (f"<table><tr><th>Model</th><th>Difference</th><th>Explanation</th></tr>{ex}</table>" if ex else "")
+            + f"<h3>Not copied</h3><table><tr><th>Relation</th><th>Kind</th><th>Why</th></tr>{nc or '<tr><td colspan=3>none</td></tr>'}</table>")
+
+
 def write_report(res: dict, out: Path) -> Path:
     s = res["summary"]
     (out / "report.json").write_text(json.dumps(res, indent=2, default=str, ensure_ascii=False))
@@ -164,6 +187,7 @@ def write_report(res: dict, out: Path) -> Path:
 The copy is in Apache Iceberg format: you can reread it without Canot. The <code>{REREAD_FILE}</code> file next to this report holds the DuckDB commands to do so.</p>
 <h2>Tables</h2><table><tr><th>Table</th><th>Source rows</th><th>Target rows</th><th>Result</th><th>Details</th></tr>{rows}</table>
 <h2>Queries replayed on both sides</h2><table><tr><th>Query</th><th>Result</th><th>Details</th></tr>{qrows or '<tr><td colspan=3>none</td></tr>'}</table>
+{_dbt_section(res)}
 <h2>Type conversions</h2><table>{crows or '<tr><td>none</td></tr>'}</table>
 <h2>What does not move as is</h2>
 <p>Columns with a platform-specific type: {len(nonp)}. Objects to rebuild (views, procedures, tasks…):</p>

@@ -11,4 +11,5 @@ Reads: 2 done, 1 not read (details and reasons in the report)
 Report to share: <TMP>/out/scan.html
 Data: <TMP>/out/scan.json and the CSV files in the same folder
 To send it to us: <TMP>/out/scan-share.json (counts only: no table name, no SQL, no identity) at https://canot.io/offres.html#demarrer
+Next step: canot drill dbt://PROJECT_PATH DESTINATION copies the tables this project uses to Apache Iceberg, compares them and replays the models on the copy (read-only, with the credentials of your dbt profile).
 Need help reading this report or planning the next step? https://canot.io/#contact

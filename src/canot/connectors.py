@@ -142,23 +142,27 @@ class DuckDB(Connector):
 
 
 class Dbt(Connector):
-    """dbt project read through its artifacts (target/manifest.json, run_results.json, catalog.json): no network, no dbt command."""
+    """dbt project. Scan: read through its artifacts (target/manifest.json, run_results.json, catalog.json), no network, no dbt
+    command. Drill (canot drill dbt://PROJECT DESTINATION, dbt_drill.py): the warehouse named by profiles.yml is read, read-only,
+    with the profile's credentials; the relations the project uses are copied to Iceberg and compared, then the models are replayed."""
     name, label, schemes, dialect = "dbt", "dbt", ("dbt", "dbt+file"), "dbt"
     url = "dbt://PROJECT_PATH"
     famille = "fichiers"
     status = TESTE
-    capabilities = Capabilities("complet", (1,), (), ("P3",),
+    # export and P1/P2 go through the warehouse the profile names (Snowflake, BigQuery, Databricks, DuckDB); P3 is the model replay
+    capabilities = Capabilities("complet", (1,), ("iceberg",), ("P1", "P2", "P3"),
                                 teste_sur="2026-10-19: canot scan dbt://lab/dbt (test bench dbt project, dbt 1.12.6 manifest, Snowflake adapter); "
-                                          "canot replay-dbt on these artifacts and a local DuckDB copy built by the tests (docs/scan.md)")
+                                          "canot drill dbt://lab/dbt --target snowflake on the Snowflake trial account: 8 relations copied and "
+                                          "identical, 8 models replayed (docs/scan.md); BigQuery and Databricks profiles written, untested")
     rejeu_familles = False  # no query history: replayability is computed per model during collection
     profile = {
         "droits": {1: ["read the manifest.json, run_results.json and catalog.json files in the target/ folder"]},
-        "droits_jamais": "no connection to the warehouse, no dbt command (no parse, compile or run)",
+        "droits_jamais": "the scan opens no connection to the warehouse and runs no dbt command (no parse, compile or run)",
         # read by render.py (Capabilities section)
-        "commande_preuve": "canot replay-dbt",
-        "limite_preuve": ("P3 covers the SQL models that DuckDB replays and whose original table is in the copy; views are "
-                          "replayed without comparison; Python models, incremental models, snapshots and models to rebuild (F13) "
-                          "are counted, not proven."),
+        "commande_preuve": "canot drill dbt://PROJECT DESTINATION (read-only, with the dbt profile's credentials)",
+        "limite_preuve": ("P1 covers the sources, seeds, snapshots and table or incremental models found in the warehouse; P3 covers "
+                          "the SQL models that DuckDB replays and whose original table is in the copy; views are replayed without "
+                          "comparison; Python models, incremental models and models to rebuild (F13) are counted, not proven."),
     }
 
     def open(self, url: str):

@@ -30,8 +30,6 @@ Sans compte ni données : la commande joue un exercice de sortie complet sur le 
   <img src="https://raw.githubusercontent.com/chiptuned/canot/main/docs/assets/demo.svg" alt="uvx canot demo copie les 8 tables de TPC-H, compare tout et signale un écart" width="860">
 </p>
 
-Résultat : 7 tables sur 8 identiques, 3 requêtes sur 4 qui rendent le même résultat. L'écart vient d'une colonne horodatée à la nanoseconde : Iceberg v2 la ramène à la microseconde. Le genre d'écart qu'on veut découvrir **avant** de partir.
-
 ## ▶ Connecteurs
 
 `canot connectors` les liste, avec ce que chacun sait faire (inventaire, export, preuve) et s'il a été validé.

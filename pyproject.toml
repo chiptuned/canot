@@ -23,6 +23,7 @@ dependencies = [
   "pyiceberg[sql-sqlite]>=0.8",
   "sqlglot>=25",
   "cryptography>=42",
+  "pyyaml>=6",  # dbt_project.yml and profiles.yml (canot drill dbt://), read with safe_load
   # les connecteurs sont installés d'office : `uvx canot drill …` marche sans option
   "snowflake-connector-python>=3.12",
   "google-cloud-bigquery[bqstorage]>=3.25",
