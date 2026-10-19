@@ -5,6 +5,7 @@ strings of the run (query details, conversion notes, dbt reasons) are worded in 
 written when no French wording is known (technical messages). report.json, like the command line, stays English."""
 from __future__ import annotations
 
+import os
 import hashlib
 import html
 import json
@@ -485,7 +486,13 @@ def write_relire_sql(res: dict, out: Path) -> Path:
                   "-- CREATE SECRET (TYPE S3, KEY_ID '...', SECRET '...', ENDPOINT 's3-host', URL_STYLE 'path');"]
     for fqn, meta in sorted((loc.get("metadata") or {}).items()):
         path = local_path(meta).as_posix() if meta.startswith("file://") else meta.replace("\\", "/")  # DuckDB reads C:/... on Windows
-        lines.append(f"SELECT '{fqn}' AS table_name, count(*) AS row_count FROM iceberg_scan('{path}');")
+        if os.name == "nt" and len(path) > 1 and path[1] == ":":
+            # The Iceberg metadata written on Windows stores file:// paths that DuckDB's iceberg reader cannot open:
+            # count the rows in the Parquet data files of the table, which every engine reads.
+            data = path.rsplit("/metadata/", 1)[0] + "/data/**/*.parquet"
+            lines.append(f"SELECT '{fqn}' AS table_name, count(*) AS row_count FROM read_parquet('{data}');")
+        else:
+            lines.append(f"SELECT '{fqn}' AS table_name, count(*) AS row_count FROM iceberg_scan('{path}');")
     p = out / REREAD_FILE
     p.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     return p

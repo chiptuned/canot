@@ -166,10 +166,11 @@ def test_reread_sql_runs_with_plain_duckdb(tmp_path, monkeypatch):
     assert main(["demo", "--out", str(tmp_path / "d"), "--rows", "1000", "--no-open"]) == 0
     sql = (tmp_path / "d" / "evidence" / "reread.sql").read_text(encoding="utf-8")
     con = duckdb.connect()
-    try:
-        con.execute("INSTALL iceberg; LOAD iceberg;")
-    except Exception as e:  # offline: the extension cannot be downloaded
-        pytest.skip(f"iceberg extension unavailable: {e}")
+    if "iceberg_scan" in sql:  # (on Windows the file counts Parquet data files: no extension needed)
+        try:
+            con.execute("INSTALL iceberg; LOAD iceberg;")
+        except Exception as e:  # offline: the extension cannot be downloaded
+            pytest.skip(f"iceberg extension unavailable: {e}")
     counts = {}
     for line in sql.splitlines():
         if line.startswith("SELECT"):
