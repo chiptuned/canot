@@ -335,34 +335,126 @@ def rejouer(projet: dbt_scan.ProjetDbt, con, copie: dict, tol: Tolerances, log=l
     return out
 
 
+def ancetres(man: dict, uid: str) -> set[str]:
+    """Every node the model reads, directly or through other models (sources included)."""
+    nodes = man.get("nodes") or {}
+    vus: set[str] = set()
+    pile = list(((nodes.get(uid) or {}).get("depends_on") or {}).get("nodes") or [])
+    while pile:
+        u = pile.pop()
+        if u in vus:
+            continue
+        vus.add(u)
+        pile += ((nodes.get(u) or {}).get("depends_on") or {}).get("nodes") or []
+    return vus
+
+
+R_PLUSIEURS_FUSEAUX = ("several source time zones: conversions to a date can differ, result not determined for the models concerned "
+                       "(replayed in UTC)")
+
+
+def fuseau(man: dict, conversions: list[dict] | None, origine: str) -> dict:
+    """Time zone of the replay session. The source zone of the inputs is known (canot drill logs it with each timestamp it stores
+    as UTC): it is applied to the replay. Exactly one zone among the inputs of the models: that zone. None: UTC, explicitly, so
+    the result does not depend on the machine. Several: UTC and a finding; the models that read them are not determined."""
+    entrees = {}  # (SCHEMA, NAME) of the tables the models read from the copy -> uid (sources, seeds, snapshots)
+    for u, n in {**(man.get("nodes") or {}), **(man.get("sources") or {})}.items():
+        if n.get("resource_type") in ("source", "seed", "snapshot") and n.get("schema"):
+            nom = n.get("identifier") if n.get("resource_type") == "source" else n.get("alias")
+            entrees[(str(n["schema"]).upper(), str(nom or n.get("name") or "").upper())] = u
+    cols: dict[str, list[str]] = {}
+    tables: dict[str, set[str]] = {}
+    for c in conversions or []:
+        tz = c.get("tz") if isinstance(c, dict) else getattr(c, "tz", None)
+        if not tz:
+            continue
+        c = c if isinstance(c, dict) else asdict(c)
+        schema, _, nom = str(c.get("table", "")).rpartition(".")
+        uid = entrees.get((schema.upper(), nom.upper()))
+        if uid is None:
+            continue
+        cols.setdefault(tz, []).append(f"{c['table']}.{c['column']}")
+        tables.setdefault(tz, set()).add(uid)
+    zones = sorted(cols)
+    res = {"applied": zones[0] if len(zones) == 1 else "UTC", "origin": cols.get(zones[0], []) if len(zones) == 1 else [],
+           "zones_found": {z: cols[z] for z in zones}, "conversions_read_from": origine, "finding": None, "inputs": sorted(set().union(*tables.values())) if tables else []}
+    res["rule"] = ("source time zone of the inputs, applied to the replay" if len(zones) == 1 else
+                   "no source time zone among the inputs: UTC, explicitly" if not zones else R_PLUSIEURS_FUSEAUX)
+    if len(zones) > 1:
+        res["finding"] = R_PLUSIEURS_FUSEAUX + ": " + "; ".join(f"{z} ({', '.join(cols[z][:3])})" for z in zones)
+    return res
+
+
+def _appliquer_fuseau(con, tz: dict) -> None:
+    try:
+        con.execute(f"SET TimeZone = '{tz['applied'].replace(chr(39), '')}'")
+    except duckdb.Error:  # a zone DuckDB does not know (a bare offset, for instance): UTC, said so
+        tz["finding"] = (f"source time zone {tz['applied']} unknown to DuckDB: replayed in UTC; conversions to a date can differ")
+        tz.update(applied="UTC", rule="source time zone not applicable: UTC, explicitly")
+        con.execute("SET TimeZone = 'UTC'")
+
+
+def conversions_du_drill(drill_out: str | None) -> tuple[list[dict] | None, str]:
+    """The conversions logged by canot drill (report.json of its --out folder), for the replay on its Iceberg copy."""
+    p = Path(drill_out or "canot-out") / "report.json"
+    try:
+        return list(json.loads(p.read_text(encoding="utf-8")).get("conversions") or []), "report.json of the drill"
+    except (OSError, ValueError):
+        return None, "none (no report.json in the drill folder)"
+
+
 def run_rejeu(url: str, out: Path, key_path: Path, *, base: str | None = None, lac: str | None = None, drill_out: str | None = None,
-              catalog: str | None = None, tol: Tolerances | None = None, log=print, cat=None, ev: EvidenceLog | None = None) -> dict:
+              catalog: str | None = None, tol: Tolerances | None = None, log=print, cat=None, ev: EvidenceLog | None = None,
+              conversions: list | None = None) -> dict:
     """`cat` + `ev` (canot drill dbt://): replay on the catalog the drill just wrote and add the entries to the drill's evidence
     log, prefixed `replay_`; the caller seals the log and writes replay-dbt.json (the returned "seal" is then None)."""
     tol = tol or Tolerances()
     t0 = time.monotonic()
     projet = dbt_scan.ProjetDbt(url)
+    man = json.loads((projet.cible / "manifest.json").read_text(encoding="utf-8"))
+    if conversions is not None:
+        origine = "conversions of the copy (canot drill)"
+    elif lac:
+        conversions, origine = conversions_du_drill(drill_out)
+    else:
+        origine = "none (a DuckDB database: no conversion logged)"
+    tz = fuseau(man, conversions, origine)
     con, copie, desc = ouvrir_copie(base, lac, drill_out, catalog, cat)
+    _appliquer_fuseau(con, tz)
     own_log = ev is None
     ev = ev if ev is not None else EvidenceLog(out)
     pre = "" if own_log else "replay_"
     env = {"canot": __version__, "duckdb": duckdb.__version__, "sqlglot": sqlglot.__version__}
-    ev.add(pre + "start", {"projet": projet.describe(), "copie": desc, "forme": "P3 pipeline replay", "env": env, "tolerances": tol.to_dict()})
+    ev.add(pre + "start", {"projet": projet.describe(), "copie": desc, "forme": "P3 pipeline replay", "env": env, "tolerances": tol.to_dict(),
+                           "timezone": tz})
     try:
-        log(f"→ replaying the dbt models of {projet.describe()} on {desc}")
+        log(f"→ replaying the dbt models of {projet.describe()} on {desc}, time zone {tz['applied']} ({tz['rule']}"
+            + (f": {', '.join(tz['origin'][:3])}" if tz["origin"] else "") + ")")
+        if tz["finding"]:
+            log(f"   finding: {tz['finding']}")
         res = rejouer(projet, con, copie, tol, log)
     finally:
         con.close()
+    if tz["finding"] and tz["inputs"]:  # the models that read a zoned input: not determined, never a silent "identical"
+        for r in res:
+            if r["statut"] in ("identique", "different") and ancetres(man, r["modele"]) & set(tz["inputs"]):
+                r["fuseau_non_determine"] = True
+                r["note"] = ((r.get("note") + "; ") if r.get("note") else "") + tz["finding"]
     for r in res:
         ev.add("dbt_model", r)
     compte = {s: sum(1 for r in res if r["statut"] == s) for s in STATUTS}
-    summary = {"modeles": len(res), **compte, "duree_s": round(time.monotonic() - t0, 1),
-               "preuve": "complete" if res and compte["identique"] == len(res) else ("mismatch" if compte["different"] else "partial")}
+    indetermines = sum(1 for r in res if r.get("fuseau_non_determine"))
+    summary = {"modeles": len(res), **compte, "duree_s": round(time.monotonic() - t0, 1), "fuseau": tz["applied"],
+               "fuseau_non_determine": indetermines,
+               "preuve": ("complete" if res and compte["identique"] == len(res) and not indetermines else
+                          "mismatch" if compte["different"] else "partial")}
     ev.add(pre + "summary", summary)
     seal = ev.seal(key_path, log) if own_log else None
     rapport = {"schema": DOSSIER, "projet": projet.describe(), "copie": desc, "forme": "P3", "summary": summary, "modeles": res,
-               "env": env, "tolerances": tol.to_dict(), "seal": seal,
-               "regles": ["same compiled SQL, copied inputs, two runs: source platform and local DuckDB",
+               "env": env, "tolerances": tol.to_dict(), "seal": seal, "timezone": tz,
+               "regles": ["time zone of the replay: the source zone of the inputs when there is exactly one; otherwise UTC, explicitly "
+                          "(several zones: finding, the models concerned are not determined)",
+                          "same compiled SQL, copied inputs, two runs: source platform and local DuckDB",
                           "types of the replayed output aligned on the original table before comparison; each conversion is logged",
                           "comparison: row count, per-column statistics, content fingerprint (canot drill criteria)",
                           "a view has no original table: replayed, not compared; its output feeds the next models"]}

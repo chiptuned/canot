@@ -25,6 +25,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlencode
 
 from .connectors import NoConnector
+from .dbt_rejeu import ancetres
 from .evidence import EvidenceLog
 from .scanner import dbt as dbt_scan
 from .tolerances import Tolerances
@@ -213,19 +214,6 @@ def relations(man: dict) -> tuple[list[dict], list[dict]]:
     return copier, ecartees
 
 
-def ancetres(man: dict, uid: str) -> set[str]:
-    nodes = man.get("nodes") or {}
-    vus: set[str] = set()
-    pile = list(((nodes.get(uid) or {}).get("depends_on") or {}).get("nodes") or [])
-    while pile:
-        u = pile.pop()
-        if u in vus:
-            continue
-        vus.add(u)
-        pile += ((nodes.get(u) or {}).get("depends_on") or {}).get("nodes") or []
-    return vus
-
-
 # ---------------------------------------------------------------- connection
 
 
@@ -237,6 +225,7 @@ class Connexion:
     env: dict[str, str] = field(default_factory=dict)  # set only while the source opens; secret values included: never written
     description: dict = field(default_factory=dict)  # what can be written: no user, no secret, no key path
     lecteur: str = ""  # who reads, for the read-only message
+    fuseau_session: str | None = None  # DuckDB: settings.TimeZone of the profile, the zone dbt computes in (applied to the source)
 
 
 def database_du_profil(p: Profil, pdir: Path, env=None) -> str | None:
@@ -321,7 +310,10 @@ def connexion(p: Profil, schemas: list[str], pdir: Path, env=None) -> Connexion:
                                   "(an in-memory or MotherDuck database is not supported).")
         f = Path(str(path)).expanduser()
         f = f if f.is_absolute() else (pdir / f)
-        return Connexion(a, str(f.resolve()), db, var, {"adapter": a, "file": f.name, "database": db}, "the local DuckDB file, read-only")
+        reglages = c.get("settings") if isinstance(c.get("settings"), dict) else {}
+        tzs = resolve(reglages.get("TimeZone") or reglages.get("timezone"), f"target {p.cible} settings.TimeZone", env)
+        return Connexion(a, str(f.resolve()), db, var, {"adapter": a, "file": f.name, "database": db, "timezone": tzs},
+                         "the local DuckDB file, read-only", tzs)
     raise AdaptateurSansConnecteur(a, p.profil, p.cible)
 
 
@@ -367,27 +359,15 @@ def _libelle_politique(items: list[dict]) -> str:
     return "; ".join(un(x) for x in items)
 
 
-def fuseau_rejeu() -> str | None:
-    """Time zone of the DuckDB session that replays the models (the machine's, unless TZ says otherwise)."""
-    from .dbt_rejeu import _connexion
-
-    try:
-        con = _connexion()
-        try:
-            return str(con.execute("select current_setting('TimeZone')").fetchone()[0])
-        finally:
-            con.close()
-    except Exception:  # noqa: BLE001
-        return None
-
-
 def explications(man: dict, rapport: dict, copiees: list[dict], pol: dict, conversions: list[dict] | None = None,
-                 lecteur: str = "the profile's role", fuseau: str | None = None) -> list[dict]:
-    """For each model reported different: the copied inputs it reads, then the causes, measured ones first: a lossy conversion
-    of an input (time zone reduced to UTC, precision), then the row access and masking policies on its inputs, else the
-    possible causes. Each cause says what supports it; nothing is asserted that this run did not read."""
+                 lecteur: str = "the profile's role") -> list[dict]:
+    """For each model reported different: the copied inputs it reads, then the causes this run measured, measured ones first.
+    A source time zone the replay applied is not a cause (rapport["timezone"]); several source zones are (not determined). A row
+    access policy on an input is a cause only when the row counts differ; otherwise it is reported in the policies, not here.
+    Lossy conversions other than a time zone come next; else the possible causes. Nothing is asserted that this run did not read."""
     par_uid = {r["uid"]: r["fqn"] for r in copiees}
     tables_pol = {k.upper(): v for k, v in (pol.get("tables") or {}).items()}
+    tz = rapport.get("timezone") or {}
     out = []
     for m in rapport.get("modeles") or []:
         if m.get("statut") != "different":
@@ -403,31 +383,43 @@ def explications(man: dict, rapport: dict, copiees: list[dict], pol: dict, conve
         autres = []  # lossy conversions other than a time zone (precision): stated only when nothing else explains the difference
         for c in conv:
             ref = f"{c['table']}.{c['column']}"
-            if "time zone" in str(c.get("note")):
-                zone = re.search(r"time zone (\S+) -> UTC", str(c.get("note")))
+            zone = c.get("tz") or (re.search(r"time zone (\S+) -> UTC", str(c.get("note"))) or [None, None])[1]
+            if zone and zone == tz.get("applied"):
+                if dates:  # zone applied, dates still differ: the stored offsets do not follow the zone's rules
+                    causes.append({"nature": "decalages", "mesure": False,
+                                   "court": f"{ref}: zone {zone} applied, dates still differ: the stored offsets do not follow that zone "
+                                            "(a TIMESTAMP_TZ keeps each value's offset), not covered by the rule",
+                                   "texte": f"{ref} was copied as UTC and the replay ran in its source zone {zone}, yet the date values still "
+                                            "differ: the offsets stored with the values do not follow that zone's rules (a TIMESTAMP_TZ keeps the "
+                                            "offset of each value: a fixed offset across daylight saving time, or offsets that vary by row). "
+                                            "The copy keeps the instant only; the replay rule cannot recover per-value offsets. If they matter, "
+                                            "copy them as a separate column before leaving (docs/scan.md)."})
+                continue  # applied to the replay: dates are derived in the same zone on both sides
+            if zone:
                 causes.append({"nature": "fuseau", "mesure": True,
-                               "court": f"{ref} copied as UTC (zone {zone.group(1) if zone else 'of origin'} not kept): dates derived from it shift"
-                                        + (" (measured on the date values here)" if dates else ""),
-                               "texte":
-                               f"{ref} is copied as an instant in UTC ({c['note']}): a date or an hour derived from it (cast to date, "
-                               f"date_trunc, extract) is computed in the replay engine's time zone{f' ({fuseau}, from this machine)' if fuseau else ''} "
-                               "on the copy, and in the zone stored with each value on the platform"
-                               + (": the differences on date values here are this shift" if dates else "")
-                               + ". After the exit, the pipeline must set that zone explicitly (docs/discrepancies.md)."})
+                               "court": f"{ref} copied as UTC (zone {zone}), replayed in {tz.get('applied') or 'another zone'}: dates derived "
+                                        "from it can shift" + (" (measured on the date values here)" if dates else ""),
+                               "texte": (f"{tz['finding']}. " if tz.get("finding") else "")
+                               + f"{ref} is copied as an instant in UTC (source zone {zone}); the replay ran in {tz.get('applied') or 'another zone'}: "
+                               "a date or an hour derived from it (cast to date, date_trunc, extract) can differ from the platform's"
+                               + (": the differences on date values here are this shift" if dates else "") + " (docs/discrepancies.md)."})
             else:
                 autres.append({"nature": "conversion", "mesure": True, "court": f"{ref} copied with a possible loss ({c['note']})",
                                "texte": f"{ref} is copied with a possible loss ({c['note']}): a model computed from it can differ."})
-        if sous_pol:
-            lignes = v.get("rows_source") is not None and v.get("rows_source") == v.get("rows_target")
-            causes.append({"nature": "politique", "mesure": False,
-                           "court": "reads " + ", ".join(f"{e} under {_libelle_politique(x)}" for e, x in sous_pol.items())
-                                    + f": the copy is what {lecteur} can read" + (", same row count as the platform table" if lignes else ""),
+        rap = {e: [x for x in items if "ROW_ACCESS" in str(x.get("kind", "")).upper()] for e, items in sous_pol.items()}
+        rap = {e: x for e, x in rap.items() if x}
+        lignes_diff = v.get("rows_source") is not None and v.get("rows_target") is not None and v["rows_source"] != v["rows_target"]
+        decale = any(c["nature"] in ("fuseau", "decalages") for c in causes)  # a date shift also changes the rows of a grouping
+        if rap and lignes_diff and not decale:
+            causes.append({"nature": "politique", "mesure": True,
+                           "court": "reads " + ", ".join(f"{e} under {_libelle_politique(x)}" for e, x in rap.items())
+                                    + f": the copy is what {lecteur} can read; row counts differ ({v['rows_source']} / {v['rows_target']})",
                            "texte":
-                           "reads " + ", ".join(f"{e} ({_libelle_politique(x)})" for e, x in sous_pol.items())
-                           + f": the copy holds what {lecteur} can read; if dbt built the table on the platform with a role that saw more rows "
-                           "or unmasked values, the replay on the copy cannot reproduce it, and that is the expected result for this reader, "
-                           "not a translation error (finding F10 of canot scan: a complete copy needs a principal these policies do not filter)"
-                           + (f". Here the replayed output has as many rows as the platform table ({v['rows_source']})." if lignes else ".")})
+                           "reads " + ", ".join(f"{e} ({_libelle_politique(x)})" for e, x in rap.items())
+                           + f", and the replayed output has {v['rows_target']} rows where the platform table has {v['rows_source']}: the copy "
+                           f"holds what {lecteur} can read, while dbt built the table with a role that saw more rows; the replay on the copy "
+                           "cannot reproduce it, and that is the expected result for this reader, not a translation error (finding F10 of "
+                           "canot scan: a complete copy needs a principal these policies do not filter)."})
         if not causes:
             causes = autres
         if not causes:
@@ -481,6 +473,8 @@ def run_dbt_drill(url: str, dest: str, out: Path, key_path: Path, *, profiles_di
     log(f"Read-only: Canot reads the warehouse with your credentials and {cx.lecteur}; nothing is written to it, no right is added.")
     with _environnement(cx.env):
         src = (open_source or sources.open_source)(cx.url)
+    if cx.fuseau_session and hasattr(src, "con"):  # the session zone dbt-duckdb sets: timestamps with time zone are read in it
+        src.con.execute(f"SET GLOBAL TimeZone = '{str(cx.fuseau_session).replace(chr(39), '')}'")
     ev = EvidenceLog(out)
     try:
         tables = src.tables()
@@ -518,16 +512,16 @@ def run_dbt_drill(url: str, dest: str, out: Path, key_path: Path, *, profiles_di
         log(f"   row access and masking policies: {pol['raison']}")
 
     log("→ replaying the dbt models on the copy (P3)")
-    rapport = run_rejeu(base, out, key_path, lac=cible.label, cat=cible.catalog(), tol=tol, log=log, ev=ev)
-    expl = explications(man, rapport, retenues, pol, res["conversions"], cx.lecteur, fuseau_rejeu())
+    rapport = run_rejeu(base, out, key_path, lac=cible.label, cat=cible.catalog(), tol=tol, log=log, ev=ev, conversions=res["conversions"])
+    expl = explications(man, rapport, retenues, pol, res["conversions"], cx.lecteur)
     s, rs = res["summary"], rapport["summary"]
     verdict = ("mismatch" if s["parity"] != "complete" or rs["different"] else
-               "partial" if rs["non_rejouable"] or absentes else "complete")
+               "partial" if rs["non_rejouable"] or absentes or rs.get("fuseau_non_determine") else "complete")
     dbt = {"schema": SCHEMA, "projet": prof.projet, "profil": prof.profil, "cible": prof.cible, "adaptateur": prof.adaptateur,
            "connexion": cx.description, "lecture": f"read-only, with {cx.lecteur}",
            "copiees": [{k: r.get(k) for k in ("uid", "nature", "materialisation", "relation", "note")} for r in retenues],
            "non_copiees": [{k: r.get(k) for k in ("uid", "nature", "materialisation", "relation", "raison")} for r in ecartees],
-           "politiques": pol, "rejeu": {k: rs[k] for k in ("modeles", *STATUTS)}, "preuve_p3": rs["preuve"],
+           "politiques": pol, "rejeu": {k: rs[k] for k in ("modeles", *STATUTS)}, "fuseau": rapport.get("timezone"), "preuve_p3": rs["preuve"],
            "parite_copie": s["parity"], "explications": expl, "verdict": verdict}
     ev.add("dbt_verdict", {k: v for k, v in dbt.items() if k not in ("copiees", "non_copiees", "politiques", "connexion")})
     seal = ev.seal(key_path, log)
@@ -541,13 +535,16 @@ def run_dbt_drill(url: str, dest: str, out: Path, key_path: Path, *, profiles_di
 def resume(r: dict, out: Path) -> list[str]:
     """The short combined summary printed by the CLI."""
     s, d = r["drill"]["summary"], r["dbt"]
-    rj = d["rejeu"]
+    rj, tz = d["rejeu"], d.get("fuseau") or {}
     lines = [f"\ndbt exit exercise ({d['projet']}, target {d['cible']}): {d['verdict']}",
              f"  Copy (P1): parity {s['parity']}, {s['tables_ok']}/{s['tables_total']} tables identical",
              f"  Queries (P2): {s['queries_match']}/{s['queries_total']} identical" if s["queries_total"] else
              "  Queries (P2): none replayed (no --queries and none found in the history)",
              f"  Models (P3): {rj['identique']} identical, {rj['different']} different, {rj['non_compare']} replayed but not compared (no table to compare: views), "
-             f"{rj['non_rejouable']} not replayable, out of {rj['modeles']}"]
+             f"{rj['non_rejouable']} not replayable, out of {rj['modeles']}",
+             f"  Replay time zone: {tz.get('applied')} ({tz.get('rule')}" + (f": {', '.join(tz['origin'][:3])}" if tz.get("origin") else "") + ")"]
+    if tz.get("finding"):
+        lines.append(f"  Finding: {tz['finding']}")
     nc = {}
     for x in d["non_copiees"]:
         nc[x.get("materialisation") or x["nature"]] = nc.get(x.get("materialisation") or x["nature"], 0) + 1
@@ -556,9 +553,9 @@ def resume(r: dict, out: Path) -> list[str]:
     for e in d["explications"]:
         lines.append(f"  Why {e['modele'].split('.')[-1]} differs: " + "; ".join(c["court"] for c in e["causes"]))
     natures = {c["nature"] for e in d["explications"] for c in e["causes"]}
-    if "fuseau" in natures:
+    if natures & {"fuseau", "decalages"}:
         lines.append("  Time zone: Iceberg keeps instants in UTC; the platform derived dates in the zone stored with each value, the replay "
-                     "in its session zone. After the exit, the pipeline must set that zone explicitly (docs/discrepancies.md).")
+                     "in another zone. After the exit, the pipeline must set that zone explicitly (docs/discrepancies.md).")
     if "politique" in natures:
         lines.append(f"  Policies: the copy holds what {d['lecture'].split('with ', 1)[-1]} can read; a table built on the platform by a role "
                      "that saw more cannot be reproduced from it, and that is expected for this reader (finding F10 of canot scan).")

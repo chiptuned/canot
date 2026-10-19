@@ -19,6 +19,8 @@ class Conversion:
     target_type: str
     lossy: bool
     note: str
+    # source time zone of a tz-aware timestamp stored as UTC (e.g. America/Los_Angeles): the replay applies it (dbt_rejeu)
+    tz: str | None = None
 
 
 def _convert_type(t: pa.DataType) -> tuple[pa.DataType, str | None, bool]:
@@ -58,7 +60,8 @@ def target_schema(table: str, schema: pa.Schema, source_types: dict[str, str]) -
     for f in schema:
         nt, note, lossy = _convert_type(f.type)
         if note or nt != f.type:
-            convs.append(Conversion(table, f.name, source_types.get(f.name, str(f.type)), str(nt), lossy, note or "normalized type"))
+            tz = f.type.tz if pa.types.is_timestamp(f.type) and f.type.tz and f.type.tz.upper() not in ("UTC", "+00:00", "Z") else None
+            convs.append(Conversion(table, f.name, source_types.get(f.name, str(f.type)), str(nt), lossy, note or "normalized type", tz))
         fields.append(pa.field(f.name, nt, nullable=True))
     return pa.schema(fields), convs
 

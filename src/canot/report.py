@@ -144,6 +144,9 @@ def _dbt_section(res: dict) -> str:
             f"<p>Replay of the models on the copy (P3): {rj['identique']} identical, {rj['different']} different, "
             f"{rj['non_compare']} replayed but not compared (no table to compare: views), {rj['non_rejouable']} not replayable, out of {rj['modeles']}. "
             f"Details per model: <code>replay-dbt.json</code>.</p>"
+            + (lambda tz: f"<p>Time zone of the replay: <b>{_e(tz.get('applied'))}</b> ({_e(tz.get('rule'))}"
+               + (f": {_e(', '.join(tz.get('origin') or []))}" if tz.get("origin") else "") + ")."
+               + (f" <span class='warn'>{_e(tz['finding'])}</span>" if tz.get("finding") else "") + "</p>")(d.get("fuseau") or {})
             + (f"<table><tr><th>Model</th><th>Difference</th><th>Explanation</th></tr>{ex}</table>" if ex else "")
             + f"<h3>Not copied</h3><table><tr><th>Relation</th><th>Kind</th><th>Why</th></tr>{nc or '<tr><td colspan=3>none</td></tr>'}</table>")
 

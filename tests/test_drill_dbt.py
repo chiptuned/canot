@@ -213,13 +213,15 @@ def test_drill_dbt_detecte_un_ecart_injecte(tmp_path):
     assert verify_dir(out)[0]
 
 
-def test_ecart_explique_par_une_politique(tmp_path, monkeypatch):
+def test_politique_sans_effet_mesure_n_est_pas_une_cause(tmp_path, monkeypatch):
+    """A row access policy on an input, same row counts: reported with the policies, not given as the cause of the difference."""
     proj = build_project(tmp_path, ecart=True)
     monkeypatch.setattr(dbt_drill, "politiques", lambda src, tables: {"lu": True, "raison": None, "tables": {
         "raw.customers": [{"kind": "ROW_ACCESS_POLICY", "policy": "RAP_COUNTRY", "column": None}]}})
     r, _ = _drill(tmp_path, proj)
     (e,) = r["dbt"]["explications"]
-    assert "raw.customers (row access policy RAP_COUNTRY)" in e["explication"] and "F10" in e["explication"]
+    assert [c["nature"] for c in e["causes"]] == ["inconnue"] and e["politiques"]
+    assert r["dbt"]["politiques"]["tables"]["raw.customers"]
 
 
 def test_profil_snowflake_aucun_secret_ecrit(tmp_path, monkeypatch, capsys):
@@ -273,21 +275,116 @@ def test_cli_drill_dbt(tmp_path, capsys):
         cli_run(["drill", str(proj / f"{WH}.duckdb"), str(tmp_path / "l2"), "--target", "x"])
 
 
-def test_explication_fuseau_horaire_mesuree_avant_la_politique():
-    """Case of the real run on the test bench: ORDER_TS TIMESTAMP_TZ copied as UTC, a date derived from it shifts by a day;
-    RAW.CUSTOMERS carries policies. The measured cause comes first, the policy is stated with what this run shows."""
+def test_explications_fuseau_applique_et_politique_mesuree():
+    """Real bench case: ORDER_TS TIMESTAMP_TZ in America/Los_Angeles. Applied to the replay: not a cause. Not applied (several zones):
+    a cause. A row access policy is a cause only when the row counts differ."""
     man = {"nodes": {"model.p.fct": {"depends_on": {"nodes": ["source.p.raw.orders", "source.p.raw.customers"]}}}}
     copiees = [{"uid": "source.p.raw.orders", "fqn": "RAW.orders"}, {"uid": "source.p.raw.customers", "fqn": "RAW.customers"}]
-    rapport = {"modeles": [{"modele": "model.p.fct", "statut": "different", "raison": "ORDER_DATE.max: datetime.date(2025, 8, 22) / datetime.date(2025, 8, 23)",
-                            "verification": {"rows_source": 150000, "rows_target": 150000, "stats_diffs": ["ORDER_DATE.max: datetime.date(2025, 8, 22) / datetime.date(2025, 8, 23)"]}}]}
     pol = {"lu": True, "tables": {"RAW.CUSTOMERS": [{"kind": "ROW_ACCESS_POLICY", "policy": "RAP_COUNTRY", "column": None}]}}
-    conv = [{"table": "RAW.ORDERS", "column": "ORDER_TS", "lossy": True,
+    conv = [{"table": "RAW.ORDERS", "column": "ORDER_TS", "lossy": True, "tz": "America/Los_Angeles",
              "note": "time zone America/Los_Angeles -> UTC (Iceberg keeps UTC only): the instant is kept, the zone name is not"}]
-    (e,) = dbt_drill.explications(man, rapport, copiees, pol, conv, "role R", "Europe/Paris")
-    assert [c["nature"] for c in e["causes"]] == ["fuseau", "politique"] and e["causes"][0]["mesure"]
-    assert "RAW.ORDERS.ORDER_TS is copied as an instant in UTC" in e["explication"] and "Europe/Paris" in e["explication"]
-    assert "the differences on date values here are this shift" in e["explication"]
-    assert "as many rows as the platform table (150000)" in e["explication"]
+
+    def rapport(tz, rows=(150000, 150000), d="ORDER_DATE.max: datetime.date(2025, 8, 22) / datetime.date(2025, 8, 23)"):
+        return {"timezone": tz, "modeles": [{"modele": "model.p.fct", "statut": "different", "raison": d,
+                                             "verification": {"rows_source": rows[0], "rows_target": rows[1], "stats_diffs": [d]}}]}
+
+    (e,) = dbt_drill.explications(man, rapport({"applied": "America/Los_Angeles"}, d="TOTAL.sum: 1 / 2"), copiees, pol, conv, "role R")
+    assert [c["nature"] for c in e["causes"]] == ["inconnue"]  # zone applied, no date difference: not a cause
+    (e,) = dbt_drill.explications(man, rapport({"applied": "UTC", "finding": "several source time zones"}), copiees, pol, conv, "role R")
+    assert [c["nature"] for c in e["causes"]] == ["fuseau"] and "replay ran in UTC" in e["explication"]
+    (e,) = dbt_drill.explications(man, rapport({"applied": "America/Los_Angeles"}, (150000, 25325), "row count: 150000 / 25325"),
+                                  copiees, pol, conv, "role R")
+    assert [c["nature"] for c in e["causes"]] == ["politique"] and "25325 rows where the platform table has 150000" in e["explication"]
+
+
+# ---------------------------------------------------------------- time zone of the replay
+
+LA = "America/Los_Angeles"
+
+
+def build_tz_project(tmp_path: Path) -> Path:
+    """Events near midnight in Los Angeles; dbt (dbt-duckdb, settings.TimeZone) derives their date in that zone."""
+    proj = tmp_path / "tzshop"
+    (proj / "target").mkdir(parents=True)
+    con = duckdb.connect(str(proj / "warehouse.duckdb"))
+    con.execute(f"SET TimeZone = '{LA}'")
+    con.execute("create schema raw; create schema analytics")
+    con.execute("""create table raw.events as select * from (values
+                   (1, timestamptz '2026-03-10 23:30:00-07'), (2, timestamptz '2026-03-11 00:15:00-07'),
+                   (3, timestamptz '2026-03-11 16:45:00-07'), (4, timestamptz '2026-03-11 23:59:00-07')) v(id, ts)""")
+    sql = 'select cast(ts as date) as d, count(*) as n from "warehouse"."raw"."events" group by 1'
+    con.execute(f"create table analytics.daily as {sql}")
+    con.close()
+    (proj / "dbt_project.yml").write_text("name: tzshop\nprofile: tz\n")
+    (proj / "profiles.yml").write_text(f"tz:\n  target: dev\n  outputs:\n    dev:\n      type: duckdb\n      path: warehouse.duckdb\n"
+                                       f"      settings:\n        TimeZone: {LA}\n")
+    node = _node("daily", "table", sql, ["source.tzshop.raw.events"])
+    node["unique_id"] = "model.tzshop.daily"
+    man = {"metadata": {"adapter_type": "duckdb", "project_name": "tzshop"},
+           "nodes": {"model.tzshop.daily": node},
+           "sources": {"source.tzshop.raw.events": {"unique_id": "source.tzshop.raw.events", "resource_type": "source", "name": "events",
+                                                     "identifier": "events", "database": WH, "schema": "raw",
+                                                     "relation_name": f'"{WH}"."raw"."events"'}},
+           "macros": {"macro.dbt.materialization_table_default": {"name": "materialization_table_default", "package_name": "dbt"}}}
+    (proj / "target" / "manifest.json").write_text(json.dumps(man))
+    return proj
+
+
+def test_fuseau_machine_sans_correctif_le_modele_differe(tmp_path, monkeypatch):
+    """Before the rule: the replay casts in the machine's zone (Europe/Paris simulated) and the evening event moves a day."""
+    from canot import dbt_rejeu
+
+    monkeypatch.setattr(dbt_rejeu, "_appliquer_fuseau", lambda con, tz: con.execute("SET TimeZone = 'Europe/Paris'"))
+    r, _ = _drill(tmp_path, build_tz_project(tmp_path))
+    assert r["drill"]["summary"]["parity"] == "complete" and _par(r)["daily"]["statut"] == "different"
+    conv = [c for c in r["drill"]["conversions"] if c["column"] == "ts"]
+    assert conv and conv[0]["tz"] == LA  # the source zone is logged with the conversion (report.json)
+
+
+def test_fuseau_d_origine_applique_meme_resultat_sous_paris(tmp_path):
+    """With the rule, in a process whose machine zone is Europe/Paris (TZ): the source zone is applied, the model is identical."""
+    import subprocess
+    import sys
+
+    proj = build_tz_project(tmp_path)
+    out = tmp_path / "out"
+    env = {**__import__("os").environ, "TZ": "Europe/Paris"}
+    p = subprocess.run([sys.executable, "-m", "canot.cli", "drill", f"dbt://{proj}", str(tmp_path / "lake"), "--out", str(out),
+                        "--key", str(tmp_path / "k.key")], capture_output=True, text=True, env=env)
+    assert p.returncode == 0, p.stdout + p.stderr
+    assert f"Replay time zone: {LA} (source time zone of the inputs, applied to the replay: raw.events.ts)" in p.stdout
+    rj = json.loads((out / "replay-dbt.json").read_text())
+    assert rj["timezone"]["applied"] == LA and rj["timezone"]["origin"] == ["raw.events.ts"]
+    assert {m["modele"]: m["statut"] for m in rj["modeles"]} == {"model.tzshop.daily": "identique"}
+    assert f"Time zone of the replay: <b>{LA}</b>" in (out / "report.html").read_text()
+
+
+def test_sans_zone_utc_explicite(tmp_path):
+    from canot.dbt_rejeu import run_rejeu
+
+    proj = build_project(tmp_path)
+    rj = run_rejeu(f"dbt://{proj}", tmp_path / "o", tmp_path / "k.key", base=str(proj / f"{WH}.duckdb"), log=lambda *_: None)
+    assert rj["timezone"]["applied"] == "UTC" and rj["timezone"]["rule"].startswith("no source time zone")
+    assert rj["summary"]["fuseau"] == "UTC" and rj["timezone"]["finding"] is None
+
+
+def test_plusieurs_zones_constat_sans_faux_identique(tmp_path):
+    """Two source zones among the inputs (read from the drill's report.json, --iceberg mode): UTC, a finding, models not determined."""
+    from canot.dbt_rejeu import run_rejeu
+
+    proj = build_tz_project(tmp_path)
+    _, out = _drill(tmp_path, proj)
+    rep = json.loads((out / "report.json").read_text())
+    rep["conversions"].append({"table": "raw.events", "column": "ts_tokyo", "source_type": "TIMESTAMP WITH TIME ZONE",
+                               "target_type": "timestamp[us, tz=UTC]", "lossy": True, "note": "time zone", "tz": "Asia/Tokyo"})
+    (out / "report.json").write_text(json.dumps(rep))
+    rj = run_rejeu(f"dbt://{proj}", tmp_path / "o2", tmp_path / "k.key", lac=str(tmp_path / "lake"), drill_out=str(out), log=lambda *_: None)
+    tz = rj["timezone"]
+    assert tz["applied"] == "UTC" and tz["conversions_read_from"] == "report.json of the drill"
+    assert sorted(tz["zones_found"]) == ["America/Los_Angeles", "Asia/Tokyo"] and "several source time zones" in tz["finding"]
+    (m,) = rj["modeles"]
+    assert m["fuseau_non_determine"] and "result not determined" in m["note"]
+    assert rj["summary"]["preuve"] != "complete" and rj["summary"]["fuseau_non_determine"] == 1
 
 
 def test_mcp_explique_le_dossier_dbt(tmp_path):
@@ -317,3 +414,18 @@ def test_correspondance_bigquery_et_databricks(tmp_path):
     assert SECRET not in json.dumps(dbx.description) + dbx.url
     with pytest.raises(DbtProfileError, match="token is written in clear"):
         dbt_drill.connexion(load_profile(proj, target="dbx_clair", env={}), ["raw"], proj, env={})
+
+
+def test_zone_appliquee_dates_encore_differentes_decalages_par_valeur():
+    """Bench case after the rule: zone applied, dates still differ (fixed -08:00 offset across DST): the per-value offsets are named,
+    the row access policy is not blamed for row counts that the date shift explains."""
+    man = {"nodes": {"model.p.daily": {"depends_on": {"nodes": ["source.p.raw.orders", "source.p.raw.customers"]}}}}
+    copiees = [{"uid": "source.p.raw.orders", "fqn": "RAW.orders"}, {"uid": "source.p.raw.customers", "fqn": "RAW.customers"}]
+    pol = {"lu": True, "tables": {"RAW.CUSTOMERS": [{"kind": "ROW_ACCESS_POLICY", "policy": "RAP_COUNTRY", "column": None}]}}
+    conv = [{"table": "RAW.ORDERS", "column": "ORDER_TS", "lossy": True, "tz": "America/Los_Angeles", "note": "time zone"},
+            {"table": "RAW.CUSTOMERS", "column": "SIGNED_UP_AT", "lossy": True, "note": "ns -> us (Iceberg v2 does not keep nanoseconds)"}]
+    d = "ORDER_DATE.max: datetime.date(2025, 8, 22) / datetime.date(2025, 8, 23)"
+    rapport = {"timezone": {"applied": "America/Los_Angeles"}, "modeles": [{"modele": "model.p.daily", "statut": "different", "raison": d,
+               "verification": {"rows_source": 14399, "rows_target": 14409, "stats_diffs": ["row count: 14399 / 14409", d]}}]}
+    (e,) = dbt_drill.explications(man, rapport, copiees, pol, conv, "role R")
+    assert [c["nature"] for c in e["causes"]] == ["decalages"] and "offsets stored with the values" in e["explication"]
