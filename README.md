@@ -37,10 +37,10 @@ uvx canot demo
 Sans compte ni données : Canot génère **TPC-H**, le benchmark de référence des bases de données (8 tables, 22 requêtes, jusqu'à 1 Go de données à l'échelle 1), le copie en Apache Iceberg, compare tout, rejoue des requêtes TPC-H des deux côtés et écrit un dossier de preuve signé. Quelques secondes par défaut (version réduite, 100 Mo) ; `uvx canot demo --sf 1` pour l'échelle 1, environ 20 secondes sur un poste portable.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/chiptuned/canot/main/docs/assets/demo.svg" alt="canot copie des tables Snowflake, compare tout, et signale une requête qui diverge" width="860">
+  <img src="https://raw.githubusercontent.com/chiptuned/canot/main/docs/assets/demo.svg" alt="uvx canot demo copie les 8 tables de TPC-H, compare tout, et signale un écart" width="860">
 </p>
 
-Sur le jeu d'exemple TPC-H de Snowflake : 8 tables au contenu identique, 3 requêtes sur 4 qui rendent le même résultat. La 4<sup>e</sup> calcule une moyenne : décimale chez Snowflake, flottante ailleurs. C'est le genre d'écart qu'on veut découvrir **avant** de partir.
+Résultat : 7 tables sur 8 au contenu identique, 3 requêtes sur 4 qui rendent le même résultat. L'écart vient d'une colonne horodatée à la nanoseconde, ajoutée par Canot : Iceberg v2 la ramène à la microseconde. C'est le genre d'écart qu'on veut découvrir **avant** de partir.
 
 ## 🧭 Pourquoi
 

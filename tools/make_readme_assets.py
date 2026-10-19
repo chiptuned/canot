@@ -46,22 +46,23 @@ text{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sa
 
 
 TERM = [
-    ("cmd", '$ canot drill "snowflake://MY_ACCOUNT/SNOWFLAKE_SAMPLE_DATA?schemas=TPCH_SF1&user=MY_USER" ./iceberg'),
+    ("cmd", "$ uvx canot demo"),
+    ("dim", "Canot : démonstration sur TPC-H, le jeu de référence des bancs d'essai de bases de données"),
     ("dim", "→ inventaire"),
-    ("dim", "→ copie de 8 table(s) vers local:./iceberg"),
-    ("txt", "   lineitem   6 001 215 lignes"),
-    ("txt", "   orders     1 500 000 lignes"),
-    ("txt", "   partsupp     800 000 lignes"),
+    ("dim", "→ copie de 8 table(s) vers local:canot-demo/iceberg"),
+    ("txt", "   tpch.lineitem   600 572 lignes"),
+    ("txt", "   tpch.orders     150 000 lignes"),
+    ("txt", "   tpch.partsupp    80 000 lignes"),
     ("dim", "→ comparaison des tables"),
-    ("ok", "   lineitem   OK    orders     OK    partsupp   OK    part     OK"),
-    ("ok", "   customer   OK    supplier   OK    nation     OK    region   OK"),
-    ("dim", "→ rejeu de 4 requêtes des deux côtés"),
-    ("warn", "   [mismatch]  select l_returnflag, l_linestatus, sum(l_quantity) …"),
-    ("ok", "   [match]     select n_name, sum(l_extendedprice * (1 - l_discount)) …"),
+    ("ok", "   customer OK   nation OK   orders OK   part OK   partsupp OK   region OK   supplier OK"),
+    ("warn", "   lineitem  ÉCART"),
+    ("dim", "→ rejeu de 4 requête(s) des deux côtés"),
+    ("ok", "   [match]     select l_returnflag, l_linestatus, sum(l_quantity) …"),
+    ("ok", "   [match]     select l_orderkey, sum(l_extendedprice * (1 - l_discount)) …"),
     ("ok", "   [match]     select sum(l_extendedprice * l_discount) as revenue …"),
-    ("ok", "   [match]     select o_orderpriority, count(*) as order_count …"),
-    ("bold", "Parité : écarts — 8/8 tables, 3/4 requêtes"),
-    ("dim", "Dossier : canot-out/report.html   (journal signé, vérifiable)"),
+    ("warn", "   [mismatch]  select * from tpch.lineitem order by l_orderkey …"),
+    ("bold", "Des écarts ont été trouvés : 7/8 tables, 3/4 requêtes."),
+    ("dim", "Dossier de preuve : canot-demo/dossier/report.html   (journal signé, vérifiable)"),
 ]
 
 
@@ -77,7 +78,7 @@ def terminal() -> str:
         weight = ' font-weight="700"' if k in ("bold", "cmd") else ""
         txt = html.escape(t).replace("[match]", '<tspan fill="#56D364">[match]</tspan>').replace("[mismatch]", '<tspan fill="#FF9A55">[mismatch]</tspan>')
         rows.append(f'<text class="l{i}" x="{X0}" y="{Y0 + i * LH}" fill="{colors[k]}"{weight} xml:space="preserve">{txt}</text>')
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" aria-label="Démonstration : canot drill copie 8 tables Snowflake vers Iceberg, compare tout et signale une requête qui diverge">
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" aria-label="Démonstration : uvx canot demo copie les 8 tables de TPC-H vers Iceberg, compare tout et signale un écart">
 <style>
 text{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:15px}}
 {''.join(css)}
