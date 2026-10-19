@@ -58,6 +58,7 @@ Useful options:
 | `--tolerances FILE.toml` | Comparison tolerances (rounding, timestamps). |
 | `--credit-price USD` | The Snowflake credit price in your contract. Without it: a dated range based on the list price. |
 | `--replay-max-gb N` | Maximum size of a table loaded in memory to replay queries (default 2). |
+| `--lang en\|fr` | Language shown first in `report.html`. The report always holds both English and French, switched at the top of the page; this only picks the default. Default: your locale (`fr…` gives French), else English. The terminal output and `report.json` stay in English. Also accepted by `canot demo`. |
 | `--key PATH` | Signing key (default `~/.canot/evidence.key`, or the `CANOT_EVIDENCE_KEY_PATH` variable). |
 | `--profiles-dir FOLDER` | dbt project only: the folder that holds `profiles.yml`. |
 | `--target NAME` | dbt project only: the profile target to read (also `dbt://PROJECT?target=NAME`). |

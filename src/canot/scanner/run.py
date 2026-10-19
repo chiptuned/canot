@@ -93,17 +93,21 @@ def _partage_v2(result: dict) -> dict:
 
 
 def scan_full(src, out: Path, *, level: int = 3, credit_price: float | None = None, include_sql_text: bool = False,
-              log: Callable[[str], None] = lambda s: None) -> dict:
+              lang: str | None = None, log: Callable[[str], None] = lambda s: None) -> dict:
+    """lang: the pane scan.html shows first (--lang; default: the locale, see brand.default_lang). scan.html always holds both
+    languages; scan.json, the CSV files and scan-share.json stay English."""
+    from .. import brand
     from . import replay
     from .analyze import analyze
     from .render import render_html, write_csv
 
     snap, raw = collect(src, level=level, log=log)
     result = analyze(snap, credit_price=credit_price)
+    result_fr = analyze(snap, credit_price=credit_price, lang="fr")  # French texts of the same analysis, for the French pane only
     out.mkdir(parents=True, exist_ok=True)
-    result["avec_sql_brut"] = bool(include_sql_text)
+    result["avec_sql_brut"] = result_fr["avec_sql_brut"] = bool(include_sql_text)
     (out / "scan.json").write_text(json.dumps(result, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
-    (out / "scan.html").write_text(render_html(result), encoding="utf-8")
+    (out / "scan.html").write_text(render_html(result, result_fr, lang=brand.default_lang(lang)), encoding="utf-8")
     write_csv(result, out)
     (out / SHARE_FILE).write_text(json.dumps(partage(result), indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
     if include_sql_text:

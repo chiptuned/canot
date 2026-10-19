@@ -14,6 +14,10 @@ from . import prices
 PREUVES = {"P1": "data parity", "P2": "query replay", "P3": "pipeline replay",
            "P4": "scoring parity", "P5": "metrics parity"}
 TESTE, NON_TESTE = "tested", "written, untested"
+# French display labels for the French pane of scan.html (the values above stay the data values)
+PREUVES_FR = {"P1": "parité des données", "P2": "rejeu des requêtes", "P3": "rejeu du pipeline",
+              "P4": "parité du scoring", "P5": "parité des métriques"}
+STATUTS_FR = {TESTE: "testé", NON_TESTE: "écrit, non testé"}
 # platform families (generalist memo §1); keys are data values; "fichiers" = artifacts read offline (dbt, .sas…)
 FAMILLES = {"entrepot": "warehouse", "lakehouse": "lakehouse", "science_donnees": "data science", "integration": "integration / ETL",
             "bi_semantique": "semantic BI", "orchestrateur": "orchestrator", "sas": "SAS", "fichiers": "files"}
@@ -29,6 +33,7 @@ class Capabilities:
     preuve: tuple[str, ...] = ()         # PREUVES keys
     # actual date of a test recorded in the repository (docs/), with what was tested; None if the repository keeps no record
     teste_sur: str | None = None
+    teste_sur_fr: str | None = None      # the same record in French (French pane of scan.html); not part of capacites()
 
 
 class Connector(ABC):
@@ -43,7 +48,8 @@ class Connector(ABC):
     famille: ClassVar[str] = "entrepot"  # FAMILLES key
     capabilities: ClassVar[Capabilities]
     # analysis profile: platform-specific constants, read by scanner/analyze.py and scanner/render.py
-    # (grants requested per level, grants never requested…)
+    # (grants requested per level, grants never requested…). Human-readable texts have a French variant under the same key + "_fr"
+    # (non_vus_fr maps each English blind spot to its French text), read only by the French pane of scan.html.
     profile: ClassVar[dict] = {}
     # HTTP guard (scanner/http_guard.py): POST allowed only on these read paths (regex patterns of the URL path)
     http_post_lecture: ClassVar[tuple[str, ...]] = ()
@@ -74,10 +80,12 @@ class Snowflake(Connector):
     extra = driver = "snowflake"
     status = TESTE
     capabilities = Capabilities("complet", (1, 2, 3), ("iceberg",), ("P1", "P2"),
-                                teste_sur="canot drill, 2026-10-17: Snowflake trial account, TPC-H SF10 (docs/banc-essai.md)")
+                                teste_sur="canot drill, 2026-10-17: Snowflake trial account, TPC-H SF10 (docs/banc-essai.md)",
+                                teste_sur_fr="canot drill, 2026-10-17 : compte d'essai Snowflake, TPC-H SF10 (docs/banc-essai.md)")
     profile = {
         "droits": {1: ["SNOWFLAKE.OBJECT_VIEWER", "SNOWFLAKE.USAGE_VIEWER"], 2: ["SNOWFLAKE.GOVERNANCE_VIEWER"], 3: ["SNOWFLAKE.SECURITY_VIEWER"]},
         "droits_jamais": "IMPORTED PRIVILEGES, MANAGE GRANTS, IMPORT SHARE, USAGE on functions, READ on stages",
+        "droits_jamais_fr": "IMPORTED PRIVILEGES, MANAGE GRANTS, IMPORT SHARE, USAGE sur les fonctions, READ sur les stages",
         "horizon_jours": 365,
         "imports_systeme": ("SNOWFLAKE",),  # system database present in every account: not a client dependency
         # sources of reads per table, most to least reliable: (view, label, confidence [data value], fields of t["lectures"])
@@ -86,6 +94,9 @@ class Snowflake(Connector):
         "non_vus": {"ACCESS_HISTORY": ["share consumers", "RESULT_SCAN"],
                     "TABLE_QUERY_PRUNING_HISTORY": ["share consumers", "results served from the cache",
                                                     "queries answered from metadata"]},
+        "non_vus_fr": {"share consumers": "consommateurs des partages", "RESULT_SCAN": "RESULT_SCAN",
+                       "results served from the cache": "résultats servis depuis le cache",
+                       "queries answered from metadata": "requêtes servies par les métadonnées"},
         "source_prix": prices.SNOWFLAKE_SOURCE,
     }
 
@@ -102,16 +113,23 @@ class BigQuery(Connector):
     extra, driver = "bigquery", "google.cloud"
     status = TESTE
     capabilities = Capabilities("complet", (1, 2, 3), ("iceberg",), ("P1", "P2"),
-                                teste_sur="canot drill, 2026-10-13: public dataset thelook_ecommerce (docs/ecarts.md)")
+                                teste_sur="canot drill, 2026-10-13: public dataset thelook_ecommerce (docs/ecarts.md)",
+                                teste_sur_fr="canot drill, 2026-10-13 : dataset public thelook_ecommerce (docs/ecarts.md)")
     profile = {
         "droits": {1: ["bigquery.jobs.create", "jobs.listAll", "datasets.get", "tables.list", "tables.get", "routines.list", "routines.get",
                        "models.list", "models.getMetadata"],
                    2: ["rowAccessPolicies.list", "transfers.get", "connections.list", "dataPolicies.list (optional)"],
                    3: ["reservations.list", "reservationAssignments.list", "capacityCommitments.list", "organization-level permissions"]},
+        "droits_fr": {2: ["rowAccessPolicies.list", "transfers.get", "connections.list", "dataPolicies.list (facultatif)"],
+                      3: ["reservations.list", "reservationAssignments.list", "capacityCommitments.list", "permissions au niveau de l'organisation"]},
         "droits_jamais": "tables.getData, bigquery.user and jobUser roles",
+        "droits_jamais_fr": "tables.getData, rôles bigquery.user et jobUser",
         "horizon_jours": 180,
         "sources_lectures": (("JOBS", "INFORMATION_SCHEMA.JOBS", "moyenne", ("n",)),),
         "non_vus": {"JOBS": ["reads through the Storage Read API", "queries run from other projects", "Analytics Hub consumers"]},
+        "non_vus_fr": {"reads through the Storage Read API": "lectures par la Storage Read API",
+                       "queries run from other projects": "requêtes lancées depuis d'autres projets",
+                       "Analytics Hub consumers": "consommateurs Analytics Hub"},
         # a "not seen" item that disappears when another read covered it
         "non_vus_couverts": {"queries run from other projects": "JOBS_BY_ORGANIZATION"},
         "source_prix": prices.BIGQUERY_SOURCE,
@@ -138,7 +156,8 @@ class DuckDB(Connector):
     status = TESTE
     # embedded SQL engine: grouped with warehouses (tables, SQL), for lack of a better family
     capabilities = Capabilities("léger", (), ("iceberg",), ("P1", "P2"),
-                                teste_sur="canot drill, 2026-10-17: canot demo database (docs/ecarts.md)")
+                                teste_sur="canot drill, 2026-10-17: canot demo database (docs/ecarts.md)",
+                                teste_sur_fr="canot drill, 2026-10-17 : base de démonstration canot (docs/ecarts.md)")
 
 
 class Dbt(Connector):
@@ -153,16 +172,26 @@ class Dbt(Connector):
     capabilities = Capabilities("complet", (1,), ("iceberg",), ("P1", "P2", "P3"),
                                 teste_sur="2026-10-19: canot scan dbt://lab/dbt (test bench dbt project, dbt 1.12.6 manifest, Snowflake adapter); "
                                           "canot drill dbt://lab/dbt --target snowflake on the Snowflake trial account: 8 relations copied and "
-                                          "identical, 8 models replayed (docs/scan.md); BigQuery and Databricks profiles written, untested")
+                                          "identical, 8 models replayed (docs/scan.md); BigQuery and Databricks profiles written, untested",
+                                teste_sur_fr="2026-10-19 : canot scan dbt://lab/dbt (projet dbt du banc d'essai, manifeste dbt 1.12.6, adaptateur "
+                                             "Snowflake) ; canot drill dbt://lab/dbt --target snowflake sur le compte d'essai Snowflake : 8 relations "
+                                             "copiées et identiques, 8 modèles rejoués (docs/scan.md) ; profils BigQuery et Databricks écrits, non testés")
     rejeu_familles = False  # no query history: replayability is computed per model during collection
     profile = {
         "droits": {1: ["read the manifest.json, run_results.json and catalog.json files in the target/ folder"]},
+        "droits_fr": {1: ["lecture des fichiers manifest.json, run_results.json et catalog.json du dossier target/"]},
         "droits_jamais": "the scan opens no connection to the warehouse and runs no dbt command (no parse, compile or run)",
+        "droits_jamais_fr": "le scan n'ouvre aucune connexion à l'entrepôt et ne lance aucune commande dbt (ni parse, ni compile, ni run)",
         # read by render.py (Capabilities section)
         "commande_preuve": "canot drill dbt://PROJECT DESTINATION (read-only, with the dbt profile's credentials)",
+        "commande_preuve_fr": "canot drill dbt://PROJET DESTINATION (lecture seule, avec les identifiants du profil dbt)",
         "limite_preuve": ("P1 covers the sources, seeds, snapshots and table or incremental models found in the warehouse; P3 covers "
                           "the SQL models that DuckDB replays and whose original table is in the copy; views are replayed without "
                           "comparison; Python models, incremental models and models to rebuild (F13) are counted, not proven."),
+        "limite_preuve_fr": ("P1 couvre les sources, seeds, snapshots et modèles table ou incrémentaux trouvés dans l'entrepôt ; P3 couvre "
+                             "les modèles SQL que DuckDB rejoue et dont la table d'origine est dans la copie ; les vues sont rejouées sans "
+                             "comparaison ; les modèles Python, les modèles incrémentaux et les modèles à reconstruire (F13) sont comptés, "
+                             "non prouvés."),
     }
 
     def open(self, url: str):

@@ -60,6 +60,8 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
 
+LANG_HELP = ("language shown first in report.html: en or fr. Both are always in the file (switch at the top of the page). "
+             "Default: your locale (fr* gives French), else English")
 KEY_HELP = "signing key (default: the CANOT_EVIDENCE_KEY_PATH variable, otherwise ~/.canot/evidence.key)"
 
 
@@ -75,6 +77,7 @@ def parser() -> argparse.ArgumentParser:
     s.add_argument("--credit-price", type=float, default=None, help="Snowflake credit price in your contract, in USD. Without it: list-price range (see canot/prices.py)")
     s.add_argument("--level", type=int, choices=(1, 2, 3), default=3, help="how far to read: 1 inventory and consumption; 2 + queries (normalized forms) and reads per table; 3 + grants and tools (pseudonymized). What your grants do not allow is logged as \"not read\"")
     s.add_argument("--include-sql-text", action="store_true", help="also write the raw SQL text to scan-sql-raw.json (mode 0600). By default it is never written: only normalized forms are")
+    s.add_argument("--lang", choices=("en", "fr"), default=None, help="language shown first in scan.html, which always holds English and French (default: your locale, else English). scan.json and the CSV files stay English")
 
     d = sub.add_parser("drill", help="full exit exercise: copy, comparison, evidence report")
     d.add_argument("source", nargs="?", help="the source: bigquery://PROJECT/dataset, snowflake://ACCOUNT/DATABASE, a .duckdb file, "
@@ -94,6 +97,7 @@ def parser() -> argparse.ArgumentParser:
     d.add_argument("--replay-max-gb", type=float, default=2.0, help="maximum size of a table loaded in memory to replay queries")
     d.add_argument("--profiles-dir", help="with dbt://: the folder that holds profiles.yml (default: DBT_PROFILES_DIR, else the project folder, else ~/.dbt)")
     d.add_argument("--target", help="with dbt://: the profile target to read (default: ?target=NAME in the URL, else the profile's default target)")
+    d.add_argument("--lang", choices=("en", "fr"), default=None, help=LANG_HELP)
 
     t = sub.add_parser("teardown", help="delete the copied data")
     t.add_argument("--to", dest="dst", required=True)
@@ -120,6 +124,7 @@ def parser() -> argparse.ArgumentParser:
     dm.add_argument("--sf", type=float, default=0.1, help="TPC-H size: 0.1 = 100 MB (default), 1 = about 1 GB (6 million order lines)")
     dm.add_argument("--rows", type=int, default=50_000, help=argparse.SUPPRESS)  # offline fallback: fictional dataset
     dm.add_argument("--no-open", action="store_true", help="do not open the report in the browser")
+    dm.add_argument("--lang", choices=("en", "fr"), default=None, help=LANG_HELP)
     it = sub.add_parser("init-tolerances", help="write a tolerances file, to review with the client")
     it.add_argument("path", nargs="?", default="tolerances.toml")
     dd = sub.add_parser("demo-data", help="create a demo DuckDB database")
@@ -231,7 +236,7 @@ def run(argv: list[str] | None = None) -> int:
             res = run_drill(src, target, evidence, Path.home() / ".canot" / "evidence.key", str(qf), Tolerances(), log=_p)
         finally:
             src.close()
-        rep = write_report(res, evidence)
+        rep = write_report(res, evidence, a.lang)
         s = res["summary"]
         _p(f"\n{'Full parity' if s['parity'] == 'complete' else 'Mismatches found'}: {s['tables_ok']}/{s['tables_total']} tables, {s['queries_match']}/{s['queries_total']} queries.")
         _p(f"Evidence report: {rep}")
@@ -294,7 +299,7 @@ def run(argv: list[str] | None = None) -> int:
         url = a.src if "://" in a.src else "dbt://" + a.src
         r = run_dbt_drill(url, a.dst, out, Path(a.key), profiles_dir=a.profiles_dir, target=a.target, bucket=a.bucket, catalog=a.catalog,
                           queries=a.queries, top=a.top, only=a.tables, tol=Tolerances.load(a.tolerances), credit_price=a.credit_price,
-                          replay_max_gb=a.replay_max_gb, log=_p)
+                          replay_max_gb=a.replay_max_gb, log=_p, lang=a.lang)
         for line in resume(r, out):
             _p(line)
         return 1 if r["dbt"]["verdict"] == "mismatch" else 0
@@ -317,7 +322,7 @@ def run(argv: list[str] | None = None) -> int:
                 _p("--include-sql-text does not apply here: the code is already in the project files; nothing more is written.")
                 a.include_sql_text = False
             _p(f"Canot read-only scan (level {level}: {LEVELS[level]})")
-            res = scan_full(src, out, level=level, credit_price=a.credit_price, include_sql_text=a.include_sql_text, log=_p)
+            res = scan_full(src, out, level=level, credit_price=a.credit_price, include_sql_text=a.include_sql_text, lang=a.lang, log=_p)
             _p(f"Source: {res['perimetre']}")
             for role, lines in res["resume"].items():
                 for line in lines:
@@ -373,7 +378,7 @@ def run(argv: list[str] | None = None) -> int:
 
             target = parse_target(a.dst, a.bucket, out, a.catalog)
             res = run_drill(src, target, out, Path(a.key), a.queries, Tolerances.load(a.tolerances), a.top, a.tables, a.credit_price, a.replay_max_gb, _p)
-            rep = write_report(res, out)
+            rep = write_report(res, out, a.lang)
             s = res["summary"]
             _p(f"\nParity: {s['parity']} — {s['tables_ok']}/{s['tables_total']} tables, {s['queries_match']}/{s['queries_total']} queries")
             _p(f"Evidence report: {rep}")

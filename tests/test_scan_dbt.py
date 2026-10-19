@@ -36,10 +36,10 @@ def _kinds(snap) -> dict:
     return out
 
 
-def _sorties(r: dict, tmp_path) -> str:
+def _sorties(r: dict, tmp_path, fr: dict | None = None) -> str:
     r = {**r, "avec_sql_brut": False}
     write_csv(r, tmp_path)
-    return (json.dumps(r, ensure_ascii=False) + render_html(r) + json.dumps(partage(r), ensure_ascii=False)
+    return (json.dumps(r, ensure_ascii=False) + render_html(r, fr) + json.dumps(partage(r), ensure_ascii=False)
             + "".join(p.read_text(encoding="utf-8") for p in tmp_path.glob("*.csv")))
 
 
@@ -217,13 +217,18 @@ def test_synthetique_portabilite_et_drapeaux(tmp_path):
     f13 = next(f for f in r["drapeaux"] if f["cible"] == "model.canot_lab.m_propre" and f["code"] == "F13")
     assert "function absent from DuckDB: CONDITIONAL_TRUE_EVENT" in f13["texte"]
     assert "1 failure" in next(f for f in r["drapeaux"] if f["code"] == "F11")["texte"]
+    fr = analyze(s, lang="fr")
+    f13_fr = next(f for f in fr["drapeaux"] if f["cible"] == "model.canot_lab.m_propre" and f["code"] == "F13")
+    assert "fonction absente de DuckDB : CONDITIONAL_TRUE_EVENT" in f13_fr["texte"] and "à reconstruire : compté, non rejoué" in f13_fr["texte"]
+    assert "1 échec" in next(f for f in fr["drapeaux"] if f["code"] == "F11")["texte"]
     assert not {"F14", "F15", "F16"} & set(by)
 
 
 def test_aucun_code_ni_canari_dans_les_sorties(tmp_path):
-    r = analyze(_collect(projet_synthetique(tmp_path)))
+    s = _collect(projet_synthetique(tmp_path))
+    r, fr = analyze(s), analyze(s, lang="fr")
     out = tmp_path / "sorties"
-    tout = _sorties(r, out)
+    tout = _sorties(r, out, fr)  # both panes of scan.html
     for x in (SENTINELLE, EMAIL, "password", "conditional_true_event(", "def model", "compartiment-x/"):
         assert x not in tout, x
     assert "s3://compartiment-x" in tout  # location reduced to the bucket

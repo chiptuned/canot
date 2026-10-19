@@ -60,6 +60,7 @@ Useful options:
 | `--tolerances FILE.toml` | Comparison tolerances (rounding, timestamps). |
 | `--credit-price USD` | The Snowflake credit price in your contract. Without it: a dated range based on the list price. |
 | `--replay-max-gb N` | Maximum size of a table loaded in memory to replay queries (default 2). |
+| `--lang en\|fr` | Language shown first in `report.html`. The report always holds both English and French, switched at the top of the page; this only picks the default. Default: your locale (`fr…` gives French), else English. The terminal output and `report.json` stay in English. Also accepted by `canot demo`. |
 | `--key PATH` | Signing key (default `~/.canot/evidence.key`, or the `CANOT_EVIDENCE_KEY_PATH` variable). |
 | `--profiles-dir FOLDER` | dbt project only: the folder that holds `profiles.yml`. |
 | `--target NAME` | dbt project only: the profile target to read (also `dbt://PROJECT?target=NAME`). |
@@ -190,6 +191,8 @@ For agents that read the web: [canot.io/llms.txt](https://canot.io/llms.txt) and
 # `canot scan`: what is read, with which permissions
 
 The scan produces `scan.html` (to share), `scan.json` and CSV files (`flags.csv`, `families.csv`, `reads.csv`, `tables.csv`). It describes your platform; it recommends neither leaving nor staying.
+
+`scan.html` is offered in English and in French: both versions are in the same file, switched by the English / Français links at the top of the page (no script). `--lang en|fr` picks the version shown first; without it, a French locale (`LANG=fr_FR.UTF-8`) shows French, anything else English. `scan.json`, the CSV files, `scan-share.json` and the command-line output stay in English.
 
 ## Guarantees
 

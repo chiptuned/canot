@@ -140,17 +140,17 @@ def test_f16_critere_declare_puis_nombre_de_lignes():
 # --- outputs: no raw code, share file, report ---------------------------------------------------------------
 
 
-def _sorties(r: dict, tmp_path) -> str:
+def _sorties(r: dict, tmp_path, fr: dict | None = None) -> str:
     r = {**r, "avec_sql_brut": False}
     write_csv(r, tmp_path)
-    return (json.dumps(r, ensure_ascii=False) + render_html(r) + json.dumps(partage(r), ensure_ascii=False)
+    return (json.dumps(r, ensure_ascii=False) + render_html(r, fr) + json.dumps(partage(r), ensure_ascii=False)
             + "".join(p.read_text(encoding="utf-8") for p in tmp_path.glob("*.csv")))
 
 
 def test_aucune_sentinelle_dans_les_sorties(tmp_path):
     s = synth()
     assert any("CANOT_SENTINELLE_7f3a" in json.dumps(o) for o in s["objets"])  # the fixture does contain it
-    tout = _sorties(analyze(s), tmp_path)
+    tout = _sorties(analyze(s), tmp_path, analyze(s, lang="fr"))  # both panes of scan.html
     for x in SENTINELLES:
         assert x not in tout, x
 

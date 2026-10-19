@@ -364,7 +364,8 @@ def explications(man: dict, rapport: dict, copiees: list[dict], pol: dict, conve
     """For each model reported different: the copied inputs it reads, then the causes this run measured, measured ones first.
     A source time zone the replay applied is not a cause (rapport["timezone"]); several source zones are (not determined). A row
     access policy on an input is a cause only when the row counts differ; otherwise it is reported in the policies, not here.
-    Lossy conversions other than a time zone come next; else the possible causes. Nothing is asserted that this run did not read."""
+    Lossy conversions other than a time zone come next; else the possible causes. Nothing is asserted that this run did not read.
+    Each cause carries "p", the values its text is built from, so the HTML report can word it in French as well (report.py)."""
     par_uid = {r["uid"]: r["fqn"] for r in copiees}
     tables_pol = {k.upper(): v for k, v in (pol.get("tables") or {}).items()}
     tz = rapport.get("timezone") or {}
@@ -386,7 +387,7 @@ def explications(man: dict, rapport: dict, copiees: list[dict], pol: dict, conve
             zone = c.get("tz") or (re.search(r"time zone (\S+) -> UTC", str(c.get("note"))) or [None, None])[1]
             if zone and zone == tz.get("applied"):
                 if dates:  # zone applied, dates still differ: the stored offsets do not follow the zone's rules
-                    causes.append({"nature": "decalages", "mesure": False,
+                    causes.append({"nature": "decalages", "mesure": False, "p": {"ref": ref, "zone": zone},
                                    "court": f"{ref}: zone {zone} applied, dates still differ: the stored offsets do not follow that zone "
                                             "(a TIMESTAMP_TZ keeps each value's offset), not covered by the rule",
                                    "texte": f"{ref} was copied as UTC and the replay ran in its source zone {zone}, yet the date values still "
@@ -397,6 +398,7 @@ def explications(man: dict, rapport: dict, copiees: list[dict], pol: dict, conve
                 continue  # applied to the replay: dates are derived in the same zone on both sides
             if zone:
                 causes.append({"nature": "fuseau", "mesure": True,
+                               "p": {"ref": ref, "zone": zone, "applied": tz.get("applied"), "dates": dates, "finding": tz.get("finding")},
                                "court": f"{ref} copied as UTC (zone {zone}), replayed in {tz.get('applied') or 'another zone'}: dates derived "
                                         "from it can shift" + (" (measured on the date values here)" if dates else ""),
                                "texte": (f"{tz['finding']}. " if tz.get("finding") else "")
@@ -404,7 +406,7 @@ def explications(man: dict, rapport: dict, copiees: list[dict], pol: dict, conve
                                "a date or an hour derived from it (cast to date, date_trunc, extract) can differ from the platform's"
                                + (": the differences on date values here are this shift" if dates else "") + " (docs/discrepancies.md)."})
             else:
-                autres.append({"nature": "conversion", "mesure": True, "court": f"{ref} copied with a possible loss ({c['note']})",
+                autres.append({"nature": "conversion", "mesure": True, "p": {"ref": ref, "note": c["note"]}, "court": f"{ref} copied with a possible loss ({c['note']})",
                                "texte": f"{ref} is copied with a possible loss ({c['note']}): a model computed from it can differ."})
         rap = {e: [x for x in items if "ROW_ACCESS" in str(x.get("kind", "")).upper()] for e, items in sous_pol.items()}
         rap = {e: x for e, x in rap.items() if x}
@@ -412,6 +414,7 @@ def explications(man: dict, rapport: dict, copiees: list[dict], pol: dict, conve
         decale = any(c["nature"] in ("fuseau", "decalages") for c in causes)  # a date shift also changes the rows of a grouping
         if rap and lignes_diff and not decale:
             causes.append({"nature": "politique", "mesure": True,
+                           "p": {"policies": rap, "rows_source": v["rows_source"], "rows_target": v["rows_target"], "reader": lecteur},
                            "court": "reads " + ", ".join(f"{e} under {_libelle_politique(x)}" for e, x in rap.items())
                                     + f": the copy is what {lecteur} can read; row counts differ ({v['rows_source']} / {v['rows_target']})",
                            "texte":
@@ -424,7 +427,7 @@ def explications(man: dict, rapport: dict, copiees: list[dict], pol: dict, conve
             causes = autres
         if not causes:
             non_lues = not pol.get("lu") and str(pol.get("raison") or "").startswith("not readable")
-            causes.append({"nature": "inconnue", "mesure": False, "court": "cause not identified by this run: see replay-dbt.json",
+            causes.append({"nature": "inconnue", "mesure": False, "p": {"policies_not_read": pol.get("raison") if non_lues else None}, "court": "cause not identified by this run: see replay-dbt.json",
                            "texte": (f"row access and masking policies {pol['raison']}; " if non_lues else "") + R_GENERIQUE})
         out.append({"modele": m["modele"], "raison": m.get("raison"), "entrees_copiees": entrees, "politiques": sous_pol,
                     "causes": causes, "explication": " Also: ".join(c["texte"] for c in causes)})
@@ -437,7 +440,7 @@ def explications(man: dict, rapport: dict, copiees: list[dict], pol: dict, conve
 def run_dbt_drill(url: str, dest: str, out: Path, key_path: Path, *, profiles_dir: str | None = None, target: str | None = None,
                   bucket: str | None = None, catalog: str | None = None, queries: str | None = None, top: int = 20,
                   only: list[str] | None = None, tol: Tolerances | None = None, credit_price: float | None = None,
-                  replay_max_gb: float = 2.0, log=print, env=None, open_source=None) -> dict:
+                  replay_max_gb: float = 2.0, log=print, env=None, open_source=None, lang: str | None = None) -> dict:
     from . import sources
     from .dbt_rejeu import STATUTS, run_rejeu, write_rapport
     from .drill import run_drill
@@ -527,7 +530,7 @@ def run_dbt_drill(url: str, dest: str, out: Path, key_path: Path, *, profiles_di
     seal = ev.seal(key_path, log)
     res["seal"] = rapport["seal"] = seal
     res["dbt"] = dbt
-    rep = write_report(res, out)
+    rep = write_report(res, out, lang)
     write_rapport(rapport, out)
     return {"drill": res, "replay": rapport, "dbt": dbt, "report": rep}
 

@@ -11,18 +11,18 @@
     "tables_precision_only": 1,
     "queries_order_differs": 0,
     "lossy_conversions": 1,
-    "throughput_mb_s": 310.41,
+    "throughput_mb_s": 303.35,
     "rto": {
       "seconds": [
         3.4,
-        7.2
+        7.4
       ],
       "basis": "measured throughput ±, excluding human validation and application cutover"
     },
     "warehouse_credits_used_est": null,
     "cost_usd_est": null,
     "cost_basis": null,
-    "duration_s": 9.4,
+    "duration_s": 9.8,
     "parity": "mismatch"
   },
   "copy_location": {
@@ -31,14 +31,14 @@
     "kind": "local",
     "catalog": "SQLite (catalog.db in the output folder)",
     "metadata": {
-      "tpch.customer": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/customer/metadata/00001-45ef7a40-59c0-486d-8f65-eeab9716e2b3.metadata.json",
-      "tpch.lineitem": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/lineitem/metadata/00013-d5836fdc-00ba-4c9e-b924-64d753e89cf7.metadata.json",
-      "tpch.nation": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/nation/metadata/00001-57385d71-4b4c-4ae7-98b1-dc7fe1e768b4.metadata.json",
-      "tpch.orders": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/orders/metadata/00003-b64174bf-68e5-4828-b3a6-a06459ed38fe.metadata.json",
-      "tpch.part": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/part/metadata/00001-d6ff16b1-fa16-473f-8e89-3a42553e11a6.metadata.json",
-      "tpch.partsupp": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/partsupp/metadata/00002-4cd81ba3-a5df-48ce-a5a1-d9cabed9035b.metadata.json",
-      "tpch.region": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/region/metadata/00001-f96c6ac1-c5b2-4eb1-ae8c-ba6ab576a0f7.metadata.json",
-      "tpch.supplier": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/supplier/metadata/00001-a256a509-9282-4091-ba31-5c87baa0ddc9.metadata.json"
+      "tpch.customer": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/customer/metadata/00001-3c8d6f29-f872-4d36-8137-3b54cc57914c.metadata.json",
+      "tpch.lineitem": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/lineitem/metadata/00013-3f79e04b-3b83-4ad1-84ed-1b9ad13d960f.metadata.json",
+      "tpch.nation": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/nation/metadata/00001-629543cd-c601-43fe-82b9-406124232e67.metadata.json",
+      "tpch.orders": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/orders/metadata/00003-a01f4e67-7024-42ab-a040-27898e1d051d.metadata.json",
+      "tpch.part": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/part/metadata/00001-c0ea9c1e-d7e4-4420-9347-3340d2f3a5cf.metadata.json",
+      "tpch.partsupp": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/partsupp/metadata/00002-5590cca4-9f16-4fe4-9435-fa62e4afe9a5.metadata.json",
+      "tpch.region": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/region/metadata/00001-61c308c6-43a8-4db1-a137-2bec27d101d8.metadata.json",
+      "tpch.supplier": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/supplier/metadata/00001-fdb4199a-f0cb-4eee-9157-1ad5aa160b41.metadata.json"
     }
   },
   "scan": {
@@ -284,19 +284,20 @@
       "source_type": "TIMESTAMP_NS",
       "target_type": "timestamp[us]",
       "lossy": true,
-      "note": "ns -> us (Iceberg v2 does not keep nanoseconds)"
+      "note": "ns -> us (Iceberg v2 does not keep nanoseconds)",
+      "tz": null
     }
   ],
   "env": {
-    "canot": "0.3.4",
+    "canot": "0.4.1",
     "duckdb": "1.5.6",
     "pyarrow": "26.0.0",
     "pyiceberg": "0.12.0",
     "sqlglot": "30.22.0"
   },
   "seal": {
-    "last_hash": "e42b281a6c763f86c475230d339b2907b844d42d487d0776f4812db9cb2544a9",
-    "signature": "b38afb38c57beeb7d2d450fa341f5c5c1aa19c8ca10a75e7579b981a096559f84c82b13611bd775d4378f347485769467ee4eac13158af7c0e73505094062102",
+    "last_hash": "e9bc8053c4c125bd1eb6a3b3c45faf933756ff9b81c8fea036874343023ce79e",
+    "signature": "13091a012c79a239d2959af56c7f816d74352962096e7f0b923620df8981d8782a5b4cce80f33adc99e95194437f50b28cd156aa2ff7169bf0b16037c591a10a",
     "entries": 23
   },
   "source": "duckdb:/tmp/canot-sf1/demo.duckdb",

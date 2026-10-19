@@ -43,7 +43,7 @@
         <li><b>Set up</b><span>A small open warehouse is created at the host you chose: one machine, one storage bucket, one catalog of Iceberg tables.</span></li>
         <li><b>Copy</b><span>Your data is read with no ability to modify it, then written in Iceberg format to another of your accounts.</span></li>
         <li><b>Replay</b><span>The 20 most important queries, chosen with you, run on both sides.</span></li>
-        <li><b>Compare</b><span>Tables and results are compared (row counts, per-column statistics, content fingerprint), with tolerances written in advance.</span></li>
+        <li><b>Compare</b><span>Tables and results are compared with tolerances written in advance: row counts and per-column statistics are recomputed in the source engine, and a content fingerprint compares the rows as Canot read them with the copy.</span></li>
         <li><b>Sign</b><span>An evidence file is produced: parity, duration, cost, and what does not move as is.</span></li>
       </ol>
     </div>

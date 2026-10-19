@@ -61,6 +61,9 @@ def figer(monkeypatch):
     monkeypatch.setattr(sqlglot, "__version__", "X")
     monkeypatch.setattr(duckdb, "__version__", "X")
     monkeypatch.setattr(canot, "__version__", "X")
+    for var in ("LC_ALL", "LC_MESSAGES"):  # scan.html shows English first whatever the machine's locale
+        monkeypatch.delenv(var, raising=False)
+    monkeypatch.setenv("LANG", "C")
 
 
 def _fake_collect(monkeypatch, fixture: str):
@@ -115,10 +118,11 @@ def test_analyse_seule_identique(tmp_path, fixture):
     from canot.scanner.analyze import analyze
     from canot.scanner.render import render_html, write_csv
 
-    result = analyze(json.loads((FIX / f"scan_{fixture}.json").read_text(encoding="utf-8")))
-    result["avec_sql_brut"] = False
+    snap = json.loads((FIX / f"scan_{fixture}.json").read_text(encoding="utf-8"))
+    result, result_fr = analyze(snap), analyze(snap, lang="fr")
+    result["avec_sql_brut"] = result_fr["avec_sql_brut"] = False
     (tmp_path / "scan.json").write_text(json.dumps(result, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
-    (tmp_path / "scan.html").write_text(render_html(result), encoding="utf-8")
+    (tmp_path / "scan.html").write_text(render_html(result, result_fr, lang="en"), encoding="utf-8")
     write_csv(result, tmp_path)
     (tmp_path / run.SHARE_FILE).write_text(json.dumps(run.partage(result), indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
     _compare(f"analyse_{fixture}", _read(tmp_path))

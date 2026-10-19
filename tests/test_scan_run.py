@@ -60,3 +60,46 @@ def test_fichier_de_partage_sans_nom_ni_sql(monkeypatch, tmp_path):
     assert CANARI not in brut
     for t in res["tables"]:
         assert t["nom"] not in brut or len(t["nom"]) < 4  # no table name (very short names may match a word)
+
+
+def test_langue_du_rapport_seul_le_html_change(monkeypatch, tmp_path):
+    """--lang (or the locale) only picks the pane scan.html shows first: both languages are always there, the data files stay English."""
+    for var in ("LC_ALL", "LC_MESSAGES"):
+        monkeypatch.delenv(var, raising=False)
+    src, _ = _src(monkeypatch, "snowflake")
+    files = {}
+    for case, lang, env in (("en", "en", "fr_FR.UTF-8"), ("fr", "fr", "C"), ("locale_fr", None, "fr_FR.UTF-8"), ("repli", None, "C")):
+        monkeypatch.setenv("LANG", env)
+        out = tmp_path / case
+        run.scan_full(src, out, level=3, lang=lang)
+        files[case] = {p.name: p.read_text(encoding="utf-8") for p in out.iterdir()}
+    for case in ("fr", "locale_fr", "repli"):
+        assert {n: t for n, t in files[case].items() if n != "scan.html"} == {n: t for n, t in files["en"].items() if n != "scan.html"}
+    assert '<html lang="en">' in files["en"]["scan.html"] and '<html lang="en">' in files["repli"]["scan.html"]
+    assert '<html lang="fr">' in files["fr"]["scan.html"] and files["locale_fr"]["scan.html"] == files["fr"]["scan.html"]
+    for case in files:
+        h = files[case]["scan.html"]
+        assert 'id="lang-en"' in h and 'id="lang-fr"' in h and "À examiner" in h and "To review" in h
+    assert "À examiner" not in files["fr"]["scan.json"] and "À examiner" not in files["fr"]["flags.csv"]
+
+
+def test_analyse_pure_dans_les_deux_langues():
+    import copy
+
+    from canot.scanner.analyze import analyze
+
+    snap = json.loads((FIX / "scan_snowflake.json").read_text())
+    before = copy.deepcopy(snap)
+    en, fr = analyze(snap), analyze(snap, lang="fr")
+    assert snap == before and analyze(snap) == en and analyze(snap, lang="fr") == fr
+
+    def shape(x):
+        if isinstance(x, dict):
+            return {k: shape(v) for k, v in x.items()}
+        if isinstance(x, list):
+            return [shape(v) for v in x]
+        return type(x).__name__
+
+    assert shape(en) == shape(fr)  # same keys, same list lengths: only the texts differ
+    assert [d["code"] for d in en["drapeaux"]] == [d["code"] for d in fr["drapeaux"]]
+    assert {d["etiquette"] for d in fr["drapeaux"]} == {"À examiner"} and {d["etiquette"] for d in en["drapeaux"]} == {"To review"}

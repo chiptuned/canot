@@ -2,6 +2,8 @@
 
 The scan produces `scan.html` (to share), `scan.json` and CSV files (`flags.csv`, `families.csv`, `reads.csv`, `tables.csv`). It describes your platform; it recommends neither leaving nor staying.
 
+`scan.html` is offered in English and in French: both versions are in the same file, switched by the English / Français links at the top of the page (no script). `--lang en|fr` picks the version shown first; without it, a French locale (`LANG=fr_FR.UTF-8`) shows French, anything else English. `scan.json`, the CSV files, `scan-share.json` and the command-line output stay in English.
+
 ## Guarantees
 
 - **Read-only.** (dbt project: no queries, only files are read, see [dbt](#dbt).) Every query goes through a guard before it is sent: only `SELECT`, `SHOW`, `DESCRIBE` and `ALTER SESSION SET` are allowed. Everything else is rejected without sending anything. `SYSTEM$` functions are rejected too.
