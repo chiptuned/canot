@@ -11,18 +11,27 @@
     "tables_precision_only": 1,
     "queries_order_differs": 0,
     "lossy_conversions": 1,
-    "throughput_mb_s": 303.35,
+    "throughput_mb_s": 227.38,
     "rto": {
       "seconds": [
-        3.4,
-        7.4
+        0.5,
+        1.0
       ],
       "basis": "measured throughput ±, excluding human validation and application cutover"
     },
     "warehouse_credits_used_est": null,
     "cost_usd_est": null,
     "cost_basis": null,
-    "duration_s": 9.8,
+    "duration_s": 2.3,
+    "proof_level": "full_aggregates",
+    "tables_by_proof_level": {
+      "not_compared": 0,
+      "metadata_only": 0,
+      "row_sampled": 0,
+      "partition_sampled": 0,
+      "full_aggregates": 8,
+      "full_fingerprint": 0
+    },
     "parity": "mismatch"
   },
   "copy_location": {
@@ -31,14 +40,14 @@
     "kind": "local",
     "catalog": "SQLite (catalog.db in the output folder)",
     "metadata": {
-      "tpch.customer": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/customer/metadata/00001-3c8d6f29-f872-4d36-8137-3b54cc57914c.metadata.json",
-      "tpch.lineitem": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/lineitem/metadata/00013-3f79e04b-3b83-4ad1-84ed-1b9ad13d960f.metadata.json",
-      "tpch.nation": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/nation/metadata/00001-629543cd-c601-43fe-82b9-406124232e67.metadata.json",
-      "tpch.orders": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/orders/metadata/00003-a01f4e67-7024-42ab-a040-27898e1d051d.metadata.json",
-      "tpch.part": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/part/metadata/00001-c0ea9c1e-d7e4-4420-9347-3340d2f3a5cf.metadata.json",
-      "tpch.partsupp": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/partsupp/metadata/00002-5590cca4-9f16-4fe4-9435-fa62e4afe9a5.metadata.json",
-      "tpch.region": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/region/metadata/00001-61c308c6-43a8-4db1-a137-2bec27d101d8.metadata.json",
-      "tpch.supplier": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/supplier/metadata/00001-fdb4199a-f0cb-4eee-9157-1ad5aa160b41.metadata.json"
+      "tpch.customer": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/customer/metadata/00001-2a8dacb2-6228-4461-a447-903a9d3151d2.metadata.json",
+      "tpch.lineitem": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/lineitem/metadata/00002-5bc9aa95-6aa5-47a4-842a-9a8e70a17633.metadata.json",
+      "tpch.nation": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/nation/metadata/00001-a0971194-317d-4d7f-a081-ffdfa9342e46.metadata.json",
+      "tpch.orders": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/orders/metadata/00001-52f8b399-de6f-4b38-a765-71ecb8e0aa99.metadata.json",
+      "tpch.part": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/part/metadata/00001-0d1363e0-eace-4644-959d-74f5cea794f6.metadata.json",
+      "tpch.partsupp": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/partsupp/metadata/00001-71c7795f-baaa-4806-b1fe-70c63393ca3e.metadata.json",
+      "tpch.region": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/region/metadata/00001-6bed82df-b0d9-4fd6-b6c0-5e617eb6ad96.metadata.json",
+      "tpch.supplier": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/supplier/metadata/00001-bf218bc7-0c7b-473c-bf39-8c1b1cd3fdb5.metadata.json"
     }
   },
   "scan": {
@@ -46,14 +55,14 @@
     "tables": [
       {
         "name": "tpch.customer",
-        "rows": 150000,
-        "bytes": 28282500,
+        "rows": 15000,
+        "bytes": 2828250,
         "columns": 8
       },
       {
         "name": "tpch.lineitem",
-        "rows": 6001215,
-        "bytes": 1104631642,
+        "rows": 600572,
+        "bytes": 110546086,
         "columns": 17
       },
       {
@@ -64,20 +73,20 @@
       },
       {
         "name": "tpch.orders",
-        "rows": 1500000,
-        "bytes": 194154000,
+        "rows": 150000,
+        "bytes": 19415400,
         "columns": 9
       },
       {
         "name": "tpch.part",
-        "rows": 200000,
-        "bytes": 29905800,
+        "rows": 20000,
+        "bytes": 2990580,
         "columns": 9
       },
       {
         "name": "tpch.partsupp",
-        "rows": 800000,
-        "bytes": 134131200,
+        "rows": 80000,
+        "bytes": 13413120,
         "columns": 5
       },
       {
@@ -88,16 +97,16 @@
       },
       {
         "name": "tpch.supplier",
-        "rows": 10000,
-        "bytes": 1651220,
+        "rows": 1000,
+        "bytes": 165122,
         "columns": 7
       }
     ],
     "totals": {
       "tables": 8,
-      "rows": 8661245,
-      "bytes": 1492759239,
-      "gb": 1.493
+      "rows": 866602,
+      "bytes": 149361435,
+      "gb": 0.149
     },
     "non_portable_columns": [],
     "objects_that_do_not_move": {
@@ -111,12 +120,12 @@
     "usage_90d": null,
     "exit_estimate": {
       "duration_hours": [
-        0.01,
-        0.02
+        0.0,
+        0.0
       ],
       "credits": [
-        0.01,
-        0.02
+        0.0,
+        0.0
       ],
       "assumed_throughput_mb_s": [
         20.0,
@@ -139,31 +148,39 @@
   "checks": [
     {
       "table": "tpch.customer",
-      "rows_source": 150000,
-      "rows_target": 150000,
+      "rows_source": 15000,
+      "rows_target": 15000,
       "schema_ok": true,
       "stats_ok": true,
       "stats_diffs": [],
       "fingerprint_ok": true,
       "bad_buckets": [],
       "precision_cols": [],
+      "within_precision_cols": [],
+      "proof_level": "full_aggregates",
+      "proof_note": "row count and per-column non-null count, min, max and sum (numeric columns) recomputed in the source engine over the whole table and compared with the copy; content fingerprint of the rows as Canot read them compared with the copy (it shows the copy matches what Canot read, not the source itself)",
       "ok": true
     },
     {
       "table": "tpch.lineitem",
-      "rows_source": 6001215,
-      "rows_target": 6001215,
+      "rows_source": 600572,
+      "rows_target": 600572,
       "schema_ok": true,
       "stats_ok": false,
       "stats_diffs": [
         "l_loaded_at.min: Timestamp('1992-01-31 00:00:00.287971001') / datetime.datetime(1992, 1, 31, 0, 0, 0, 287971)",
-        "l_loaded_at.max: Timestamp('1998-10-31 00:00:05.354144001') / datetime.datetime(1998, 10, 31, 0, 0, 5, 354144)"
+        "l_loaded_at.max: Timestamp('1998-10-31 00:00:00.455367004') / datetime.datetime(1998, 10, 31, 0, 0, 0, 455367)"
       ],
       "fingerprint_ok": true,
       "bad_buckets": [],
       "precision_cols": [
         "l_loaded_at"
       ],
+      "within_precision_cols": [
+        "l_loaded_at"
+      ],
+      "proof_level": "full_aggregates",
+      "proof_note": "row count and per-column non-null count, min, max and sum (numeric columns) recomputed in the source engine over the whole table and compared with the copy; content fingerprint of the rows as Canot read them compared with the copy (it shows the copy matches what Canot read, not the source itself); compared only within the precision of the target type: l_loaded_at",
       "ok": false
     },
     {
@@ -176,42 +193,54 @@
       "fingerprint_ok": true,
       "bad_buckets": [],
       "precision_cols": [],
+      "within_precision_cols": [],
+      "proof_level": "full_aggregates",
+      "proof_note": "row count and per-column non-null count, min, max and sum (numeric columns) recomputed in the source engine over the whole table and compared with the copy; content fingerprint of the rows as Canot read them compared with the copy (it shows the copy matches what Canot read, not the source itself)",
       "ok": true
     },
     {
       "table": "tpch.orders",
-      "rows_source": 1500000,
-      "rows_target": 1500000,
+      "rows_source": 150000,
+      "rows_target": 150000,
       "schema_ok": true,
       "stats_ok": true,
       "stats_diffs": [],
       "fingerprint_ok": true,
       "bad_buckets": [],
       "precision_cols": [],
+      "within_precision_cols": [],
+      "proof_level": "full_aggregates",
+      "proof_note": "row count and per-column non-null count, min, max and sum (numeric columns) recomputed in the source engine over the whole table and compared with the copy; content fingerprint of the rows as Canot read them compared with the copy (it shows the copy matches what Canot read, not the source itself)",
       "ok": true
     },
     {
       "table": "tpch.part",
-      "rows_source": 200000,
-      "rows_target": 200000,
+      "rows_source": 20000,
+      "rows_target": 20000,
       "schema_ok": true,
       "stats_ok": true,
       "stats_diffs": [],
       "fingerprint_ok": true,
       "bad_buckets": [],
       "precision_cols": [],
+      "within_precision_cols": [],
+      "proof_level": "full_aggregates",
+      "proof_note": "row count and per-column non-null count, min, max and sum (numeric columns) recomputed in the source engine over the whole table and compared with the copy; content fingerprint of the rows as Canot read them compared with the copy (it shows the copy matches what Canot read, not the source itself)",
       "ok": true
     },
     {
       "table": "tpch.partsupp",
-      "rows_source": 800000,
-      "rows_target": 800000,
+      "rows_source": 80000,
+      "rows_target": 80000,
       "schema_ok": true,
       "stats_ok": true,
       "stats_diffs": [],
       "fingerprint_ok": true,
       "bad_buckets": [],
       "precision_cols": [],
+      "within_precision_cols": [],
+      "proof_level": "full_aggregates",
+      "proof_note": "row count and per-column non-null count, min, max and sum (numeric columns) recomputed in the source engine over the whole table and compared with the copy; content fingerprint of the rows as Canot read them compared with the copy (it shows the copy matches what Canot read, not the source itself)",
       "ok": true
     },
     {
@@ -224,21 +253,28 @@
       "fingerprint_ok": true,
       "bad_buckets": [],
       "precision_cols": [],
+      "within_precision_cols": [],
+      "proof_level": "full_aggregates",
+      "proof_note": "row count and per-column non-null count, min, max and sum (numeric columns) recomputed in the source engine over the whole table and compared with the copy; content fingerprint of the rows as Canot read them compared with the copy (it shows the copy matches what Canot read, not the source itself)",
       "ok": true
     },
     {
       "table": "tpch.supplier",
-      "rows_source": 10000,
-      "rows_target": 10000,
+      "rows_source": 1000,
+      "rows_target": 1000,
       "schema_ok": true,
       "stats_ok": true,
       "stats_diffs": [],
       "fingerprint_ok": true,
       "bad_buckets": [],
       "precision_cols": [],
+      "within_precision_cols": [],
+      "proof_level": "full_aggregates",
+      "proof_note": "row count and per-column non-null count, min, max and sum (numeric columns) recomputed in the source engine over the whole table and compared with the copy; content fingerprint of the rows as Canot read them compared with the copy (it shows the copy matches what Canot read, not the source itself)",
       "ok": true
     }
   ],
+  "not_compared": [],
   "queries": [
     {
       "sql": "select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price,\n       sum(l_extendedprice * (1 - l_discount)) as sum_disc_price, avg(l_discount) as avg_disc, count(*) as n\nfrom tpch.lineitem where l_shipdate <= date '1998-12-01' - interval '90' day\ngroup by 1, 2 order by 1, 2",
@@ -289,15 +325,15 @@
     }
   ],
   "env": {
-    "canot": "0.4.1",
+    "canot": "0.5.0",
     "duckdb": "1.5.6",
     "pyarrow": "26.0.0",
     "pyiceberg": "0.12.0",
     "sqlglot": "30.22.0"
   },
   "seal": {
-    "last_hash": "e9bc8053c4c125bd1eb6a3b3c45faf933756ff9b81c8fea036874343023ce79e",
-    "signature": "13091a012c79a239d2959af56c7f816d74352962096e7f0b923620df8981d8782a5b4cce80f33adc99e95194437f50b28cd156aa2ff7169bf0b16037c591a10a",
+    "last_hash": "331d993818b563648063a3bcd180da19eb784519390a4c32f2e6e71db377f743",
+    "signature": "8e5ac819fb224c9975601dc90e3f87f00292031de9ac8b636af86215e3ea78aea03803a1fa4c263adfd78a0d69ddab0b0b215b5ed19d7a025988dae9d200ca04",
     "entries": 23
   },
   "source": "duckdb:/tmp/canot-sf1/demo.duckdb",
