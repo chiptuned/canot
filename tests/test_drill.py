@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import os
 import pyarrow as pa
 import pytest
 
@@ -139,10 +140,12 @@ def test_snowflake_setup_generates_key(tmp_path, monkeypatch, capsys):
     from canot.cli import main
 
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))  # Path.home() on Windows
     assert main(["snowflake-setup", "--generate-key", "--base", "MABASE"]) == 0
     out = capsys.readouterr().out
     assert "MABASE" in out and "RSA_PUBLIC_KEY = '" in out and "<public key" not in out and "<DATABASE>" not in out
-    assert (tmp_path / ".canot" / "snowflake_rsa_key.p8").stat().st_mode & 0o077 == 0
+    if os.name != "nt":  # POSIX permission bits do not exist on Windows
+        assert (tmp_path / ".canot" / "snowflake_rsa_key.p8").stat().st_mode & 0o077 == 0
 
 
 def test_errors_are_readable():

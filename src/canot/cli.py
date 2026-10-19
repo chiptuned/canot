@@ -43,6 +43,12 @@ def explain(exc: BaseException, argv: list[str]) -> str | None:
 def main(argv: list[str] | None = None) -> int:
     import warnings
 
+    for stream in (sys.stdout, sys.stderr):  # a Windows pipe or legacy console (cp1252) must not crash on →, ≠ or accents
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
     warnings.filterwarnings("ignore", message=".*end user credentials.*")
     argv_list = list(sys.argv[1:] if argv is None else argv)
     debug = "--debug" in argv_list

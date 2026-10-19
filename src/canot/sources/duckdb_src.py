@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from pathlib import Path
+import re
 from urllib.parse import urlparse
 
 import duckdb
@@ -19,7 +20,8 @@ class DuckDBSource(Source):
 
     def __init__(self, url: str):
         u = urlparse(url)
-        path = url if u.scheme == "" else (u.netloc + u.path)
+        windows_path = re.match(r"^[A-Za-z]:[\\/]", url) is not None  # C:\... parses as scheme "c"
+        path = url if u.scheme == "" or windows_path else (u.netloc + u.path)
         if u.scheme == "duckdb" and url.startswith("duckdb:///"):
             path = u.path
         self.path = str(Path(path).expanduser())

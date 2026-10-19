@@ -140,7 +140,7 @@ def test_correspondance_snowflake_sans_secret_dans_la_description(tmp_path):
     p = load_profile(proj, target="sf", env=env)
     cx = dbt_drill.connexion(p, ["raw", "analytics"], proj, env=env)
     assert cx.url.startswith("snowflake://xy12345/warehouse?") and "schemas=ANALYTICS%2CRAW" in cx.url and "role=SHOP_READER" in cx.url
-    assert cx.env == {"SNOWFLAKE_PASSWORD": SECRET, "SNOWFLAKE_PRIVATE_KEY_PATH": "/keys/shop_rsa.p8"}
+    assert cx.env == {"SNOWFLAKE_PASSWORD": SECRET, "SNOWFLAKE_PRIVATE_KEY_PATH": str(Path("/keys/shop_rsa.p8"))}
     assert SECRET not in json.dumps(cx.description) and "shop_rsa" not in json.dumps(cx.description) and "SHOP_USER" not in json.dumps(cx.description)
     # a variable the user already set wins
     assert "SNOWFLAKE_PASSWORD" not in dbt_drill.connexion(p, ["raw"], proj, env={**env, "SNOWFLAKE_PASSWORD": "mine"}).env
@@ -245,7 +245,7 @@ def test_profil_snowflake_aucun_secret_ecrit(tmp_path, monkeypatch, capsys):
     out = tmp_path / "out"
     lines = []
     r = run_dbt_drill(f"dbt://{proj}?target=sf", str(tmp_path / "lake"), out, tmp_path / "k.key", log=lines.append, open_source=ouvrir)
-    assert vu["pw"] == SECRET and vu["key"] == "/keys/shop_rsa.p8" and "user=SHOP_USER" in vu["url"]
+    assert vu["pw"] == SECRET and vu["key"] == str(Path("/keys/shop_rsa.p8")) and "user=SHOP_USER" in vu["url"]
     import os
 
     assert "SNOWFLAKE_PASSWORD" not in os.environ  # restored after opening
@@ -407,7 +407,7 @@ def test_correspondance_bigquery_et_databricks(tmp_path):
         "    dbx_clair:\n      type: databricks\n      host: h\n      http_path: p\n      token: dapi-clear\n"))
     bq = dbt_drill.connexion(load_profile(proj, env={}), ["raw", "analytics"], proj, env={})
     assert bq.url == "bigquery://bill-proj/data-proj.analytics,data-proj.raw?location=EU" and bq.database == "data-proj"
-    assert bq.env == {"GOOGLE_APPLICATION_CREDENTIALS": "/keys/sa.json"} and "sa.json" not in json.dumps(bq.description)
+    assert bq.env == {"GOOGLE_APPLICATION_CREDENTIALS": str(Path("/keys/sa.json"))} and "sa.json" not in json.dumps(bq.description)
     env = {"DBX_TOKEN": SECRET}
     dbx = dbt_drill.connexion(load_profile(proj, target="dbx", env=env), ["raw"], proj, env=env)
     assert dbx.url == "databricks://adb-1.azuredatabricks.net/sql/1.0/warehouses/abc?catalog=main" and dbx.env == {"DATABRICKS_TOKEN": SECRET}

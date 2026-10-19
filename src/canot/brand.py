@@ -53,7 +53,7 @@ def bilingual(en_html: str, fr_html: str, default: str = "en") -> str:
 
 
 def brand_bar(kind: str) -> str:
-    return f'<div class="brandbar"><span class="brand">{LOGO_SVG}<span>canot</span></span><span class="kind">{html.escape(kind)}</span></div>'
+    return f'<div class="brandbar"><span class="brand">{LOGO_SVG}<span>canot.io</span></span><span class="kind">{html.escape(kind)}</span></div>'
 
 
 def _data_uri(payload: dict) -> str:

@@ -1,4 +1,5 @@
 """collect -> analyze -> render orchestration, with a fake collection: regression on how the pieces are wired."""
+import os
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -45,7 +46,7 @@ def test_texte_brut_seulement_sur_demande(monkeypatch, tmp_path):
     out = tmp_path / "brut"
     run.scan_full(src, out, level=2, include_sql_text=True)
     p = out / "scan-sql-raw.json"
-    assert p.exists() and oct(p.stat().st_mode & 0o777) == "0o600"
+    assert p.exists() and (os.name == "nt" or oct(p.stat().st_mode & 0o777) == "0o600")
     brut = p.read_text(encoding="utf-8")
     assert CANARI in brut and "hunter2" not in brut  # the requested text is there, never the text of a query holding a secret
     assert "avec_sql_brut" in (out / "scan.json").read_text(encoding="utf-8")
