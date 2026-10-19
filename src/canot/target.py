@@ -19,9 +19,9 @@ PROVIDERS: dict[str, tuple[str, str]] = {
 
 
 def file_uri(p: Path) -> str:
-    """file:// URI of a local folder. Windows needs three slashes and forward slashes (file:///C:/...): the Iceberg metadata
-    stores these URIs, and DuckDB or Spark must be able to read them."""
-    return "file:///" + p.as_posix() if os.name == "nt" else f"file://{p}"
+    """file:// URI of a local folder. On Windows: forward slashes (file://C:/...), the form PyIceberg turns back into C:/...
+    (file:///C:/... would become /C:/..., a path Windows rejects) and that the Iceberg metadata can store portably."""
+    return "file://" + p.as_posix() if os.name == "nt" else f"file://{p}"
 
 
 def local_path(uri: str) -> Path:
