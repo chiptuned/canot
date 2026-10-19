@@ -27,7 +27,7 @@ def test_le_rapport_du_drill_et_celui_du_scan_contiennent_la_section(tmp_path):
     from canot.scanner.render import render_html
     import json
 
-    snap = json.loads((Path(__file__).parent / "fixtures" / "scan_bigquery.json").read_text())
+    snap = json.loads((Path(__file__).parent / "fixtures" / "scan_bigquery.json").read_text(encoding="utf-8"))
     from canot.scanner.analyze import analyze
 
     page = render_html(analyze(snap))

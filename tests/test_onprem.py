@@ -18,7 +18,7 @@ def demo(tmp_path: Path):
     db = tmp_path / "demo.duckdb"
     make_demo(str(db), 1_000)
     q = tmp_path / "q.sql"
-    q.write_text(DEMO_QUERIES)
+    q.write_text(DEMO_QUERIES, encoding="utf-8")
     return db, q
 
 

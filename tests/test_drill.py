@@ -19,7 +19,7 @@ def demo(tmp_path: Path):
     db = tmp_path / "demo.duckdb"
     make_demo(str(db), 2_000)
     q = tmp_path / "q.sql"
-    q.write_text(DEMO_QUERIES)
+    q.write_text(DEMO_QUERIES, encoding="utf-8")
     return db, q
 
 
@@ -47,7 +47,7 @@ def test_tamper_is_detected(demo, tmp_path):
     db, q = demo
     _, out = drill(DuckDBSource(str(db)), tmp_path, q)
     p = out / "evidence.jsonl"
-    p.write_text(p.read_text().replace('"rows": 2000', '"rows": 2001', 1))
+    p.write_text(p.read_text(encoding="utf-8").replace('"rows": 2000', '"rows": 2001', 1))
     assert not verify_dir(out)[0]
 
 
@@ -92,7 +92,7 @@ def test_fingerprint_is_order_independent():
 
 def test_scaleway_keys_from_scw_config(tmp_path, monkeypatch):
     cfg = tmp_path / "config.yaml"
-    cfg.write_text("access_key: SCWTEST\nsecret_key: 'sekret'\ndefault_project_id: p\nprofiles:\n  other:\n    access_key: NOPE\n")
+    cfg.write_text("access_key: SCWTEST\nsecret_key: 'sekret'\ndefault_project_id: p\nprofiles:\n  other:\n    access_key: NOPE\n", encoding="utf-8")
     for v in ("CANOT_S3_ACCESS_KEY", "CANOT_S3_SECRET_KEY", "SCW_ACCESS_KEY", "SCW_SECRET_KEY", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"):
         monkeypatch.delenv(v, raising=False)
     monkeypatch.setenv("SCW_CONFIG_PATH", str(cfg))
@@ -103,7 +103,7 @@ def test_scaleway_keys_from_scw_config(tmp_path, monkeypatch):
 
 def test_scaleway_named_profile(tmp_path, monkeypatch):
     cfg = tmp_path / "config.yaml"
-    cfg.write_text("access_key: TOPKEY\nsecret_key: topsecret\nprofiles:\n  canot:\n    access_key: CANOTKEY\n    secret_key: canotsecret\n    default_project_id: p\n")
+    cfg.write_text("access_key: TOPKEY\nsecret_key: topsecret\nprofiles:\n  canot:\n    access_key: CANOTKEY\n    secret_key: canotsecret\n    default_project_id: p\n", encoding="utf-8")
     for v in ("CANOT_S3_ACCESS_KEY", "CANOT_S3_SECRET_KEY", "SCW_ACCESS_KEY", "SCW_SECRET_KEY", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"):
         monkeypatch.delenv(v, raising=False)
     monkeypatch.setenv("SCW_CONFIG_PATH", str(cfg))
@@ -121,7 +121,7 @@ def test_demo_command_end_to_end_and_synthesis(tmp_path, capsys, monkeypatch):
     from canot.evidence import verify_dir
 
     assert main(["demo", "--out", str(tmp_path / "d"), "--rows", "2000", "--no-open"]) == 0
-    html = (tmp_path / "d" / "evidence" / "report.html").read_text()
+    html = (tmp_path / "d" / "evidence" / "report.html").read_text(encoding="utf-8")
     assert "Exit feasible on this scope" in html and "canot.io/#contact" in html
     assert "lose precision" in html and "TIMESTAMP_NS" in html  # the nanosecond trap is flagged as a point to address
     assert "/tmp" not in html and "/private" not in html and "None" not in html  # no local path and no "None" in a shared report
@@ -164,7 +164,7 @@ def test_reread_sql_runs_with_plain_duckdb(tmp_path, monkeypatch):
     monkeypatch.setattr("canot.demo.make_tpch", lambda *a, **k: (_ for _ in ()).throw(OSError("offline")))
 
     assert main(["demo", "--out", str(tmp_path / "d"), "--rows", "1000", "--no-open"]) == 0
-    sql = (tmp_path / "d" / "evidence" / "reread.sql").read_text()
+    sql = (tmp_path / "d" / "evidence" / "reread.sql").read_text(encoding="utf-8")
     con = duckdb.connect()
     try:
         con.execute("INSTALL iceberg; LOAD iceberg;")
@@ -218,7 +218,7 @@ def test_demo_tpch_si_l_extension_est_disponible(tmp_path):
     from canot.cli import main
 
     assert main(["demo", "--out", str(tmp_path / "d"), "--sf", "0.01", "--no-open"]) in (0, 1)
-    html = (tmp_path / "d" / "evidence" / "report.html").read_text()
+    html = (tmp_path / "d" / "evidence" / "report.html").read_text(encoding="utf-8")
     assert "TPC-H" in html or "lineitem" in html.lower()
     assert "TIMESTAMP_NS" in html
 
@@ -233,9 +233,9 @@ def test_demo_est_un_raccourci_exact(tmp_path, capsys, monkeypatch):
     out = tmp_path / "d"
     assert main(["demo", "--out", str(out), "--no-open"]) == 0
     shown = capsys.readouterr().out
-    assert f"canot demo-data {out}/demo.duckdb --tpch" in shown
+    assert f"canot demo-data {out / 'demo.duckdb'} --tpch" in shown
     m = re.search(r"canot drill (\S+) (\S+) --queries (\S+) --out (\S+)", shown)
-    assert m and m.group(2) == f"{out}/iceberg" and m.group(3) == f"{out}/queries.sql" and m.group(4) == f"{out}/evidence"
+    assert m and m.group(2) == str(out / "iceberg") and m.group(3) == str(out / "queries.sql") and m.group(4) == str(out / "evidence")
     # same source, same queries, same output folder: the long command replays the exercise
     assert main(["drill", m.group(1), str(tmp_path / "autre"), "--queries", m.group(3), "--out", str(tmp_path / "o2")]) in (0, 1)
     assert (tmp_path / "o2" / "report.json").exists()

@@ -34,7 +34,7 @@ def demo(tmp_path_factory):
     finally:
         canot.demo.make_tpch = keep
     ev = out / "evidence"
-    return json.loads((ev / "report.json").read_text()), ev
+    return json.loads((ev / "report.json").read_text(encoding="utf-8")), ev
 
 
 def panes(page: str) -> dict:
@@ -55,11 +55,11 @@ def text(fragment: str, drop_code: bool = False) -> str:
 def rewrite(res, ev, tmp_path, lang=None) -> str:
     out = tmp_path / "copy"
     shutil.copytree(ev, out)
-    return write_report(res, out, lang).read_text()
+    return write_report(res, out, lang).read_text(encoding="utf-8")
 
 
 def test_both_panes_present_with_the_same_structure(demo):
-    page = (demo[1] / "report.html").read_text()
+    page = (demo[1] / "report.html").read_text(encoding="utf-8")
     p = panes(page)
     en, fr = p["en"], p["fr"]
     for tag in ("<h1", "<h2", "<h3", "<table", "<tr", "<li", 'class="find"', 'class="share"', 'class="cta"', "<code>"):
@@ -73,7 +73,7 @@ def test_both_panes_present_with_the_same_structure(demo):
 
 
 def test_no_english_left_in_the_french_pane_and_no_accent_in_the_english_one(demo):
-    p = panes((demo[1] / "report.html").read_text())
+    p = panes((demo[1] / "report.html").read_text(encoding="utf-8"))
     fr = text(p["fr"], drop_code=True)
     for name in ("Data Act", "Apache Iceberg", "SecNumCloud", "reporting", "drill-share.json", "Business Critical"):
         fr = fr.replace(name, " ")
@@ -84,14 +84,14 @@ def test_no_english_left_in_the_french_pane_and_no_accent_in_the_english_one(dem
 
 
 def test_french_numbers_and_date(demo):
-    fr = text(panes((demo[1] / "report.html").read_text())["fr"])
+    fr = text(panes((demo[1] / "report.html").read_text(encoding="utf-8"))["fr"])
     assert re.search(r"\d \d{3} lignes au total", fr)  # 12 300, narrow no-break space
     assert re.search(r"Débit de copie mesuré : \d+(,\d+)? Mo/s", fr)
     assert re.search(r"Constat daté du (1er|\d{1,2}) (janv\.|févr\.|mars|avr\.|mai|juin|juil\.|août|sept\.|oct\.|nov\.|déc\.) 20\d\d", fr)
 
 
 def test_ids_are_unique_and_only_the_pane_wrappers_are_shared_names(demo):
-    page = (demo[1] / "report.html").read_text()
+    page = (demo[1] / "report.html").read_text(encoding="utf-8")
     ids = re.findall(r'\sid="([^"]+)"', page)
     assert len(ids) == len(set(ids)), ids
     assert {"lang-en", "lang-fr", "regulatory-en", "regulatory-fr"} <= set(ids)
@@ -101,7 +101,7 @@ def test_ids_are_unique_and_only_the_pane_wrappers_are_shared_names(demo):
 
 
 def test_toggle_one_brand_bar_and_default_from_lang_option(demo):
-    page = (demo[1] / "report.html").read_text()
+    page = (demo[1] / "report.html").read_text(encoding="utf-8")
     assert page.count('href="#lang-en"') == 1 and page.count('href="#lang-fr"') == 1
     assert page.count("<svg") == 1 and page.count('class="brandbar"') == 1 and page.count("<style>") == 1
     assert page.index('class="langbar"') < page.index('id="lang-')  # the language bar comes before both panes
@@ -123,7 +123,7 @@ def test_default_from_locale_and_fallback(demo, tmp_path, monkeypatch):
 
 
 def test_no_script_no_external_resource(demo):
-    page = (demo[1] / "report.html").read_text()
+    page = (demo[1] / "report.html").read_text(encoding="utf-8")
     assert "<script" not in page.lower() and " src=" not in page and "url(" not in page and "@import" not in page
     urls = re.findall(r"https?://[^\s\"'<>)]+", page)
     assert urls and all(u.startswith("https://canot.io/") for u in urls), urls
@@ -134,7 +134,7 @@ def test_no_script_no_external_resource(demo):
 
 
 def test_forbidden_words_absent_in_both_languages(demo):
-    p = panes((demo[1] / "report.html").read_text())
+    p = panes((demo[1] / "report.html").read_text(encoding="utf-8"))
     en, fr = text(p["en"]).lower(), text(p["fr"]).lower()
     for w in EN_FORBIDDEN:
         assert w not in en, w
@@ -217,7 +217,7 @@ def test_dbt_section_in_both_panes(tmp_path):
 
     proj = build_project(tmp_path, ecart=True)
     r, out = _drill(tmp_path, proj, lang="fr")
-    page = (out / "report.html").read_text()
+    page = (out / "report.html").read_text(encoding="utf-8")
     p = panes(page)
     assert p["_order"] == ("en", "fr")
     en, fr = text(p["en"]), text(p["fr"])
@@ -228,5 +228,5 @@ def test_dbt_section_in_both_panes(tmp_path):
     assert "Fuseau horaire du rejeu" in fr and "aucun fuseau source parmi les entrées" in fr
     ids = re.findall(r'\sid="([^"]+)"', page)
     assert len(ids) == len(set(ids))
-    rep = (out / "report.json").read_text()
+    rep = (out / "report.json").read_text(encoding="utf-8")
     assert "Projet dbt" not in rep and "causes possibles" not in rep  # report.json stays English

@@ -96,7 +96,7 @@ def test_explain_scan_on_the_fixture(tmp_path):
 
     from canot.scanner.analyze import analyze
 
-    snap = json.loads((Path(__file__).parent / "fixtures" / "scan_bigquery.json").read_text())
+    snap = json.loads((Path(__file__).parent / "fixtures" / "scan_bigquery.json").read_text(encoding="utf-8"))
     p = tmp_path / "scan.json"
     p.write_text(json.dumps(analyze(snap)))
     r = agent.explain_scan(str(p))
@@ -105,7 +105,7 @@ def test_explain_scan_on_the_fixture(tmp_path):
 
 def test_rejects_a_file_that_is_not_canot(tmp_path):
     p = tmp_path / "x.json"
-    p.write_text("{}")
+    p.write_text("{}", encoding="utf-8")
     with pytest.raises(ValueError):
         agent.explain_scan(str(p))
     with pytest.raises(ValueError):
@@ -118,7 +118,7 @@ def test_explain_report(tmp_path, docs):
     p = tmp_path / "report.json"
     p.write_text(json.dumps({"summary": {"parity": "mismatch"}, "checks": [
         {"table": "a.b", "ok": False, "rows_source": 3, "rows_target": 2, "schema_ok": True, "stats_ok": False, "fingerprint_ok": False, "stats_diffs": ["x"]},
-        {"table": "a.c", "ok": True}], "queries": [{"status": "mismatch", "detail": "d", "sql": "select 1"}, {"status": "match", "sql": "select 2"}]}))
+        {"table": "a.c", "ok": True}], "queries": [{"status": "mismatch", "detail": "d", "sql": "select 1"}, {"status": "match", "sql": "select 2"}]}), encoding="utf-8")
     r = agent.explain_report(str(p))
     assert [t["table"] for t in r["tables_with_mismatch"]] == ["a.b"] and len(r["queries_with_mismatch"]) == 1
     assert r["discrepancy_catalog"] == ["Nanoseconds do not survive Iceberg v2", "BigQuery: DATE_TRUNC"]

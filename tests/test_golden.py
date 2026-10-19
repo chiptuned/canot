@@ -79,6 +79,15 @@ def _fake_collect(monkeypatch, fixture: str):
                            datasets=[], describe=lambda: f"{dialect}:dore", close=lambda: None)
 
 
+def _tmp(text: str, tmp) -> str:
+    """Replace the temporary folder by <TMP> and use forward slashes after it (Windows paths use backslashes, also escaped in JSON)."""
+    import re
+
+    for variant in (str(tmp), str(tmp).replace("\\", "\\\\"), Path(tmp).as_posix()):
+        text = text.replace(variant, "<TMP>")
+    return re.sub(r"<TMP>[^\s\"']*", lambda m: m.group(0).replace("\\\\", "/").replace("\\", "/"), text)
+
+
 def _compare(case: str, produced: dict[str, str]):
     d = GOLD / case
     if REGEN:
@@ -92,7 +101,8 @@ def _compare(case: str, produced: dict[str, str]):
         if not ref.exists():
             diffs.append(f"{name}: reference missing")
             continue
-        want = ref.read_bytes().decode("utf-8")
+        want = ref.read_bytes().decode("utf-8").replace("\r\n", "\n")  # a Windows checkout may convert line endings
+        text = text.replace("\r\n", "\n")
         if want != text:
             diff = "".join(list(difflib.unified_diff(want.splitlines(True), text.splitlines(True), "reference", "produced", n=1))[:40])
             diffs.append(f"{name} differs:\n{diff}")
@@ -141,7 +151,7 @@ def test_cli_scan_complet_identique(figer, monkeypatch, tmp_path, capsys):
     src = _fake_collect(monkeypatch, "snowflake")
     monkeypatch.setattr(canot.sources, "open_source", lambda url: src)
     out = tmp_path / "out"
-    stdout = _cli(["scan", "snowflake://COMPTE/B", "--out", str(out)], capsys).replace(str(tmp_path), "<TMP>")
+    stdout = _tmp(_cli(["scan", "snowflake://COMPTE/B", "--out", str(out)], capsys), tmp_path)
     _compare("cli_scan_complet", {"stdout.txt": stdout, **_read(out)})
 
 
@@ -151,8 +161,8 @@ def test_cli_scan_leger_identique(tmp_path, capsys):
     db = tmp_path / "demo.duckdb"
     make_demo(str(db), 500)
     out = tmp_path / "out"
-    stdout = _cli(["scan", str(db), "--out", str(out)], capsys).replace(str(tmp_path), "<TMP>")
-    _compare("cli_scan_leger", {"stdout.txt": stdout, "scan.json": (out / "scan.json").read_text(encoding="utf-8").replace(str(tmp_path), "<TMP>")})
+    stdout = _tmp(_cli(["scan", str(db), "--out", str(out)], capsys), tmp_path)
+    _compare("cli_scan_leger", {"stdout.txt": stdout, "scan.json": _tmp((out / "scan.json").read_text(encoding="utf-8"), tmp_path)})
 
 
 def test_cli_scan_dbt_identique(figer, monkeypatch, tmp_path, capsys):
@@ -162,5 +172,5 @@ def test_cli_scan_dbt_identique(figer, monkeypatch, tmp_path, capsys):
     monkeypatch.setattr(dbt_scan, "now_iso", lambda: "2026-10-19T10:00:00Z")
     monkeypatch.setattr(dbt_scan, "_duree", lambda t0: 0.0)
     out = tmp_path / "out"
-    stdout = _cli(["scan", f"dbt://{FIX / 'dbt' / 'banc'}", "--out", str(out)], capsys).replace(str(tmp_path), "<TMP>")
+    stdout = _tmp(_cli(["scan", f"dbt://{FIX / 'dbt' / 'banc'}", "--out", str(out)], capsys), tmp_path)
     _compare("cli_scan_dbt", {"stdout.txt": stdout, **_read(out)})

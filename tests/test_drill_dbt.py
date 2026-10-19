@@ -62,7 +62,7 @@ def build_project(tmp_path: Path, profiles: str | None = None, ecart: bool = Fal
     proj = tmp_path / "shop"
     (proj / "target").mkdir(parents=True)
     build_warehouse(proj / f"{WH}.duckdb", ecart)
-    (proj / "dbt_project.yml").write_text("name: shop\nversion: '1.0'\nprofile: shop_profile\n")
+    (proj / "dbt_project.yml").write_text("name: shop\nversion: '1.0'\nprofile: shop_profile\n", encoding="utf-8")
     (proj / "profiles.yml").write_text(profiles or (
         "shop_profile:\n  target: dev\n  outputs:\n"
         "    dev:\n      type: duckdb\n      path: \"{{ env_var('SHOP_DB', 'warehouse.duckdb') }}\"\n      threads: 1\n"
@@ -84,7 +84,7 @@ def build_project(tmp_path: Path, profiles: str | None = None, ecart: bool = Fal
               for m in ("table", "view", "incremental", "seed", "materialized_view")}
     man = {"metadata": {"adapter_type": "duckdb", "project_name": "shop", "dbt_version": "1.9.0"}, "nodes": nodes, "sources": srcs,
            "macros": macros}
-    (proj / "target" / "manifest.json").write_text(json.dumps(man))
+    (proj / "target" / "manifest.json").write_text(json.dumps(man), encoding="utf-8")
     return proj
 
 
@@ -117,7 +117,7 @@ def test_choix_du_profil_et_de_la_cible(tmp_path, monkeypatch):
         load_profile(proj, target="nope", env={})
     other = tmp_path / "elsewhere"
     other.mkdir()
-    (other / "profiles.yml").write_text("shop_profile:\n  target: x\n  outputs:\n    x:\n      type: bigquery\n      project: p\n")
+    (other / "profiles.yml").write_text("shop_profile:\n  target: x\n  outputs:\n    x:\n      type: bigquery\n      project: p\n", encoding="utf-8")
     assert load_profile(proj, profiles_dir=str(other), env={}).adaptateur == "bigquery"
     assert load_profile(proj, env={"DBT_PROFILES_DIR": str(other)}).origine == "DBT_PROFILES_DIR"
     (proj / "profiles.yml").unlink()
@@ -158,7 +158,7 @@ def test_adaptateur_sans_connecteur(tmp_path):
 
 
 def test_relations_du_manifest(tmp_path):
-    man = json.loads((build_project(tmp_path) / "target" / "manifest.json").read_text())
+    man = json.loads((build_project(tmp_path) / "target" / "manifest.json").read_text(encoding="utf-8"))
     copier, ecartees = relations(man)
     assert sorted(r["fqn"] for r in copier) == ["analytics.customer_totals", "analytics.fct_orders", "analytics.orders_inc",
                                                  "analytics.py_scores", "main.country_codes", "raw.customers", "raw.ghost", "raw.orders"]
@@ -193,12 +193,12 @@ def test_drill_dbt_duckdb_de_bout_en_bout(tmp_path):
     for f in ("report.html", "report.json", "replay-dbt.json", "evidence.jsonl", "evidence.sig", "evidence.pub", "reread.sql"):
         assert (out / f).exists(), f
     assert verify_dir(out)[0]
-    events = [json.loads(l)["event"] for l in (out / "evidence.jsonl").read_text().splitlines()]
+    events = [json.loads(l)["event"] for l in (out / "evidence.jsonl").read_text(encoding="utf-8").splitlines()]
     assert events[0] == "dbt_project" and "copy" in events and "replay_start" in events and "dbt_model" in events and events[-1] == "dbt_verdict"
-    rep = json.loads((out / "report.json").read_text())
-    rj = json.loads((out / "replay-dbt.json").read_text())
+    rep = json.loads((out / "report.json").read_text(encoding="utf-8"))
+    rj = json.loads((out / "replay-dbt.json").read_text(encoding="utf-8"))
     assert rep["seal"] == rj["seal"] and rep["seal"]["entries"] == len(events) and rep["dbt"]["projet"] == "shop"
-    assert "dbt project" in (out / "report.html").read_text()
+    assert "dbt project" in (out / "report.html").read_text(encoding="utf-8")
 
 
 def test_drill_dbt_detecte_un_ecart_injecte(tmp_path):
@@ -315,9 +315,9 @@ def build_tz_project(tmp_path: Path) -> Path:
     sql = 'select cast(ts as date) as d, count(*) as n from "warehouse"."raw"."events" group by 1'
     con.execute(f"create table analytics.daily as {sql}")
     con.close()
-    (proj / "dbt_project.yml").write_text("name: tzshop\nprofile: tz\n")
+    (proj / "dbt_project.yml").write_text("name: tzshop\nprofile: tz\n", encoding="utf-8")
     (proj / "profiles.yml").write_text(f"tz:\n  target: dev\n  outputs:\n    dev:\n      type: duckdb\n      path: warehouse.duckdb\n"
-                                       f"      settings:\n        TimeZone: {LA}\n")
+                                       f"      settings:\n        TimeZone: {LA}\n", encoding="utf-8")
     node = _node("daily", "table", sql, ["source.tzshop.raw.events"])
     node["unique_id"] = "model.tzshop.daily"
     man = {"metadata": {"adapter_type": "duckdb", "project_name": "tzshop"},
@@ -326,7 +326,7 @@ def build_tz_project(tmp_path: Path) -> Path:
                                                      "identifier": "events", "database": WH, "schema": "raw",
                                                      "relation_name": f'"{WH}"."raw"."events"'}},
            "macros": {"macro.dbt.materialization_table_default": {"name": "materialization_table_default", "package_name": "dbt"}}}
-    (proj / "target" / "manifest.json").write_text(json.dumps(man))
+    (proj / "target" / "manifest.json").write_text(json.dumps(man), encoding="utf-8")
     return proj
 
 
@@ -353,10 +353,10 @@ def test_fuseau_d_origine_applique_meme_resultat_sous_paris(tmp_path):
                         "--key", str(tmp_path / "k.key")], capture_output=True, text=True, env=env)
     assert p.returncode == 0, p.stdout + p.stderr
     assert f"Replay time zone: {LA} (source time zone of the inputs, applied to the replay: raw.events.ts)" in p.stdout
-    rj = json.loads((out / "replay-dbt.json").read_text())
+    rj = json.loads((out / "replay-dbt.json").read_text(encoding="utf-8"))
     assert rj["timezone"]["applied"] == LA and rj["timezone"]["origin"] == ["raw.events.ts"]
     assert {m["modele"]: m["statut"] for m in rj["modeles"]} == {"model.tzshop.daily": "identique"}
-    assert f"Time zone of the replay: <b>{LA}</b>" in (out / "report.html").read_text()
+    assert f"Time zone of the replay: <b>{LA}</b>" in (out / "report.html").read_text(encoding="utf-8")
 
 
 def test_sans_zone_utc_explicite(tmp_path):
@@ -374,10 +374,10 @@ def test_plusieurs_zones_constat_sans_faux_identique(tmp_path):
 
     proj = build_tz_project(tmp_path)
     _, out = _drill(tmp_path, proj)
-    rep = json.loads((out / "report.json").read_text())
+    rep = json.loads((out / "report.json").read_text(encoding="utf-8"))
     rep["conversions"].append({"table": "raw.events", "column": "ts_tokyo", "source_type": "TIMESTAMP WITH TIME ZONE",
                                "target_type": "timestamp[us, tz=UTC]", "lossy": True, "note": "time zone", "tz": "Asia/Tokyo"})
-    (out / "report.json").write_text(json.dumps(rep))
+    (out / "report.json").write_text(json.dumps(rep), encoding="utf-8")
     rj = run_rejeu(f"dbt://{proj}", tmp_path / "o2", tmp_path / "k.key", lac=str(tmp_path / "lake"), drill_out=str(out), log=lambda *_: None)
     tz = rj["timezone"]
     assert tz["applied"] == "UTC" and tz["conversions_read_from"] == "report.json of the drill"

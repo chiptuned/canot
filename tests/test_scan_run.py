@@ -11,7 +11,7 @@ CANARI = "canari-7f3a@exemple.test"
 
 
 def _src(monkeypatch, dialect: str):
-    snap = json.loads((FIX / f"scan_{'snowflake' if dialect == 'snowflake' else 'bigquery'}.json").read_text())
+    snap = json.loads((FIX / f"scan_{'snowflake' if dialect == 'snowflake' else 'bigquery'}.json").read_text(encoding="utf-8"))
     snap["familles"], snap["rejouabilite"] = [], None
     raw = [
         {"_sql": f"select id from t where email = '{CANARI}'", "hash_plateforme": "h1", "n_exec": 3, "temps_ms": 10, "credits": 0.1,
@@ -89,7 +89,7 @@ def test_analyse_pure_dans_les_deux_langues():
 
     from canot.scanner.analyze import analyze
 
-    snap = json.loads((FIX / "scan_snowflake.json").read_text())
+    snap = json.loads((FIX / "scan_snowflake.json").read_text(encoding="utf-8"))
     before = copy.deepcopy(snap)
     en, fr = analyze(snap), analyze(snap, lang="fr")
     assert snap == before and analyze(snap) == en and analyze(snap, lang="fr") == fr

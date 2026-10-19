@@ -21,7 +21,7 @@ def demo(tmp_path):
     db = tmp_path / "demo.duckdb"
     make_demo(str(db), 2_000)
     q = tmp_path / "q.sql"
-    q.write_text(DEMO_QUERIES)
+    q.write_text(DEMO_QUERIES, encoding="utf-8")
     return db, q
 
 
@@ -35,7 +35,7 @@ class BrokenReadSource(DuckDBSource):
 
 
 def _events(out):
-    return [json.loads(x) for x in (out / "evidence.jsonl").read_text().splitlines() if x.strip()]
+    return [json.loads(x) for x in (out / "evidence.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
 
 
 def test_scale_order_and_rules():
@@ -80,7 +80,7 @@ def test_a_copy_error_makes_the_exercise_not_compared(demo, tmp_path):
     copy = [e["data"] for e in _events(out) if e["event"] == "copy" and e["data"]["error"]]
     assert copy and copy[0]["proof_level"] == "not_compared"
     assert verify_dir(out)[0]
-    p = panes(write_report(res, out, "en").read_text())
+    p = panes(write_report(res, out, "en").read_text(encoding="utf-8"))
     en, fr = text(p["en"]), text(p["fr"])
     assert re.search(r"not compared Not compared copy failed: RuntimeError: read refused", en)
     assert re.search(r"non comparée Non comparé échec de la copie : RuntimeError: read refused", fr)
@@ -125,7 +125,7 @@ def test_reports_state_the_level_in_both_panes_and_drop_the_identity_wording(tmp
     assert main(["demo", "--out", str(tmp_path / "d"), "--rows", "2000", "--no-open"]) == 0
     assert "\nProof level: full_aggregates\n" in capsys.readouterr().out
     ev = tmp_path / "d" / "evidence"
-    page = (ev / "report.html").read_text()
+    page = (ev / "report.html").read_text(encoding="utf-8")
     p = panes(page)
     en, fr = text(p["en"]), text(p["fr"])
     assert "Proof level" in en and "Niveau de preuve" in fr
@@ -163,7 +163,7 @@ def test_old_report_json_still_renders(demo, tmp_path):
     for k in ("proof_level", "tables_by_proof_level"):
         res["summary"].pop(k)
     res.pop("not_compared")
-    en = text(panes(write_report(res, out, "en").read_text())["en"])
+    en = text(panes(write_report(res, out, "en").read_text(encoding="utf-8"))["en"])
     assert "Level reached by this exercise: Full aggregates" in en  # same computation as today: labelled as such
 
 
@@ -188,7 +188,7 @@ def test_dbt_replay_levels(tmp_path):
     assert s["proof_level"] == "not_compared"
     assert s["models_by_proof_level"] == {"not_compared": 4, "metadata_only": 1, "row_sampled": 0, "partition_sampled": 0,
                                           "full_aggregates": 3, "full_fingerprint": 0}
-    saved = json.loads((out / "replay-dbt.json").read_text())
+    saved = json.loads((out / "replay-dbt.json").read_text(encoding="utf-8"))
     assert saved["summary"]["proof_level"] == "not_compared"
     models = [e["data"] for e in _events(out) if e["event"] == "dbt_model"]
     assert models and all(e.get("proof_level") in proof.PRODUCED for e in models)
@@ -201,7 +201,7 @@ def test_dbt_drill_report_states_the_replay_level(tmp_path):
     proj = build_project(tmp_path, ecart=True)
     r, out = _drill(tmp_path, proj, lang="fr")
     assert r["dbt"]["rejeu"]["proof_level"] in proof.PRODUCED and "models_by_proof_level" in r["dbt"]["rejeu"]
-    p = panes((out / "report.html").read_text())
+    p = panes((out / "report.html").read_text(encoding="utf-8"))
     assert "Proof level of the replay:" in text(p["en"]) and "Niveau de preuve du rejeu :" in text(p["fr"])
     assert "identique" not in text(p["fr"]) and "identical" not in text(p["en"])
 
