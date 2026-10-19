@@ -268,7 +268,7 @@ def test_cli_drill_dbt(tmp_path, capsys):
     assert code == 1
     assert "Read-only: Canot reads the warehouse with your credentials" in txt
     assert "dbt exit exercise (shop, target dev): mismatch" in txt
-    assert "Models (P3): 1 identical, 1 different, 2 replayed but not compared (no table to compare: views), 3 not replayable, out of 7" in txt
+    assert "Models (P3): 1 match, 1 different, 2 replayed but not compared (no table to compare: views), 3 not replayable, out of 7" in txt
     assert "Why customer_totals differs" in txt and f"canot verify-evidence {out}" in txt
     assert cli_run(["verify-evidence", str(out)]) == 0
     with pytest.raises(SystemExit):

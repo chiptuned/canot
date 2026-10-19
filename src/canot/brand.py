@@ -86,6 +86,7 @@ def drill_share(res: dict) -> dict:
     """Shareable summary of an exit exercise (drill): counts and versions only."""
     s = res["summary"]
     keep = ("tables_total", "tables_ok", "tables_precision_only", "queries_total", "queries_match", "queries_mismatch",
-            "queries_untranslatable", "queries_skipped", "queries_order_differs", "lossy_conversions", "parity")
+            "queries_untranslatable", "queries_skipped", "queries_order_differs", "lossy_conversions", "parity",
+            "proof_level", "tables_by_proof_level")  # proof level of the exercise (the lowest over its tables) and the count per level
     return {"schema": "canot.share/1", "kind": "drill", "summary": {k: s.get(k) for k in keep}, "tables_in_error": len(s.get("tables_error", [])),
             "versions": res.get("env")}

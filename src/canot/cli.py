@@ -239,6 +239,7 @@ def run(argv: list[str] | None = None) -> int:
         rep = write_report(res, evidence, a.lang)
         s = res["summary"]
         _p(f"\n{'Full parity' if s['parity'] == 'complete' else 'Mismatches found'}: {s['tables_ok']}/{s['tables_total']} tables, {s['queries_match']}/{s['queries_total']} queries.")
+        _p(f"Proof level: {s['proof_level']}")
         _p(f"Evidence report: {rep}")
         _p("Check that it has not been modified: canot verify-evidence " + str(evidence))
         _p("\nNext, on your data (read-only):  canot scan \"snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER\"")
@@ -279,8 +280,9 @@ def run(argv: list[str] | None = None) -> int:
         res = run_rejeu(a.project, out, Path(a.key), base=a.base, lac=a.lac, drill_out=a.drill_out, catalog=a.catalog,
                         tol=Tolerances.load(a.tolerances), log=_p)
         s = res["summary"]
-        _p(f"\ndbt replay (P3): {s['identique']} identical, {s['different']} different, {s['non_compare']} replayed but not compared, "
+        _p(f"\ndbt replay (P3): {s['identique']} match, {s['different']} different, {s['non_compare']} replayed but not compared, "
            f"{s['non_rejouable']} not replayable, out of {s['modeles']} model(s)")
+        _p(f"Proof level: {s['proof_level']} (lowest over the models)")
         _p(f"Evidence: {out / REPORT_FILE}; verify: canot verify-evidence {out}")
         return 0 if s["different"] == 0 else 1
     if a.cmd == "teardown":
@@ -381,6 +383,7 @@ def run(argv: list[str] | None = None) -> int:
             rep = write_report(res, out, a.lang)
             s = res["summary"]
             _p(f"\nParity: {s['parity']} — {s['tables_ok']}/{s['tables_total']} tables, {s['queries_match']}/{s['queries_total']} queries")
+            _p(f"Proof level: {s['proof_level']}")
             _p(f"Evidence report: {rep}")
             return 0 if s["parity"] == "complete" else 1
     finally:

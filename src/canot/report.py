@@ -12,6 +12,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from . import proof
 from .regulatory import section as regulatory_section
 from .brand import CSS as BRAND_CSS, bilingual, brand_bar, default_lang, drill_share, share_block
 
@@ -38,13 +39,15 @@ T = {
         "meta": "Source: {src} · Target: {dst} · Finding dated {date}, on the scope run · Canot {v}",
         "summary": "Summary",
         # synthese
-        "tag_identical": "Identical", "tag_mismatch": "Mismatch", "tag_of": "{m} of {n}", "tag_todo": "To address",
+        "tag_match": "Matches", "tag_mismatch": "Mismatch", "tag_of": "{m} of {n}", "tag_todo": "To address",
         "tag_skipped": "Not replayed", "tag_signed": "Signed",
-        "f_ident": "The content arrives identical.", "f_ident_prec": "The content arrives, except for precision.",
-        "f_ident_d": "All {n} tables, {rows} rows in total, were copied then compared. Row counts and per-column statistics are recomputed in the source engine; the content fingerprint compares the rows as Canot read them with the copy.",
-        "f_ident_d_prec": " Only the columns flagged below differ.", "f_ident_d_none": " No difference.",
+        "f_match": "Counts and statistics match.", "f_match_prec": "Counts and statistics match, except for precision.",
+        "f_match_d": ("All {n} tables, {rows} rows in total, were copied then compared (proof level: {lvl}). Row counts and per-column "
+                      "statistics recomputed in the source engine match the copy, and the copy matches the rows as Canot read them "
+                      "(content fingerprint). The content is not compared value by value with the source: see Proof level."),
+        "f_match_d_prec": " Only the columns flagged below differ.", "f_match_d_none": " No difference observed.",
         "f_ko": "Some data differs.",
-        "f_ko_d": "{k} table(s) out of {t} are not identical: fix them before drawing conclusions.",
+        "f_ko_d": "{k} table(s) out of {t} do not match or could not be compared: fix them before drawing conclusions.",
         "f_q_same": "Your reports give the same figures.", "f_q_almost": "Your reports give almost the same figures.",
         "f_q_d": "{n} reporting queries were replayed on both sides. {m} return exactly the same result.",
         "f_qm": "A report returns a different result.",
@@ -69,9 +72,9 @@ T = {
         "v_one": "Exit feasible on this scope. One point to address before leaving.",
         "v_many": "Exit feasible on this scope. {n} points to address before leaving.",
         # finding box
-        "box": "Finding:", "box_ok": "identical content", "box_ko": "mismatches to review",
-        "box_d": ("{tok}/{tt} identical tables, {qm}/{qt} identical queries, {qu} not replayable, {qx} with a mismatch, "
-                  "{lc} conversion(s) with possible loss."),
+        "box": "Finding:", "box_ok": "counts and statistics match", "box_ko": "mismatches to review",
+        "box_d": ("{tok}/{tt} matching tables (proof level: {lvl}), {qm}/{qt} queries with the same result, {qu} not replayable, "
+                  "{qx} with a mismatch, {lc} conversion(s) with possible loss."),
         # measurements
         "meas": "Measurements from this exercise",
         "meas_tp": "Measured copy throughput: {v} MB/s",
@@ -86,8 +89,21 @@ T = {
         "where_iceberg": ("The copy is in Apache Iceberg format: you can reread it without Canot. The {f} file next to this report "
                           "holds the DuckDB commands to do so."),
         # tables
-        "tables": "Tables", "th_tables": ("Table", "Source rows", "Target rows", "Result", "Details"),
-        "r_identical": "identical", "r_precision": "precision", "r_mismatch": "mismatch", "buckets": " buckets ",
+        "tables": "Tables", "th_tables": ("Table", "Source rows", "Target rows", "Result", "Proof level", "Details"),
+        "r_match": "matches", "r_precision": "precision", "r_mismatch": "mismatch", "r_not_compared": "not compared", "buckets": " buckets ",
+        "within_prec": "compared only within the precision of the target type: {cols}",
+        # proof level
+        "proof": "Proof level",
+        "proof_reached": "Level reached by this exercise: {lvl} ({code}), the lowest level over its tables ({counts}).",
+        "proof_count_t": "{n} table(s): {lvl}", "proof_count_m": "{n} model(s): {lvl}",
+        "proof_today": " This is what Canot does today.",
+        "proof_sampled": "{a} and {b}: sampled levels (partitions drawn with a recorded seed, or rows selected by key), reserved; not implemented yet.",
+        "proof_low": ("{a} and {b}: only catalog metadata compared, or nothing compared (copy error, comparison error, table not copied), "
+                      "with the reason."),
+        "proof_not": ("What full aggregates do not prove: a value changed inside a text column that keeps the same count, minimum and "
+                      "maximum would not be detected by the recomputation in the source engine, and the content fingerprint only shows "
+                      "that the copy matches what Canot read, not that Canot read the source faithfully. A stronger check, a content "
+                      "fingerprint computed in both engines, is not implemented yet."),
         # queries
         "queries": "Queries replayed on both sides", "th_queries": ("Query", "Result", "Details"),
         "q_status": {"match": "match", "mismatch": "mismatch", "untranslatable": "untranslatable", "error": "error", "skipped": "not replayed"},
@@ -121,8 +137,10 @@ T = {
         "dbt_head": "Project {p}, profile {pr}, target {c}, adapter {a}. {lect}: nothing was written to the warehouse.",
         "dbt_rel": "Relations copied: {n} (sources, seeds, snapshots, table and incremental models). Row access and masking policies: {pol}.",
         "dbt_pol_none": "none on the copied tables", "dbt_pol_unread": "not read",
-        "dbt_rejeu": ("Replay of the models on the copy (P3): {i} identical, {d} different, {nc} replayed but not compared (no table to "
+        "dbt_rejeu": ("Replay of the models on the copy (P3): {i} matching, {d} different, {nc} replayed but not compared (no table to "
                       "compare: views), {nr} not replayable, out of {m}. Details per model: {f}."),
+        "dbt_proof": ("Proof level of the replay: {lvl} ({code}), the lowest over the models ({counts}). A model replay compares the "
+                      "counts, statistics and fingerprint of the replayed output with the original table."),
         "dbt_tz": "Time zone of the replay: {z} ({rule}",
         "th_dbt_ex": ("Model", "Difference", "Explanation"), "dbt_not": "Not copied", "th_dbt_nc": ("Relation", "Kind", "Why"),
         "also": " Also: ", "sep": "; ", "colon": ": ",
@@ -132,14 +150,16 @@ T = {
         "h1": "Rapport de preuve : exercice de sortie",
         "meta": "Source : {src} · Destination : {dst} · Constat daté du {date}, sur le périmètre exécuté · Canot {v}",
         "summary": "Synthèse",
-        "tag_identical": "Identique", "tag_mismatch": "Écart", "tag_of": "{m} sur {n}", "tag_todo": "À traiter",
+        "tag_match": "Concordant", "tag_mismatch": "Écart", "tag_of": "{m} sur {n}", "tag_todo": "À traiter",
         "tag_skipped": "Non rejoué", "tag_signed": "Signé",
-        "f_ident": "Le contenu arrive identique.", "f_ident_prec": "Le contenu arrive identique, à la précision près.",
-        "f_ident_d": ("Les {n} tables, {rows} lignes au total, ont été copiées puis comparées. Le nombre de lignes et les statistiques par "
-                      "colonne sont recalculés dans le moteur source ; l'empreinte de contenu compare les lignes telles que Canot les a lues avec la copie."),
-        "f_ident_d_prec": " Seules les colonnes signalées ci-dessous diffèrent.", "f_ident_d_none": " Aucune différence.",
+        "f_match": "Les comptes et statistiques concordent.", "f_match_prec": "Les comptes et statistiques concordent, à la précision près.",
+        "f_match_d": ("Les {n} tables, {rows} lignes au total, ont été copiées puis comparées (niveau de preuve : {lvl}). Le nombre de "
+                      "lignes et les statistiques par colonne recalculés dans le moteur source concordent avec la copie, et la copie "
+                      "concorde avec les lignes telles que Canot les a lues (empreinte de contenu). Le contenu n'est pas comparé valeur "
+                      "par valeur avec la source : voir Niveau de preuve."),
+        "f_match_d_prec": " Seules les colonnes signalées ci-dessous diffèrent.", "f_match_d_none": " Aucun écart observé.",
         "f_ko": "Certaines données diffèrent.",
-        "f_ko_d": "{k} table(s) sur {t} ne sont pas identiques : corrigez-les avant de conclure.",
+        "f_ko_d": "{k} table(s) sur {t} ne concordent pas ou n'ont pas pu être comparées : corrigez-les avant de conclure.",
         "f_q_same": "Vos rapports donnent les mêmes chiffres.", "f_q_almost": "Vos rapports donnent presque les mêmes chiffres.",
         "f_q_d": "{n} requêtes de reporting ont été rejouées des deux côtés. {m} renvoient exactement le même résultat.",
         "f_qm": "Un rapport renvoie un résultat différent.",
@@ -165,9 +185,9 @@ T = {
         "v_none": "Sortie réalisable sur ce périmètre. Rien à traiter avant de partir.",
         "v_one": "Sortie réalisable sur ce périmètre. Un point à traiter avant de partir.",
         "v_many": "Sortie réalisable sur ce périmètre. {n} points à traiter avant de partir.",
-        "box": "Constat :", "box_ok": "contenu identique", "box_ko": "écarts à examiner",
-        "box_d": ("{tok}/{tt} tables identiques, {qm}/{qt} requêtes identiques, {qu} non rejouable(s), {qx} avec un écart, "
-                  "{lc} conversion(s) avec perte possible."),
+        "box": "Constat :", "box_ok": "comptes et statistiques concordants", "box_ko": "écarts à examiner",
+        "box_d": ("{tok}/{tt} tables concordantes (niveau de preuve : {lvl}), {qm}/{qt} requêtes au même résultat, {qu} non "
+                  "rejouable(s), {qx} avec un écart, {lc} conversion(s) avec perte possible."),
         "meas": "Mesures de cet exercice",
         "meas_tp": "Débit de copie mesuré : {v} Mo/s",
         "meas_rto": "Temps de reprise estimé (fourchette) : {lo} à {hi} s — {basis}",
@@ -179,10 +199,25 @@ T = {
         "where_d": "Destination : {dst} · emplacement : {loc} · catalogue : {cat}.",
         "where_iceberg": ("La copie est au format Apache Iceberg : vous pouvez la relire sans Canot. Le fichier {f}, à côté de ce "
                           "rapport, contient les commandes DuckDB pour le faire."),
-        "tables": "Tables", "th_tables": ("Table", "Lignes source", "Lignes cible", "Résultat", "Détails"),
-        "r_identical": "identique", "r_precision": "précision", "r_mismatch": "écart", "buckets": " compartiments d'empreinte ",
+        "tables": "Tables", "th_tables": ("Table", "Lignes source", "Lignes cible", "Résultat", "Niveau de preuve", "Détails"),
+        "r_match": "concordante", "r_precision": "précision", "r_mismatch": "écart", "r_not_compared": "non comparée",
+        "buckets": " compartiments d'empreinte ",
+        "within_prec": "comparée seulement à la précision du type cible : {cols}",
+        "proof": "Niveau de preuve",
+        "proof_reached": "Niveau atteint par cet exercice : {lvl} ({code}), le plus bas de ses tables ({counts}).",
+        "proof_count_t": "{n} table(s) : {lvl}", "proof_count_m": "{n} modèle(s) : {lvl}",
+        "proof_today": " C'est ce que fait Canot aujourd'hui.",
+        "proof_sampled": ("{a} et {b} : niveaux par échantillon (partitions tirées avec une graine consignée, ou lignes choisies par clé), "
+                          "réservés ; pas encore disponibles."),
+        "proof_low": ("{a} et {b} : seules les métadonnées du catalogue comparées, ou rien de comparé (erreur de copie, erreur de "
+                      "comparaison, table non copiée), avec la raison."),
+        "proof_not": ("Ce que les agrégats complets ne prouvent pas : une valeur modifiée à l'intérieur d'une colonne de texte qui garde "
+                      "le même nombre de valeurs, le même minimum et le même maximum ne serait pas détectée par le recalcul dans le "
+                      "moteur source, et l'empreinte de contenu montre seulement que la copie correspond à ce que Canot a lu, pas que "
+                      "Canot a lu fidèlement la source. Un contrôle plus fort, une empreinte de contenu calculée dans les deux moteurs, "
+                      "n'est pas encore disponible."),
         "queries": "Requêtes rejouées des deux côtés", "th_queries": ("Requête", "Résultat", "Détails"),
-        "q_status": {"match": "identique", "mismatch": "écart", "untranslatable": "non traduisible", "error": "erreur",
+        "q_status": {"match": "même résultat", "mismatch": "écart", "untranslatable": "non traduisible", "error": "erreur",
                      "skipped": "non rejouée"},
         "q_order": " (ordre différent)", "none_f": "aucune", "none_m": "aucun",
         "convs": "Conversions de type", "possible_loss": " (perte possible)",
@@ -214,8 +249,10 @@ T = {
         "dbt_rel": ("Relations copiées : {n} (sources, seeds, snapshots, modèles table et incremental). Politiques d'accès aux lignes "
                     "et de masquage : {pol}."),
         "dbt_pol_none": "aucune sur les tables copiées", "dbt_pol_unread": "non lues",
-        "dbt_rejeu": ("Rejeu des modèles sur la copie (P3) : {i} identique(s), {d} différent(s), {nc} rejoué(s) sans comparaison (pas "
+        "dbt_rejeu": ("Rejeu des modèles sur la copie (P3) : {i} concordant(s), {d} différent(s), {nc} rejoué(s) sans comparaison (pas "
                       "de table à comparer : vues), {nr} non rejouable(s), sur {m}. Détail par modèle : {f}."),
+        "dbt_proof": ("Niveau de preuve du rejeu : {lvl} ({code}), le plus bas des modèles ({counts}). Le rejeu d'un modèle compare les "
+                      "comptes, les statistiques et l'empreinte de la sortie rejouée avec la table d'origine."),
         "dbt_tz": "Fuseau horaire du rejeu : {z} ({rule}",
         "th_dbt_ex": ("Modèle", "Écart", "Explication"), "dbt_not": "Non copiées", "th_dbt_nc": ("Relation", "Nature", "Raison"),
         "also": " Par ailleurs : ", "sep": " ; ", "colon": " : ",
@@ -238,6 +275,11 @@ _FR = [(re.compile(a, re.S), b) for a, b in (
     (r"(\S+) weighs ([\d.]+) GB: too large for in-memory replay \(limit (\d+) GB, see --replay-max-gb\)",
      r"\1 pèse \2 Go : trop volumineuse pour le rejeu en mémoire (limite \3 Go, voir --replay-max-gb)"),
     (r"row count: ([^;]*)", r"nombre de lignes : \1"),
+    (r"copy failed: (.*)", r"échec de la copie : \1"),
+    (r"comparison failed: (.*)", r"échec de la comparaison : \1"),
+    (r"not compared: (.*)", r"non comparé : \1"),
+    (r"only the column lists were compared \(they differ\): content not compared",
+     "seules les listes de colonnes ont été comparées (elles diffèrent) : contenu non comparé"),
     # conversions (convert.py)
     (r"time zone (\S+) -> UTC \(Iceberg keeps UTC only\): the instant is kept, the zone name is not",
      r"fuseau \1 -> UTC (Iceberg ne garde que l'UTC) : l'instant est conservé, pas le nom du fuseau"),
@@ -332,8 +374,38 @@ def _date(d: datetime, lang: str) -> str:
     return d.strftime("%Y-%m-%d %H:%M")
 
 
+def proof_levels(res: dict) -> tuple[str, dict[str, int]]:
+    """(level of the exercise, tables per level). A report.json written before the levels existed: same computation as today,
+    so its compared tables are full_aggregates and its tables in error not_compared."""
+    s = res["summary"]
+    if s.get("proof_level"):
+        return s["proof_level"], s.get("tables_by_proof_level") or {}
+    levels = [c.get("proof_level") or proof.FULL_AGGREGATES for c in res["checks"]] + [proof.NOT_COMPARED for _ in s.get("tables_error", [])]
+    return proof.lowest(levels), proof.counts(levels)
+
+
+def _counts_text(counts: dict[str, int], lang: str, tpl: str) -> str:
+    t = T[lang]
+    return t["sep"].join(t[tpl].format(n=_n(n, lang), lvl=proof.label(lv, lang)) for lv, n in counts.items() if n)
+
+
+def _proof_section(res: dict, lang: str) -> str:
+    """Fixed section: the level reached, the scale in four lines, what full_aggregates does not prove."""
+    t = T[lang]
+    lvl, counts = proof_levels(res)
+    code = lambda x: f"<code>{_e(x)}</code>"  # noqa: E731
+    d = lambda x: _e(proof.DEFINITIONS[x][lang])  # noqa: E731
+    lines = [f"{code(proof.FULL_FINGERPRINT)} ({_e(proof.label(proof.FULL_FINGERPRINT, lang))}){_e(t['colon'])}{d(proof.FULL_FINGERPRINT)}",
+             f"{code(proof.FULL_AGGREGATES)} ({_e(proof.label(proof.FULL_AGGREGATES, lang))}){_e(t['colon'])}{d(proof.FULL_AGGREGATES)}{_e(t['proof_today'])}",
+             _h(t["proof_sampled"], a=code(proof.PARTITION_SAMPLED), b=code(proof.ROW_SAMPLED)),
+             _h(t["proof_low"], a=code(proof.METADATA_ONLY), b=code(proof.NOT_COMPARED))]
+    return (f"<h2>{_e(t['proof'])}</h2><p>"
+            + _h(t["proof_reached"], lvl=f"<b>{_e(proof.label(lvl, lang))}</b>", code=code(lvl), counts=_e(_counts_text(counts, lang, "proof_count_t")))
+            + "</p><ul>" + "".join(f"<li>{x}</li>" for x in lines) + f"</ul><p>{_e(t['proof_not'])}</p>")
+
+
 def synthese(res: dict, lang: str = "en") -> dict:
-    """The finding in plain language: what is identical, what differs, what needs action (English by default, or French)."""
+    """The finding in plain language: what matches (at the proof level stated), what differs, what needs action (English by default, or French)."""
     t = T["fr" if lang == "fr" else "en"]
     s = res["summary"]
     tabs = res["checks"]
@@ -352,8 +424,9 @@ def synthese(res: dict, lang: str = "en") -> dict:
     n = lambda x: _n(x, lang)  # noqa: E731
     f = []
     if not ko and not s["tables_error"]:
-        f.append(("ok", t["tag_identical"], t["f_ident"] if not prec else t["f_ident_prec"],
-                  t["f_ident_d"].format(n=n(len(tabs)), rows=_n(rows, lang, True)) + (t["f_ident_d_prec"] if prec else t["f_ident_d_none"])))
+        lvl = proof.label(proof_levels(res)[0], lang).lower()
+        f.append(("ok", t["tag_match"], t["f_match"] if not prec else t["f_match_prec"],
+                  t["f_match_d"].format(n=n(len(tabs)), rows=_n(rows, lang, True), lvl=lvl) + (t["f_match_d_prec"] if prec else t["f_match_d_none"])))
     else:
         f.append(("warn", t["tag_mismatch"], t["f_ko"], t["f_ko_d"].format(k=n(len(ko) + len(s["tables_error"])), t=n(s["tables_total"]))))
     if res["queries"]:
@@ -484,6 +557,9 @@ def _dbt_section(res: dict, lang: str = "en") -> str:
         return ""
     t = T[lang]
     rj = d["rejeu"]
+    rj_proof = ("<p>" + _h(t["dbt_proof"], lvl=f"<b>{_e(proof.label(rj['proof_level'], lang))}</b>", code=f"<code>{_e(rj['proof_level'])}</code>",
+                           counts=_e(_counts_text(rj.get("models_by_proof_level") or {}, lang, "proof_count_m"))) + "</p>"
+                if rj.get("proof_level") else "")  # a report.json written before the levels: no line
     th = lambda cols: "<tr>" + "".join(f"<th>{_e(c)}</th>" for c in cols) + "</tr>"  # noqa: E731
     nc = "".join(f"<tr><td>{_e(x.get('relation') or x['uid'])}</td><td>{_e(x.get('materialisation') or x['nature'])}</td><td>{_e(_tr(x['raison'], lang))}</td></tr>"
                  for x in d["non_copiees"])
@@ -510,6 +586,7 @@ def _dbt_section(res: dict, lang: str = "en") -> str:
             + "<p>" + _e(t["dbt_rel"].format(n=_n(len(d["copiees"]), lang), pol=poltxt)) + "</p>"
             + "<p>" + _h(t["dbt_rejeu"], i=_n(rj["identique"], lang), d=_n(rj["different"], lang), nc=_n(rj["non_compare"], lang),
                                             nr=_n(rj["non_rejouable"], lang), m=_n(rj["modeles"], lang), f="<code>replay-dbt.json</code>") + "</p>"
+            + rj_proof
             + f"<p>{tzp}</p>"
             + (f"<table>{th(t['th_dbt_ex'])}{ex}</table>" if ex else "")
             + f"<h3>{_e(t['dbt_not'])}</h3><table>{th(t['th_dbt_nc'])}{nc or '<tr><td colspan=3>' + _e(t['none_f']) + '</td></tr>'}</table>")
@@ -525,13 +602,23 @@ def _body(res: dict, out: Path, lang: str, stamp: datetime) -> str:
 
     def result(c):
         prec = c.get("precision_cols") and c["rows_source"] == c["rows_target"] and c["fingerprint_ok"]
-        return ("ok", t["r_identical"]) if c["ok"] else (("warn", t["r_precision"]) if prec else ("ko", t["r_mismatch"]))
+        return ("ok", t["r_match"]) if c["ok"] else (("warn", t["r_precision"]) if prec else ("ko", t["r_mismatch"]))
+
+    def details(c):
+        parts = [_tr(x, lang) for x in c["stats_diffs"][:3]]
+        if c.get("within_precision_cols"):
+            parts.append(t["within_prec"].format(cols=", ".join(c["within_precision_cols"])))
+        return _e(t["sep"].join(parts))
     rows = "".join(
         f"<tr><td>{_e(c['table'])}</td><td>{n(c['rows_source'])}</td><td>{n(c['rows_target'])}</td>"
-        f"<td class='{result(c)[0]}'>{_e(result(c)[1])}</td>"
-        f"<td>{_e(t['sep'].join(_tr(x, lang) for x in c['stats_diffs'][:3]))}"
+        f"<td class='{result(c)[0]}'>{_e(result(c)[1])}</td><td>{_e(proof.label(c.get('proof_level') or proof.FULL_AGGREGATES, lang))}</td>"
+        f"<td>{details(c)}"
         f"{_e(t['buckets']) + _e(c['bad_buckets'][:5]) if c['bad_buckets'] else ''}</td></tr>"
         for c in res["checks"])
+    rows += "".join(  # tables without a comparison: listed, with the reason, never left out
+        f"<tr><td>{_e(x['table'])}</td><td>—</td><td>—</td><td class='ko'>{_e(t['r_not_compared'])}</td>"
+        f"<td>{_e(proof.label(x['proof_level'], lang))}</td><td>{_e(_tr(x.get('proof_note') or '', lang))}</td></tr>"
+        for x in res.get("not_compared") or [])
     qrows = "".join(
         f"<tr><td><code>{_e(q['sql'][:140])}</code></td><td class='{'ok' if q['status'] == 'match' else ('warn' if q['status'] == 'skipped' else 'ko')}'>"
         f"{_e(t['q_status'].get(q['status'], q['status']))}{_e(t['q_order']) if q['order_differs'] else ''}</td><td>{_e(_tr(q['detail'], lang))}</td></tr>"
@@ -565,7 +652,7 @@ def _body(res: dict, out: Path, lang: str, stamp: datetime) -> str:
 <h2 style="border:0;margin-bottom:0">{_e(t['summary'])}</h2><p class="verdict"><b>{_e(sy['verdict'])}</b></p>{finds}
 {share_block(drill_share(res), "drill-share.json", lang)}
 <div class="box"><b>{_e(t['box'])}</b> <span class="{'ok' if ok else 'warn'}">{_e(t['box_ok'] if ok else t['box_ko'])}</span> —
-{_e(t['box_d'].format(tok=n(s['tables_ok']), tt=n(s['tables_total']), qm=n(s['queries_match']), qt=n(s['queries_total']),
+{_e(t['box_d'].format(tok=n(s['tables_ok']), tt=n(s['tables_total']), lvl=proof.label(proof_levels(res)[0], lang).lower(), qm=n(s['queries_match']), qt=n(s['queries_total']),
                       qu=n(s['queries_untranslatable']), qx=n(s['queries_mismatch']), lc=n(s['lossy_conversions'])))}</div>
 <h2>{_e(t['meas'])}</h2><ul>
 {''.join(f'<li>{_e(m)}</li>' for m in meas)}</ul>
@@ -574,6 +661,7 @@ def _body(res: dict, out: Path, lang: str, stamp: datetime) -> str:
 <p>{_h(t['where_d'], dst=code(_clean(loc['target'])), loc=code(_clean_path(loc['warehouse'])), cat=_e(_tr(loc['catalog'], lang)))}<br>
 {_h(t['where_iceberg'], f=code(REREAD_FILE))}</p>
 <h2>{_e(t['tables'])}</h2><table>{th(t['th_tables'])}{rows}</table>
+{_proof_section(res, lang)}
 <h2>{_e(t['queries'])}</h2><table>{th(t['th_queries'])}{qrows or '<tr><td colspan=3>' + _e(t['none_f']) + '</td></tr>'}</table>
 {_dbt_section(res, lang)}
 <h2>{_e(t['convs'])}</h2><table>{crows or '<tr><td>' + _e(t['none_f']) + '</td></tr>'}</table>

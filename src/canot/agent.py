@@ -158,6 +158,11 @@ def capabilities(platform: str | None = None) -> dict:
                              "A missing evidence form is not replaced by any score."]}
 
 
+PROOF_NOTE = ("proof_level (summary: the lowest over the tables or models): full_aggregates = row count and per-column statistics "
+              "recomputed in the source engine, plus a fingerprint of the rows as Canot read them compared with the copy; it is not "
+              "a content fingerprint computed in both engines (not implemented yet). not_compared and metadata_only carry their reason.")
+
+
 def explain_report(path: str, max_rows: int = 30) -> dict:
     """Summary of an exercise report.json (parity, tables and queries with a mismatch, leads from the discrepancy catalog)
     or of a replay-dbt.json (P3 evidence: identical, different, not compared and not replayable models, with their reasons)."""
@@ -169,7 +174,8 @@ def explain_report(path: str, max_rows: int = 30) -> dict:
                 "not_replayable": [{"model": m["modele"], "reason": m.get("raison")} for m in mods if m.get("statut") == "non_rejouable"][:max_rows],
                 "not_compared": [m["modele"] for m in mods if m.get("statut") == "non_compare"][:max_rows],
                 "rules": r.get("regles"),
-                "good_to_know": ["\"identique\" (identical): same compiled SQL, copied inputs, DuckDB output compared with the original table.",
+                "good_to_know": ["\"identique\" (matches): same compiled SQL, copied inputs, DuckDB output compared with the original table.",
+                                 PROOF_NOTE,
                                  "A model that is not replayable or not compared is not proven: it is counted with its reason.",
                                  "The evidence signature attests its integrity, not the author nor the date."]}
     if "summary" not in r or "checks" not in r:
@@ -194,6 +200,7 @@ def explain_report(path: str, max_rows: int = 30) -> dict:
     return {"summary": r["summary"], "tables_with_mismatch": bad_t, "queries_with_mismatch": bad_q, "discrepancy_catalog": catalog,
             **({"dbt": dbt} if dbt else {}),
             "good_to_know": ["The quoted queries come from your history: review them before sharing.",
+                             PROOF_NOTE,
                              "A precision-only mismatch (nanoseconds with Iceberg v2) needs a decision; it is not corruption.",
                              "The evidence signature attests its integrity, not the author nor the date."]}
 

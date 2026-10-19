@@ -2,6 +2,11 @@
 then each output is compared with the table the platform had materialized, using the `canot drill` criteria
 (row count, per-column statistics, content fingerprint: verify.check_table).
 
+Each model also gets a proof level (proof.py), with the same semantics as a table of `canot drill`: `full_aggregates` when the
+replayed output was compared (counts, statistics recomputed on the original table, fingerprint of both as read by Canot),
+`metadata_only` when only the column lists could be compared (they differ), `not_compared` otherwise (with the reason). The
+summary carries the lowest level over the models.
+
 Input: the dbt artifacts (target/manifest.json, compiled SQL) and a copy that holds the source tables and the models'
 original tables: a DuckDB database, or the Iceberg copy written by `canot drill`. Nothing is sent to the platform.
 
@@ -25,7 +30,7 @@ import sqlglot
 from sqlglot import exp
 from sqlglot.errors import ErrorLevel
 
-from . import __version__
+from . import __version__, proof
 from .convert import fingerprint
 from .evidence import EvidenceLog
 from .model import ColumnInfo, TableInfo, q
@@ -331,8 +336,23 @@ def rejouer(projet: dbt_scan.ProjetDbt, con, copie: dict, tol: Tolerances, log=l
             ok = _empreinte_flottants(orig_tb, rej_tb, tol, res)
         res["statut"] = "identique" if ok else "different"
         res["raison"] = None if ok else "; ".join(chk.stats_diffs[:3]) or "different content fingerprint"
-        log(f"   [replayed, {'identical' if ok else 'different'}] {uid}")
+        log(f"   [replayed, {'matches' if ok else 'different'}] {uid}")
+    for res in out:
+        res.update(_niveau(res))
     return out
+
+
+def _niveau(res: dict) -> dict:
+    """Proof level of one replayed model, from what was actually compared (the comparison itself is unchanged)."""
+    v = res.get("verification")
+    if v:
+        note = v.get("proof_note") or proof.full_aggregates_note()
+        if (res["verification"].get("empreinte_flottants") or {}).get("egale"):
+            note += "; fingerprint recomputed with float columns rounded (verification.empreinte_flottants)"
+        return {"proof_level": v.get("proof_level") or proof.FULL_AGGREGATES, "proof_note": note}
+    if res["statut"] == "different" and str(res.get("raison") or "").startswith("different columns"):
+        return {"proof_level": proof.METADATA_ONLY, "proof_note": "only the column lists were compared (they differ): content not compared"}
+    return {"proof_level": proof.NOT_COMPARED, "proof_note": "not compared: " + str(res.get("raison") or res["statut"])}
 
 
 def ancetres(man: dict, uid: str) -> set[str]:
@@ -446,6 +466,8 @@ def run_rejeu(url: str, out: Path, key_path: Path, *, base: str | None = None, l
     indetermines = sum(1 for r in res if r.get("fuseau_non_determine"))
     summary = {"modeles": len(res), **compte, "duree_s": round(time.monotonic() - t0, 1), "fuseau": tz["applied"],
                "fuseau_non_determine": indetermines,
+               "proof_level": proof.lowest(r["proof_level"] for r in res),  # the lowest level over the models
+               "models_by_proof_level": proof.counts(r["proof_level"] for r in res),
                "preuve": ("complete" if res and compte["identique"] == len(res) and not indetermines else
                           "mismatch" if compte["different"] else "partial")}
     ev.add(pre + "summary", summary)
@@ -457,6 +479,9 @@ def run_rejeu(url: str, out: Path, key_path: Path, *, base: str | None = None, l
                           "same compiled SQL, copied inputs, two runs: source platform and local DuckDB",
                           "types of the replayed output aligned on the original table before comparison; each conversion is logged",
                           "comparison: row count, per-column statistics, content fingerprint (canot drill criteria)",
+                          "proof level per model (full_aggregates, metadata_only, not_compared; summary: the lowest): a model replay "
+                          "compares the counts, statistics and fingerprint of the replayed output with the original table, not a "
+                          "content fingerprint computed in two engines",
                           "a view has no original table: replayed, not compared; its output feeds the next models"]}
     if own_log:
         write_rapport(rapport, out)

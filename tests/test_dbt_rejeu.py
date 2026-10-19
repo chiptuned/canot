@@ -160,7 +160,8 @@ def test_cli_rejeu_dbt(tmp_path, capsys):
     db = copie_duckdb(tmp_path / "copie.duckdb")
     out = tmp_path / "out"
     assert cli_run(["replay-dbt", f"dbt://{FIX}", "--base", str(db), "--out", str(out), "--key", str(tmp_path / "k.key")]) == 0
-    assert "4 identical, 0 different, 4 replayed but not compared, 0 not replayable, out of 8 model(s)" in capsys.readouterr().out
+    assert "4 match, 0 different, 4 replayed but not compared, 0 not replayable, out of 8 model(s)" in (txt := capsys.readouterr().out)
+    assert "Proof level: not_compared (lowest over the models)" in txt  # the 4 views are replayed, not compared
     assert (out / "replay-dbt.json").exists()
     db2 = copie_duckdb(tmp_path / "copie2.duckdb", ecart=True)
     assert cli_run(["replay-dbt", f"dbt://{FIX}", "--base", str(db2), "--out", str(tmp_path / "o2"), "--key", str(tmp_path / "k.key")]) == 1

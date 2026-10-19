@@ -524,7 +524,7 @@ def run_dbt_drill(url: str, dest: str, out: Path, key_path: Path, *, profiles_di
            "connexion": cx.description, "lecture": f"read-only, with {cx.lecteur}",
            "copiees": [{k: r.get(k) for k in ("uid", "nature", "materialisation", "relation", "note")} for r in retenues],
            "non_copiees": [{k: r.get(k) for k in ("uid", "nature", "materialisation", "relation", "raison")} for r in ecartees],
-           "politiques": pol, "rejeu": {k: rs[k] for k in ("modeles", *STATUTS)}, "fuseau": rapport.get("timezone"), "preuve_p3": rs["preuve"],
+           "politiques": pol, "rejeu": {k: rs[k] for k in ("modeles", *STATUTS, "proof_level", "models_by_proof_level")}, "fuseau": rapport.get("timezone"), "preuve_p3": rs["preuve"],
            "parite_copie": s["parity"], "explications": expl, "verdict": verdict}
     ev.add("dbt_verdict", {k: v for k, v in dbt.items() if k not in ("copiees", "non_copiees", "politiques", "connexion")})
     seal = ev.seal(key_path, log)
@@ -540,11 +540,12 @@ def resume(r: dict, out: Path) -> list[str]:
     s, d = r["drill"]["summary"], r["dbt"]
     rj, tz = d["rejeu"], d.get("fuseau") or {}
     lines = [f"\ndbt exit exercise ({d['projet']}, target {d['cible']}): {d['verdict']}",
-             f"  Copy (P1): parity {s['parity']}, {s['tables_ok']}/{s['tables_total']} tables identical",
-             f"  Queries (P2): {s['queries_match']}/{s['queries_total']} identical" if s["queries_total"] else
+             f"  Copy (P1): parity {s['parity']}, {s['tables_ok']}/{s['tables_total']} tables match",
+             f"  Queries (P2): {s['queries_match']}/{s['queries_total']} same result" if s["queries_total"] else
              "  Queries (P2): none replayed (no --queries and none found in the history)",
-             f"  Models (P3): {rj['identique']} identical, {rj['different']} different, {rj['non_compare']} replayed but not compared (no table to compare: views), "
+             f"  Models (P3): {rj['identique']} match, {rj['different']} different, {rj['non_compare']} replayed but not compared (no table to compare: views), "
              f"{rj['non_rejouable']} not replayable, out of {rj['modeles']}",
+             f"  Proof level: {s.get('proof_level')} for the copy, {rj.get('proof_level')} for the models (the lowest over each)",
              f"  Replay time zone: {tz.get('applied')} ({tz.get('rule')}" + (f": {', '.join(tz['origin'][:3])}" if tz.get("origin") else "") + ")"]
     if tz.get("finding"):
         lines.append(f"  Finding: {tz['finding']}")

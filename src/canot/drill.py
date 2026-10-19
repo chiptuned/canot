@@ -9,7 +9,7 @@ import pyarrow
 import pyiceberg
 import sqlglot
 
-from . import __version__, prices
+from . import __version__, prices, proof
 from .copy import copy_table
 from .evidence import EvidenceLog
 from .scan import scan as run_scan
@@ -49,7 +49,7 @@ def run_drill(src: Source, target: Target, out: Path, key_path: Path, queries_fi
         mb = r.bytes / 1e6
         log(f"   {t.fqn}: {r.rows} rows, {mb:.1f} MB, {r.seconds:.1f}s" + (f"  ERROR {r.error}" if r.error else ""))
         ev.add("copy", {"table": t.fqn, "rows": r.rows, "bytes": r.bytes, "seconds": round(r.seconds, 3), "error": r.error,
-                        "fingerprint": r.fingerprint})
+                        "fingerprint": r.fingerprint} | ({"proof_level": proof.NOT_COMPARED} if r.error else {}))
     copy_seconds = sum(r.seconds for r in copies.values())
     copy_bytes = sum(r.bytes for r in copies.values())
 
@@ -64,11 +64,18 @@ def run_drill(src: Source, target: Target, out: Path, key_path: Path, queries_fi
         except Exception as e:  # noqa: BLE001 : a table that cannot be compared must not hide the others
             r.error = f"comparison failed: {type(e).__name__}: {str(e).splitlines()[0][:200]}"
             log(f"   {t.fqn}: ERROR {r.error}")
-            ev.add("table_check_error", {"table": t.fqn, "error": r.error})
+            ev.add("table_check_error", {"table": t.fqn, "error": r.error, "proof_level": proof.NOT_COMPARED,
+                                         "proof_note": "not compared: " + r.error})
             continue
         checks.append(c)
         log(f"   {t.fqn}: {'OK' if c.ok else 'MISMATCH'}")
         ev.add("table_check", asdict(c) | {"ok": c.ok})
+
+    # tables without a comparison (copy error, comparison error): listed with their level and the reason, never left out
+    not_compared = [{"table": f, "proof_level": proof.NOT_COMPARED,
+                     "proof_note": (r.error if r.error.startswith("comparison failed") else "copy failed: " + r.error)}
+                    for f, r in copies.items() if r.error]
+    levels = [c.proof_level for c in checks] + [x["proof_level"] for x in not_compared]
 
     queries = split_sql(Path(queries_file).read_text()) if queries_file else src.history_queries(top_n)
     qres = []
@@ -108,6 +115,8 @@ def run_drill(src: Source, target: Target, out: Path, key_path: Path, queries_fi
         "cost_usd_est": cost,
         "cost_basis": cost_basis,
         "duration_s": round(time.monotonic() - t_start, 1),
+        "proof_level": proof.lowest(levels),  # the lowest level over all tables: never an average
+        "tables_by_proof_level": proof.counts(levels),
     }
     summary["parity"] = ("complete" if summary["tables_ok"] == summary["tables_total"] and not summary["tables_error"]
                          and not summary["queries_mismatch"] else "mismatch")
@@ -123,5 +132,6 @@ def run_drill(src: Source, target: Target, out: Path, key_path: Path, queries_fi
     copy_location = {"target": target.label, "warehouse": target.warehouse, "kind": target.kind,
                      "catalog": "custom" if target.catalog_uri else "SQLite (catalog.db in the output folder)", "metadata": locations}
     return {"summary": summary, "copy_location": copy_location, "scan": scan_res, "checks": [asdict(c) | {"ok": c.ok} for c in checks],
+            "not_compared": not_compared,
             "queries": [asdict(q) for q in qres], "conversions": [asdict(c) for c in conversions],
             "env": env, "seal": seal, "source": src.describe(), "target": target.label, "tolerances": tol.to_dict()}

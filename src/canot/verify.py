@@ -10,6 +10,7 @@ from sqlglot import exp
 
 from .convert import fingerprint, merge_fp
 from .model import TableInfo, q
+from .proof import FULL_AGGREGATES, full_aggregates_note
 from .sources.base import Source
 from .tolerances import Tolerances, equal
 
@@ -25,6 +26,13 @@ class TableCheck:
     fingerprint_ok: bool = True
     bad_buckets: list[int] = field(default_factory=list)
     precision_cols: list[str] = field(default_factory=list)  # columns whose value differs because the target type is less precise
+    within_precision_cols: list[str] = field(default_factory=list)  # lossy columns: compared only within the target type's precision
+    proof_level: str = FULL_AGGREGATES  # what this comparison established (proof.py); the computation itself is not changed by it
+    proof_note: str = ""  # what was compared, in words (English, like report.json)
+
+    def __post_init__(self):
+        if not self.proof_note and self.proof_level == FULL_AGGREGATES:
+            self.proof_note = full_aggregates_note(self.within_precision_cols)
 
     @property
     def precision_only(self) -> bool:
@@ -127,7 +135,8 @@ def check_table(src: Source, t: TableInfo, ice_table, source_fp: dict[int, list[
             if col in lossy_cols and col not in precision_cols:
                 precision_cols.append(col)
     bad = sorted(k for k in set(fp) | set(source_fp) if fp.get(k) != source_fp.get(k))
-    return TableCheck(t.fqn, t.rows, int(tgt["n"]), schema_ok, not diffs, diffs[:20], not bad, bad, precision_cols)
+    within = sorted(f.name for f in schema if f.name in lossy_cols)
+    return TableCheck(t.fqn, t.rows, int(tgt["n"]), schema_ok, not diffs, diffs[:20], not bad, bad, precision_cols, within)
 
 
 def src_db(src: Source) -> str:
