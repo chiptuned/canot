@@ -27,6 +27,10 @@ def explain(exc: BaseException, argv: list[str]) -> str | None:
         return "Google credentials not found. Run: gcloud auth application-default login"
     if name in ("Forbidden", "PermissionDenied") or "403" in str(exc)[:40]:
         return "Access denied. Check the read-only roles the source requires (see the source documentation)."
+    from .connectors import NoConnector
+
+    if isinstance(exc, NoConnector):
+        return str(exc)
     if isinstance(exc, ValueError) and ("SNOWFLAKE_" in str(exc) or "DATABRICKS_" in str(exc) or "URL " in str(exc)):
         return str(exc)
     return None

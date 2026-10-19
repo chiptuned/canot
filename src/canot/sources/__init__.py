@@ -21,4 +21,8 @@ def open_source(url: str) -> Source:
         from .duckdb_src import DuckDBSource
 
         return DuckDBSource(url)
-    raise ValueError(f"Unknown source: {url!r} (snowflake://, bigquery://, databricks://, duckdb://)")
+    if "://" in url:  # a platform we have no connector for: say so, and offer a way to ask for it
+        from ..connectors import NoConnector
+
+        raise NoConnector(scheme.lower())
+    raise ValueError(f"Unknown source: {url!r} (snowflake://, bigquery://, databricks://, duckdb://, or a dbt project folder)")

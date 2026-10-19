@@ -61,6 +61,18 @@
         fail = document.getElementById(offre ? "fail-offre" : "fail"), send = form.querySelector("button.send"),
         again = document.getElementById("again"), preview = document.getElementById("preview"), body = document.getElementById("preview-body");
     var req = function (v) { return v.trim() ? "" : T.required; };
+    // Arriving from the command line (`canot scan redshift://…`): preselect the platform and start the message
+    var want = (new URLSearchParams(location.search).get("connector") || "").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 30);
+    if (offre && want && form.elements.platform) {
+      var NAMES = { fabric: "Microsoft Fabric / Synapse", synapse: "Microsoft Fabric / Synapse", mssql: "Microsoft Fabric / Synapse", redshift: "Amazon Redshift", teradata: "Teradata",
+                    oracle: "Oracle", sap: "SAP Datasphere", datasphere: "SAP Datasphere", hana: "SAP Datasphere", clickhouse: "Autre", dataiku: "Autre", sas: "Autre" };
+      var label = NAMES[want] || "Autre", sel = form.elements.platform;
+      var opt = Array.prototype.find.call(sel.options, function (o) { return o.value === label || o.text === label; });
+      sel.value = opt ? opt.value : "Autre";
+      if (form.elements.message && !form.elements.message.value) {
+        form.elements.message.value = (EN ? "I would like a Canot connector for: " : "Je voudrais un connecteur Canot pour : ") + (want === "your-platform" ? "" : want) + ". ";
+      }
+    }
     var checks = {
       name: req, company: req,
       email: function (v) { return v ? (EMAIL.test(v) ? "" : T.email) : T.required; },

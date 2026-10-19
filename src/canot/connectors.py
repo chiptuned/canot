@@ -175,6 +175,32 @@ class Dbt(Connector):
 CONNECTORS: dict[str, Connector] = {c.name: c for c in (Snowflake(), BigQuery(), Databricks(), DuckDB(), Dbt())}
 
 
+# Platforms people ask for, with no connector yet: they get a helpful message and a way to ask for it (scheme -> label).
+ROADMAP = {
+    "fabric": "Microsoft Fabric / Azure Synapse", "synapse": "Microsoft Fabric / Azure Synapse", "mssql": "Microsoft Fabric / Azure Synapse",
+    "redshift": "Amazon Redshift", "teradata": "Teradata", "oracle": "Oracle", "sap": "SAP Datasphere", "datasphere": "SAP Datasphere",
+    "hana": "SAP HANA", "clickhouse": "ClickHouse", "dataiku": "Dataiku", "sas": "SAS",
+}
+REQUEST_URL = "https://canot.io/en/review.html?connector={scheme}"
+
+
+class NoConnector(ValueError):
+    """The URL names a platform Canot has no connector for (yet)."""
+
+    def __init__(self, scheme: str):
+        self.scheme = scheme
+        self.label = ROADMAP.get(scheme, scheme)
+        super().__init__(self.explain())
+
+    def explain(self) -> str:
+        have = ", ".join(c.label for c in CONNECTORS.values())
+        return (f"Canot has no connector for {self.label} yet.\n"
+                f"It would be written and validated with you, on your own account. Tell us you need it (two minutes, it tells us what to build next):\n"
+                f"  {REQUEST_URL.format(scheme=self.scheme)}\n"
+                f"Q4O, the team behind Canot, can also build it for a real project and run the exit exercise with you: https://canot.io/en/review.html\n"
+                f"Available today: {have} (canot connectors).")
+
+
 def for_url(url: str) -> Connector | None:
     """Connector named by the URL scheme; without a scheme, a folder that holds a dbt manifest is a dbt project."""
     if "://" in url:
@@ -261,6 +287,7 @@ def table() -> str:
     w = [max(len(r[i]) for r in (head, *rows)) for i in range(len(head))]
     lines = ["  ".join(v.ljust(w[i]) for i, v in enumerate(r)).rstrip() for r in (head, *rows)]
     used = sorted({p for c in CONNECTORS.values() for p in c.capabilities.preuve})
-    lines += ["", "Evidence: " + "; ".join(f"{p} {PREUVES[p]}" for p in used) + ".",
+    lines += ["", "On the roadmap, no connector yet: " + ", ".join(sorted(set(ROADMAP.values()))) + ". Ask for one: " + REQUEST_URL.format(scheme="your-platform"), "",
+              "Evidence: " + "; ".join(f"{p} {PREUVES[p]}" for p in used) + ".",
               "Full inventory: canot scan (logged reads, levels 1 to 3 depending on the connector). Light: tables, volumes, objects, no history."]
     return "\n".join(lines)

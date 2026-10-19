@@ -41,6 +41,21 @@ No account, no data: Canot generates **TPC-H**, the standard database benchmark 
 
 Result: 7 tables out of 8 with identical content, 3 queries out of 4 returning the same result. The discrepancy comes from a nanosecond timestamp column added by Canot: Iceberg v2 reduces it to microsecond precision. This is the kind of discrepancy you want to find **before** you leave.
 
+## ▶ Connectors
+
+`canot connectors` lists them with what each can do (inventory, export, evidence) and whether it has been validated.
+
+| Connector | Source URL | Status |
+|---|---|---|
+| Snowflake | `snowflake://ACCOUNT/DATABASE` | available, tested: full scan, copy, comparison, query replay |
+| BigQuery | `bigquery://PROJECT/DATASET` | available, tested: full scan, copy, comparison, query replay |
+| dbt | `dbt://PROJECT_PATH` | available, tested: scan of the project files, replay of the models (`canot replay-dbt`) |
+| DuckDB | `file.duckdb` | available, tested: light scan, copy, comparison |
+| Databricks | `databricks://HOST/HTTP_PATH?catalog=…` | written, not yet validated on a real account |
+| Microsoft Fabric / Azure Synapse, Amazon Redshift, Teradata, Oracle, SAP Datasphere, ClickHouse | | on the roadmap, no connector yet |
+
+Running Canot on a platform without a connector prints how to ask for it. A connector is written and validated with you, on your own account: [tell us what you run](https://canot.io/en/review.html).
+
 ## 🧭 Why
 
 |  |  |  |

@@ -31,11 +31,13 @@ def test_le_registre_n_importe_aucun_pilote():
 
 
 def test_schema_inconnu_meme_message():
+    """A scheme with no connector says so, the same way through the registry and through sources.open_source."""
+    from canot.connectors import NoConnector
     from canot.sources import open_source
 
-    with pytest.raises(ValueError, match=r"Unknown source: 'oracle://x' \(snowflake://, bigquery://, databricks://, duckdb://\)"):
+    with pytest.raises(NoConnector, match="no connector for Oracle yet"):
         connectors.get("duckdb").open("oracle://x")
-    with pytest.raises(ValueError, match="Unknown source"):
+    with pytest.raises(NoConnector, match="no connector for Oracle yet"):
         open_source("oracle://x")
 
 
@@ -89,3 +91,20 @@ def test_fiche_bigquery_non_vu_couvert():
             lec["statut"] = "read"
     f05 = [f for f in analyze(snap)["drapeaux"] if f["code"] == "F05"]
     assert f05 and all(nv not in f["preuve"]["non_vus"] for f in f05)
+
+
+def test_plateforme_sans_connecteur_explique_comment_le_demander(capsys):
+    from canot.cli import main
+
+    assert main(["scan", "redshift://cluster/db"]) == 1
+    err = capsys.readouterr().err
+    assert "no connector for Amazon Redshift yet" in err and "canot.io/en/review.html?connector=redshift" in err
+    assert "Q4O" in err and "Available today" in err and "Traceback" not in err
+
+
+def test_la_liste_des_connecteurs_cite_la_feuille_de_route(capsys):
+    from canot.cli import run as cli_run
+
+    cli_run(["connectors"])
+    out = capsys.readouterr().out
+    assert "On the roadmap" in out and "Teradata" in out and "Ask for one" in out
