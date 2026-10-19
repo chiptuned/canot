@@ -9,13 +9,13 @@
 
 ## Try it
 
-Thirty seconds, no account, no data. The TPC-H benchmark dataset (generated locally), a full exit exercise, and the evidence report opens in your browser.
-
 ```bash
-uvx canot drill "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" ./iceberg
+uvx canot demo
 ```
 
-No data at hand? `uvx canot demo` runs the TPC-H benchmark dataset in thirty seconds, no account. Canot copies tables from BigQuery, Snowflake or Databricks into Apache Iceberg on storage you control, compares each table (row counts, per-column statistics, content fingerprint), replays your key queries on both sides, and writes a report with a hash-chained, signed log.
+No account, no data. Canot generates **TPC-H**, the standard database benchmark (8 tables, 22 queries, up to 1 GB of data at scale factor 1), copies it to Apache Iceberg, compares everything, replays TPC-H queries on both sides and writes a signed evidence report. A few seconds by default (reduced size, 100 MB); `uvx canot demo --sf 1` runs scale factor 1, about 20 seconds on a laptop.
+
+Canot copies tables from BigQuery, Snowflake or Databricks into Apache Iceberg on storage you control, compares each table (row counts, per-column statistics, content fingerprint), replays your key queries on both sides, and writes a report with a hash-chained, signed log.
 
 It runs entirely in your accounts. No telemetry. It is **not** a certification: it is a dated record of measurements on the scope you ran.
 

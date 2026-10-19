@@ -30,16 +30,14 @@
 
 ## ▶ Essayer
 
-Une commande : la source, la destination. Un dossier local suffit.
-
 ```bash
-uvx canot drill "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" ./iceberg
+uvx canot demo
 ```
 
-Canot copie les tables en Apache Iceberg, compare tout, rejoue vos requêtes les plus coûteuses et écrit un dossier de preuve signé. Pas de données sous la main : `uvx canot demo` (trente secondes, sans compte).
+Sans compte ni données : Canot génère **TPC-H**, le benchmark de référence des bases de données (8 tables, 22 requêtes, jusqu'à 1 Go de données à l'échelle 1), le copie en Apache Iceberg, compare tout, rejoue des requêtes TPC-H des deux côtés et écrit un dossier de preuve signé. Quelques secondes par défaut (version réduite, 100 Mo) ; `uvx canot demo --sf 1` pour l'échelle 1, environ 20 secondes sur un poste portable.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/chiptuned/canot/main/docs/assets/demo.svg" alt="canot copie des tables BigQuery, compare tout, et signale une requête qui diverge" width="860">
+  <img src="https://raw.githubusercontent.com/chiptuned/canot/main/docs/assets/demo.svg" alt="canot copie des tables Snowflake, compare tout, et signale une requête qui diverge" width="860">
 </p>
 
 Sur le jeu d'exemple TPC-H de Snowflake : 8 tables au contenu identique, 3 requêtes sur 4 qui rendent le même résultat. La 4<sup>e</sup> calcule une moyenne : décimale chez Snowflake, flottante ailleurs. C'est le genre d'écart qu'on veut découvrir **avant** de partir.
