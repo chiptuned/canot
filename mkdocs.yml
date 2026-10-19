@@ -1,0 +1,40 @@
+site_name: Canot
+site_description: Rehearse your exit from a data platform, and keep the evidence.
+site_url: https://chiptuned.github.io/canot/
+repo_url: https://github.com/chiptuned/canot
+repo_name: chiptuned/canot
+docs_dir: docs
+exclude_docs: |
+  landing-brief.md
+  deliverables.md
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: custom
+      toggle: {icon: material/weather-night, name: Dark mode}
+    - scheme: slate
+      primary: custom
+      toggle: {icon: material/weather-sunny, name: Light mode}
+extra_css:
+  - stylesheets/extra.css
+nav:
+  - Home: index.md
+  - Commands: commands.md
+  - Read-only scan: scan.md
+  - On-prem exit: on-prem.md
+  - Targets: targets.md
+  - Benchmark: bench.md
+  - Discrepancies: discrepancies.md
+markdown_extensions:
+  - admonition
+  - tables
+  - toc: {permalink: true}
+  - pymdownx.highlight
+  - pymdownx.superfences
+site_dir: site_docs

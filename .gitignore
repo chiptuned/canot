@@ -16,3 +16,4 @@ lab/dbt/target/
 lab/dbt/logs/
 lab/dbt/dbt_packages/
 lab/dbt/.user.yml
+site_docs/

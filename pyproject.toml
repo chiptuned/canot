@@ -45,6 +45,7 @@ postgres = ["psycopg2-binary>=2.9"]
 mcp = []  # installé d'office
 all = ["psycopg2-binary>=2.9"]
 dev = ["pytest>=8", "moto[server,s3]>=5"]
+docs = ["mkdocs-material>=9.5", "mkdocs<2"]
 
 [project.scripts]
 canot = "canot.cli:main"

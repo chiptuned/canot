@@ -421,3 +421,7 @@ input[type=file]{font:inherit;padding:8px 0}
   .hero .ctas{display:none}
   .hero-copy{gap:0}
 }
+
+/* Home: report (wash) / who (paper) / destinations (wash) / contact (paper) alternate */
+.sov{background:var(--wash)}
+.sov + .contact{background:var(--paper)}
