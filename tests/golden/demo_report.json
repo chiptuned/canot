@@ -1,0 +1,196 @@
+{
+  "checks": [
+    {
+      "bad_buckets": [],
+      "fingerprint_ok": true,
+      "ok": true,
+      "precision_cols": [],
+      "proof_level": "full_aggregates",
+      "rows_source": 1500,
+      "rows_target": 1500,
+      "schema_ok": true,
+      "stats_diffs": [],
+      "stats_ok": true,
+      "table": "tpch.customer",
+      "within_precision_cols": []
+    },
+    {
+      "bad_buckets": [],
+      "fingerprint_ok": true,
+      "ok": false,
+      "precision_cols": [
+        "l_loaded_at"
+      ],
+      "proof_level": "full_aggregates",
+      "rows_source": 60175,
+      "rows_target": 60175,
+      "schema_ok": true,
+      "stats_diffs": [
+        "l_loaded_at.min: '1992-02-02T00:00:00.027137004' / datetime.datetime(1992, 2, 2, 0, 0, 0, 27137)",
+        "l_loaded_at.max: '1998-10-28T00:00:00.028484001' / datetime.datetime(1998, 10, 28, 0, 0, 0, 28484)"
+      ],
+      "stats_ok": false,
+      "table": "tpch.lineitem",
+      "within_precision_cols": [
+        "l_loaded_at"
+      ]
+    },
+    {
+      "bad_buckets": [],
+      "fingerprint_ok": true,
+      "ok": true,
+      "precision_cols": [],
+      "proof_level": "full_aggregates",
+      "rows_source": 25,
+      "rows_target": 25,
+      "schema_ok": true,
+      "stats_diffs": [],
+      "stats_ok": true,
+      "table": "tpch.nation",
+      "within_precision_cols": []
+    },
+    {
+      "bad_buckets": [],
+      "fingerprint_ok": true,
+      "ok": true,
+      "precision_cols": [],
+      "proof_level": "full_aggregates",
+      "rows_source": 15000,
+      "rows_target": 15000,
+      "schema_ok": true,
+      "stats_diffs": [],
+      "stats_ok": true,
+      "table": "tpch.orders",
+      "within_precision_cols": []
+    },
+    {
+      "bad_buckets": [],
+      "fingerprint_ok": true,
+      "ok": true,
+      "precision_cols": [],
+      "proof_level": "full_aggregates",
+      "rows_source": 2000,
+      "rows_target": 2000,
+      "schema_ok": true,
+      "stats_diffs": [],
+      "stats_ok": true,
+      "table": "tpch.part",
+      "within_precision_cols": []
+    },
+    {
+      "bad_buckets": [],
+      "fingerprint_ok": true,
+      "ok": true,
+      "precision_cols": [],
+      "proof_level": "full_aggregates",
+      "rows_source": 8000,
+      "rows_target": 8000,
+      "schema_ok": true,
+      "stats_diffs": [],
+      "stats_ok": true,
+      "table": "tpch.partsupp",
+      "within_precision_cols": []
+    },
+    {
+      "bad_buckets": [],
+      "fingerprint_ok": true,
+      "ok": true,
+      "precision_cols": [],
+      "proof_level": "full_aggregates",
+      "rows_source": 5,
+      "rows_target": 5,
+      "schema_ok": true,
+      "stats_diffs": [],
+      "stats_ok": true,
+      "table": "tpch.region",
+      "within_precision_cols": []
+    },
+    {
+      "bad_buckets": [],
+      "fingerprint_ok": true,
+      "ok": true,
+      "precision_cols": [],
+      "proof_level": "full_aggregates",
+      "rows_source": 100,
+      "rows_target": 100,
+      "schema_ok": true,
+      "stats_diffs": [],
+      "stats_ok": true,
+      "table": "tpch.supplier",
+      "within_precision_cols": []
+    }
+  ],
+  "conversions": [
+    {
+      "column": "l_loaded_at",
+      "lossy": true,
+      "note": "ns -> us (Iceberg v2 does not keep nanoseconds)",
+      "source_type": "TIMESTAMP_NS",
+      "table": "tpch.lineitem",
+      "target_type": "timestamp[us]",
+      "tz": null
+    }
+  ],
+  "not_compared": [],
+  "queries": [
+    {
+      "detail": "",
+      "order_differs": false,
+      "rows_source": 4,
+      "rows_target": 4,
+      "sql": "select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price,\n       sum(l_extendedprice * (1 - l_discount)) as sum_disc_price, avg(l_discount) as avg_disc, count(*) as n\nfrom tpch.lineitem where l_shipdate <= date '1998-12-01' - interval '90' day\ngroup by 1, 2 order by 1, 2",
+      "status": "match",
+      "translated": "SELECT l_returnflag, l_linestatus, SUM(l_quantity) AS sum_qty, SUM(l_extendedprice) AS sum_base_price, SUM(l_extendedprice * (1 - l_discount)) AS sum_disc_price, AVG(l_discount) AS avg_disc, COUNT(*) AS n FROM tpch.lineitem WHERE l_shipdate <= CAST('1998-12-01' AS DATE) - INTERVAL '90' DAY GROUP BY 1, 2 ORDER BY 1, 2"
+    },
+    {
+      "detail": "",
+      "order_differs": false,
+      "rows_source": 10,
+      "rows_target": 10,
+      "sql": "select l_orderkey, sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate\nfrom tpch.customer, tpch.orders, tpch.lineitem\nwhere c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey\n  and o_orderdate < date '1995-03-15' and l_shipdate > date '1995-03-15'\ngroup by l_orderkey, o_orderdate order by revenue desc, o_orderdate limit 10",
+      "status": "match",
+      "translated": "SELECT l_orderkey, SUM(l_extendedprice * (1 - l_discount)) AS revenue, o_orderdate FROM tpch.customer, tpch.orders, tpch.lineitem WHERE c_mktsegment = 'BUILDING' AND c_custkey = o_custkey AND l_orderkey = o_orderkey AND o_orderdate < CAST('1995-03-15' AS DATE) AND l_shipdate > CAST('1995-03-15' AS DATE) GROUP BY l_orderkey, o_orderdate ORDER BY revenue DESC, o_orderdate LIMIT 10"
+    },
+    {
+      "detail": "",
+      "order_differs": false,
+      "rows_source": 1,
+      "rows_target": 1,
+      "sql": "select sum(l_extendedprice * l_discount) as revenue from tpch.lineitem\nwhere l_shipdate >= date '1994-01-01' and l_shipdate < date '1995-01-01' and l_discount between 0.05 and 0.07 and l_quantity < 24",
+      "status": "match",
+      "translated": "SELECT SUM(l_extendedprice * l_discount) AS revenue FROM tpch.lineitem WHERE l_shipdate >= CAST('1994-01-01' AS DATE) AND l_shipdate < CAST('1995-01-01' AS DATE) AND l_discount BETWEEN 0.05 AND 0.07 AND l_quantity < 24"
+    },
+    {
+      "detail": "sorted row 0, column 16: '1996-02-12T00:00:00.000001001' / datetime.datetime(1996, 2, 12, 0, 0, 0, 1)",
+      "order_differs": false,
+      "rows_source": 50,
+      "rows_target": 50,
+      "sql": "select * from tpch.lineitem order by l_orderkey, l_linenumber limit 50",
+      "status": "mismatch",
+      "translated": "SELECT * FROM tpch.lineitem ORDER BY l_orderkey, l_linenumber LIMIT 50"
+    }
+  ],
+  "summary": {
+    "lossy_conversions": 1,
+    "parity": "mismatch",
+    "proof_level": "full_aggregates",
+    "queries_match": 3,
+    "queries_mismatch": 1,
+    "queries_order_differs": 0,
+    "queries_skipped": 0,
+    "queries_total": 4,
+    "queries_untranslatable": 0,
+    "tables_by_proof_level": {
+      "full_aggregates": 8,
+      "full_fingerprint": 0,
+      "metadata_only": 0,
+      "not_compared": 0,
+      "partition_sampled": 0,
+      "row_sampled": 0
+    },
+    "tables_error": [],
+    "tables_ok": 7,
+    "tables_precision_only": 1,
+    "tables_total": 8
+  }
+}
