@@ -1,0 +1,1944 @@
+{
+  "as_of": "2026-10-17T10:00:00Z",
+  "avec_sql_brut": false,
+  "cout_du_scan": {
+    "duree": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_lu",
+      "raison": "durée non transmise par la collecte",
+      "unite": "secondes",
+      "valeur": null
+    },
+    "lectures": {
+      "lu": 18,
+      "non_lu": 4,
+      "total": 22
+    },
+    "requetes": {
+      "bas": null,
+      "base": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B05",
+        "B06",
+        "B07",
+        "B08",
+        "B09",
+        "B10",
+        "B11",
+        "B12",
+        "B13",
+        "B14",
+        "B15",
+        "B16",
+        "B17",
+        "B19",
+        "B20",
+        "B21"
+      ],
+      "confiance": null,
+      "formule": "lectures tentées, lues ou refusées par la plateforme",
+      "haut": null,
+      "hypotheses": [
+        "une lecture = une requête"
+      ],
+      "nature": "calculé",
+      "raison": null,
+      "unite": "requêtes",
+      "valeur": 20
+    }
+  },
+  "couts": {
+    "a_la_demande": {
+      "monnaie": {
+        "bas": 0.0,
+        "base": [
+          "B10",
+          "B11",
+          "B12"
+        ],
+        "confiance": "basse",
+        "formule": "Tio facturés × prix catalogue, palier gratuit déduit ou non",
+        "haut": 21.88,
+        "hypotheses": [
+          "prix catalogue à la demande du 17/10/2026 : 6,25 $ par Tio (tarif US ; région à confirmer), https://cloud.google.com/bigquery/pricing",
+          "haut : aucun palier gratuit déduit ; bas : 1 Tio gratuit par mois touché par la fenêtre ; le palier gratuit est partagé par le compte de facturation, il n'est pas imputable par projet",
+          "prix de votre contrat non lu",
+          "octets facturés NULL pour les requêtes sur tables à politique de lignes : non comptés"
+        ],
+        "nature": "estimé",
+        "raison": null,
+        "unite": "USD",
+        "valeur": null
+      },
+      "octets_factures": {
+        "bas": null,
+        "base": [
+          "B10",
+          "B11",
+          "B12"
+        ],
+        "confiance": null,
+        "formule": null,
+        "haut": null,
+        "hypotheses": [],
+        "nature": "mesuré",
+        "raison": null,
+        "unite": "octets",
+        "valeur": 3848290697216
+      },
+      "requetes": {
+        "bas": null,
+        "base": [
+          "B10",
+          "B11",
+          "B12"
+        ],
+        "confiance": null,
+        "formule": null,
+        "haut": null,
+        "hypotheses": [],
+        "nature": "mesuré",
+        "raison": null,
+        "unite": "requêtes",
+        "valeur": 1200
+      }
+    },
+    "fenetre_jours": 180,
+    "note": "À la demande et réservé : deux modes de facturation, jamais additionnés.",
+    "reserve": {
+      "monnaie": {
+        "bas": null,
+        "base": [],
+        "confiance": null,
+        "formule": null,
+        "haut": null,
+        "hypotheses": [],
+        "nature": "non_estimé",
+        "raison": "prix de votre contrat non lu",
+        "unite": "USD",
+        "valeur": null
+      },
+      "requetes": {
+        "bas": null,
+        "base": [
+          "B10",
+          "B11",
+          "B12"
+        ],
+        "confiance": null,
+        "formule": null,
+        "haut": null,
+        "hypotheses": [],
+        "nature": "mesuré",
+        "raison": null,
+        "unite": "requêtes",
+        "valeur": 300
+      },
+      "slot_heures": {
+        "bas": null,
+        "base": [
+          "B10",
+          "B11",
+          "B12"
+        ],
+        "confiance": null,
+        "formule": null,
+        "haut": null,
+        "hypotheses": [],
+        "nature": "mesuré",
+        "raison": null,
+        "unite": "slot-heures",
+        "valeur": 820.5
+      }
+    },
+    "stockage_monnaie": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_estimé",
+      "raison": "prix de votre contrat non lu",
+      "unite": "USD",
+      "valeur": null
+    },
+    "stockage_octets_moyens": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_lu",
+      "raison": "non transmis par la collecte",
+      "unite": "octets",
+      "valeur": null
+    },
+    "transferts": []
+  },
+  "dependances": {
+    "aretes": [
+      [
+        "lab-a.hub.listing_sales",
+        "lab-a.raw.orders"
+      ],
+      [
+        "lab-a.mart.mv_daily",
+        "lab-a.raw.orders"
+      ],
+      [
+        "lab-a.mart.v_legacy",
+        "lab-a.raw.orders"
+      ],
+      [
+        "lab-a.mart.v_sheet",
+        "lab-a.ext.sheet_targets"
+      ],
+      [
+        "lab-a.raw.rap_country",
+        "lab-a.raw.customers"
+      ]
+    ],
+    "base": [
+      "B10",
+      "B11",
+      "B12",
+      "B20"
+    ],
+    "cachees": [
+      {
+        "chemin": [
+          "lab-a.mart.v_sheet",
+          "lab-a.ext.sheet_targets"
+        ],
+        "emplacements": [
+          "docs.google.com"
+        ],
+        "id": "lab-a.mart.v_sheet"
+      }
+    ],
+    "clients": [],
+    "consommateurs": [
+      {
+        "comptes": 1,
+        "id": "lab-a.hub.listing_sales"
+      }
+    ],
+    "ecritures_externes": [
+      {
+        "cible": "066b5f1f3a39",
+        "cible_type": "famille",
+        "emplacements": [
+          "gs://bucket-x"
+        ],
+        "mode": "observé"
+      },
+      {
+        "cible": "lab-a.sq_export",
+        "cible_type": "objet",
+        "emplacements": [
+          "gs://lab-exports"
+        ],
+        "mode": "déclaré"
+      }
+    ],
+    "externes": [
+      {
+        "emplacements": [
+          "gs://lab-bucket"
+        ],
+        "id": "lab-a.ext.gcs_events",
+        "type": "table"
+      },
+      {
+        "emplacements": [
+          "docs.google.com"
+        ],
+        "id": "lab-a.ext.sheet_targets",
+        "type": "table"
+      }
+    ],
+    "outils": [
+      {
+        "executions": 903,
+        "familles": 3,
+        "outil": "non identifié"
+      },
+      {
+        "executions": 10,
+        "familles": 1,
+        "outil": "looker"
+      }
+    ]
+  },
+  "drapeaux": [
+    {
+      "base": [
+        "B03",
+        "B04",
+        "B05",
+        "B07",
+        "B08"
+      ],
+      "cible": "lab-a.ext.gcs_events",
+      "cible_type": "table",
+      "code": "F01",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Dépendance externe",
+      "preuve": {
+        "emplacements": [
+          "gs://lab-bucket"
+        ],
+        "type": "table"
+      },
+      "texte": "Table externe : données hors de la plateforme (gs://lab-bucket)."
+    },
+    {
+      "base": [
+        "B03",
+        "B04",
+        "B05",
+        "B07",
+        "B08"
+      ],
+      "cible": "lab-a.ext.sheet_targets",
+      "cible_type": "table",
+      "code": "F01",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Dépendance externe",
+      "preuve": {
+        "emplacements": [
+          "docs.google.com"
+        ],
+        "type": "table"
+      },
+      "texte": "Table externe : données hors de la plateforme (docs.google.com)."
+    },
+    {
+      "base": [
+        "B20"
+      ],
+      "cible": "lab-a.mart.v_sheet",
+      "cible_type": "objet",
+      "code": "F02",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Dépendance externe cachée",
+      "preuve": {
+        "chemin": [
+          "lab-a.mart.v_sheet",
+          "lab-a.ext.sheet_targets"
+        ],
+        "emplacements": [
+          "docs.google.com"
+        ]
+      },
+      "texte": "Dépend de lab-a.ext.sheet_targets, hors de la plateforme, par 1 niveau : lab-a.mart.v_sheet → lab-a.ext.sheet_targets (docs.google.com)."
+    },
+    {
+      "base": [
+        "B10",
+        "B11",
+        "B12"
+      ],
+      "cible": "066b5f1f3a39",
+      "cible_type": "famille",
+      "code": "F03",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Écriture hors de la plateforme",
+      "preuve": {
+        "emplacements": [
+          "gs://bucket-x"
+        ],
+        "mode": "observé",
+        "n_exec": 2,
+        "tables": [
+          "lab-a.raw.orders"
+        ]
+      },
+      "texte": "Écriture hors de la plateforme observée : 2 exécutions ; destination : gs://bucket-x."
+    },
+    {
+      "base": [
+        "B13"
+      ],
+      "cible": "lab-a.sq_export",
+      "cible_type": "objet",
+      "code": "F03",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Écriture hors de la plateforme",
+      "preuve": {
+        "emplacements": [
+          "gs://lab-exports"
+        ],
+        "mode": "déclaré"
+      },
+      "texte": "Requête planifiée qui écrit hors de la plateforme (déclaré dans sa définition) ; destination : gs://lab-exports."
+    },
+    {
+      "base": [
+        "B07",
+        "B10",
+        "B11",
+        "B12"
+      ],
+      "cible": "lab-a.archive.archive_2023",
+      "cible_type": "table",
+      "code": "F05",
+      "confiance": "moyenne",
+      "etiquette": "À examiner",
+      "libelle": "Stockage sans lecture observée",
+      "preuve": {
+        "au": "2026-10-17",
+        "du": "2026-04-20",
+        "jours": 180,
+        "non_vus": [
+          "lectures par l'API Storage Read",
+          "requêtes lancées depuis d'autres projets",
+          "consommateurs Analytics Hub"
+        ],
+        "octets_actifs": 3000000000,
+        "source": "INFORMATION_SCHEMA.JOBS"
+      },
+      "texte": "3 Go stockés. Aucune lecture observée dans INFORMATION_SCHEMA.JOBS du 20/04/2026 au 17/10/2026 ; non vus : lectures par l'API Storage Read, requêtes lancées depuis d'autres projets, consommateurs Analytics Hub."
+    },
+    {
+      "base": [
+        "B07",
+        "B10",
+        "B11",
+        "B12"
+      ],
+      "cible": "lab-a.raw.read_by_api_only",
+      "cible_type": "table",
+      "code": "F05",
+      "confiance": "moyenne",
+      "etiquette": "À examiner",
+      "libelle": "Stockage sans lecture observée",
+      "preuve": {
+        "au": "2026-10-17",
+        "du": "2026-04-20",
+        "jours": 180,
+        "non_vus": [
+          "lectures par l'API Storage Read",
+          "requêtes lancées depuis d'autres projets",
+          "consommateurs Analytics Hub"
+        ],
+        "octets_actifs": 700000000,
+        "source": "INFORMATION_SCHEMA.JOBS"
+      },
+      "texte": "700 Mo stockés. Aucune lecture observée dans INFORMATION_SCHEMA.JOBS du 20/04/2026 au 17/10/2026 ; non vus : lectures par l'API Storage Read, requêtes lancées depuis d'autres projets, consommateurs Analytics Hub."
+    },
+    {
+      "base": [
+        "B07"
+      ],
+      "cible": "lab-a.raw.orders",
+      "cible_type": "table",
+      "code": "F06",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Historique payé non transférable",
+      "preuve": {
+        "octets_actifs": 900000000,
+        "octets_historique": 250000000,
+        "retention_jours": 7
+      },
+      "texte": "250 Mo d'historique facturé (Time Travel et Fail-safe), rétention 7 jours, pour 900 Mo actifs ; cet historique ne part pas avec la copie."
+    },
+    {
+      "base": [
+        "B19"
+      ],
+      "cible": "lab-a.mart.sp_rebuild",
+      "cible_type": "objet",
+      "code": "F08",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "SQL dynamique",
+      "preuve": {
+        "langage": "SQL"
+      },
+      "texte": "Procédure en SQL : construit du SQL à l'exécution ; les objets touchés ne se lisent pas dans le code."
+    },
+    {
+      "base": [
+        "B16",
+        "B17"
+      ],
+      "cible": "lab-a.hub.listing_sales",
+      "cible_type": "objet",
+      "code": "F09",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Consommateurs externes",
+      "preuve": {
+        "consommateurs": 1,
+        "objets": [
+          "lab-a.raw.orders"
+        ]
+      },
+      "texte": "Partage vers 1 abonné ; 1 objet partagé. Les lectures des consommateurs ne sont pas vues par ce scan."
+    },
+    {
+      "base": [
+        "B14"
+      ],
+      "cible": "lab-a.raw.rap_country",
+      "cible_type": "objet",
+      "code": "F10",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Sécurité à reconstruire",
+      "preuve": {
+        "objets": [
+          "lab-a.raw.customers"
+        ]
+      },
+      "texte": "Politique de lignes appliquée à 1 objet ; elle ne part pas avec la copie ; la copie demande un principal non filtré."
+    },
+    {
+      "base": [
+        "B09",
+        "B14"
+      ],
+      "cible": "lab-a.raw.customers",
+      "cible_type": "table",
+      "code": "F10",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Sécurité à reconstruire",
+      "preuve": {
+        "etiquettes_n": 0,
+        "politiques": [
+          "pt-pii",
+          "rap_country"
+        ]
+      },
+      "texte": "Politiques : pt-pii, rap_country. Elles ne partent pas avec la copie ; la copie demande un principal non filtré par ces politiques."
+    },
+    {
+      "base": [
+        "B13"
+      ],
+      "cible": "lab-a.sq_daily_kpi",
+      "cible_type": "objet",
+      "code": "F11",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Chaîne planifiée et ses échecs",
+      "preuve": {
+        "chaine": [
+          "lab-a.sq_daily_kpi"
+        ],
+        "echecs_n": 3,
+        "etat": "actif",
+        "executions_n": 180
+      },
+      "texte": "Requête planifiée, planification every 24 hours, état actif ; 180 exécutions, 3 échecs, dernière le 17/10/2026."
+    },
+    {
+      "base": [
+        "B13"
+      ],
+      "cible": "lab-a.sq_export",
+      "cible_type": "objet",
+      "code": "F11",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Chaîne planifiée et ses échecs",
+      "preuve": {
+        "chaine": [
+          "lab-a.sq_export"
+        ],
+        "echecs_n": 0,
+        "etat": "actif",
+        "executions_n": 180
+      },
+      "texte": "Requête planifiée, planification every day 05:00, état actif ; 180 exécutions, 0 échec."
+    },
+    {
+      "base": [
+        "B13"
+      ],
+      "cible": "lab-a.sq_old",
+      "cible_type": "objet",
+      "code": "F11",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Chaîne planifiée et ses échecs",
+      "preuve": {
+        "chaine": [
+          "lab-a.sq_old"
+        ],
+        "echecs_n": 0,
+        "etat": "désactivée",
+        "executions_n": 0
+      },
+      "texte": "Requête planifiée, planification every 1 hours, état désactivée ; 0 exécution, 0 échec."
+    },
+    {
+      "base": [
+        "B13"
+      ],
+      "cible": "lab-a.sq_weekly",
+      "cible_type": "objet",
+      "code": "F11",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Chaîne planifiée et ses échecs",
+      "preuve": {
+        "chaine": [
+          "lab-a.sq_weekly"
+        ],
+        "echecs_n": 0,
+        "etat": "actif",
+        "executions_n": 26
+      },
+      "texte": "Requête planifiée, planification every monday 06:00, état actif ; 26 exécutions, 0 échec."
+    },
+    {
+      "base": [],
+      "cible": "B15",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "droit absent",
+        "vue": "API connections.list"
+      },
+      "texte": "API connections.list non lue (droit absent) ; limite : connexions externes (F01)."
+    },
+    {
+      "base": [],
+      "cible": "B18",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "niveau de droits non demandé",
+        "vue": "`region-eu`.INFORMATION_SCHEMA.RESERVATIONS"
+      },
+      "texte": "`region-eu`.INFORMATION_SCHEMA.RESERVATIONS non lue (niveau de droits non demandé) ; limite : capacité réservée."
+    },
+    {
+      "base": [],
+      "cible": "B22",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "niveau de droits non demandé",
+        "vue": "`region-eu`.INFORMATION_SCHEMA.JOBS_BY_ORGANIZATION"
+      },
+      "texte": "`region-eu`.INFORMATION_SCHEMA.JOBS_BY_ORGANIZATION non lue (niveau de droits non demandé) ; limite : requêtes lancées depuis d'autres projets."
+    }
+  ],
+  "edition": "non déterminée",
+  "f04_lu": false,
+  "familles": [
+    {
+      "app": null,
+      "categorie": "C5",
+      "compartiments": [],
+      "credits": null,
+      "ecriture_externe": false,
+      "empreinte": "81c59a441550c1954bae4f55380350f098153fac7e35095277ef156a8ab69230",
+      "entrepot": null,
+      "fonctions": [],
+      "hash_plateforme": "h0",
+      "n_exec": 900,
+      "octets": 2000000000000,
+      "outil": null,
+      "sql_normalise": "SELECT * FROM `lab-a.raw.orders` WHERE d >= ?",
+      "tables": [
+        "lab-a.raw.orders"
+      ],
+      "temps_ms": 9000.0
+    },
+    {
+      "app": "looker",
+      "categorie": "C0",
+      "compartiments": [],
+      "credits": null,
+      "ecriture_externe": false,
+      "empreinte": "6a5b2ac25d9242dc7cc9fedaff4070b5829aeced2d4a85a466f2bb0cca2441ba",
+      "entrepot": null,
+      "fonctions": [],
+      "hash_plateforme": "h1",
+      "n_exec": 10,
+      "octets": 1000000,
+      "outil": null,
+      "sql_normalise": "SELECT count(*) FROM `lab-a.raw.customers`",
+      "tables": [
+        "lab-a.raw.customers"
+      ],
+      "temps_ms": 100.0
+    },
+    {
+      "app": null,
+      "categorie": "C7",
+      "compartiments": [
+        "gs://bucket-x"
+      ],
+      "credits": null,
+      "ecriture_externe": true,
+      "empreinte": "066b5f1f3a39fc67ad07f79580a44acc84c6dbbae364983967373116786218a8",
+      "entrepot": null,
+      "fonctions": [],
+      "hash_plateforme": "h2",
+      "n_exec": 2,
+      "octets": 50000,
+      "outil": null,
+      "sql_normalise": "EXPORT DATA OPTIONS (uri=?, FORMAT=?) AS SELECT * FROM `lab-a.raw.orders`",
+      "tables": [
+        "lab-a.raw.orders"
+      ],
+      "temps_ms": 20.0
+    },
+    {
+      "app": null,
+      "categorie": "C4",
+      "compartiments": [],
+      "credits": null,
+      "ecriture_externe": false,
+      "empreinte": "5649c51ed2a38b239c2b66a153624057786dde867488cfd302b6c49e6be31e88",
+      "entrepot": null,
+      "fonctions": [
+        "predict"
+      ],
+      "hash_plateforme": "h3",
+      "n_exec": 1,
+      "octets": null,
+      "outil": null,
+      "sql_normalise": "SELECT ML.PREDICT(MODEL `lab-a.raw.m`, (SELECT ?))",
+      "tables": [
+        "lab-a.raw.m"
+      ],
+      "temps_ms": 10.0
+    }
+  ],
+  "fourchettes": {
+    "cout_lecture": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [
+        "lecture par l'API Storage Read, facturée par Tio lu, et sortie réseau hors de Google Cloud"
+      ],
+      "nature": "non_estimé",
+      "raison": "prix de votre contrat non lu",
+      "unite": "USD",
+      "valeur": null
+    },
+    "duree_lecture": {
+      "bas": 0.02,
+      "base": [
+        "B07"
+      ],
+      "confiance": "basse",
+      "formule": "volume ÷ débit supposé",
+      "haut": 0.07,
+      "hypotheses": [
+        "débit supposé de 20 à 80 Mo/s, remplacé par la mesure d'un canot drill"
+      ],
+      "nature": "estimé",
+      "raison": null,
+      "unite": "heures",
+      "valeur": null
+    },
+    "reprise": {
+      "bas": 3.0,
+      "base": [
+        "B13",
+        "B19",
+        "B20"
+      ],
+      "confiance": "basse",
+      "formule": "objets × jours par objet + colonnes × jours par colonne",
+      "haut": 18.0,
+      "hypotheses": [
+        "11 objets à reconstruire et 3 colonnes à type propre à la plateforme",
+        "hypothèses de q4o : 0,25 à 1,5 jour par objet, 0,1 à 0,5 par colonne, à discuter"
+      ],
+      "nature": "estimé",
+      "raison": null,
+      "unite": "jours",
+      "valeur": null
+    },
+    "volume": {
+      "bas": null,
+      "base": [
+        "B07"
+      ],
+      "confiance": null,
+      "formule": "somme des octets actifs",
+      "haut": null,
+      "hypotheses": [
+        "octets actifs des tables présentes, hors tables externes et temporaires"
+      ],
+      "nature": "calculé",
+      "raison": null,
+      "unite": "octets",
+      "valeur": 4980000000
+    }
+  },
+  "fraicheur": null,
+  "latence_max_h": 0.1,
+  "lectures": [
+    {
+      "fenetre": null,
+      "id": "B01",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "API datasets.list"
+    },
+    {
+      "fenetre": null,
+      "id": "B02",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "API datasets.get"
+    },
+    {
+      "fenetre": null,
+      "id": "B03",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "`region-eu`.INFORMATION_SCHEMA.TABLES"
+    },
+    {
+      "fenetre": null,
+      "id": "B04",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "`region-europe-west1`.INFORMATION_SCHEMA.TABLES"
+    },
+    {
+      "fenetre": null,
+      "id": "B05",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "`region-us`.INFORMATION_SCHEMA.TABLES"
+    },
+    {
+      "fenetre": null,
+      "id": "B06",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "aucune : tables.get lue à la place",
+      "raison": "absent ou non exposé",
+      "statut": "non_lu",
+      "vue": "`region-eu`.INFORMATION_SCHEMA.TABLE_STORAGE"
+    },
+    {
+      "fenetre": null,
+      "id": "B07",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "API tables.get"
+    },
+    {
+      "fenetre": null,
+      "id": "B08",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "`region-eu`.INFORMATION_SCHEMA.TABLE_OPTIONS"
+    },
+    {
+      "fenetre": null,
+      "id": "B09",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "`region-eu`.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS"
+    },
+    {
+      "fenetre": {
+        "au": "2026-10-17T09:00:00Z",
+        "du": "2026-04-20T00:00:00Z"
+      },
+      "id": "B10",
+      "latence_max_h": 0.1,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "`region-eu`.INFORMATION_SCHEMA.JOBS"
+    },
+    {
+      "fenetre": {
+        "au": "2026-10-17T09:00:00Z",
+        "du": "2026-04-20T00:00:00Z"
+      },
+      "id": "B11",
+      "latence_max_h": 0.1,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "`region-europe-west1`.INFORMATION_SCHEMA.JOBS"
+    },
+    {
+      "fenetre": {
+        "au": "2026-10-17T09:00:00Z",
+        "du": "2026-04-20T00:00:00Z"
+      },
+      "id": "B12",
+      "latence_max_h": 0.1,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "`region-us`.INFORMATION_SCHEMA.JOBS"
+    },
+    {
+      "fenetre": null,
+      "id": "B13",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "API transferConfigs.list"
+    },
+    {
+      "fenetre": null,
+      "id": "B14",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "API rowAccessPolicies.list"
+    },
+    {
+      "fenetre": null,
+      "id": "B15",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "connexions externes (F01)",
+      "raison": "droit absent",
+      "statut": "non_lu",
+      "vue": "API connections.list"
+    },
+    {
+      "fenetre": null,
+      "id": "B16",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "`region-eu`.INFORMATION_SCHEMA.SCHEMATA_LINKS"
+    },
+    {
+      "fenetre": null,
+      "id": "B17",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "`region-eu`.INFORMATION_SCHEMA.SHARED_DATASET_USAGE"
+    },
+    {
+      "fenetre": null,
+      "id": "B18",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "capacité réservée",
+      "raison": "niveau de droits non demandé",
+      "statut": "non_lu",
+      "vue": "`region-eu`.INFORMATION_SCHEMA.RESERVATIONS"
+    },
+    {
+      "fenetre": null,
+      "id": "B19",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "`region-eu`.INFORMATION_SCHEMA.ROUTINES"
+    },
+    {
+      "fenetre": null,
+      "id": "B20",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "`region-eu`.INFORMATION_SCHEMA.VIEWS"
+    },
+    {
+      "fenetre": null,
+      "id": "B21",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "API models.list"
+    },
+    {
+      "fenetre": null,
+      "id": "B22",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "requêtes lancées depuis d'autres projets",
+      "raison": "niveau de droits non demandé",
+      "statut": "non_lu",
+      "vue": "`region-eu`.INFORMATION_SCHEMA.JOBS_BY_ORGANIZATION"
+    }
+  ],
+  "mode_sql": "lecture seule",
+  "mouvements": {
+    "base": [
+      "B03",
+      "B04",
+      "B05",
+      "B07",
+      "B10",
+      "B11",
+      "B12"
+    ],
+    "figée": 2,
+    "non_determine": 0,
+    "recréée": 0,
+    "regle": "recréée : DDL de moins de 7 jours sans écriture postérieure ; vivante : écriture de moins de 30 jours ; figée : dernière écriture plus ancienne ; non déterminée : écritures non lues",
+    "vivante": 7
+  },
+  "ne_part_pas": {
+    "colonnes_non_portables": 3,
+    "exemples": {
+      "fonction": [
+        "lab-a.mart.js_clean"
+      ],
+      "modele_ml": [
+        "lab-a.ml.churn"
+      ],
+      "partage": [
+        "lab-a.hub.listing_sales"
+      ],
+      "politique_lignes": [
+        "lab-a.raw.rap_country"
+      ],
+      "procedure": [
+        "lab-a.mart.sp_rebuild"
+      ],
+      "requete_planifiee": [
+        "lab-a.sq_daily_kpi",
+        "lab-a.sq_export",
+        "lab-a.sq_old",
+        "lab-a.sq_weekly"
+      ],
+      "vue": [
+        "lab-a.mart.v_legacy",
+        "lab-a.mart.v_sheet"
+      ],
+      "vue_materialisee": [
+        "lab-a.mart.mv_daily"
+      ]
+    },
+    "historique": {
+      "octets": {
+        "bas": null,
+        "base": [
+          "B07"
+        ],
+        "confiance": null,
+        "formule": "Time Travel + Fail-safe des tables présentes, + octets encore facturés des tables supprimées",
+        "haut": null,
+        "hypotheses": [],
+        "nature": "calculé",
+        "raison": null,
+        "unite": "octets",
+        "valeur": 250000000
+      },
+      "tables": 1
+    },
+    "objets_par_type": {
+      "fonction": 1,
+      "modele_ml": 1,
+      "partage": 1,
+      "politique_lignes": 1,
+      "procedure": 1,
+      "requete_planifiee": 4,
+      "vue": 2,
+      "vue_materialisee": 1
+    },
+    "routines_par_langage": {
+      "JAVASCRIPT": 1,
+      "SQL": 1
+    }
+  },
+  "niveau_droits": 3,
+  "non_estime": [
+    {
+      "raison": "non transmis par la collecte",
+      "sujet": "Stockage moyen facturé"
+    },
+    {
+      "raison": "prix de votre contrat non lu",
+      "sujet": "Coût du stockage"
+    },
+    {
+      "raison": "prix de votre contrat non lu",
+      "sujet": "Réservé, en dollars"
+    },
+    {
+      "raison": "prix de votre contrat non lu",
+      "sujet": "Coût de lecture de la copie (API Storage Read, sortie réseau)"
+    },
+    {
+      "raison": "prix de votre contrat non lu",
+      "sujet": "Tarif de votre contrat"
+    },
+    {
+      "raison": "dépendent de votre contrat et de votre architecture",
+      "sujet": "Stockage d'arrivée, double exploitation, fonctionnement après la sortie"
+    },
+    {
+      "raison": "accepté ≠ résultat identique : traduit vers DuckDB, non comparé ; un canot drill compare les résultats",
+      "sujet": "Résultat identique des requêtes traduites"
+    },
+    {
+      "raison": "non reprises : elles ne se vérifient pas depuis le scan",
+      "sujet": "Projections de coût fournies par la plateforme"
+    },
+    {
+      "raison": "partagé par le compte de facturation, non imputable par projet",
+      "sujet": "Palier gratuit BigQuery"
+    },
+    {
+      "raison": "absentes de INFORMATION_SCHEMA.JOBS",
+      "sujet": "Lectures par l'API Storage Read"
+    },
+    {
+      "raison": "valeur NULL dans INFORMATION_SCHEMA.JOBS",
+      "sujet": "Octets facturés des requêtes sous politique de lignes"
+    }
+  ],
+  "objets": [
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "lab-a.mart.js_clean",
+      "kind": "fonction",
+      "langage": "JAVASCRIPT",
+      "planification": null,
+      "proprietaire": null,
+      "reference": [],
+      "schema": "mart",
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "lab-a.ml.churn",
+      "kind": "modele_ml",
+      "langage": null,
+      "planification": null,
+      "proprietaire": null,
+      "reference": [],
+      "schema": "ml",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {
+        "abonnes": 1
+      },
+      "drapeaux": [
+        "F09"
+      ],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "lab-a.hub.listing_sales",
+      "kind": "partage",
+      "langage": null,
+      "planification": null,
+      "proprietaire": null,
+      "reference": [
+        "lab-a.raw.orders"
+      ],
+      "schema": "hub",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F10"
+      ],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "lab-a.raw.rap_country",
+      "kind": "politique_lignes",
+      "langage": null,
+      "planification": null,
+      "proprietaire": null,
+      "reference": [
+        "lab-a.raw.customers"
+      ],
+      "schema": "raw",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F08"
+      ],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "lab-a.mart.sp_rebuild",
+      "kind": "procedure",
+      "langage": "SQL",
+      "planification": null,
+      "proprietaire": null,
+      "reference": [],
+      "schema": "mart",
+      "sql_dynamique": true
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T06:00:00Z",
+      "detail": {},
+      "drapeaux": [
+        "F11"
+      ],
+      "echecs_n": 3,
+      "etat": "actif",
+      "executions_n": 180,
+      "externe": false,
+      "id": "lab-a.sq_daily_kpi",
+      "kind": "requete_planifiee",
+      "langage": null,
+      "planification": "every 24 hours",
+      "proprietaire": null,
+      "reference": [],
+      "schema": "lab-a",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [
+        "gs://lab-exports"
+      ],
+      "derniere_execution": null,
+      "detail": {
+        "ecriture_externe": true
+      },
+      "drapeaux": [
+        "F03",
+        "F11"
+      ],
+      "echecs_n": 0,
+      "etat": "actif",
+      "executions_n": 180,
+      "externe": false,
+      "id": "lab-a.sq_export",
+      "kind": "requete_planifiee",
+      "langage": null,
+      "planification": "every day 05:00",
+      "proprietaire": null,
+      "reference": [],
+      "schema": "lab-a",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F11"
+      ],
+      "echecs_n": 0,
+      "etat": "désactivée",
+      "executions_n": 0,
+      "externe": false,
+      "id": "lab-a.sq_old",
+      "kind": "requete_planifiee",
+      "langage": null,
+      "planification": "every 1 hours",
+      "proprietaire": null,
+      "reference": [],
+      "schema": "lab-a",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F11"
+      ],
+      "echecs_n": 0,
+      "etat": "actif",
+      "executions_n": 26,
+      "externe": false,
+      "id": "lab-a.sq_weekly",
+      "kind": "requete_planifiee",
+      "langage": null,
+      "planification": "every monday 06:00",
+      "proprietaire": null,
+      "reference": [],
+      "schema": "lab-a",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "lab-a.mart.v_legacy",
+      "kind": "vue",
+      "langage": null,
+      "planification": null,
+      "proprietaire": null,
+      "reference": [
+        "lab-a.raw.orders"
+      ],
+      "schema": "mart",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F02"
+      ],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "lab-a.mart.v_sheet",
+      "kind": "vue",
+      "langage": null,
+      "planification": null,
+      "proprietaire": null,
+      "reference": [
+        "lab-a.ext.sheet_targets"
+      ],
+      "schema": "mart",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "lab-a.mart.mv_daily",
+      "kind": "vue_materialisee",
+      "langage": null,
+      "planification": null,
+      "proprietaire": null,
+      "reference": [
+        "lab-a.raw.orders"
+      ],
+      "schema": "mart",
+      "sql_dynamique": null
+    }
+  ],
+  "perimetre": "projets lab-a (données) ; régions EU, europe-west1, US",
+  "plateforme": "bigquery",
+  "regles": {
+    "debit_mo_s": [
+      20.0,
+      80.0
+    ],
+    "horizon_lectures_jours": 180,
+    "recreee_jours": 7,
+    "vivante_jours": 30
+  },
+  "rejouabilite": {
+    "base": "1/3 familles, fenêtre non lue, sqlglot X, duckdb X",
+    "bases": {
+      "executions": "10/911 exécutions, fenêtre non lue, sqlglot X, duckdb X",
+      "familles": "1/3 familles, fenêtre non lue, sqlglot X, duckdb X",
+      "poids": "1 000 000/2 000 001 000 000 octets, fenêtre non lue, sqlglot X, duckdb X"
+    },
+    "categories": {
+      "C0": {
+        "executions": 10,
+        "familles": 1,
+        "poids": 1000000
+      },
+      "C1": {
+        "executions": 0,
+        "familles": 0,
+        "poids": 0
+      },
+      "C2": {
+        "executions": 0,
+        "familles": 0,
+        "poids": 0
+      },
+      "C3": {
+        "executions": 0,
+        "familles": 0,
+        "poids": 0
+      },
+      "C4": {
+        "executions": 1,
+        "familles": 1,
+        "poids": null
+      },
+      "C5": {
+        "executions": 900,
+        "familles": 1,
+        "poids": 2000000000000
+      },
+      "C6": {
+        "executions": 0,
+        "familles": 0,
+        "poids": 0
+      },
+      "C7": {
+        "executions": 2,
+        "familles": 1,
+        "poids": 50000
+      }
+    },
+    "fonctions": {
+      "predict": 1
+    },
+    "mention": "accepté ≠ résultat identique",
+    "non_testees": {
+      "executions": 0,
+      "familles": 0
+    },
+    "raison": null,
+    "secrets_ecartes": {
+      "executions": 1,
+      "familles": 1
+    },
+    "statut": "lu",
+    "taux": {
+      "executions": {
+        "bas": null,
+        "base": [
+          "B10",
+          "B11",
+          "B12"
+        ],
+        "confiance": null,
+        "formule": "traduit et accepté par DuckDB (C0) / C0 à C6 ; C7 compté à part",
+        "haut": null,
+        "hypotheses": [
+          "accepté ≠ résultat identique"
+        ],
+        "nature": "calculé",
+        "raison": null,
+        "unite": "%",
+        "valeur": 1.1
+      },
+      "familles": {
+        "bas": null,
+        "base": [
+          "B10",
+          "B11",
+          "B12"
+        ],
+        "confiance": null,
+        "formule": "traduit et accepté par DuckDB (C0) / C0 à C6 ; C7 compté à part",
+        "haut": null,
+        "hypotheses": [
+          "accepté ≠ résultat identique"
+        ],
+        "nature": "calculé",
+        "raison": null,
+        "unite": "%",
+        "valeur": 33.3
+      },
+      "poids": {
+        "bas": null,
+        "base": [
+          "B10",
+          "B11",
+          "B12"
+        ],
+        "confiance": null,
+        "formule": "traduit et accepté par DuckDB (C0) / C0 à C6 ; C7 compté à part",
+        "haut": null,
+        "hypotheses": [
+          "accepté ≠ résultat identique",
+          "poids lu pour 2/3 familles"
+        ],
+        "nature": "calculé",
+        "raison": null,
+        "unite": "%",
+        "valeur": 0.0
+      }
+    }
+  },
+  "resume": {
+    "DAF": [
+      "Mesuré sur 180 jours : 3,8 To facturés à la demande, 820,5 slot-heures en réservé ; les deux ne s'additionnent pas.",
+      "À la demande, fourchette catalogue : 0,00 à 21,88 $ ; réservé, non estimé : prix de votre contrat non lu.",
+      "Historique facturé qui ne part pas avec la copie : 250 Mo sur 1 table (F06, F07)."
+    ],
+    "DSI": [
+      "9 tables présentes (5 Go) et 11 objets à reconstruire hors tables.",
+      "Mouvement : 2 figée(s), 7 vivante(s), 0 recréée(s), 0 non déterminée(s).",
+      "Rejouabilité : 1/3 familles acceptées par DuckDB ; accepté ≠ résultat identique."
+    ],
+    "RSSI": [
+      "2 tables ou politiques à reconstruire côté sécurité (F10) ; la copie demande un principal non filtré.",
+      "3 dépendances externes (F01, F02), 2 écritures hors de la plateforme (F03), 1 partage avec consommateurs externes (F09).",
+      "Rôles propriétaires (F04) : sans objet sur BigQuery, où les droits sont portés par les datasets et les tables."
+    ]
+  },
+  "schema": "canot.scan/1",
+  "schemas_caches": [
+    "_tmp"
+  ],
+  "sources_prix": [
+    "https://cloud.google.com/bigquery/pricing"
+  ],
+  "tables": [
+    {
+      "base": "lab-a",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-06-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": "2026-10-15T08:00:00Z",
+        "n": 30
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "lab-a._tmp.scratch",
+      "lectures": {
+        "derniere": "2026-10-16T08:00:00Z",
+        "n": 6,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "nom": "scratch",
+      "octets_actifs": 50000000,
+      "octets_historique": 0,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": null,
+      "retention_jours": 1,
+      "schema": "_tmp",
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "lab-a",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-03-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [
+        "F05"
+      ],
+      "ecritures": {
+        "derniere": "2025-03-01T00:00:00Z",
+        "n": 0
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "lab-a.archive.archive_2023",
+      "lectures": {
+        "derniere": null,
+        "n": 0,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "figée",
+      "mouvement_preuve": "dernière écriture le 01/03/2025",
+      "nom": "archive_2023",
+      "octets_actifs": 3000000000,
+      "octets_historique": 0,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": null,
+      "retention_jours": 7,
+      "schema": "archive",
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "lab-a",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-06-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [
+        "F01"
+      ],
+      "ecritures": {
+        "derniere": "2026-10-15T08:00:00Z",
+        "n": 30
+      },
+      "etiquettes_n": 0,
+      "externe_uri": "gs://lab-bucket",
+      "flags": [],
+      "id": "lab-a.ext.gcs_events",
+      "lectures": {
+        "derniere": "2026-10-16T08:00:00Z",
+        "n": 4,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "nom": "gcs_events",
+      "octets_actifs": null,
+      "octets_historique": null,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": null,
+      "retention_jours": 1,
+      "schema": "ext",
+      "supprimee_le": null,
+      "type": "EXTERNE"
+    },
+    {
+      "base": "lab-a",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-06-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [
+        "F01"
+      ],
+      "ecritures": {
+        "derniere": "2026-10-15T08:00:00Z",
+        "n": 30
+      },
+      "etiquettes_n": 0,
+      "externe_uri": "docs.google.com",
+      "flags": [],
+      "id": "lab-a.ext.sheet_targets",
+      "lectures": {
+        "derniere": "2026-10-16T08:00:00Z",
+        "n": 2,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "nom": "sheet_targets",
+      "octets_actifs": null,
+      "octets_historique": null,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": null,
+      "retention_jours": 1,
+      "schema": "ext",
+      "supprimee_le": null,
+      "type": "EXTERNE"
+    },
+    {
+      "base": "lab-a",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 2,
+      "colonnes_non_portables": [
+        {
+          "nom": "geo",
+          "type": "GEOGRAPHY"
+        }
+      ],
+      "derniere_ddl": "2025-06-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [
+        "F10"
+      ],
+      "ecritures": {
+        "derniere": "2026-10-15T08:00:00Z",
+        "n": 30
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "lab-a.raw.customers",
+      "lectures": {
+        "derniere": "2026-10-16T08:00:00Z",
+        "n": 33,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "nom": "customers",
+      "octets_actifs": 200000000,
+      "octets_historique": 0,
+      "partitionnement": null,
+      "politiques": [
+        "pt-pii",
+        "rap_country"
+      ],
+      "proprietaire": null,
+      "retention_jours": 1,
+      "schema": "raw",
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "lab-a",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 2,
+      "colonnes_non_portables": [
+        {
+          "nom": "payload",
+          "type": "JSON"
+        },
+        {
+          "nom": "ctx",
+          "type": "STRUCT<a INT64, b STRING>"
+        }
+      ],
+      "derniere_ddl": "2025-06-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": "2026-10-15T08:00:00Z",
+        "n": 30
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "lab-a.raw.events_20261001",
+      "lectures": {
+        "derniere": "2026-10-16T08:00:00Z",
+        "n": 14,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "nom": "events_20261001",
+      "octets_actifs": 120000000,
+      "octets_historique": 0,
+      "partitionnement": "_PARTITIONTIME",
+      "politiques": [],
+      "proprietaire": null,
+      "retention_jours": 1,
+      "schema": "raw",
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "lab-a",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-06-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [
+        "F06"
+      ],
+      "ecritures": {
+        "derniere": "2026-10-15T08:00:00Z",
+        "n": 30
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "lab-a.raw.orders",
+      "lectures": {
+        "derniere": "2026-10-16T08:00:00Z",
+        "n": 80,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "nom": "orders",
+      "octets_actifs": 900000000,
+      "octets_historique": 250000000,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": null,
+      "retention_jours": 7,
+      "schema": "raw",
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "lab-a",
+      "clone_de": "lab-a.raw.orders",
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-06-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": "2026-10-15T08:00:00Z",
+        "n": 30
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "lab-a.raw.orders_snap",
+      "lectures": {
+        "derniere": "2026-10-16T08:00:00Z",
+        "n": 1,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "nom": "orders_snap",
+      "octets_actifs": 10000000,
+      "octets_historique": 0,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": null,
+      "retention_jours": 1,
+      "schema": "raw",
+      "supprimee_le": null,
+      "type": "SNAPSHOT"
+    },
+    {
+      "base": "lab-a",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-06-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [
+        "F05"
+      ],
+      "ecritures": {
+        "derniere": "2026-09-01T00:00:00Z",
+        "n": 30
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "lab-a.raw.read_by_api_only",
+      "lectures": {
+        "derniere": null,
+        "n": 0,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "figée",
+      "mouvement_preuve": "dernière écriture le 01/09/2026",
+      "nom": "read_by_api_only",
+      "octets_actifs": 700000000,
+      "octets_historique": 0,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": null,
+      "retention_jours": 1,
+      "schema": "raw",
+      "supprimee_le": null,
+      "type": "TABLE"
+    }
+  ],
+  "versions": {
+    "canot": "X",
+    "duckdb": "X",
+    "sqlglot": "X"
+  }
+}

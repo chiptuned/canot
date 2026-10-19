@@ -13,16 +13,15 @@ def _p(*a):
     print(*a, flush=True)
 
 
-HINTS = {
-    "mcp": ("MCP", "mcp"), "google.cloud": ("BigQuery", "bigquery"), "snowflake": ("Snowflake", "snowflake"), "databricks": ("Databricks", "databricks"),
-}
 
 
 def explain(exc: BaseException, argv: list[str]) -> str | None:
     """Une phrase claire pour les erreurs que tout premier utilisateur rencontre (connecteur absent, identifiants absents)."""
+    from .connectors import driver_hints
+
     name = type(exc).__name__
     if isinstance(exc, ModuleNotFoundError) and exc.name:
-        for prefix, (label, extra) in HINTS.items():
+        for prefix, (label, extra) in {"mcp": ("MCP", "mcp"), **driver_hints()}.items():
             if exc.name.startswith(prefix):
                 return (f"Il manque le connecteur {label}. Lancez : uvx --from \"canot[{extra}]\" canot {' '.join(argv)}\n"
                         f"ou installez-le : pip install 'canot[{extra}]'  (ou 'canot[all]' pour les trois).")
@@ -55,7 +54,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
 
-def run(argv: list[str] | None = None) -> int:
+def parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="canot", description="Prouvez que vous pouvez partir.")
     ap.add_argument("--version", action="version", version=__version__)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -111,7 +110,12 @@ def run(argv: list[str] | None = None) -> int:
     dd.add_argument("path")
     dd.add_argument("--rows", type=int, default=20_000)
     dd.add_argument("--retail", action="store_true", help="jeu fictif de distributeur (tickets avec lignes imbriquées)")
+    sub.add_parser("connecteurs", help="les plateformes connues : inventaire, export, preuve, statut de validation")
+    return ap
 
+
+def run(argv: list[str] | None = None) -> int:
+    ap = parser()
     a = ap.parse_args(argv)
     if a.cmd in ("scan", "drill"):
         a.src = a.src or a.source
@@ -144,6 +148,11 @@ def run(argv: list[str] | None = None) -> int:
             sql = sql.replace("<clé publique, sans les lignes BEGIN/END>", pub)
             print(f"-- Clé privée : {kp} (reste sur cette machine). Puis : export SNOWFLAKE_PRIVATE_KEY_PATH={kp}", file=sys.stderr)
         _p(sql)
+        return 0
+    if a.cmd == "connecteurs":
+        from .connectors import table
+
+        _p(table())
         return 0
     if a.cmd == "mcp":
         from .agent import serve
@@ -222,7 +231,9 @@ def run(argv: list[str] | None = None) -> int:
 
     src = open_source(a.src)
     try:
-        if a.cmd == "scan" and src.dialect in ("snowflake", "bigquery"):
+        from .connectors import supports_full
+
+        if a.cmd == "scan" and supports_full(src):
             from collections import Counter
 
             from .scanner.run import LEVELS, scan_full

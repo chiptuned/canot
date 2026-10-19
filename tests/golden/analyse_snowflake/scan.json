@@ -1,0 +1,2872 @@
+{
+  "as_of": "2026-10-17T10:00:00Z",
+  "avec_sql_brut": false,
+  "cout_du_scan": {
+    "duree": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "mesuré",
+      "raison": null,
+      "unite": "secondes",
+      "valeur": 412.0
+    },
+    "lectures": {
+      "lu": 33,
+      "non_lu": 2,
+      "total": 35
+    },
+    "requetes": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "mesuré",
+      "raison": null,
+      "unite": "requêtes",
+      "valeur": 35
+    }
+  },
+  "couts": {
+    "credits": {
+      "bas": null,
+      "base": [
+        "S05"
+      ],
+      "confiance": null,
+      "formule": "somme des crédits par service sur 365 jours",
+      "haut": null,
+      "hypotheses": [],
+      "nature": "calculé",
+      "raison": null,
+      "unite": "crédits",
+      "valeur": 43.5
+    },
+    "credits_par_entrepot": [
+      {
+        "credits": {
+          "bas": null,
+          "base": [
+            "S06"
+          ],
+          "confiance": null,
+          "formule": null,
+          "haut": null,
+          "hypotheses": [],
+          "nature": "mesuré",
+          "raison": null,
+          "unite": "crédits",
+          "valeur": 40.0
+        },
+        "entrepot": "CANOT_WH"
+      },
+      {
+        "credits": {
+          "bas": null,
+          "base": [
+            "S06"
+          ],
+          "confiance": null,
+          "formule": null,
+          "haut": null,
+          "hypotheses": [],
+          "nature": "mesuré",
+          "raison": null,
+          "unite": "crédits",
+          "valeur": 1.5
+        },
+        "entrepot": "COMPUTE_WH"
+      }
+    ],
+    "credits_par_service": [
+      {
+        "credits": {
+          "bas": null,
+          "base": [
+            "S05"
+          ],
+          "confiance": null,
+          "formule": null,
+          "haut": null,
+          "hypotheses": [],
+          "nature": "mesuré",
+          "raison": null,
+          "unite": "crédits",
+          "valeur": 41.5
+        },
+        "service": "WAREHOUSE_METERING"
+      },
+      {
+        "credits": {
+          "bas": null,
+          "base": [
+            "S05"
+          ],
+          "confiance": null,
+          "formule": null,
+          "haut": null,
+          "hypotheses": [],
+          "nature": "mesuré",
+          "raison": null,
+          "unite": "crédits",
+          "valeur": 1.2
+        },
+        "service": "SERVERLESS_TASK"
+      },
+      {
+        "credits": {
+          "bas": null,
+          "base": [
+            "S05"
+          ],
+          "confiance": null,
+          "formule": null,
+          "haut": null,
+          "hypotheses": [],
+          "nature": "mesuré",
+          "raison": null,
+          "unite": "crédits",
+          "valeur": 0.8
+        },
+        "service": "AUTO_CLUSTERING"
+      }
+    ],
+    "fenetre_jours": 365,
+    "monnaie": {
+      "bas": 113.1,
+      "base": [
+        "S05"
+      ],
+      "confiance": "basse",
+      "formule": "crédits × prix catalogue du crédit, du plus bas au plus haut",
+      "haut": 226.2,
+      "hypotheses": [
+        "prix catalogue Snowflake du 17/10/2026, AWS Paris/Francfort : 2,60 $ (Standard) à 5,20 $ (Business Critical), https://www.snowflake.com/pricing/pricing-guide/",
+        "prix de votre contrat non lu ; votre région peut différer"
+      ],
+      "nature": "estimé",
+      "raison": null,
+      "unite": "USD",
+      "valeur": null
+    },
+    "note": "Crédits mesurés ; en dollars, seulement avec le prix fourni ou une fourchette catalogue datée.",
+    "stockage_monnaie": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_estimé",
+      "raison": "prix de votre contrat non lu",
+      "unite": "USD",
+      "valeur": null
+    },
+    "stockage_octets_moyens": {
+      "bas": null,
+      "base": [
+        "S04"
+      ],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "mesuré",
+      "raison": null,
+      "unite": "octets",
+      "valeur": 24000000000
+    },
+    "transferts": []
+  },
+  "dependances": {
+    "aretes": [
+      [
+        "CANOT_LAB.MART.DT_COUNTRY_REVENUE",
+        "CANOT_LAB.MART.FCT_ORDERS"
+      ],
+      [
+        "CANOT_LAB.MART.V_KPI",
+        "CANOT_LAB.STG.V_STATES"
+      ],
+      [
+        "CANOT_LAB.OPS.MP_EMAIL",
+        "CANOT_LAB.RAW.CUSTOMERS"
+      ],
+      [
+        "CANOT_LAB.OPS.ORDERS_STREAM",
+        "CANOT_LAB.RAW.ORDERS"
+      ],
+      [
+        "CANOT_LAB.OPS.PII",
+        "CANOT_LAB.RAW.CUSTOMERS"
+      ],
+      [
+        "CANOT_LAB.OPS.P_EVENTS",
+        "CANOT_LAB.OPS.EVENTS_LOG"
+      ],
+      [
+        "CANOT_LAB.OPS.P_EVENTS",
+        "CANOT_LAB.RAW.INT_STAGE"
+      ],
+      [
+        "CANOT_LAB.OPS.RAP_COUNTRY",
+        "CANOT_LAB.MART.FCT_ORDERS"
+      ],
+      [
+        "CANOT_LAB.STAGING.STG_ORDERS",
+        "CANOT_LAB.RAW.ORDERS"
+      ],
+      [
+        "CANOT_LAB.STG.V_STATES",
+        "CANOT_LAB.EXT.US_STATES"
+      ],
+      [
+        "S_CLIENTS",
+        "CANOT_LAB.MART.FCT_ORDERS"
+      ],
+      [
+        "S_CLIENTS",
+        "CANOT_LAB.RAW.ARCHIVE_1"
+      ]
+    ],
+    "base": [
+      "S10",
+      "S11",
+      "S24"
+    ],
+    "cachees": [
+      {
+        "chemin": [
+          "CANOT_LAB.MART.V_KPI",
+          "CANOT_LAB.STG.V_STATES",
+          "CANOT_LAB.EXT.US_STATES"
+        ],
+        "emplacements": [
+          "s3://canot-lab-public"
+        ],
+        "id": "CANOT_LAB.MART.V_KPI"
+      },
+      {
+        "chemin": [
+          "CANOT_LAB.STG.V_STATES",
+          "CANOT_LAB.EXT.US_STATES"
+        ],
+        "emplacements": [
+          "s3://canot-lab-public"
+        ],
+        "id": "CANOT_LAB.STG.V_STATES"
+      }
+    ],
+    "clients": [
+      {
+        "outil": "dbt-snowflake",
+        "sessions": 2190
+      },
+      {
+        "outil": "looker",
+        "sessions": 310
+      }
+    ],
+    "consommateurs": [
+      {
+        "comptes": 2,
+        "id": "S_CLIENTS"
+      }
+    ],
+    "ecritures_externes": [
+      {
+        "cible": "dddddddddddd",
+        "cible_type": "famille",
+        "emplacements": [
+          "s3://canot-lab-export"
+        ],
+        "mode": "observé"
+      },
+      {
+        "cible": "CANOT_LAB.OPS.T_EXPORT_NIGHTLY",
+        "cible_type": "objet",
+        "emplacements": [
+          "s3://canot-lab-export"
+        ],
+        "mode": "déclaré"
+      }
+    ],
+    "externes": [
+      {
+        "emplacements": [
+          "s3://canot-lab-public"
+        ],
+        "id": "CANOT_LAB.EXT.S3_PUBLIC",
+        "type": "stage"
+      },
+      {
+        "emplacements": [],
+        "id": "SNOWFLAKE_SAMPLE_DATA",
+        "type": "base_importee"
+      },
+      {
+        "emplacements": [
+          "s3://canot-lab-public"
+        ],
+        "id": "CANOT_LAB.EXT.US_STATES",
+        "type": "table"
+      }
+    ],
+    "outils": [
+      {
+        "executions": 340,
+        "familles": 1,
+        "outil": "looker"
+      },
+      {
+        "executions": 72,
+        "familles": 1,
+        "outil": "dbt-snowflake"
+      },
+      {
+        "executions": 60,
+        "familles": 2,
+        "outil": "airflow"
+      },
+      {
+        "executions": 25,
+        "familles": 1,
+        "outil": "notebook"
+      },
+      {
+        "executions": 12,
+        "familles": 1,
+        "outil": "bi-sim"
+      }
+    ]
+  },
+  "drapeaux": [
+    {
+      "base": [
+        "S19"
+      ],
+      "cible": "CANOT_LAB.EXT.S3_PUBLIC",
+      "cible_type": "objet",
+      "code": "F01",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Dépendance externe",
+      "preuve": {
+        "emplacements": [
+          "s3://canot-lab-public"
+        ],
+        "type": "stage"
+      },
+      "texte": "Stage externe (s3://canot-lab-public)."
+    },
+    {
+      "base": [
+        "S20"
+      ],
+      "cible": "SNOWFLAKE_SAMPLE_DATA",
+      "cible_type": "objet",
+      "code": "F01",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Dépendance externe",
+      "preuve": {
+        "emplacements": [],
+        "type": "base_importee"
+      },
+      "texte": "Base importée d'un partage entrant."
+    },
+    {
+      "base": [
+        "S01"
+      ],
+      "cible": "CANOT_LAB.EXT.US_STATES",
+      "cible_type": "table",
+      "code": "F01",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Dépendance externe",
+      "preuve": {
+        "emplacements": [
+          "s3://canot-lab-public"
+        ],
+        "type": "table"
+      },
+      "texte": "Table externe : données hors de la plateforme (s3://canot-lab-public)."
+    },
+    {
+      "base": [
+        "S10",
+        "S11"
+      ],
+      "cible": "CANOT_LAB.MART.V_KPI",
+      "cible_type": "objet",
+      "code": "F02",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Dépendance externe cachée",
+      "preuve": {
+        "chemin": [
+          "CANOT_LAB.MART.V_KPI",
+          "CANOT_LAB.STG.V_STATES",
+          "CANOT_LAB.EXT.US_STATES"
+        ],
+        "emplacements": [
+          "s3://canot-lab-public"
+        ]
+      },
+      "texte": "Dépend de CANOT_LAB.EXT.US_STATES, hors de la plateforme, par 2 niveaux : CANOT_LAB.MART.V_KPI → CANOT_LAB.STG.V_STATES → CANOT_LAB.EXT.US_STATES (s3://canot-lab-public)."
+    },
+    {
+      "base": [
+        "S10",
+        "S11"
+      ],
+      "cible": "CANOT_LAB.STG.V_STATES",
+      "cible_type": "objet",
+      "code": "F02",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Dépendance externe cachée",
+      "preuve": {
+        "chemin": [
+          "CANOT_LAB.STG.V_STATES",
+          "CANOT_LAB.EXT.US_STATES"
+        ],
+        "emplacements": [
+          "s3://canot-lab-public"
+        ]
+      },
+      "texte": "Dépend de CANOT_LAB.EXT.US_STATES, hors de la plateforme, par 1 niveau : CANOT_LAB.STG.V_STATES → CANOT_LAB.EXT.US_STATES (s3://canot-lab-public)."
+    },
+    {
+      "base": [
+        "S24"
+      ],
+      "cible": "dddddddddddd",
+      "cible_type": "famille",
+      "code": "F03",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Écriture hors de la plateforme",
+      "preuve": {
+        "emplacements": [
+          "s3://canot-lab-export"
+        ],
+        "mode": "observé",
+        "n_exec": 30,
+        "tables": []
+      },
+      "texte": "Écriture hors de la plateforme observée : 30 exécutions (airflow) ; destination : s3://canot-lab-export."
+    },
+    {
+      "base": [
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "cible": "CANOT_LAB.OPS.T_EXPORT_NIGHTLY",
+      "cible_type": "objet",
+      "code": "F03",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Écriture hors de la plateforme",
+      "preuve": {
+        "emplacements": [
+          "s3://canot-lab-export"
+        ],
+        "mode": "déclaré"
+      },
+      "texte": "Tâche qui écrit hors de la plateforme (déclaré dans sa définition) ; destination : s3://canot-lab-export."
+    },
+    {
+      "base": [
+        "S28",
+        "S29"
+      ],
+      "cible": "LAB_ORPHAN",
+      "cible_type": "role",
+      "code": "F04",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Rôle propriétaire sans titulaire",
+      "preuve": {
+        "exemples": [
+          "CANOT_LAB.SANDBOX.OLD_EXPORT_2023"
+        ],
+        "objets_n": 1
+      },
+      "texte": "Le rôle LAB_ORPHAN possède 1 objet et n'est accordé à aucun utilisateur, ni directement ni par un autre rôle."
+    },
+    {
+      "base": [
+        "S03",
+        "S25"
+      ],
+      "cible": "CANOT_LAB.RAW.ARCHIVE_1",
+      "cible_type": "table",
+      "code": "F05",
+      "confiance": "haute",
+      "etiquette": "À examiner",
+      "libelle": "Stockage sans lecture observée",
+      "preuve": {
+        "au": "2026-10-17",
+        "du": "2025-10-18",
+        "jours": 364,
+        "non_vus": [
+          "consommateurs de partages",
+          "RESULT_SCAN"
+        ],
+        "octets_actifs": 5000000000,
+        "source": "ACCESS_HISTORY"
+      },
+      "texte": "5 Go stockés. Aucune lecture observée dans ACCESS_HISTORY du 18/10/2025 au 17/10/2026 ; non vus : consommateurs de partages, RESULT_SCAN. Partagée avec 2 consommateurs externes : leurs lectures ne sont pas vues."
+    },
+    {
+      "base": [
+        "S03",
+        "S25"
+      ],
+      "cible": "CANOT_LAB.RAW.ARCHIVE_2",
+      "cible_type": "table",
+      "code": "F05",
+      "confiance": "haute",
+      "etiquette": "À examiner",
+      "libelle": "Stockage sans lecture observée",
+      "preuve": {
+        "au": "2026-10-17",
+        "du": "2025-10-18",
+        "jours": 364,
+        "non_vus": [
+          "consommateurs de partages",
+          "RESULT_SCAN"
+        ],
+        "octets_actifs": 5000000000,
+        "source": "ACCESS_HISTORY"
+      },
+      "texte": "5 Go stockés. Aucune lecture observée dans ACCESS_HISTORY du 18/10/2025 au 17/10/2026 ; non vus : consommateurs de partages, RESULT_SCAN."
+    },
+    {
+      "base": [
+        "S03",
+        "S25"
+      ],
+      "cible": "CANOT_LAB.RAW.ARCHIVE_3",
+      "cible_type": "table",
+      "code": "F05",
+      "confiance": "haute",
+      "etiquette": "À examiner",
+      "libelle": "Stockage sans lecture observée",
+      "preuve": {
+        "au": "2026-10-17",
+        "du": "2025-10-18",
+        "jours": 364,
+        "non_vus": [
+          "consommateurs de partages",
+          "RESULT_SCAN"
+        ],
+        "octets_actifs": 5000000000,
+        "source": "ACCESS_HISTORY"
+      },
+      "texte": "5 Go stockés. Aucune lecture observée dans ACCESS_HISTORY du 18/10/2025 au 17/10/2026 ; non vus : consommateurs de partages, RESULT_SCAN."
+    },
+    {
+      "base": [
+        "S03"
+      ],
+      "cible": "CANOT_LAB.RAW.ORDERS",
+      "cible_type": "table",
+      "code": "F06",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Historique payé non transférable",
+      "preuve": {
+        "octets_actifs": 2000000000,
+        "octets_historique": 6000000000,
+        "retention_jours": 30
+      },
+      "texte": "6 Go d'historique facturé (Time Travel et Fail-safe), rétention 30 jours, pour 2 Go actifs ; cet historique ne part pas avec la copie."
+    },
+    {
+      "base": [
+        "S01",
+        "S03"
+      ],
+      "cible": "CANOT_LAB.RAW.TMP_DROPPED",
+      "cible_type": "table",
+      "code": "F07",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Table supprimée encore facturée",
+      "preuve": {
+        "octets": 300000000,
+        "supprimee_le": "2026-10-10T12:00:00Z"
+      },
+      "texte": "Supprimée le 10/10/2026 ; 300 Mo encore facturés (Time Travel et Fail-safe)."
+    },
+    {
+      "base": [
+        "S13"
+      ],
+      "cible": "CANOT_LAB.MART.SP_DYNAMIC_JS",
+      "cible_type": "objet",
+      "code": "F08",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "SQL dynamique",
+      "preuve": {
+        "langage": "JAVASCRIPT"
+      },
+      "texte": "Procédure en JAVASCRIPT : construit du SQL à l'exécution ; les objets touchés ne se lisent pas dans le code."
+    },
+    {
+      "base": [
+        "S13"
+      ],
+      "cible": "CANOT_LAB.MART.SP_DYNAMIC_PY",
+      "cible_type": "objet",
+      "code": "F08",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "SQL dynamique",
+      "preuve": {
+        "langage": "PYTHON"
+      },
+      "texte": "Procédure en PYTHON : construit du SQL à l'exécution ; les objets touchés ne se lisent pas dans le code."
+    },
+    {
+      "base": [
+        "S32"
+      ],
+      "cible": "S_CLIENTS",
+      "cible_type": "objet",
+      "code": "F09",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Consommateurs externes",
+      "preuve": {
+        "consommateurs": 2,
+        "objets": [
+          "CANOT_LAB.MART.FCT_ORDERS",
+          "CANOT_LAB.RAW.ARCHIVE_1"
+        ]
+      },
+      "texte": "Partage vers 2 comptes cibles ; 2 objets partagés. Les lectures des consommateurs ne sont pas vues par ce scan."
+    },
+    {
+      "base": [
+        "S26"
+      ],
+      "cible": "CANOT_LAB.OPS.MP_EMAIL",
+      "cible_type": "objet",
+      "code": "F10",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Sécurité à reconstruire",
+      "preuve": {
+        "objets": [
+          "CANOT_LAB.RAW.CUSTOMERS"
+        ]
+      },
+      "texte": "Politique de masquage appliquée à 1 objet ; elle ne part pas avec la copie ; la copie demande un principal non filtré."
+    },
+    {
+      "base": [
+        "S27"
+      ],
+      "cible": "CANOT_LAB.OPS.PII",
+      "cible_type": "objet",
+      "code": "F10",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Sécurité à reconstruire",
+      "preuve": {
+        "objets": [
+          "CANOT_LAB.RAW.CUSTOMERS"
+        ]
+      },
+      "texte": "Étiquette appliquée à 1 objet ; elle ne part pas avec la copie."
+    },
+    {
+      "base": [
+        "S26"
+      ],
+      "cible": "CANOT_LAB.OPS.RAP_COUNTRY",
+      "cible_type": "objet",
+      "code": "F10",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Sécurité à reconstruire",
+      "preuve": {
+        "objets": [
+          "CANOT_LAB.MART.FCT_ORDERS"
+        ]
+      },
+      "texte": "Politique de lignes appliquée à 1 objet ; elle ne part pas avec la copie ; la copie demande un principal non filtré."
+    },
+    {
+      "base": [
+        "S26",
+        "S27"
+      ],
+      "cible": "CANOT_LAB.MART.FCT_ORDERS",
+      "cible_type": "table",
+      "code": "F10",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Sécurité à reconstruire",
+      "preuve": {
+        "etiquettes_n": 0,
+        "politiques": [
+          "OPS.RAP_COUNTRY"
+        ]
+      },
+      "texte": "Politiques : OPS.RAP_COUNTRY. Elles ne partent pas avec la copie ; la copie demande un principal non filtré par ces politiques."
+    },
+    {
+      "base": [
+        "S26",
+        "S27"
+      ],
+      "cible": "CANOT_LAB.RAW.CUSTOMERS",
+      "cible_type": "table",
+      "code": "F10",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Sécurité à reconstruire",
+      "preuve": {
+        "etiquettes_n": 1,
+        "politiques": [
+          "OPS.MP_EMAIL"
+        ]
+      },
+      "texte": "Politiques : OPS.MP_EMAIL ; 1 étiquette. Elles ne partent pas avec la copie ; la copie demande un principal non filtré par ces politiques."
+    },
+    {
+      "base": [
+        "S22"
+      ],
+      "cible": "CANOT_LAB.MART.DT_COUNTRY_REVENUE",
+      "cible_type": "objet",
+      "code": "F11",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Chaîne planifiée et ses échecs",
+      "preuve": {
+        "chaine": [
+          "CANOT_LAB.MART.DT_COUNTRY_REVENUE"
+        ],
+        "echecs_n": null,
+        "etat": null,
+        "executions_n": null
+      },
+      "texte": "Table dynamique, planification 1 day ; exécutions non lues."
+    },
+    {
+      "base": [],
+      "cible": "CANOT_LAB.OPS.ORDERS_STREAM",
+      "cible_type": "objet",
+      "code": "F11",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Chaîne planifiée et ses échecs",
+      "preuve": {
+        "chaine": [
+          "CANOT_LAB.OPS.ORDERS_STREAM"
+        ],
+        "echecs_n": null,
+        "etat": null,
+        "executions_n": null
+      },
+      "texte": "Flux ; sur CANOT_LAB.RAW.ORDERS."
+    },
+    {
+      "base": [
+        "S17",
+        "S18"
+      ],
+      "cible": "CANOT_LAB.OPS.P_EVENTS",
+      "cible_type": "objet",
+      "code": "F11",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Chaîne planifiée et ses échecs",
+      "preuve": {
+        "chaine": [
+          "CANOT_LAB.OPS.P_EVENTS"
+        ],
+        "echecs_n": null,
+        "etat": "RUNNING",
+        "executions_n": null
+      },
+      "texte": "Pipe, état RUNNING ; exécutions non lues."
+    },
+    {
+      "base": [
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "cible": "CANOT_LAB.OPS.T_DAILY",
+      "cible_type": "objet",
+      "code": "F11",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Chaîne planifiée et ses échecs",
+      "preuve": {
+        "chaine": [
+          "CANOT_LAB.OPS.T_DAILY"
+        ],
+        "echecs_n": 2,
+        "etat": "started",
+        "executions_n": 365
+      },
+      "texte": "Tâche, planification USING CRON 0 3 * * * Europe/Paris, état started ; 365 exécutions, 2 échecs, dernière le 17/10/2026."
+    },
+    {
+      "base": [
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "cible": "CANOT_LAB.OPS.T_EXPORT_NIGHTLY",
+      "cible_type": "objet",
+      "code": "F11",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Chaîne planifiée et ses échecs",
+      "preuve": {
+        "chaine": [
+          "CANOT_LAB.OPS.T_EXPORT_NIGHTLY"
+        ],
+        "echecs_n": 30,
+        "etat": "started",
+        "executions_n": 30
+      },
+      "texte": "Tâche, planification USING CRON 0 2 * * * UTC, état started ; 30 exécutions, 30 échecs, dernière le 17/10/2026."
+    },
+    {
+      "base": [
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "cible": "CANOT_LAB.OPS.T_REFRESH",
+      "cible_type": "objet",
+      "code": "F11",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Chaîne planifiée et ses échecs",
+      "preuve": {
+        "chaine": [
+          "CANOT_LAB.OPS.T_DAILY",
+          "CANOT_LAB.OPS.T_REFRESH"
+        ],
+        "echecs_n": 0,
+        "etat": "started",
+        "executions_n": 365
+      },
+      "texte": "Tâche, état started ; 365 exécutions, 0 échec, dernière le 17/10/2026 ; chaîne : CANOT_LAB.OPS.T_DAILY → CANOT_LAB.OPS.T_REFRESH."
+    },
+    {
+      "base": [
+        "S14",
+        "S15",
+        "S16"
+      ],
+      "cible": "CANOT_LAB.OPS.T_SERVERLESS",
+      "cible_type": "objet",
+      "code": "F11",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Chaîne planifiée et ses échecs",
+      "preuve": {
+        "chaine": [
+          "CANOT_LAB.OPS.T_SERVERLESS"
+        ],
+        "echecs_n": 0,
+        "etat": "suspended",
+        "executions_n": 0
+      },
+      "texte": "Tâche, planification 60 MINUTE, état suspended ; 0 exécution, 0 échec."
+    },
+    {
+      "base": [],
+      "cible": "S33",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "droit absent",
+        "vue": "SNOWFLAKE.ACCOUNT_USAGE.STREAMS"
+      },
+      "texte": "STREAMS non lue (droit absent) ; limite : flux (F11)."
+    },
+    {
+      "base": [],
+      "cible": "S34",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "droit absent",
+        "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASK_VERSIONS"
+      },
+      "texte": "TASK_VERSIONS non lue (droit absent) ; limite : versions des tâches (F11)."
+    },
+    {
+      "base": [
+        "S09",
+        "S25"
+      ],
+      "cible": "lectures_par_table",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "tables": [
+          "CANOT_LAB.MART.DIM_LEGACY"
+        ]
+      },
+      "texte": "Lectures non déterminées pour 1 table ; limite : stockage sans lecture observée (F05)."
+    }
+  ],
+  "edition": "enterprise",
+  "f04_lu": true,
+  "familles": [
+    {
+      "app": null,
+      "categorie": "C0",
+      "compartiments": [],
+      "credits": 1.8,
+      "ecriture_externe": false,
+      "empreinte": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "entrepot": "CANOT_WH",
+      "fonctions": [],
+      "hash_plateforme": null,
+      "n_exec": 340,
+      "octets": null,
+      "outil": "looker",
+      "sql_normalise": "SELECT country, SUM(total) FROM MART.FCT_ORDERS WHERE order_date >= ? GROUP BY country",
+      "tables": [
+        "CANOT_LAB.MART.FCT_ORDERS"
+      ],
+      "temps_ms": 40800.0
+    },
+    {
+      "app": "dbt",
+      "categorie": "C7",
+      "compartiments": [],
+      "credits": 4.2,
+      "ecriture_externe": false,
+      "empreinte": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "entrepot": "CANOT_WH",
+      "fonctions": [],
+      "hash_plateforme": null,
+      "n_exec": 72,
+      "octets": null,
+      "outil": "dbt-snowflake",
+      "sql_normalise": "MERGE INTO DBT.FCT USING (SELECT * FROM RAW.ORDERS WHERE x = ?) AS s ON ? WHEN MATCHED THEN UPDATE SET y = ?",
+      "tables": [
+        "CANOT_LAB.RAW.ORDERS"
+      ],
+      "temps_ms": 8640.0
+    },
+    {
+      "app": null,
+      "categorie": "C7",
+      "compartiments": [
+        "s3://canot-lab-export"
+      ],
+      "credits": null,
+      "ecriture_externe": true,
+      "empreinte": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "entrepot": "CANOT_WH",
+      "fonctions": [],
+      "hash_plateforme": null,
+      "n_exec": 30,
+      "octets": null,
+      "outil": "airflow",
+      "sql_normalise": "COPY INTO @EXT.S3_PUBLIC FROM (SELECT * FROM OPS.EVENTS_LOG)",
+      "tables": [],
+      "temps_ms": 3600.0
+    },
+    {
+      "app": null,
+      "categorie": "C7",
+      "compartiments": [],
+      "credits": null,
+      "ecriture_externe": false,
+      "empreinte": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "entrepot": "CANOT_WH",
+      "fonctions": [],
+      "hash_plateforme": null,
+      "n_exec": 30,
+      "octets": null,
+      "outil": "airflow",
+      "sql_normalise": "COPY INTO @RAW.INT_STAGE FROM (SELECT * FROM OPS.EVENTS_LOG)",
+      "tables": [],
+      "temps_ms": 3600.0
+    },
+    {
+      "app": null,
+      "categorie": "C4",
+      "compartiments": [],
+      "credits": null,
+      "ecriture_externe": false,
+      "empreinte": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "entrepot": "CANOT_WH",
+      "fonctions": [
+        "flatten",
+        "lateral"
+      ],
+      "hash_plateforme": null,
+      "n_exec": 25,
+      "octets": null,
+      "outil": "notebook",
+      "sql_normalise": "SELECT f.value:k::STRING FROM RAW.EVENTS, LATERAL FLATTEN(input => props) AS f",
+      "tables": [],
+      "temps_ms": 3000.0
+    },
+    {
+      "app": null,
+      "categorie": "C0",
+      "compartiments": [],
+      "credits": null,
+      "ecriture_externe": false,
+      "empreinte": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "entrepot": "CANOT_WH",
+      "fonctions": [],
+      "hash_plateforme": null,
+      "n_exec": 12,
+      "octets": null,
+      "outil": "bi-sim",
+      "sql_normalise": "SELECT * FROM RAW.CUSTOMERS WHERE email = ?",
+      "tables": [],
+      "temps_ms": 1440.0
+    }
+  ],
+  "fourchettes": {
+    "cout_lecture": {
+      "bas": 0.18,
+      "base": [
+        "S03"
+      ],
+      "confiance": "basse",
+      "formule": "crédits × prix catalogue du crédit, du plus bas au plus haut",
+      "haut": 1.4,
+      "hypotheses": [
+        "prix catalogue Snowflake du 17/10/2026, AWS Paris/Francfort : 2,60 $ (Standard) à 5,20 $ (Business Critical), https://www.snowflake.com/pricing/pricing-guide/",
+        "prix de votre contrat non lu ; votre région peut différer"
+      ],
+      "nature": "estimé",
+      "raison": null,
+      "unite": "USD",
+      "valeur": null
+    },
+    "credits_lecture": {
+      "bas": 0.07,
+      "base": [
+        "S03"
+      ],
+      "confiance": "basse",
+      "formule": "durée × crédits par heure",
+      "haut": 0.27,
+      "hypotheses": [
+        "débit supposé de 20 à 80 Mo/s, remplacé par la mesure d'un canot drill",
+        "entrepôt XS, 1 crédit par heure"
+      ],
+      "nature": "estimé",
+      "raison": null,
+      "unite": "crédits",
+      "valeur": null
+    },
+    "duree_lecture": {
+      "bas": 0.07,
+      "base": [
+        "S03"
+      ],
+      "confiance": "basse",
+      "formule": "volume ÷ débit supposé",
+      "haut": 0.27,
+      "hypotheses": [
+        "débit supposé de 20 à 80 Mo/s, remplacé par la mesure d'un canot drill"
+      ],
+      "nature": "estimé",
+      "raison": null,
+      "unite": "heures",
+      "valeur": null
+    },
+    "reprise": {
+      "bas": 5.2,
+      "base": [
+        "S02",
+        "S11",
+        "S12",
+        "S13",
+        "S14",
+        "S17"
+      ],
+      "confiance": "basse",
+      "formule": "objets × jours par objet + colonnes × jours par colonne",
+      "haut": 31.0,
+      "hypotheses": [
+        "20 objets à reconstruire et 2 colonnes à type propre à la plateforme",
+        "hypothèses de q4o : 0,25 à 1,5 jour par objet, 0,1 à 0,5 par colonne, à discuter"
+      ],
+      "nature": "estimé",
+      "raison": null,
+      "unite": "jours",
+      "valeur": null
+    },
+    "volume": {
+      "bas": null,
+      "base": [
+        "S03"
+      ],
+      "confiance": null,
+      "formule": "somme des octets actifs",
+      "haut": null,
+      "hypotheses": [
+        "octets actifs des tables présentes, hors tables externes et temporaires",
+        "volume compressé stocké ; le volume lu par la copie peut être plus élevé",
+        "clones : seuls leurs octets propres sont comptés"
+      ],
+      "nature": "calculé",
+      "raison": null,
+      "unite": "octets",
+      "valeur": 19440000000
+    }
+  },
+  "fraicheur": null,
+  "latence_max_h": 6,
+  "lectures": [
+    {
+      "fenetre": null,
+      "id": "S01",
+      "latence_max_h": 1.5,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLES"
+    },
+    {
+      "fenetre": null,
+      "id": "S02",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.COLUMNS"
+    },
+    {
+      "fenetre": null,
+      "id": "S03",
+      "latence_max_h": 2,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_STORAGE_METRICS"
+    },
+    {
+      "fenetre": {
+        "au": "2026-10-17T07:00:00Z",
+        "du": "2025-10-18T00:00:00Z"
+      },
+      "id": "S04",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.STORAGE_USAGE"
+    },
+    {
+      "fenetre": {
+        "au": "2026-10-17T07:00:00Z",
+        "du": "2025-10-18T00:00:00Z"
+      },
+      "id": "S05",
+      "latence_max_h": 3,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.METERING_DAILY_HISTORY"
+    },
+    {
+      "fenetre": {
+        "au": "2026-10-17T07:00:00Z",
+        "du": "2025-10-18T00:00:00Z"
+      },
+      "id": "S06",
+      "latence_max_h": 3,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY"
+    },
+    {
+      "fenetre": null,
+      "id": "S07",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.QUERY_ATTRIBUTION_HISTORY"
+    },
+    {
+      "fenetre": {
+        "au": "2026-10-17T07:00:00Z",
+        "du": "2025-10-18T00:00:00Z"
+      },
+      "id": "S08",
+      "latence_max_h": 6,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_DML_HISTORY"
+    },
+    {
+      "fenetre": {
+        "au": "2026-10-17T07:00:00Z",
+        "du": "2025-10-18T00:00:00Z"
+      },
+      "id": "S09",
+      "latence_max_h": 4,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_QUERY_PRUNING_HISTORY"
+    },
+    {
+      "fenetre": null,
+      "id": "S10",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.OBJECT_DEPENDENCIES"
+    },
+    {
+      "fenetre": null,
+      "id": "S11",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.VIEWS"
+    },
+    {
+      "fenetre": null,
+      "id": "S12",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.FUNCTIONS"
+    },
+    {
+      "fenetre": null,
+      "id": "S13",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.PROCEDURES"
+    },
+    {
+      "fenetre": null,
+      "id": "S14",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASKS"
+    },
+    {
+      "fenetre": {
+        "au": "2026-10-17T07:00:00Z",
+        "du": "2025-10-18T00:00:00Z"
+      },
+      "id": "S15",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASK_HISTORY"
+    },
+    {
+      "fenetre": null,
+      "id": "S16",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.SERVERLESS_TASK_HISTORY"
+    },
+    {
+      "fenetre": null,
+      "id": "S17",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.PIPES"
+    },
+    {
+      "fenetre": null,
+      "id": "S18",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.COPY_HISTORY"
+    },
+    {
+      "fenetre": null,
+      "id": "S19",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.STAGES"
+    },
+    {
+      "fenetre": null,
+      "id": "S20",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.DATABASES"
+    },
+    {
+      "fenetre": {
+        "au": "2026-10-17T07:00:00Z",
+        "du": "2025-10-18T00:00:00Z"
+      },
+      "id": "S21",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.DATA_TRANSFER_HISTORY"
+    },
+    {
+      "fenetre": null,
+      "id": "S22",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.DYNAMIC_TABLE_REFRESH_HISTORY"
+    },
+    {
+      "fenetre": null,
+      "id": "S23",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.AUTOMATIC_CLUSTERING_HISTORY"
+    },
+    {
+      "fenetre": {
+        "au": "2026-10-17T07:00:00Z",
+        "du": "2025-10-18T00:00:00Z"
+      },
+      "id": "S24",
+      "latence_max_h": 0.75,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY"
+    },
+    {
+      "fenetre": {
+        "au": "2026-10-17T07:00:00Z",
+        "du": "2025-10-18T00:00:00Z"
+      },
+      "id": "S25",
+      "latence_max_h": 3,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY"
+    },
+    {
+      "fenetre": null,
+      "id": "S26",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.POLICY_REFERENCES"
+    },
+    {
+      "fenetre": null,
+      "id": "S27",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.TAG_REFERENCES"
+    },
+    {
+      "fenetre": null,
+      "id": "S28",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_ROLES"
+    },
+    {
+      "fenetre": null,
+      "id": "S29",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_USERS"
+    },
+    {
+      "fenetre": null,
+      "id": "S30",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.USERS"
+    },
+    {
+      "fenetre": null,
+      "id": "S31",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.SESSIONS"
+    },
+    {
+      "fenetre": null,
+      "id": "S32",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.SHARES"
+    },
+    {
+      "fenetre": null,
+      "id": "S33",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "flux (F11)",
+      "raison": "droit absent",
+      "statut": "non_lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.STREAMS"
+    },
+    {
+      "fenetre": null,
+      "id": "S34",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "versions des tâches (F11)",
+      "raison": "droit absent",
+      "statut": "non_lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASK_VERSIONS"
+    },
+    {
+      "fenetre": null,
+      "id": "S35",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SHOW WAREHOUSES"
+    }
+  ],
+  "mode_sql": "lecture seule",
+  "mouvements": {
+    "base": [
+      "S01",
+      "S08",
+      "S25"
+    ],
+    "figée": 3,
+    "non_determine": 1,
+    "recréée": 1,
+    "regle": "recréée : DDL de moins de 7 jours sans écriture postérieure ; vivante : écriture de moins de 30 jours ; figée : dernière écriture plus ancienne ; non déterminée : écritures non lues",
+    "vivante": 7
+  },
+  "ne_part_pas": {
+    "colonnes_non_portables": 2,
+    "exemples": {
+      "base_importee": [
+        "SNOWFLAKE",
+        "SNOWFLAKE_SAMPLE_DATA"
+      ],
+      "etiquette": [
+        "CANOT_LAB.OPS.PII"
+      ],
+      "flux": [
+        "CANOT_LAB.OPS.ORDERS_STREAM"
+      ],
+      "fonction": [
+        "CANOT_LAB.MART.CLEAN_NAME",
+        "CANOT_LAB.MART.FX_TO_CENTS",
+        "CANOT_LAB.MART.SLUG"
+      ],
+      "partage": [
+        "S_CLIENTS",
+        "S_PARTNER"
+      ],
+      "pipe": [
+        "CANOT_LAB.OPS.P_EVENTS"
+      ],
+      "politique_lignes": [
+        "CANOT_LAB.OPS.RAP_COUNTRY"
+      ],
+      "politique_masquage": [
+        "CANOT_LAB.OPS.MP_EMAIL"
+      ],
+      "procedure": [
+        "CANOT_LAB.MART.SP_DYNAMIC_JS",
+        "CANOT_LAB.MART.SP_DYNAMIC_PY",
+        "CANOT_LAB.MART.SP_REFRESH_MART"
+      ],
+      "stage": [
+        "CANOT_LAB.EXT.S3_PUBLIC",
+        "CANOT_LAB.RAW.INT_STAGE"
+      ],
+      "table_dynamique": [
+        "CANOT_LAB.MART.DT_COUNTRY_REVENUE"
+      ],
+      "tache": [
+        "CANOT_LAB.OPS.T_DAILY",
+        "CANOT_LAB.OPS.T_EXPORT_NIGHTLY",
+        "CANOT_LAB.OPS.T_REFRESH",
+        "CANOT_LAB.OPS.T_SERVERLESS"
+      ],
+      "vue": [
+        "CANOT_LAB.MART.V_KPI",
+        "CANOT_LAB.STAGING.STG_ORDERS",
+        "CANOT_LAB.STG.V_STATES"
+      ]
+    },
+    "historique": {
+      "octets": {
+        "bas": null,
+        "base": [
+          "S03"
+        ],
+        "confiance": null,
+        "formule": "Time Travel + Fail-safe des tables présentes, + octets encore facturés des tables supprimées",
+        "haut": null,
+        "hypotheses": [],
+        "nature": "calculé",
+        "raison": null,
+        "unite": "octets",
+        "valeur": 6300000000
+      },
+      "tables": 2
+    },
+    "objets_par_type": {
+      "base_importee": 2,
+      "etiquette": 1,
+      "flux": 1,
+      "fonction": 3,
+      "partage": 2,
+      "pipe": 1,
+      "politique_lignes": 1,
+      "politique_masquage": 1,
+      "procedure": 3,
+      "stage": 2,
+      "table_dynamique": 1,
+      "tache": 4,
+      "vue": 3
+    },
+    "routines_par_langage": {
+      "JAVASCRIPT": 2,
+      "PYTHON": 2,
+      "SQL": 2
+    }
+  },
+  "niveau_droits": 3,
+  "non_estime": [
+    {
+      "raison": "prix de votre contrat non lu",
+      "sujet": "Coût du stockage"
+    },
+    {
+      "raison": "prix de votre contrat non lu",
+      "sujet": "Tarif de votre contrat"
+    },
+    {
+      "raison": "dépendent de votre contrat et de votre architecture",
+      "sujet": "Stockage d'arrivée, double exploitation, fonctionnement après la sortie"
+    },
+    {
+      "raison": "accepté ≠ résultat identique : traduit vers DuckDB, non comparé ; un canot drill compare les résultats",
+      "sujet": "Résultat identique des requêtes traduites"
+    },
+    {
+      "raison": "non reprises : elles ne se vérifient pas depuis le scan",
+      "sujet": "Projections de coût fournies par la plateforme"
+    }
+  ],
+  "objets": [
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "SNOWFLAKE",
+      "kind": "base_importee",
+      "langage": null,
+      "planification": null,
+      "proprietaire": null,
+      "reference": [],
+      "schema": null,
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F01"
+      ],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "SNOWFLAKE_SAMPLE_DATA",
+      "kind": "base_importee",
+      "langage": null,
+      "planification": null,
+      "proprietaire": null,
+      "reference": [],
+      "schema": null,
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F10"
+      ],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "CANOT_LAB.OPS.PII",
+      "kind": "etiquette",
+      "langage": null,
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [
+        "CANOT_LAB.RAW.CUSTOMERS"
+      ],
+      "schema": "OPS",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F11"
+      ],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "CANOT_LAB.OPS.ORDERS_STREAM",
+      "kind": "flux",
+      "langage": null,
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [
+        "CANOT_LAB.RAW.ORDERS"
+      ],
+      "schema": "OPS",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "CANOT_LAB.MART.CLEAN_NAME",
+      "kind": "fonction",
+      "langage": "JAVASCRIPT",
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [],
+      "schema": "MART",
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "CANOT_LAB.MART.FX_TO_CENTS",
+      "kind": "fonction",
+      "langage": "SQL",
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [],
+      "schema": "MART",
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "CANOT_LAB.MART.SLUG",
+      "kind": "fonction",
+      "langage": "PYTHON",
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [],
+      "schema": "MART",
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {
+        "comptes_cibles": 2
+      },
+      "drapeaux": [
+        "F09"
+      ],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "S_CLIENTS",
+      "kind": "partage",
+      "langage": null,
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [
+        "CANOT_LAB.MART.FCT_ORDERS",
+        "CANOT_LAB.RAW.ARCHIVE_1"
+      ],
+      "schema": null,
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {
+        "comptes_cibles": 0
+      },
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "S_PARTNER",
+      "kind": "partage",
+      "langage": null,
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [],
+      "schema": null,
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F11"
+      ],
+      "echecs_n": null,
+      "etat": "RUNNING",
+      "executions_n": null,
+      "externe": false,
+      "id": "CANOT_LAB.OPS.P_EVENTS",
+      "kind": "pipe",
+      "langage": null,
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [
+        "CANOT_LAB.OPS.EVENTS_LOG",
+        "CANOT_LAB.RAW.INT_STAGE"
+      ],
+      "schema": "OPS",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F10"
+      ],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "CANOT_LAB.OPS.RAP_COUNTRY",
+      "kind": "politique_lignes",
+      "langage": null,
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [
+        "CANOT_LAB.MART.FCT_ORDERS"
+      ],
+      "schema": "OPS",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F10"
+      ],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "CANOT_LAB.OPS.MP_EMAIL",
+      "kind": "politique_masquage",
+      "langage": null,
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [
+        "CANOT_LAB.RAW.CUSTOMERS"
+      ],
+      "schema": "OPS",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F08"
+      ],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "CANOT_LAB.MART.SP_DYNAMIC_JS",
+      "kind": "procedure",
+      "langage": "JAVASCRIPT",
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [],
+      "schema": "MART",
+      "sql_dynamique": true
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F08"
+      ],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "CANOT_LAB.MART.SP_DYNAMIC_PY",
+      "kind": "procedure",
+      "langage": "PYTHON",
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [],
+      "schema": "MART",
+      "sql_dynamique": true
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "CANOT_LAB.MART.SP_REFRESH_MART",
+      "kind": "procedure",
+      "langage": "SQL",
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [],
+      "schema": "MART",
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [
+        "s3://canot-lab-public"
+      ],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F01"
+      ],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": true,
+      "id": "CANOT_LAB.EXT.S3_PUBLIC",
+      "kind": "stage",
+      "langage": null,
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [],
+      "schema": "EXT",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "CANOT_LAB.RAW.INT_STAGE",
+      "kind": "stage",
+      "langage": null,
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [],
+      "schema": "RAW",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F11"
+      ],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "CANOT_LAB.MART.DT_COUNTRY_REVENUE",
+      "kind": "table_dynamique",
+      "langage": null,
+      "planification": "1 day",
+      "proprietaire": "SYSADMIN",
+      "reference": [
+        "CANOT_LAB.MART.FCT_ORDERS"
+      ],
+      "schema": "MART",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T01:00:00Z",
+      "detail": {},
+      "drapeaux": [
+        "F11"
+      ],
+      "echecs_n": 2,
+      "etat": "started",
+      "executions_n": 365,
+      "externe": false,
+      "id": "CANOT_LAB.OPS.T_DAILY",
+      "kind": "tache",
+      "langage": null,
+      "planification": "USING CRON 0 3 * * * Europe/Paris",
+      "proprietaire": "SYSADMIN",
+      "reference": [],
+      "schema": "OPS",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [
+        "s3://canot-lab-export"
+      ],
+      "derniere_execution": "2026-10-17T02:00:00Z",
+      "detail": {
+        "commentaire": "export vers [masqué]",
+        "ecriture_externe": true
+      },
+      "drapeaux": [
+        "F03",
+        "F11"
+      ],
+      "echecs_n": 30,
+      "etat": "started",
+      "executions_n": 30,
+      "externe": false,
+      "id": "CANOT_LAB.OPS.T_EXPORT_NIGHTLY",
+      "kind": "tache",
+      "langage": null,
+      "planification": "USING CRON 0 2 * * * UTC",
+      "proprietaire": "SYSADMIN",
+      "reference": [],
+      "schema": "OPS",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T01:05:00Z",
+      "detail": {
+        "apres": "CANOT_LAB.OPS.T_DAILY"
+      },
+      "drapeaux": [
+        "F11"
+      ],
+      "echecs_n": 0,
+      "etat": "started",
+      "executions_n": 365,
+      "externe": false,
+      "id": "CANOT_LAB.OPS.T_REFRESH",
+      "kind": "tache",
+      "langage": null,
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [],
+      "schema": "OPS",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {
+        "serverless": true
+      },
+      "drapeaux": [
+        "F11"
+      ],
+      "echecs_n": 0,
+      "etat": "suspended",
+      "executions_n": 0,
+      "externe": false,
+      "id": "CANOT_LAB.OPS.T_SERVERLESS",
+      "kind": "tache",
+      "langage": null,
+      "planification": "60 MINUTE",
+      "proprietaire": "SYSADMIN",
+      "reference": [],
+      "schema": "OPS",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F02"
+      ],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "CANOT_LAB.MART.V_KPI",
+      "kind": "vue",
+      "langage": null,
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [
+        "CANOT_LAB.STG.V_STATES"
+      ],
+      "schema": "MART",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "CANOT_LAB.STAGING.STG_ORDERS",
+      "kind": "vue",
+      "langage": null,
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [
+        "CANOT_LAB.RAW.ORDERS"
+      ],
+      "schema": "STAGING",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F02"
+      ],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "CANOT_LAB.STG.V_STATES",
+      "kind": "vue",
+      "langage": null,
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [
+        "CANOT_LAB.EXT.US_STATES"
+      ],
+      "schema": "STG",
+      "sql_dynamique": null
+    }
+  ],
+  "perimetre": "compte xy12345, base CANOT_LAB",
+  "plateforme": "snowflake",
+  "regles": {
+    "debit_mo_s": [
+      20.0,
+      80.0
+    ],
+    "horizon_lectures_jours": 365,
+    "recreee_jours": 7,
+    "vivante_jours": 30
+  },
+  "rejouabilite": {
+    "base": "6/6 familles, du 18/10/2025 au 17/10/2026, sqlglot 30.22.0, duckdb 1.5.6",
+    "bases": {},
+    "categories": {
+      "C0": {
+        "executions": 352,
+        "familles": 2,
+        "poids": 1.8
+      },
+      "C1": {
+        "executions": 0,
+        "familles": 0,
+        "poids": 0
+      },
+      "C2": {
+        "executions": 0,
+        "familles": 0,
+        "poids": 0
+      },
+      "C3": {
+        "executions": 0,
+        "familles": 0,
+        "poids": 0
+      },
+      "C4": {
+        "executions": 25,
+        "familles": 1,
+        "poids": 0.3
+      },
+      "C5": {
+        "executions": 0,
+        "familles": 0,
+        "poids": 0
+      },
+      "C6": {
+        "executions": 0,
+        "familles": 0,
+        "poids": 0
+      },
+      "C7": {
+        "executions": 132,
+        "familles": 3,
+        "poids": 4.2
+      }
+    },
+    "fonctions": {},
+    "mention": "accepté ≠ résultat identique",
+    "non_testees": null,
+    "raison": null,
+    "secrets_ecartes": null,
+    "statut": "lu",
+    "taux": {
+      "executions": {
+        "bas": null,
+        "base": [
+          "S24"
+        ],
+        "confiance": null,
+        "formule": "C0 ÷ C0 à C6, en exécutions ; C7 compté à part",
+        "haut": null,
+        "hypotheses": [],
+        "nature": "calculé",
+        "raison": null,
+        "unite": "%",
+        "valeur": 93.4
+      },
+      "familles": {
+        "bas": null,
+        "base": [
+          "S24"
+        ],
+        "confiance": null,
+        "formule": "C0 ÷ C0 à C6, en familles ; C7 compté à part",
+        "haut": null,
+        "hypotheses": [],
+        "nature": "calculé",
+        "raison": null,
+        "unite": "%",
+        "valeur": 66.7
+      },
+      "poids": {
+        "bas": null,
+        "base": [
+          "S24"
+        ],
+        "confiance": null,
+        "formule": "C0 ÷ C0 à C6, en crédits ; C7 compté à part",
+        "haut": null,
+        "hypotheses": [],
+        "nature": "calculé",
+        "raison": null,
+        "unite": "%",
+        "valeur": 85.7
+      }
+    }
+  },
+  "resume": {
+    "DAF": [
+      "Consommation mesurée sur 365 jours : 43,5 crédits.",
+      "En dollars, fourchette catalogue du 17/10/2026 : 113,10 à 226,20 $ ; prix de votre contrat non lu.",
+      "Historique facturé qui ne part pas avec la copie : 6,3 Go sur 2 tables (F06, F07)."
+    ],
+    "DSI": [
+      "12 tables présentes (19,4 Go) et 20 objets à reconstruire hors tables.",
+      "Mouvement : 3 figée(s), 7 vivante(s), 1 recréée(s), 1 non déterminée(s).",
+      "Rejouabilité : 2/3 familles acceptées par DuckDB ; accepté ≠ résultat identique."
+    ],
+    "RSSI": [
+      "5 tables ou politiques à reconstruire côté sécurité (F10) ; la copie demande un principal non filtré.",
+      "5 dépendances externes (F01, F02), 2 écritures hors de la plateforme (F03), 1 partage avec consommateurs externes (F09).",
+      "1 rôle propriétaire sans titulaire (F04)."
+    ]
+  },
+  "schema": "canot.scan/1",
+  "schemas_caches": [],
+  "sources_prix": [
+    "https://www.snowflake.com/pricing/pricing-guide/"
+  ],
+  "tables": [
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-06-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [
+        "F01"
+      ],
+      "ecritures": {
+        "derniere": "2026-10-15T08:00:00Z",
+        "n": 30
+      },
+      "etiquettes_n": 0,
+      "externe_uri": "s3://canot-lab-public",
+      "flags": [],
+      "id": "CANOT_LAB.EXT.US_STATES",
+      "lectures": {
+        "derniere": "2026-10-16T08:00:00Z",
+        "n": 0,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "nom": "US_STATES",
+      "octets_actifs": null,
+      "octets_historique": null,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": "SYSADMIN",
+      "retention_jours": 1,
+      "schema": "EXT",
+      "supprimee_le": null,
+      "type": "EXTERNE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2024-02-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": null,
+        "n": null
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "CANOT_LAB.MART.DIM_LEGACY",
+      "lectures": {
+        "derniere": null,
+        "n": null,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": null,
+      "mouvement_preuve": "écritures non lues",
+      "nom": "DIM_LEGACY",
+      "octets_actifs": 10000000,
+      "octets_historique": 0,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": "SYSADMIN",
+      "retention_jours": 1,
+      "schema": "MART",
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2026-10-17T03:00:00Z",
+      "detail": {},
+      "drapeaux": [
+        "F10"
+      ],
+      "ecritures": {
+        "derniere": "2026-10-17T03:00:30Z",
+        "n": 30
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "CANOT_LAB.MART.FCT_ORDERS",
+      "lectures": {
+        "derniere": "2026-10-16T08:00:00Z",
+        "n": 500,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "recréée",
+      "mouvement_preuve": "dernière DDL le 17/10/2026, sans écriture postérieure",
+      "nom": "FCT_ORDERS",
+      "octets_actifs": 1500000000,
+      "octets_historique": 0,
+      "partitionnement": null,
+      "politiques": [
+        "OPS.RAP_COUNTRY"
+      ],
+      "proprietaire": "SYSADMIN",
+      "retention_jours": 1,
+      "schema": "MART",
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-06-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": "2026-10-17T02:00:00Z",
+        "n": 30
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "CANOT_LAB.OPS.EVENTS_LOG",
+      "lectures": {
+        "derniere": "2026-10-16T08:00:00Z",
+        "n": 5,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 17/10/2026",
+      "nom": "EVENTS_LOG",
+      "octets_actifs": 10000000,
+      "octets_historique": 0,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": "SYSADMIN",
+      "retention_jours": 1,
+      "schema": "OPS",
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-01-10T00:00:00Z",
+      "detail": {},
+      "drapeaux": [
+        "F05"
+      ],
+      "ecritures": {
+        "derniere": "2025-01-10T00:00:00Z",
+        "n": 0
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "CANOT_LAB.RAW.ARCHIVE_1",
+      "lectures": {
+        "derniere": null,
+        "n": 0,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "figée",
+      "mouvement_preuve": "dernière écriture le 10/01/2025",
+      "nom": "ARCHIVE_1",
+      "octets_actifs": 5000000000,
+      "octets_historique": 0,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": "SYSADMIN",
+      "retention_jours": 1,
+      "schema": "RAW",
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-01-10T00:00:00Z",
+      "detail": {},
+      "drapeaux": [
+        "F05"
+      ],
+      "ecritures": {
+        "derniere": "2025-01-10T00:00:00Z",
+        "n": 0
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "CANOT_LAB.RAW.ARCHIVE_2",
+      "lectures": {
+        "derniere": null,
+        "n": 0,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "figée",
+      "mouvement_preuve": "dernière écriture le 10/01/2025",
+      "nom": "ARCHIVE_2",
+      "octets_actifs": 5000000000,
+      "octets_historique": 0,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": "SYSADMIN",
+      "retention_jours": 1,
+      "schema": "RAW",
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-01-10T00:00:00Z",
+      "detail": {},
+      "drapeaux": [
+        "F05"
+      ],
+      "ecritures": {
+        "derniere": "2025-01-10T00:00:00Z",
+        "n": 0
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "CANOT_LAB.RAW.ARCHIVE_3",
+      "lectures": {
+        "derniere": null,
+        "n": 0,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "figée",
+      "mouvement_preuve": "dernière écriture le 10/01/2025",
+      "nom": "ARCHIVE_3",
+      "octets_actifs": 5000000000,
+      "octets_historique": 0,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": "SYSADMIN",
+      "retention_jours": 1,
+      "schema": "RAW",
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 4,
+      "colonnes_non_portables": [
+        {
+          "nom": "profile",
+          "type": "VARIANT"
+        },
+        {
+          "nom": "geo",
+          "type": "GEOGRAPHY"
+        }
+      ],
+      "derniere_ddl": "2025-06-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [
+        "F10"
+      ],
+      "ecritures": {
+        "derniere": "2026-10-15T08:00:00Z",
+        "n": 30
+      },
+      "etiquettes_n": 1,
+      "externe_uri": null,
+      "flags": [],
+      "id": "CANOT_LAB.RAW.CUSTOMERS",
+      "lectures": {
+        "derniere": "2026-10-16T08:00:00Z",
+        "n": 40,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "nom": "CUSTOMERS",
+      "octets_actifs": 800000000,
+      "octets_historique": 0,
+      "partitionnement": null,
+      "politiques": [
+        "OPS.MP_EMAIL"
+      ],
+      "proprietaire": "SYSADMIN",
+      "retention_jours": 1,
+      "schema": "RAW",
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-06-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": "2026-10-15T08:00:00Z",
+        "n": 30
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "CANOT_LAB.RAW.OLD_DROPPED",
+      "lectures": {
+        "derniere": "2026-10-16T08:00:00Z",
+        "n": null,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": null,
+      "mouvement_preuve": "supprimée le 10/01/2026",
+      "nom": "OLD_DROPPED",
+      "octets_actifs": 0,
+      "octets_historique": 0,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": "SYSADMIN",
+      "retention_jours": 1,
+      "schema": "RAW",
+      "supprimee_le": "2026-01-10T12:00:00Z",
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [
+        "TO_DATE(ORDER_TS)"
+      ],
+      "colonnes_n": 2,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-06-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [
+        "F06"
+      ],
+      "ecritures": {
+        "derniere": "2026-10-16T22:00:00Z",
+        "n": 30
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "CANOT_LAB.RAW.ORDERS",
+      "lectures": {
+        "derniere": "2026-10-16T08:00:00Z",
+        "n": 120,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 16/10/2026",
+      "nom": "ORDERS",
+      "octets_actifs": 2000000000,
+      "octets_historique": 6000000000,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": "SYSADMIN",
+      "retention_jours": 30,
+      "schema": "RAW",
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": "CANOT_LAB.RAW.ORDERS",
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-06-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": "2026-10-15T08:00:00Z",
+        "n": 30
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "CANOT_LAB.RAW.ORDERS_CLONE",
+      "lectures": {
+        "derniere": "2026-10-16T08:00:00Z",
+        "n": 2,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "nom": "ORDERS_CLONE",
+      "octets_actifs": 100000000,
+      "octets_historique": 0,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": "SYSADMIN",
+      "retention_jours": 1,
+      "schema": "RAW",
+      "supprimee_le": null,
+      "type": "CLONE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-06-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [
+        "F07"
+      ],
+      "ecritures": {
+        "derniere": "2026-10-15T08:00:00Z",
+        "n": 30
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "CANOT_LAB.RAW.TMP_DROPPED",
+      "lectures": {
+        "derniere": "2026-10-16T08:00:00Z",
+        "n": null,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": null,
+      "mouvement_preuve": "supprimée le 10/10/2026",
+      "nom": "TMP_DROPPED",
+      "octets_actifs": 0,
+      "octets_historique": 300000000,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": "SYSADMIN",
+      "retention_jours": 1,
+      "schema": "RAW",
+      "supprimee_le": "2026-10-10T12:00:00Z",
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-06-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [
+        "F04"
+      ],
+      "ecritures": {
+        "derniere": "2026-10-15T08:00:00Z",
+        "n": 30
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "CANOT_LAB.SANDBOX.OLD_EXPORT_2023",
+      "lectures": {
+        "derniere": "2026-10-16T08:00:00Z",
+        "n": 3,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "nom": "OLD_EXPORT_2023",
+      "octets_actifs": 10000000,
+      "octets_historique": 0,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": "LAB_ORPHAN",
+      "retention_jours": 1,
+      "schema": "SANDBOX",
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2025-06-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": "2026-10-15T08:00:00Z",
+        "n": 30
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "CANOT_LAB.SANDBOX.TEAM_WORK",
+      "lectures": {
+        "derniere": "2026-10-16T08:00:00Z",
+        "n": 8,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": 1000,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "nom": "TEAM_WORK",
+      "octets_actifs": 10000000,
+      "octets_historique": 0,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": "LAB_ENGINEER",
+      "retention_jours": 1,
+      "schema": "SANDBOX",
+      "supprimee_le": null,
+      "type": "TABLE"
+    }
+  ],
+  "versions": {
+    "canot": "0.1.0",
+    "duckdb": "1.5.6",
+    "sqlglot": "30.22.0"
+  }
+}

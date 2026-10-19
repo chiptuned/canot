@@ -34,6 +34,7 @@ Si un connecteur manque, Canot affiche la commande exacte à lancer (par exemple
 | `canot bigquery-setup` | Écrit le script `gcloud` du rôle personnalisé en lecture seule. |
 | `canot init-tolerances` | Écrit un fichier de tolérances de comparaison à relire avec vous. |
 | `canot demo-data CHEMIN` | Crée une base DuckDB de démonstration. |
+| `canot connecteurs` | Liste les plateformes connues : forme d'URL, inventaire (`scan`), export (`drill`), forme de preuve, statut (testé ou écrit, non testé) et extra `pip` à installer. |
 | `canot mcp` | Serveur MCP : la documentation et l'explication de vos rapports, pour un agent. Voir [Avec un agent](#avec-un-agent-mcp). |
 
 Toutes les commandes acceptent `--debug` (trace complète en cas d'erreur).
@@ -73,6 +74,8 @@ uvx canot scan "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" --level 2
 | Snowflake | `snowflake://COMPTE/BASE?user=…&warehouse=…&role=…&schemas=A,B` | paire de clés : variable `SNOWFLAKE_PRIVATE_KEY_PATH` (recommandé) ou `SNOWFLAKE_PASSWORD` |
 | Databricks | `databricks://HÔTE/CHEMIN_HTTP_DE_L_ENTREPÔT?catalog=…` | variable `DATABRICKS_TOKEN` (jeton en lecture) ; connecteur non encore testé sur un vrai compte |
 | DuckDB | `maison.duckdb` | aucune |
+
+`canot connecteurs` affiche, pour chacune, ce que Canot sait faire (inventaire complet ou léger, export, preuve) et si c'est testé.
 
 ## Sortie en local ou on-prem
 

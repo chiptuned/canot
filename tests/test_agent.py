@@ -17,8 +17,14 @@ def test_chercher_doc_trouve_la_sortie_locale():
 
 
 def test_commandes_liste_les_sous_commandes_du_cli():
+    import argparse
+
+    from canot.cli import parser
+
     t = agent.commandes()
-    for cmd in ("scan", "drill", "demo", "verify-evidence", "teardown", "snowflake-setup", "bigquery-setup", "mcp"):
+    sub = next(a for a in parser()._actions if isinstance(a, argparse._SubParsersAction))
+    assert "connecteurs" in sub.choices
+    for cmd in sub.choices:
         assert f"canot {cmd}" in t, cmd
 
 

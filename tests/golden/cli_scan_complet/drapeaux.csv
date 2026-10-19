@@ -1,0 +1,32 @@
+code,libelle,etiquette,cible_type,cible,texte,confiance,base
+F01,Dépendance externe,À examiner,objet,CANOT_LAB.EXT.S3_PUBLIC,Stage externe (s3://canot-lab-public).,,S19
+F01,Dépendance externe,À examiner,objet,SNOWFLAKE_SAMPLE_DATA,Base importée d'un partage entrant.,,S20
+F01,Dépendance externe,À examiner,table,CANOT_LAB.EXT.US_STATES,Table externe : données hors de la plateforme (s3://canot-lab-public).,,S01
+F02,Dépendance externe cachée,À examiner,objet,CANOT_LAB.MART.V_KPI,"Dépend de CANOT_LAB.EXT.US_STATES, hors de la plateforme, par 2 niveaux : CANOT_LAB.MART.V_KPI → CANOT_LAB.STG.V_STATES → CANOT_LAB.EXT.US_STATES (s3://canot-lab-public).",,S10 ; S11
+F02,Dépendance externe cachée,À examiner,objet,CANOT_LAB.STG.V_STATES,"Dépend de CANOT_LAB.EXT.US_STATES, hors de la plateforme, par 1 niveau : CANOT_LAB.STG.V_STATES → CANOT_LAB.EXT.US_STATES (s3://canot-lab-public).",,S10 ; S11
+F03,Écriture hors de la plateforme,À examiner,famille,5cf082fb4538,Écriture hors de la plateforme observée : 3 exécutions ; destination : s3://canot-lab-public.,,S24
+F03,Écriture hors de la plateforme,À examiner,objet,CANOT_LAB.OPS.T_EXPORT_NIGHTLY,Tâche qui écrit hors de la plateforme (déclaré dans sa définition) ; destination : s3://canot-lab-export.,,S14 ; S15 ; S16
+F04,Rôle propriétaire sans titulaire,À examiner,role,LAB_ORPHAN,"Le rôle LAB_ORPHAN possède 1 objet et n'est accordé à aucun utilisateur, ni directement ni par un autre rôle.",,S28 ; S29
+F05,Stockage sans lecture observée,À examiner,table,CANOT_LAB.RAW.ARCHIVE_1,"5 Go stockés. Aucune lecture observée dans ACCESS_HISTORY du 18/10/2025 au 17/10/2026 ; non vus : consommateurs de partages, RESULT_SCAN. Partagée avec 2 consommateurs externes : leurs lectures ne sont pas vues.",haute,S03 ; S25
+F05,Stockage sans lecture observée,À examiner,table,CANOT_LAB.RAW.ARCHIVE_2,"5 Go stockés. Aucune lecture observée dans ACCESS_HISTORY du 18/10/2025 au 17/10/2026 ; non vus : consommateurs de partages, RESULT_SCAN.",haute,S03 ; S25
+F05,Stockage sans lecture observée,À examiner,table,CANOT_LAB.RAW.ARCHIVE_3,"5 Go stockés. Aucune lecture observée dans ACCESS_HISTORY du 18/10/2025 au 17/10/2026 ; non vus : consommateurs de partages, RESULT_SCAN.",haute,S03 ; S25
+F06,Historique payé non transférable,À examiner,table,CANOT_LAB.RAW.ORDERS,"6 Go d'historique facturé (Time Travel et Fail-safe), rétention 30 jours, pour 2 Go actifs ; cet historique ne part pas avec la copie.",,S03
+F07,Table supprimée encore facturée,À examiner,table,CANOT_LAB.RAW.TMP_DROPPED,Supprimée le 10/10/2026 ; 300 Mo encore facturés (Time Travel et Fail-safe).,,S01 ; S03
+F08,SQL dynamique,À examiner,objet,CANOT_LAB.MART.SP_DYNAMIC_JS,Procédure en JAVASCRIPT : construit du SQL à l'exécution ; les objets touchés ne se lisent pas dans le code.,,S13
+F08,SQL dynamique,À examiner,objet,CANOT_LAB.MART.SP_DYNAMIC_PY,Procédure en PYTHON : construit du SQL à l'exécution ; les objets touchés ne se lisent pas dans le code.,,S13
+F09,Consommateurs externes,À examiner,objet,S_CLIENTS,Partage vers 2 comptes cibles ; 2 objets partagés. Les lectures des consommateurs ne sont pas vues par ce scan.,,S32
+F10,Sécurité à reconstruire,À examiner,objet,CANOT_LAB.OPS.MP_EMAIL,Politique de masquage appliquée à 1 objet ; elle ne part pas avec la copie ; la copie demande un principal non filtré.,,S26
+F10,Sécurité à reconstruire,À examiner,objet,CANOT_LAB.OPS.PII,Étiquette appliquée à 1 objet ; elle ne part pas avec la copie.,,S27
+F10,Sécurité à reconstruire,À examiner,objet,CANOT_LAB.OPS.RAP_COUNTRY,Politique de lignes appliquée à 1 objet ; elle ne part pas avec la copie ; la copie demande un principal non filtré.,,S26
+F10,Sécurité à reconstruire,À examiner,table,CANOT_LAB.MART.FCT_ORDERS,Politiques : OPS.RAP_COUNTRY. Elles ne partent pas avec la copie ; la copie demande un principal non filtré par ces politiques.,,S26 ; S27
+F10,Sécurité à reconstruire,À examiner,table,CANOT_LAB.RAW.CUSTOMERS,Politiques : OPS.MP_EMAIL ; 1 étiquette. Elles ne partent pas avec la copie ; la copie demande un principal non filtré par ces politiques.,,S26 ; S27
+F11,Chaîne planifiée et ses échecs,À examiner,objet,CANOT_LAB.MART.DT_COUNTRY_REVENUE,"Table dynamique, planification 1 day ; exécutions non lues.",,S22
+F11,Chaîne planifiée et ses échecs,À examiner,objet,CANOT_LAB.OPS.ORDERS_STREAM,Flux ; sur CANOT_LAB.RAW.ORDERS.,,
+F11,Chaîne planifiée et ses échecs,À examiner,objet,CANOT_LAB.OPS.P_EVENTS,"Pipe, état RUNNING ; exécutions non lues.",,S17 ; S18
+F11,Chaîne planifiée et ses échecs,À examiner,objet,CANOT_LAB.OPS.T_DAILY,"Tâche, planification USING CRON 0 3 * * * Europe/Paris, état started ; 365 exécutions, 2 échecs, dernière le 17/10/2026.",,S14 ; S15 ; S16
+F11,Chaîne planifiée et ses échecs,À examiner,objet,CANOT_LAB.OPS.T_EXPORT_NIGHTLY,"Tâche, planification USING CRON 0 2 * * * UTC, état started ; 30 exécutions, 30 échecs, dernière le 17/10/2026.",,S14 ; S15 ; S16
+F11,Chaîne planifiée et ses échecs,À examiner,objet,CANOT_LAB.OPS.T_REFRESH,"Tâche, état started ; 365 exécutions, 0 échec, dernière le 17/10/2026 ; chaîne : CANOT_LAB.OPS.T_DAILY → CANOT_LAB.OPS.T_REFRESH.",,S14 ; S15 ; S16
+F11,Chaîne planifiée et ses échecs,À examiner,objet,CANOT_LAB.OPS.T_SERVERLESS,"Tâche, planification 60 MINUTE, état suspended ; 0 exécution, 0 échec.",,S14 ; S15 ; S16
+F12,Lecture incomplète,À examiner,lecture,S33,STREAMS non lue (droit absent) ; limite : flux (F11).,,
+F12,Lecture incomplète,À examiner,lecture,S34,TASK_VERSIONS non lue (droit absent) ; limite : versions des tâches (F11).,,
+F12,Lecture incomplète,À examiner,lecture,lectures_par_table,Lectures non déterminées pour 1 table ; limite : stockage sans lecture observée (F05).,,S09 ; S25

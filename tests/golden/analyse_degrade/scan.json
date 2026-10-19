@@ -1,0 +1,955 @@
+{
+  "as_of": "2026-10-17T10:00:00Z",
+  "avec_sql_brut": false,
+  "cout_du_scan": {
+    "duree": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_lu",
+      "raison": "durée non transmise par la collecte",
+      "unite": "secondes",
+      "valeur": null
+    },
+    "lectures": {
+      "lu": 5,
+      "non_lu": 14,
+      "total": 19
+    },
+    "requetes": {
+      "bas": null,
+      "base": [
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05",
+        "S06",
+        "S07",
+        "S08",
+        "S09",
+        "S10",
+        "S11",
+        "S12"
+      ],
+      "confiance": null,
+      "formule": "lectures tentées, lues ou refusées par la plateforme",
+      "haut": null,
+      "hypotheses": [
+        "une lecture = une requête"
+      ],
+      "nature": "calculé",
+      "raison": null,
+      "unite": "requêtes",
+      "valeur": 12
+    }
+  },
+  "couts": {
+    "credits": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_lu",
+      "raison": "METERING_DAILY_HISTORY non lue : droit absent",
+      "unite": "crédits",
+      "valeur": null
+    },
+    "credits_par_entrepot": [],
+    "credits_par_service": [],
+    "fenetre_jours": 365,
+    "monnaie": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_estimé",
+      "raison": "crédits non lus",
+      "unite": "USD",
+      "valeur": null
+    },
+    "note": "Crédits mesurés ; en dollars, seulement avec le prix fourni ou une fourchette catalogue datée.",
+    "stockage_monnaie": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_estimé",
+      "raison": "prix de votre contrat non lu",
+      "unite": "USD",
+      "valeur": null
+    },
+    "stockage_octets_moyens": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_lu",
+      "raison": "STORAGE_USAGE non lue : droit absent",
+      "unite": "octets",
+      "valeur": null
+    },
+    "transferts": []
+  },
+  "dependances": {
+    "aretes": [
+      [
+        "PROD.MART.V_REVENUE",
+        "PROD.MART.KPI"
+      ]
+    ],
+    "base": [
+      "S09"
+    ],
+    "cachees": [],
+    "clients": [],
+    "consommateurs": [],
+    "ecritures_externes": [],
+    "externes": [],
+    "outils": []
+  },
+  "drapeaux": [
+    {
+      "base": [
+        "S11"
+      ],
+      "cible": "PROD.OPS.T_NIGHTLY",
+      "cible_type": "objet",
+      "code": "F11",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Chaîne planifiée et ses échecs",
+      "preuve": {
+        "chaine": [
+          "PROD.OPS.T_NIGHTLY"
+        ],
+        "echecs_n": null,
+        "etat": "started",
+        "executions_n": null
+      },
+      "texte": "Tâche, planification USING CRON 0 1 * * * UTC, état started ; exécutions non lues."
+    },
+    {
+      "base": [],
+      "cible": "S03",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "droit absent",
+        "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_STORAGE_METRICS"
+      },
+      "texte": "TABLE_STORAGE_METRICS non lue (droit absent) ; limite : octets actifs et historique (F05, F06, F07, fourchettes)."
+    },
+    {
+      "base": [],
+      "cible": "S04",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "droit absent",
+        "vue": "SNOWFLAKE.ACCOUNT_USAGE.STORAGE_USAGE"
+      },
+      "texte": "STORAGE_USAGE non lue (droit absent) ; limite : stockage moyen facturé."
+    },
+    {
+      "base": [],
+      "cible": "S05",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "droit absent",
+        "vue": "SNOWFLAKE.ACCOUNT_USAGE.METERING_DAILY_HISTORY"
+      },
+      "texte": "METERING_DAILY_HISTORY non lue (droit absent) ; limite : crédits par service."
+    },
+    {
+      "base": [],
+      "cible": "S06",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "droit absent",
+        "vue": "SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY"
+      },
+      "texte": "WAREHOUSE_METERING_HISTORY non lue (droit absent) ; limite : crédits par entrepôt."
+    },
+    {
+      "base": [],
+      "cible": "S07",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "droit absent",
+        "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_DML_HISTORY"
+      },
+      "texte": "TABLE_DML_HISTORY non lue (droit absent) ; limite : dernières écritures (mouvement)."
+    },
+    {
+      "base": [],
+      "cible": "S08",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "droit absent",
+        "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_QUERY_PRUNING_HISTORY"
+      },
+      "texte": "TABLE_QUERY_PRUNING_HISTORY non lue (droit absent) ; limite : repli des lectures par table (F05)."
+    },
+    {
+      "base": [],
+      "cible": "S12",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "délai dépassé",
+        "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASK_HISTORY"
+      },
+      "texte": "TASK_HISTORY non lue (délai dépassé) ; limite : exécutions et échecs des tâches (F11)."
+    },
+    {
+      "base": [],
+      "cible": "S13",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "niveau de droits non demandé",
+        "vue": "SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY"
+      },
+      "texte": "QUERY_HISTORY non lue (niveau de droits non demandé) ; limite : familles de requêtes, rejouabilité, écritures observées (F03)."
+    },
+    {
+      "base": [],
+      "cible": "S14",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "niveau de droits non demandé",
+        "vue": "SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY"
+      },
+      "texte": "ACCESS_HISTORY non lue (niveau de droits non demandé) ; limite : lectures par objet : F05 non calculé ; édition non déterminée (Standard ou droit absent)."
+    },
+    {
+      "base": [],
+      "cible": "S15",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "niveau de droits non demandé",
+        "vue": "SNOWFLAKE.ACCOUNT_USAGE.POLICY_REFERENCES"
+      },
+      "texte": "POLICY_REFERENCES non lue (niveau de droits non demandé) ; limite : politiques appliquées (F10)."
+    },
+    {
+      "base": [],
+      "cible": "S16",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "niveau de droits non demandé",
+        "vue": "SNOWFLAKE.ACCOUNT_USAGE.TAG_REFERENCES"
+      },
+      "texte": "TAG_REFERENCES non lue (niveau de droits non demandé) ; limite : étiquettes (F10)."
+    },
+    {
+      "base": [],
+      "cible": "S17",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "niveau de droits non demandé",
+        "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_ROLES"
+      },
+      "texte": "GRANTS_TO_ROLES non lue (niveau de droits non demandé) ; limite : rôles propriétaires sans titulaire (F04)."
+    },
+    {
+      "base": [],
+      "cible": "S18",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "niveau de droits non demandé",
+        "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_USERS"
+      },
+      "texte": "GRANTS_TO_USERS non lue (niveau de droits non demandé) ; limite : rôles propriétaires sans titulaire (F04)."
+    },
+    {
+      "base": [],
+      "cible": "S19",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "niveau de droits non demandé",
+        "vue": "SNOWFLAKE.ACCOUNT_USAGE.SHARES"
+      },
+      "texte": "SHARES non lue (niveau de droits non demandé) ; limite : consommateurs externes (F09)."
+    },
+    {
+      "base": [
+        "S10"
+      ],
+      "cible": "code_des_routines",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "routines": [
+          "PROD.MART.SP_HIDDEN"
+        ]
+      },
+      "texte": "Code non lu pour 1 routine (filtré par droits ou non transmis) ; limite : SQL dynamique (F08)."
+    }
+  ],
+  "edition": "non déterminée (Standard ou droit absent)",
+  "f04_lu": false,
+  "familles": [],
+  "fourchettes": {
+    "cout_lecture": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_estimé",
+      "raison": "crédits non lus",
+      "unite": "USD",
+      "valeur": null
+    },
+    "credits_lecture": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_estimé",
+      "raison": "volume non lu",
+      "unite": "crédits",
+      "valeur": null
+    },
+    "duree_lecture": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_estimé",
+      "raison": "volume non lu",
+      "unite": "heures",
+      "valeur": null
+    },
+    "reprise": {
+      "bas": 0.8,
+      "base": [
+        "S02",
+        "S09",
+        "S10",
+        "S11"
+      ],
+      "confiance": "basse",
+      "formule": "objets × jours par objet + colonnes × jours par colonne",
+      "haut": 5.0,
+      "hypotheses": [
+        "3 objets à reconstruire et 1 colonne à type propre à la plateforme",
+        "hypothèses de q4o : 0,25 à 1,5 jour par objet, 0,1 à 0,5 par colonne, à discuter"
+      ],
+      "nature": "estimé",
+      "raison": null,
+      "unite": "jours",
+      "valeur": null
+    },
+    "volume": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_lu",
+      "raison": "TABLE_STORAGE_METRICS non lue : droit absent",
+      "unite": "octets",
+      "valeur": null
+    }
+  },
+  "fraicheur": null,
+  "latence_max_h": 1.5,
+  "lectures": [
+    {
+      "fenetre": null,
+      "id": "S01",
+      "latence_max_h": 1.5,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLES"
+    },
+    {
+      "fenetre": null,
+      "id": "S02",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.COLUMNS"
+    },
+    {
+      "fenetre": null,
+      "id": "S03",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "octets actifs et historique (F05, F06, F07, fourchettes)",
+      "raison": "droit absent",
+      "statut": "non_lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_STORAGE_METRICS"
+    },
+    {
+      "fenetre": null,
+      "id": "S04",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "stockage moyen facturé",
+      "raison": "droit absent",
+      "statut": "non_lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.STORAGE_USAGE"
+    },
+    {
+      "fenetre": null,
+      "id": "S05",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "crédits par service",
+      "raison": "droit absent",
+      "statut": "non_lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.METERING_DAILY_HISTORY"
+    },
+    {
+      "fenetre": null,
+      "id": "S06",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "crédits par entrepôt",
+      "raison": "droit absent",
+      "statut": "non_lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY"
+    },
+    {
+      "fenetre": null,
+      "id": "S07",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "dernières écritures (mouvement)",
+      "raison": "droit absent",
+      "statut": "non_lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_DML_HISTORY"
+    },
+    {
+      "fenetre": null,
+      "id": "S08",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "repli des lectures par table (F05)",
+      "raison": "droit absent",
+      "statut": "non_lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_QUERY_PRUNING_HISTORY"
+    },
+    {
+      "fenetre": null,
+      "id": "S09",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.VIEWS"
+    },
+    {
+      "fenetre": null,
+      "id": "S10",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.PROCEDURES"
+    },
+    {
+      "fenetre": null,
+      "id": "S11",
+      "latence_max_h": null,
+      "lignes": 10,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASKS"
+    },
+    {
+      "fenetre": null,
+      "id": "S12",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "exécutions et échecs des tâches (F11)",
+      "raison": "délai dépassé",
+      "statut": "non_lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASK_HISTORY"
+    },
+    {
+      "fenetre": null,
+      "id": "S13",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "familles de requêtes, rejouabilité, écritures observées (F03)",
+      "raison": "niveau de droits non demandé",
+      "statut": "non_lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY"
+    },
+    {
+      "fenetre": null,
+      "id": "S14",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "lectures par objet : F05 non calculé ; édition non déterminée (Standard ou droit absent)",
+      "raison": "niveau de droits non demandé",
+      "statut": "non_lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY"
+    },
+    {
+      "fenetre": null,
+      "id": "S15",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "politiques appliquées (F10)",
+      "raison": "niveau de droits non demandé",
+      "statut": "non_lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.POLICY_REFERENCES"
+    },
+    {
+      "fenetre": null,
+      "id": "S16",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "étiquettes (F10)",
+      "raison": "niveau de droits non demandé",
+      "statut": "non_lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.TAG_REFERENCES"
+    },
+    {
+      "fenetre": null,
+      "id": "S17",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "rôles propriétaires sans titulaire (F04)",
+      "raison": "niveau de droits non demandé",
+      "statut": "non_lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_ROLES"
+    },
+    {
+      "fenetre": null,
+      "id": "S18",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "rôles propriétaires sans titulaire (F04)",
+      "raison": "niveau de droits non demandé",
+      "statut": "non_lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_USERS"
+    },
+    {
+      "fenetre": null,
+      "id": "S19",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "consommateurs externes (F09)",
+      "raison": "niveau de droits non demandé",
+      "statut": "non_lu",
+      "vue": "SNOWFLAKE.ACCOUNT_USAGE.SHARES"
+    }
+  ],
+  "mode_sql": "lecture seule",
+  "mouvements": {
+    "base": [
+      "S01"
+    ],
+    "figée": 0,
+    "non_determine": 2,
+    "recréée": 1,
+    "regle": "recréée : DDL de moins de 7 jours sans écriture postérieure ; vivante : écriture de moins de 30 jours ; figée : dernière écriture plus ancienne ; non déterminée : écritures non lues",
+    "vivante": 0
+  },
+  "ne_part_pas": {
+    "colonnes_non_portables": 1,
+    "exemples": {
+      "procedure": [
+        "PROD.MART.SP_HIDDEN"
+      ],
+      "tache": [
+        "PROD.OPS.T_NIGHTLY"
+      ],
+      "vue": [
+        "PROD.MART.V_REVENUE"
+      ]
+    },
+    "historique": {
+      "octets": {
+        "bas": null,
+        "base": [],
+        "confiance": null,
+        "formule": null,
+        "haut": null,
+        "hypotheses": [],
+        "nature": "non_lu",
+        "raison": "TABLE_STORAGE_METRICS non lue : droit absent",
+        "unite": "octets",
+        "valeur": null
+      },
+      "tables": 0
+    },
+    "objets_par_type": {
+      "procedure": 1,
+      "tache": 1,
+      "vue": 1
+    },
+    "routines_par_langage": {
+      "NON LU": 1
+    }
+  },
+  "niveau_droits": 1,
+  "non_estime": [
+    {
+      "raison": "STORAGE_USAGE non lue : droit absent",
+      "sujet": "Stockage moyen facturé"
+    },
+    {
+      "raison": "prix de votre contrat non lu",
+      "sujet": "Coût du stockage"
+    },
+    {
+      "raison": "METERING_DAILY_HISTORY non lue : droit absent",
+      "sujet": "Crédits consommés"
+    },
+    {
+      "raison": "crédits non lus",
+      "sujet": "Crédits en dollars"
+    },
+    {
+      "raison": "TABLE_STORAGE_METRICS non lue : droit absent",
+      "sujet": "Volume à copier"
+    },
+    {
+      "raison": "volume non lu",
+      "sujet": "Durée de lecture de la copie"
+    },
+    {
+      "raison": "volume non lu",
+      "sujet": "Crédits de lecture de la copie"
+    },
+    {
+      "raison": "crédits non lus",
+      "sujet": "Coût de lecture de la copie"
+    },
+    {
+      "raison": "QUERY_HISTORY non lue : niveau de droits non demandé",
+      "sujet": "Rejouabilité des requêtes"
+    },
+    {
+      "raison": "TABLE_STORAGE_METRICS non lue : droit absent",
+      "sujet": "Historique facturé"
+    },
+    {
+      "raison": "prix de votre contrat non lu",
+      "sujet": "Tarif de votre contrat"
+    },
+    {
+      "raison": "dépendent de votre contrat et de votre architecture",
+      "sujet": "Stockage d'arrivée, double exploitation, fonctionnement après la sortie"
+    },
+    {
+      "raison": "accepté ≠ résultat identique : traduit vers DuckDB, non comparé ; un canot drill compare les résultats",
+      "sujet": "Résultat identique des requêtes traduites"
+    },
+    {
+      "raison": "non reprises : elles ne se vérifient pas depuis le scan",
+      "sujet": "Projections de coût fournies par la plateforme"
+    }
+  ],
+  "objets": [
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "PROD.MART.SP_HIDDEN",
+      "kind": "procedure",
+      "langage": null,
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [],
+      "schema": "MART",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [
+        "F11"
+      ],
+      "echecs_n": null,
+      "etat": "started",
+      "executions_n": null,
+      "externe": false,
+      "id": "PROD.OPS.T_NIGHTLY",
+      "kind": "tache",
+      "langage": null,
+      "planification": "USING CRON 0 1 * * * UTC",
+      "proprietaire": "SYSADMIN",
+      "reference": [],
+      "schema": "OPS",
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {},
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "id": "PROD.MART.V_REVENUE",
+      "kind": "vue",
+      "langage": null,
+      "planification": null,
+      "proprietaire": "SYSADMIN",
+      "reference": [
+        "PROD.MART.KPI"
+      ],
+      "schema": "MART",
+      "sql_dynamique": null
+    }
+  ],
+  "perimetre": "compte ab98765, base PROD",
+  "plateforme": "snowflake",
+  "regles": {
+    "debit_mo_s": [
+      20.0,
+      80.0
+    ],
+    "horizon_lectures_jours": 365,
+    "recreee_jours": 7,
+    "vivante_jours": 30
+  },
+  "rejouabilite": {
+    "base": null,
+    "categories": {},
+    "mention": "accepté ≠ résultat identique",
+    "raison": "QUERY_HISTORY non lue : niveau de droits non demandé",
+    "statut": "non_lu",
+    "taux": {}
+  },
+  "resume": {
+    "DAF": [
+      "Consommation non lue : METERING_DAILY_HISTORY non lue : droit absent.",
+      "En dollars, non estimé : crédits non lus.",
+      "Historique facturé non lu : TABLE_STORAGE_METRICS non lue : droit absent."
+    ],
+    "DSI": [
+      "3 tables présentes (volume non lu) et 3 objets à reconstruire hors tables.",
+      "Mouvement : 0 figée(s), 0 vivante(s), 1 recréée(s), 2 non déterminée(s).",
+      "Rejouabilité non lue : QUERY_HISTORY non lue : niveau de droits non demandé."
+    ],
+    "RSSI": [
+      "Politiques non lues : POLICY_REFERENCES non lue : niveau de droits non demandé.",
+      "0 dépendance externe (F01, F02), 0 écriture hors de la plateforme (F03), 0 partage avec consommateurs externes (F09).",
+      "Rôles propriétaires sans titulaire non déterminés : droits non lus."
+    ]
+  },
+  "schema": "canot.scan/1",
+  "schemas_caches": [],
+  "sources_prix": [
+    "https://www.snowflake.com/pricing/pricing-guide/"
+  ],
+  "tables": [
+    {
+      "base": "PROD",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2026-10-16T03:00:00Z",
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": null,
+        "n": null
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "PROD.MART.KPI",
+      "lectures": {
+        "derniere": null,
+        "n": null,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": null,
+      "mouvement": "recréée",
+      "mouvement_preuve": "dernière DDL le 16/10/2026, écritures non lues",
+      "nom": "KPI",
+      "octets_actifs": null,
+      "octets_historique": null,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": "SYSADMIN",
+      "retention_jours": 1,
+      "schema": "MART",
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "PROD",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 1,
+      "colonnes_non_portables": [],
+      "derniere_ddl": "2019-05-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": null,
+        "n": null
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "PROD.RAW.ARCHIVE_2019",
+      "lectures": {
+        "derniere": null,
+        "n": null,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": null,
+      "mouvement": null,
+      "mouvement_preuve": "écritures non lues",
+      "nom": "ARCHIVE_2019",
+      "octets_actifs": null,
+      "octets_historique": null,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": "LEGACY_OWNER",
+      "retention_jours": 1,
+      "schema": "RAW",
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "PROD",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 2,
+      "colonnes_non_portables": [
+        {
+          "nom": "doc",
+          "type": "VARIANT"
+        }
+      ],
+      "derniere_ddl": "2026-03-01T00:00:00Z",
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": null,
+        "n": null
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [],
+      "id": "PROD.RAW.ORDERS",
+      "lectures": {
+        "derniere": null,
+        "n": null,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": null,
+      "mouvement": null,
+      "mouvement_preuve": "écritures non lues",
+      "nom": "ORDERS",
+      "octets_actifs": null,
+      "octets_historique": null,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": "SYSADMIN",
+      "retention_jours": 1,
+      "schema": "RAW",
+      "supprimee_le": null,
+      "type": "TABLE"
+    }
+  ],
+  "versions": {
+    "canot": "0.1.0",
+    "duckdb": "1.5.6",
+    "sqlglot": "30.22.0"
+  }
+}

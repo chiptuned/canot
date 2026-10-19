@@ -7,14 +7,10 @@ from collections.abc import Callable
 from pathlib import Path
 
 from .. import __version__
+from ..connectors import for_source, supports_full  # noqa: F401 : supports_full reste importable d'ici
 from .model import new_salt
 
 LEVELS = {1: "inventaire, volumes, consommation", 2: "+ requêtes (formes normalisées), lectures par table, politiques", 3: "+ droits et outils (pseudonymisés)"}
-FULL_DIALECTS = ("snowflake", "bigquery")
-
-
-def supports_full(src) -> bool:
-    return getattr(src, "dialect", None) in FULL_DIALECTS
 
 
 def _versions() -> dict:
@@ -26,17 +22,10 @@ def _versions() -> dict:
 
 def collect(src, *, level: int, days: int | None = None, log: Callable[[str], None] = lambda s: None) -> tuple[dict, list[dict]]:
     """Lit la plateforme (lecture seule). Renvoie (snapshot, familles brutes) ; le texte SQL brut ne vit que dans le second retour."""
+    if not supports_full(src):
+        raise ValueError(f"scan complet non disponible pour {getattr(src, 'dialect', None)}")
     salt = new_salt()
-    if src.dialect == "snowflake":
-        from . import snowflake
-
-        snap, raw = snowflake.collect(src.run_readonly, base=src.database, schemas=src.schemas or None, level=level, salt=salt, **({"days": days} if days else {}))
-    elif src.dialect == "bigquery":
-        from . import bigquery
-
-        snap, raw = bigquery.collect(src, project=src.project, data_project=src.data_project, datasets=src.datasets or None, level=level, salt=salt, **({"days": days} if days else {}))
-    else:
-        raise ValueError(f"scan complet non disponible pour {src.dialect}")
+    snap, raw = for_source(src).scan_collect(src, level=level, salt=salt, days=days)
     snap["niveau_droits"] = level
     snap.setdefault("mode_sql", "lecture seule")
     snap["versions"] = _versions()

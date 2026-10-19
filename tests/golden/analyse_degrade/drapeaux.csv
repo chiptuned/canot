@@ -1,0 +1,17 @@
+code,libelle,etiquette,cible_type,cible,texte,confiance,base
+F11,Chaîne planifiée et ses échecs,À examiner,objet,PROD.OPS.T_NIGHTLY,"Tâche, planification USING CRON 0 1 * * * UTC, état started ; exécutions non lues.",,S11
+F12,Lecture incomplète,À examiner,lecture,S03,"TABLE_STORAGE_METRICS non lue (droit absent) ; limite : octets actifs et historique (F05, F06, F07, fourchettes).",,
+F12,Lecture incomplète,À examiner,lecture,S04,STORAGE_USAGE non lue (droit absent) ; limite : stockage moyen facturé.,,
+F12,Lecture incomplète,À examiner,lecture,S05,METERING_DAILY_HISTORY non lue (droit absent) ; limite : crédits par service.,,
+F12,Lecture incomplète,À examiner,lecture,S06,WAREHOUSE_METERING_HISTORY non lue (droit absent) ; limite : crédits par entrepôt.,,
+F12,Lecture incomplète,À examiner,lecture,S07,TABLE_DML_HISTORY non lue (droit absent) ; limite : dernières écritures (mouvement).,,
+F12,Lecture incomplète,À examiner,lecture,S08,TABLE_QUERY_PRUNING_HISTORY non lue (droit absent) ; limite : repli des lectures par table (F05).,,
+F12,Lecture incomplète,À examiner,lecture,S12,TASK_HISTORY non lue (délai dépassé) ; limite : exécutions et échecs des tâches (F11).,,
+F12,Lecture incomplète,À examiner,lecture,S13,"QUERY_HISTORY non lue (niveau de droits non demandé) ; limite : familles de requêtes, rejouabilité, écritures observées (F03).",,
+F12,Lecture incomplète,À examiner,lecture,S14,ACCESS_HISTORY non lue (niveau de droits non demandé) ; limite : lectures par objet : F05 non calculé ; édition non déterminée (Standard ou droit absent).,,
+F12,Lecture incomplète,À examiner,lecture,S15,POLICY_REFERENCES non lue (niveau de droits non demandé) ; limite : politiques appliquées (F10).,,
+F12,Lecture incomplète,À examiner,lecture,S16,TAG_REFERENCES non lue (niveau de droits non demandé) ; limite : étiquettes (F10).,,
+F12,Lecture incomplète,À examiner,lecture,S17,GRANTS_TO_ROLES non lue (niveau de droits non demandé) ; limite : rôles propriétaires sans titulaire (F04).,,
+F12,Lecture incomplète,À examiner,lecture,S18,GRANTS_TO_USERS non lue (niveau de droits non demandé) ; limite : rôles propriétaires sans titulaire (F04).,,
+F12,Lecture incomplète,À examiner,lecture,S19,SHARES non lue (niveau de droits non demandé) ; limite : consommateurs externes (F09).,,
+F12,Lecture incomplète,À examiner,lecture,code_des_routines,Code non lu pour 1 routine (filtré par droits ou non transmis) ; limite : SQL dynamique (F08).,,S10

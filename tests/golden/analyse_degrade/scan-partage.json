@@ -1,0 +1,43 @@
+{
+  "as_of": "2026-10-17T10:00:00Z",
+  "constats": {
+    "F11": 1,
+    "F12": 15
+  },
+  "lectures": {
+    "faites": 5,
+    "non_lues": 14
+  },
+  "niveau_droits": 1,
+  "objets": {
+    "procedure": 1,
+    "tache": 1,
+    "vue": 1
+  },
+  "plateforme": "snowflake",
+  "rejouabilite_familles_pct": null,
+  "resume": {
+    "DAF": [
+      "Consommation non lue : METERING_DAILY_HISTORY non lue : droit absent.",
+      "En dollars, non estimé : crédits non lus.",
+      "Historique facturé non lu : TABLE_STORAGE_METRICS non lue : droit absent."
+    ],
+    "DSI": [
+      "3 tables présentes (volume non lu) et 3 objets à reconstruire hors tables.",
+      "Mouvement : 0 figée(s), 0 vivante(s), 1 recréée(s), 2 non déterminée(s).",
+      "Rejouabilité non lue : QUERY_HISTORY non lue : niveau de droits non demandé."
+    ],
+    "RSSI": [
+      "Politiques non lues : POLICY_REFERENCES non lue : niveau de droits non demandé.",
+      "0 dépendance externe (F01, F02), 0 écriture hors de la plateforme (F03), 0 partage avec consommateurs externes (F09).",
+      "Rôles propriétaires sans titulaire non déterminés : droits non lus."
+    ]
+  },
+  "schema": "canot.partage/1",
+  "tables": 3,
+  "versions": {
+    "canot": "0.1.0",
+    "duckdb": "1.5.6",
+    "sqlglot": "30.22.0"
+  }
+}

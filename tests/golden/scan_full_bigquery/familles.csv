@@ -1,0 +1,5 @@
+empreinte,hash_plateforme,categorie,n_exec,temps_ms,credits,octets,app,outil,entrepot,tables,fonctions,ecriture_externe,sql_normalise
+81c59a441550c1954bae4f55380350f098153fac7e35095277ef156a8ab69230,h0,C5,900,9000.0,,2000000000000,,,,lab-a.raw.orders,,non,SELECT * FROM `lab-a.raw.orders` WHERE d >= ?
+6a5b2ac25d9242dc7cc9fedaff4070b5829aeced2d4a85a466f2bb0cca2441ba,h1,C0,10,100.0,,1000000,looker,,,lab-a.raw.customers,,non,SELECT count(*) FROM `lab-a.raw.customers`
+066b5f1f3a39fc67ad07f79580a44acc84c6dbbae364983967373116786218a8,h2,C7,2,20.0,,50000,,,,lab-a.raw.orders,,oui,"EXPORT DATA OPTIONS (uri=?, FORMAT=?) AS SELECT * FROM `lab-a.raw.orders`"
+5649c51ed2a38b239c2b66a153624057786dde867488cfd302b6c49e6be31e88,h3,C4,1,10.0,,,,,,lab-a.raw.m,predict,non,"SELECT ML.PREDICT(MODEL `lab-a.raw.m`, (SELECT ?))"

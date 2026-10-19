@@ -10,6 +10,7 @@ from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 
 from .. import prices
+from ..connectors import profile
 from ..scan import NON_PORTABLE, THROUGHPUT_MBPS
 from .model import NATURES, bucket_only, fig
 
@@ -41,11 +42,9 @@ REBUILD_KINDS = ("vue", "vue_materialisee", "fonction", "procedure", "tache", "f
                  "modele_ml", "politique_masquage", "politique_lignes", "requete_planifiee", "connexion", "integration")
 SCHEDULED_KINDS = ("tache", "requete_planifiee", "pipe", "table_dynamique", "flux")
 POLICY_KINDS = ("politique_masquage", "politique_lignes", "etiquette")
-SYSTEM_IMPORTS = ("SNOWFLAKE",)  # base système présente dans tout compte Snowflake : pas une dépendance du client
 
 VIVANTE_JOURS = 30   # écriture observée dans les 30 derniers jours
 RECREEE_JOURS = 7    # DDL dans les 7 derniers jours, sans écriture postérieure
-HORIZON_JOURS = {"snowflake": 365, "bigquery": 180}
 CREDITS_PAR_HEURE = 1.0  # entrepôt XS
 TIB = 2 ** 40
 PRICE_SOURCES = (prices.SNOWFLAKE_SOURCE, prices.BIGQUERY_SOURCE)
@@ -69,11 +68,6 @@ GRANT_SOURCES = ("GRANTS_TO_USERS", "GRANTS_TO_ROLES")
 POLICY_SOURCES = ("POLICY_REFERENCES", "TAG_REFERENCES", "rowAccessPolicies.list", "COLUMN_FIELD_PATHS")
 WRITE_SOURCES = ("TABLES", "TABLE_DML_HISTORY", "ACCESS_HISTORY", "tables.get", "JOBS")
 CODE_SOURCES = ("COLUMNS", "VIEWS", "FUNCTIONS", "PROCEDURES", "ROUTINES", "TASKS", "PIPES", "transferConfigs.list")
-NON_VUS = {
-    "ACCESS_HISTORY": ["consommateurs de partages", "RESULT_SCAN"],
-    "TABLE_QUERY_PRUNING_HISTORY": ["consommateurs de partages", "résultats servis par le cache", "requêtes résolues par les métadonnées"],
-    "JOBS": ["lectures par l'API Storage Read", "requêtes lancées depuis d'autres projets", "consommateurs Analytics Hub"],
-}
 # ce que limite une lecture non lue (F12)
 IMPACTS = {
     "ACCESS_HISTORY": "lectures et écritures par objet (F05)",
@@ -388,7 +382,7 @@ def _external(ctx: _Ctx) -> dict[str, tuple[str, str, list[str]]]:
             out[t["id"]] = ("table", what, loc)
     for o in ctx.objets:
         k, deps = o["kind"], o["dependances_externes"]
-        if k == "base_importee" and o["id"].upper() in SYSTEM_IMPORTS:
+        if k == "base_importee" and o["id"].upper() in profile(ctx.plat).get("imports_systeme", ()):
             continue
         exports = bool(o["detail"].get("ecriture_externe") or o["detail"].get("exporte"))
         if k == "base_importee":
@@ -532,32 +526,25 @@ def _f04(ctx: _Ctx) -> tuple[list[dict], list[str]]:
 
 
 def _read_sources(ctx: _Ctx) -> list[dict]:
-    """Sources des lectures par table, de la plus sûre à la moins sûre ; seules celles qui ont été lues."""
+    """Sources des lectures par table (fiche du connecteur), de la plus sûre à la moins sûre ; seules celles qui ont été lues."""
     r = ctx.reads
-    cands = {
-        "snowflake": [("ACCESS_HISTORY", "ACCESS_HISTORY", "haute", lambda t: t["lectures"]["n"]),
-                      ("TABLE_QUERY_PRUNING_HISTORY", "TABLE_QUERY_PRUNING_HISTORY", "moyenne",
-                       lambda t: t["lectures"]["n_pruning"] if t["lectures"]["n_pruning"] is not None else t["lectures"]["n"])],
-        "bigquery": [("JOBS", "INFORMATION_SCHEMA.JOBS", "moyenne", lambda t: t["lectures"]["n"])],
-    }.get(ctx.plat, [])
+    fiche = profile(ctx.plat)
     out = []
-    for name, label, conf, get in cands:
+    for name, label, conf, keys in fiche.get("sources_lectures", ()):
         if not r.ok(name):
             continue
-        non_vus = list(NON_VUS[name])
-        if name == "JOBS" and r.status("JOBS_BY_ORGANIZATION") == "lu":
-            non_vus.remove("requêtes lancées depuis d'autres projets")
+        non_vus = [nv for nv in fiche["non_vus"][name] if r.status(fiche.get("non_vus_couverts", {}).get(nv, "")) != "lu"]
         du, au = r.window(name)
         partiel = r.partial(name)
         lat = [lec["latence_max_h"] for lec in r.find(name) if lec["statut"] == "lu" and lec["latence_max_h"] is not None]
         out.append({"vue": name, "label": label, "confiance": "basse" if partiel or not du else conf, "non_vus": non_vus,
-                    "ids": r.ids(name), "du": du, "au": au, "partiel": partiel, "get": get, "latence_h": max(lat, default=None)})
+                    "ids": r.ids(name), "du": du, "au": au, "partiel": partiel, "keys": keys, "latence_h": max(lat, default=None)})
     return out
 
 
 def _source_for(t: dict, sources: list[dict]) -> tuple[dict | None, int | None]:
     for s in sources:
-        n = s["get"](t)
+        n = next((t["lectures"][k] for k in s["keys"] if t["lectures"][k] is not None), None)
         if n is not None:
             return s, n
     return None, None
@@ -575,7 +562,7 @@ def _too_recent(t: dict, src: dict, as_of: datetime) -> bool:
 
 def _f05(ctx: _Ctx, sources: list[dict], shared: dict[str, int]) -> list[dict]:
     """Aucune source lue, ou valeur inconnue pour la table : F05 se tait (F12 le dit). Table trop récente : F05 se tait aussi."""
-    horizon = HORIZON_JOURS.get(ctx.plat, 365)
+    horizon = profile(ctx.plat).get("horizon_jours", 365)
     flags = []
     for t in ctx.present:
         src, n = _source_for(t, sources)
@@ -1231,9 +1218,9 @@ def analyze(snapshot: dict, *, credit_price: float | None = None) -> dict:
         "latence_max_h": max((lec["latence_max_h"] for lec in lectures if lec["statut"] == "lu" and lec["latence_max_h"] is not None), default=None),
         "fraicheur": _fraicheur(ctx),
         "f04_lu": bool(f04) or (all(reads.status(n) == "lu" for n in GRANT_SOURCES) and (snapshot.get("droits") or {}).get("roles") is not None),
-        "regles": {"vivante_jours": VIVANTE_JOURS, "recreee_jours": RECREEE_JOURS, "horizon_lectures_jours": HORIZON_JOURS.get(plat, 365),
+        "regles": {"vivante_jours": VIVANTE_JOURS, "recreee_jours": RECREEE_JOURS, "horizon_lectures_jours": profile(plat).get("horizon_jours", 365),
                    "debit_mo_s": list(THROUGHPUT_MBPS)},
-        "sources_prix": [prices.SNOWFLAKE_SOURCE] if plat == "snowflake" else [prices.BIGQUERY_SOURCE] if plat == "bigquery" else [],
+        "sources_prix": [profile(plat)["source_prix"]] if "source_prix" in profile(plat) else [],
     }
     res["resume"] = _resume(ctx, res, by_code)
     return res

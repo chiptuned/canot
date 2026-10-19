@@ -1,0 +1,65 @@
+{
+  "source": "duckdb:<TMP>/demo.duckdb",
+  "tables": [
+    {
+      "name": "shop.customers",
+      "rows": 50,
+      "bytes": 2207,
+      "columns": 4
+    },
+    {
+      "name": "shop.empty_table",
+      "rows": 0,
+      "bytes": 0,
+      "columns": 2
+    },
+    {
+      "name": "shop.orders",
+      "rows": 500,
+      "bytes": 41333,
+      "columns": 7
+    }
+  ],
+  "totals": {
+    "tables": 3,
+    "rows": 550,
+    "bytes": 43540,
+    "gb": 0.0
+  },
+  "non_portable_columns": [],
+  "objects_that_do_not_move": {
+    "views": [],
+    "macros": []
+  },
+  "object_counts": {
+    "views": 0,
+    "macros": 0
+  },
+  "usage_90d": null,
+  "exit_estimate": {
+    "duration_hours": [
+      0.0,
+      0.0
+    ],
+    "credits": [
+      0.0,
+      0.0
+    ],
+    "assumed_throughput_mb_s": [
+      20.0,
+      80.0
+    ],
+    "note": "estimation de planification ; remplacée par la mesure après un `canot drill`"
+  },
+  "exit_cost": {
+    "reading_usd": null,
+    "reading_basis": null,
+    "rework_days": [
+      0.0,
+      0.0
+    ],
+    "rework_basis": "0 objet(s) à reconstruire et 0 colonne(s) à type propre à la plateforme ; hypothèses de q4o (0.25 à 1.5 jour par objet, 0.1 à 0.5 par colonne), à discuter.",
+    "not_included": "Tarif de votre contrat, stockage d'arrivée, double exploitation, coût de fonctionnement après la sortie : ils dépendent de votre contrat et de votre architecture, et ne sont pas estimés ici."
+  },
+  "egress_note": ""
+}

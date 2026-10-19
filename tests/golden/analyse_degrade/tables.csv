@@ -1,0 +1,4 @@
+id,base,schema,nom,type,lignes,octets_actifs,octets_historique,retention_jours,clone_de,supprimee_le,emplacement,proprietaire,mouvement,mouvement_preuve,n_lectures,derniere_lecture,n_ecritures,derniere_ecriture,derniere_ddl,colonnes_non_portables,politiques,etiquettes_n,drapeaux
+PROD.MART.KPI,PROD,MART,KPI,TABLE,,,,1,,,,SYSADMIN,recréée,"dernière DDL le 16/10/2026, écritures non lues",,,,,2026-10-16T03:00:00Z,,,0,
+PROD.RAW.ARCHIVE_2019,PROD,RAW,ARCHIVE_2019,TABLE,,,,1,,,,LEGACY_OWNER,,écritures non lues,,,,,2019-05-01T00:00:00Z,,,0,
+PROD.RAW.ORDERS,PROD,RAW,ORDERS,TABLE,,,,1,,,,SYSADMIN,,écritures non lues,,,,,2026-03-01T00:00:00Z,doc:VARIANT,,0,

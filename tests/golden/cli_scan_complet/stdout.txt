@@ -1,0 +1,17 @@
+Canot scan en lecture seule (niveau 3 : + droits et outils (pseudonymisés))
+Source : compte xy12345, base CANOT_LAB
+  DSI : 12 tables présentes (19,4 Go) et 20 objets à reconstruire hors tables.
+  DSI : Mouvement : 3 figée(s), 7 vivante(s), 1 recréée(s), 1 non déterminée(s).
+  DSI : Rejouabilité : 0/5 familles acceptées par DuckDB ; accepté ≠ résultat identique.
+  DAF : Consommation mesurée sur 365 jours : 43,5 crédits.
+  DAF : En dollars, fourchette catalogue du 17/10/2026 : 113,10 à 226,20 $ ; prix de votre contrat non lu.
+  DAF : Historique facturé qui ne part pas avec la copie : 6,3 Go sur 2 tables (F06, F07).
+  RSSI : 5 tables ou politiques à reconstruire côté sécurité (F10) ; la copie demande un principal non filtré.
+  RSSI : 5 dépendances externes (F01, F02), 2 écritures hors de la plateforme (F03), 1 partage avec consommateurs externes (F09).
+  RSSI : 1 rôle propriétaire sans titulaire (F04).
+À examiner : F01 ×3, F02 ×2, F03 ×2, F04 ×1, F05 ×3, F06 ×1, F07 ×1, F08 ×2, F09 ×1, F10 ×5, F11 ×7, F12 ×3
+Lectures : 33 faites, 2 non lues (détail et raisons dans le rapport)
+Rapport à transmettre : <TMP>/out/scan.html
+Données : <TMP>/out/scan.json et les CSV du même dossier
+Pour nous le transmettre : <TMP>/out/scan-partage.json (des comptes seulement : ni nom de table, ni SQL, ni identité) sur https://canot.io/offres.html#demarrer
+Besoin d'aide pour lire ce rapport ou préparer la suite ? https://canot.io/#contact

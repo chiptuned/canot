@@ -1,0 +1,7 @@
+Source : duckdb:<TMP>/demo.duckdb
+3 tables, 550 lignes, 0.0 Go
+Sortie estimée : 0.0 à 0.0 h de copie (20.0-80.0 Mo/s, est.)
+Travail de reprise estimé : 0.0 à 0.0 jours (0 objet(s) à reconstruire et 0 colonne(s) à type propre à la plateforme ; hypothèses de q4o (0.25 à 1.5 jour par objet, 0.1 à 0.5 par colonne), à discuter.)
+Non inclus : Tarif de votre contrat, stockage d'arrivée, double exploitation, coût de fonctionnement après la sortie : ils dépendent de votre contrat et de votre architecture, et ne sont pas estimés ici.
+Colonnes à type propre à la plateforme : 0
+Détail : <TMP>/out/scan.json
