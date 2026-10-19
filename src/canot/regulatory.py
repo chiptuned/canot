@@ -68,7 +68,7 @@ def rows_for(kind: str):
     return [r for r in ROWS if kind in r[4]]
 
 
-def section(kind: str, *, tag: str = "section") -> str:
+def section(kind: str, lang: str = "en", *, tag: str = "section") -> str:
     """HTML block for a report ('drill' or 'scan'): self-contained, no script, no link."""
     e = html.escape
     body = "".join(f"<tr><td>{e(fw)}</td><td>{e(req)}</td><td>{e(got)}</td><td>{e(lim)}</td></tr>" for fw, req, got, lim, _ in rows_for(kind))

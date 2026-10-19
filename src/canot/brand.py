@@ -7,6 +7,7 @@ from __future__ import annotations
 import base64
 import html
 import json
+import os
 
 REVIEW_URL = "https://canot.io/en/review.html"
 
@@ -22,7 +23,32 @@ CSS = """.brandbar{display:flex;justify-content:space-between;align-items:center
 .share a.pri{background:#e8622a;border-color:#e8622a;color:#fff}
 .share p{margin:8px 0 0;font:13px/1.45 system-ui,sans-serif;opacity:.8}
 @media print{.share{display:none}}
+.langbar{display:flex;justify-content:flex-end;gap:6px;margin:0 0 6px;font:600 13px system-ui,sans-serif}
+.langbar a{padding:3px 10px;border:1px solid rgba(128,128,128,.45);border-radius:999px;text-decoration:none;color:inherit}
+.langbar a:hover{background:rgba(128,128,128,.15)}
+.pane.alt{display:none}
+.pane.alt:target{display:block}
+.pane.alt:target ~ .pane.main{display:none}
 """
+
+
+def default_lang(requested: str | None = None) -> str:
+    """Language shown first in a report: the --lang option, else the user's locale (fr* -> French), else English."""
+    if requested in ("en", "fr"):
+        return requested
+    loc = (os.environ.get("LC_ALL") or os.environ.get("LC_MESSAGES") or os.environ.get("LANG") or "").lower()
+    return "fr" if loc.startswith("fr") else "en"
+
+
+def bilingual(en_html: str, fr_html: str, default: str = "en") -> str:
+    """Both languages in one page, switched without any script: two panes, a language bar, and the CSS :target rule
+    (the pane that is not the default comes first and displays only when targeted, so there is no need for :has).
+    Ids inside each pane must be unique (suffix them by language): only lang-en and lang-fr are shared names."""
+    panes = {"en": en_html, "fr": fr_html}
+    alt = "fr" if default == "en" else "en"
+    bar = '<nav class="langbar" aria-label="Language / Langue"><a href="#lang-en" hreflang="en">English</a><a href="#lang-fr" hreflang="fr">Français</a></nav>'
+    return (f'{bar}<div class="pane alt" id="lang-{alt}" lang="{alt}">{panes[alt]}</div>'
+            f'<div class="pane main" id="lang-{default}" lang="{default}">{panes[default]}</div>')
 
 
 def brand_bar(kind: str) -> str:
@@ -34,7 +60,7 @@ def _data_uri(payload: dict) -> str:
     return "data:application/json;base64," + base64.b64encode(raw).decode()
 
 
-def share_block(payload: dict, filename: str) -> str:
+def share_block(payload: dict, filename: str, lang: str = "en") -> str:
     """Primary action: get an expert review (a page on canot.io that explains who reads it and what happens). Secondary: download the
     shareable summary, embedded in the page. No script, nothing is sent from this page."""
     return (f'<div class="share"><div class="acts"><a class="pri" href="{REVIEW_URL}">Get an expert review of this report</a>'
