@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Faire relire votre rapport | Canot</title>
+<meta name="description" content="Envoyez la synthèse de votre rapport Canot (des comptes seulement) : l&#x27;équipe derrière Canot le lit avec vous et vous dit ce qui compte.">
+<link rel="canonical" href="https://canot.io/revue.html">
+<link rel="alternate" hreflang="fr" href="https://canot.io/revue.html">
+<link rel="alternate" hreflang="en" href="https://canot.io/en/review.html">
+<link rel="alternate" hreflang="x-default" href="https://canot.io/revue.html">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f4f6f7">
+<link rel="stylesheet" href="/style.css?v=e7d1f62957">
+</head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="Canot, accueil"><img src="/assets/canot-symbole.svg" alt="" width="52" height="27"><span>canot</span></a>
+    <nav class="main" aria-label="Navigation principale">
+      <a class="hide-s" href="/pourquoi.html">Pourquoi</a>
+      <a class="hide-s" href="/methode.html">Méthode</a>
+      <a class="hide-s" href="/discrepancies.html" hreflang="en">Écarts</a>
+      <a class="hide-s" href="/docs.html" hreflang="en">Documentation</a>
+      <a class="hide-s" href="/offres.html">Offres</a>
+      <a href="/rapport.html">Exemple de rapport</a>
+      <span class="lang-switch" aria-label="Langue / Language"><b aria-current="true">FR</b> | <a href="/en/review.html" hreflang="en" lang="en">EN</a></span>
+      <a class="btn btn-dark" href="https://github.com/chiptuned/canot">Tester gratuitement</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="s contact" id="review">
+  <div class="wrap">
+    <div class="lead">
+      <h1 class="h2like">Faites relire votre rapport par un expert.</h1>
+      <p>Vous avez lancé Canot et vous avez un rapport. Que disent ses constats de votre plateforme, de votre contrat et de vos régulateurs ? L'équipe derrière Canot le lit avec vous et vous dit ce qui compte.</p>
+      <ol class="steps">
+        <li><b>Envoyez la synthèse.</b> Le fichier que le rapport permet d'exporter (<code>scan-share.json</code> ou <code>drill-share.json</code>) ne contient que des comptes : ni nom de table, ni SQL, ni identité. Vous voyez exactement ce qui part avant d'envoyer.</li>
+        <li><b>Nous le lisons.</b> Nous revenons par e-mail ou par un appel avec ce que disent les constats, ce qu'il faut régler d'abord et les options réalistes.</li>
+        <li><b>Vous décidez.</b> Si cela a du sens, nous proposons une prestation cadrée. Sinon, vous gardez la lecture. Nous ne demandons aucun accès à votre plateforme à ce stade.</li>
+      </ol>
+      <p>Q4O est le studio data parisien qui a conçu Canot et réalise des exercices de sortie. <a href="https://q4o.com">À propos de Q4O</a></p>
+    </div>
+    <div class="form-box">
+      <form id="form-offre" data-lead="offre" novalidate>
+        <div class="fields">
+          <label>Nom<input name="name" autocomplete="name" required><span class="err" data-for="name"></span></label>
+          <label>Société<input name="company" autocomplete="organization" required><span class="err" data-for="company"></span></label>
+          <label>E-mail professionnel<input name="email" type="email" autocomplete="email" required><span class="err" data-for="email"></span></label>
+          <label>Plateforme actuelle
+            <select name="platform" required>
+              <option value="">Choisir…</option><option>Snowflake</option><option>BigQuery</option><option>Databricks</option><option>Microsoft Fabric / Synapse</option><option>Amazon Redshift</option><option>Teradata</option><option>Oracle</option><option>SAP Datasphere</option><option value="Autre">Autre (Dataiku, SAS…)</option>
+            </select><span class="err" data-for="platform"></span></label>
+          <label>Échéance ou renouvellement (facultatif)<input name="renewal" type="month"></label>
+        </div>
+        <label>Votre projet<textarea name="message" rows="5" maxlength="2000" required placeholder="Ce que vous voulez vérifier ou décider, le calendrier, les contraintes (DORA, souveraineté, contrat)."></textarea><span class="err" data-for="message"></span></label>
+        <label>Votre rapport Canot (facultatif) : <code>scan-partage.json</code><input name="partage" type="file" accept="application/json,.json"><span class="err" data-for="partage"></span></label>
+        <details class="preview" id="preview" hidden><summary>Ce qui sera envoyé avec votre message</summary><pre id="preview-body"></pre></details>
+        <div class="hp" aria-hidden="true"><label>Ne pas remplir<input name="website" tabindex="-1" autocomplete="off"></label></div>
+        <div class="fail" id="fail-offre" role="alert" hidden></div>
+        <button class="send" type="submit">Envoyer ma demande</button>
+        <p class="legal">Ces informations servent uniquement à vous répondre. Aucun pisteur sur cette page. Responsable du traitement : Q4O. Détails et droits : <a href="/mentions-legales.html#confidentialite">confidentialité</a>.</p>
+      </form>
+      <div class="thanks" id="thanks-offre" hidden>
+        <img src="/assets/canot-symbole.svg" alt="" width="160" height="82">
+        <span class="h">Demande reçue.</span>
+        <p>Merci. Nous revenons vers vous avec une offre adaptée à votre périmètre.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s contact-strip"><div class="wrap"><p>Une question, ou un test à proposer ? <a class="btn btn-accent" href="/#contact">Nous écrire</a></p></div></section>
+</main>
+
+<footer class="bot">
+  <div class="wrap">
+    <span>Canot · un outil libre (Apache-2.0) et des missions de <a href="https://q4o.com">Q4O</a>. Ce n'est pas une certification.</span>
+    <span class="foot-links"><a href="/docs.html" hreflang="en">Documentation</a> · <a href="/faq.html">Questions fréquentes</a> · <a href="/mentions-legales.html">Mentions légales et confidentialité</a> · <a href="https://github.com/chiptuned/canot">Code source</a></span>
+  </div>
+</footer>
+<script src="/app.js?v=a7c197a686" defer></script>
+</body>
+</html>

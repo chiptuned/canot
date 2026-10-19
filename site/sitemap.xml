@@ -49,6 +49,18 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://canot.io/offres.html"/>
   </url>
   <url>
+    <loc>https://canot.io/revue.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://canot.io/revue.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://canot.io/en/review.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://canot.io/revue.html"/>
+  </url>
+  <url>
+    <loc>https://canot.io/en/review.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://canot.io/revue.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://canot.io/en/review.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://canot.io/revue.html"/>
+  </url>
+  <url>
     <loc>https://canot.io/faq.html</loc>
     <xhtml:link rel="alternate" hreflang="fr" href="https://canot.io/faq.html"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://canot.io/en/faq.html"/>
