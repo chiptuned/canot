@@ -104,11 +104,11 @@
     { id: 'stackit', label: 'STACKIT', word: 'stackit:eu01', rest: BUCKET },
     { id: 'onprem', label: 'S3 sur site', word: '"s3://MY_BUCKET/canot?endpoint=https://s3.internal:9000"', rest: '' }
   ];
-  // Comment lancer Canot : uv (uvx), pipx ou pip. Le connecteur de la plateforme choisie est demandé tel quel (canot[snowflake]).
+  // Comment lancer Canot : uv (uvx), pipx ou pip. Les connecteurs sont installés d'office avec Canot.
   var RUNNERS = [
-    { id: 'uvx', label: 'uvx', word: 'uvx', rest: function (x) { return ' --from "canot[' + x + ']" canot'; } },
-    { id: 'pipx', label: 'pipx', word: 'pipx run', rest: function (x) { return ' --spec "canot[' + x + ']" canot'; } },
-    { id: 'pip', label: 'pip', word: 'pip install', rest: function (x) { return ' "canot[' + x + ']" && canot'; } }
+    { id: 'uvx', label: 'uvx', word: 'uvx canot', rest: function () { return ''; } },
+    { id: 'pipx', label: 'pipx', word: 'pipx run canot', rest: function () { return ''; } },
+    { id: 'pip', label: 'pip', word: 'pip install canot && canot', rest: function () { return ''; } }
   ];
   var INTRO_DELAY = 1400, INTRO_STEP = 650;
 

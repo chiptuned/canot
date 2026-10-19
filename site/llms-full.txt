@@ -21,7 +21,7 @@ uvx canot drill "databricks://MY_WORKSPACE.cloud.databricks.com/sql/1.0/warehous
 uvx canot drill "bigquery://MY_PROJECT/MY_DATASET?location=EU" scaleway:fr-par --bucket my-bucket
 ```
 
-Si un connecteur manque, Canot affiche la commande exacte à lancer (par exemple `uvx --from "canot[bigquery]" canot drill …`).
+Les connecteurs Snowflake, BigQuery et Databricks sont installés avec Canot : rien à ajouter. Sans `uv`, `pipx run canot …` ou `pip install canot` font de même.
 
 ## Les commandes
 
@@ -115,7 +115,7 @@ Beaucoup d'équipes travaillent avec un agent. `canot mcp` lui donne la document
 Installation dans Claude Code :
 
 ```bash
-claude mcp add canot -- uvx --from "canot[mcp]" canot mcp
+claude mcp add canot -- uvx canot mcp
 ```
 
 Ou dans la configuration MCP de votre client (Claude Desktop, Cursor, VS Code…) :
@@ -123,7 +123,7 @@ Ou dans la configuration MCP de votre client (Claude Desktop, Cursor, VS Code…
 ```json
 {
   "mcpServers": {
-    "canot": { "command": "uvx", "args": ["--from", "canot[mcp]", "canot", "mcp"] }
+    "canot": { "command": "uvx", "args": ["canot", "mcp"] }
   }
 }
 ```

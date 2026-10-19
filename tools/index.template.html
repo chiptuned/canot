@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Canot : prouvez que vous pouvez partir</title>
+<title>Canot : reprenez la main sur vos données</title>
 <meta name="description" content="Canot teste la sortie de votre plateforme de données (Snowflake, BigQuery, Databricks) dans vos propres comptes et vous remet un dossier de preuve signé.">
 <link rel="canonical" href="https://canot.io/">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -44,10 +44,10 @@
     </div>
     <div class="cmd">
       <span class="p" aria-hidden="true">$</span>
-      <code><span class="cs-drum--code" data-cs-drum="runner">uvx</span><span data-cs-run-rest> --from "canot[snowflake]" canot</span> drill "<span class="cs-drum--code" data-cs-drum="scheme">snowflake</span><span data-cs-rest>://MY_ACCOUNT/MY_DATABASE?user=MY_USER</span>" <span class="cs-drum--code" data-cs-drum="dest">./iceberg</span><span data-cs-dest-rest></span></code>
+      <code><span class="cs-drum--code" data-cs-drum="runner">uvx canot</span> drill "<span class="cs-drum--code" data-cs-drum="scheme">snowflake</span><span data-cs-rest>://MY_ACCOUNT/MY_DATABASE?user=MY_USER</span>" <span class="cs-drum--code" data-cs-drum="dest">./iceberg</span><span data-cs-dest-rest></span></code>
       <button class="c" type="button" data-cs-copy aria-label="Copier la commande">copier</button>
     </div>
-    <p class="cmd-note">En entrée <a href="?source=snowflake" data-cs-pick="snowflake">Snowflake</a>, <a href="?source=bigquery" data-cs-pick="bigquery">BigQuery</a> ou <a href="?source=databricks" data-cs-pick="databricks">Databricks</a> ; en sortie un <a href="?sortie=local" data-cs-pick-out="local">dossier local</a>, <a href="?sortie=scaleway" data-cs-pick-out="scaleway">Scaleway</a>, <a href="?sortie=ovh" data-cs-pick-out="ovh">OVHcloud</a>, <a href="?sortie=outscale" data-cs-pick-out="outscale">Outscale</a>, <a href="?sortie=ionos" data-cs-pick-out="ionos">IONOS</a>, <a href="?sortie=stackit" data-cs-pick-out="stackit">STACKIT</a> ou <a href="?sortie=onprem" data-cs-pick-out="onprem">un S3 sur site</a>.<br>Canot copie, compare tout, rejoue vos requêtes les plus coûteuses et écrit un dossier de preuve signé.<br>Pas de données sous la main ? <code>uvx canot demo</code></p>
+    <p class="cmd-note">En entrée <a href="?source=snowflake" data-cs-pick="snowflake">Snowflake</a>, <a href="?source=bigquery" data-cs-pick="bigquery">BigQuery</a> ou <a href="?source=databricks" data-cs-pick="databricks">Databricks</a> ; en sortie un <a href="?sortie=local" data-cs-pick-out="local">dossier local</a>, <a href="?sortie=scaleway" data-cs-pick-out="scaleway">Scaleway</a>, <a href="?sortie=ovh" data-cs-pick-out="ovh">OVHcloud</a>, <a href="?sortie=outscale" data-cs-pick-out="outscale">Outscale</a>, <a href="?sortie=ionos" data-cs-pick-out="ionos">IONOS</a>, <a href="?sortie=stackit" data-cs-pick-out="stackit">STACKIT</a> ou <a href="?sortie=onprem" data-cs-pick-out="onprem">un S3 sur site</a>.<br>Canot copie, compare tout, rejoue vos requêtes les plus coûteuses et écrit un dossier de preuve signé.</p>
     <div class="ctas">
       <a class="btn btn-accent" href="https://github.com/chiptuned/canot">Tester gratuitement</a>
       <a class="btn btn-line" href="rapport.html">Voir un exemple de rapport</a>@@booking@@

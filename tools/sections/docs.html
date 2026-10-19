@@ -10,7 +10,7 @@ uvx canot drill &quot;databricks://MY_WORKSPACE.cloud.databricks.com/sql/1.0/war
 
 # BigQuery vers un hébergeur européen
 uvx canot drill &quot;bigquery://MY_PROJECT/MY_DATASET?location=EU&quot; scaleway:fr-par --bucket my-bucket</code></pre>
-<p>Si un connecteur manque, Canot affiche la commande exacte à lancer (par exemple <code>uvx --from "canot[bigquery]" canot drill …</code>).</p>
+<p>Les connecteurs Snowflake, BigQuery et Databricks sont installés avec Canot : rien à ajouter. Sans <code>uv</code>, <code>pipx run canot …</code> ou <code>pip install canot</code> font de même.</p>
 <h3 id="les-commandes">Les commandes</h3>
 <table><tr><th>Commande</th><th>Ce qu'elle fait</th></tr><tr><td><code>canot scan SOURCE</code></td><td>Radiographie en lecture seule : inventaire, volumes, consommation, ce qui ne part pas, rejouabilité des requêtes. Écrit <code>scan.html</code> (à transmettre), <code>scan.json</code> et des CSV. Voir <a href="#scan">scan</a>.</td></tr><tr><td><code>canot drill SOURCE DESTINATION</code></td><td>Exercice de sortie complet : copie, comparaison table par table, rejeu des requêtes, dossier de preuve signé.</td></tr><tr><td><code>canot demo</code></td><td>Démonstration de 30 secondes, sans compte ni données : le jeu TPC-H (référence des bancs d'essai de bases de données, généré en local) et un exercice complet. Hors ligne, un jeu fictif de secours.</td></tr><tr><td><code>canot verify-evidence DOSSIER</code></td><td>Vérifie la chaîne et la signature d'un dossier de preuve. <code>--expect-pub</code> refuse un dossier signé par une autre clé.</td></tr><tr><td><code>canot teardown DESTINATION</code></td><td>Supprime les données copiées.</td></tr><tr><td><code>canot snowflake-setup</code></td><td>Écrit le script SQL d'accès en lecture seule à faire relire et lancer par un administrateur. <code>--generate-key</code> crée la paire de clés.</td></tr><tr><td><code>canot bigquery-setup</code></td><td>Écrit le script <code>gcloud</code> du rôle personnalisé en lecture seule.</td></tr><tr><td><code>canot init-tolerances</code></td><td>Écrit un fichier de tolérances de comparaison à relire avec vous.</td></tr><tr><td><code>canot demo-data CHEMIN</code></td><td>Crée une base DuckDB de démonstration.</td></tr><tr><td><code>canot rejeu-dbt dbt://PROJET --base COPIE.duckdb</code></td><td>Preuve P3 sur un projet dbt : rejoue les modèles SQL dans DuckDB à partir de la copie des sources (base DuckDB, ou <code>--lac</code> écrit par <code>canot drill</code>), compare chaque sortie à la table d'origine (lignes, statistiques, empreinte) et signe un dossier. Voir <a href="scan.md#preuve-p3--canot-rejeu-dbt">scan</a>.</td></tr><tr><td><code>canot connecteurs</code></td><td>Liste les plateformes connues : forme d'URL, inventaire (<code>scan</code>), export (<code>drill</code>), forme de preuve, statut (testé ou écrit, non testé) et extra <code>pip</code> à installer.</td></tr><tr><td><code>canot mcp</code></td><td>Serveur MCP : la documentation et l'explication de vos rapports, pour un agent. Voir <a href="#avec-un-agent-mcp">Avec un agent</a>.</td></tr></table>
 <p>Toutes les commandes acceptent <code>--debug</code> (trace complète en cas d'erreur).</p>
@@ -36,11 +36,11 @@ uvx canot drill &quot;bigquery://MY_PROJECT/MY_DATASET?location=EU&quot; scalewa
 <h3 id="avec-un-agent-mcp">Avec un agent (MCP)</h3>
 <p>Beaucoup d'équipes travaillent avec un agent. <code>canot mcp</code> lui donne la documentation de Canot et lui explique vos rapports, sans rien envoyer à personne : le serveur tourne sur votre machine.</p>
 <p>Installation dans Claude Code :</p>
-<pre><code>claude mcp add canot -- uvx --from &quot;canot[mcp]&quot; canot mcp</code></pre>
+<pre><code>claude mcp add canot -- uvx canot mcp</code></pre>
 <p>Ou dans la configuration MCP de votre client (Claude Desktop, Cursor, VS Code…) :</p>
 <pre><code>{
   &quot;mcpServers&quot;: {
-    &quot;canot&quot;: { &quot;command&quot;: &quot;uvx&quot;, &quot;args&quot;: [&quot;--from&quot;, &quot;canot[mcp]&quot;, &quot;canot&quot;, &quot;mcp&quot;] }
+    &quot;canot&quot;: { &quot;command&quot;: &quot;uvx&quot;, &quot;args&quot;: [&quot;canot&quot;, &quot;mcp&quot;] }
   }
 }</code></pre>
 <p>Outils exposés :</p>

@@ -46,7 +46,7 @@ def test_commande_connecteurs(capsys):
     out = capsys.readouterr().out
     for label, status in (("Snowflake", "testé"), ("BigQuery", "testé"), ("Databricks", "écrit, non testé"), ("DuckDB", "testé")):
         line = next(l for l in out.splitlines() if l.startswith(label))
-        assert line.rstrip().endswith(("aucun", f"canot[{label.lower()}]")) and f"  {status}  " in line, line
+        assert line.rstrip().endswith("inclus") and f"  {status}  " in line, line
     assert "P1 parité des données" in out
 
 

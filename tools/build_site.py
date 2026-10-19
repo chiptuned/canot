@@ -134,7 +134,7 @@ def docs():
 - [Les commandes](https://canot.io/docs.html#commandes): drill, scan, demo, verify-evidence, teardown, snowflake-setup, bigquery-setup, mcp
 - [Sortie en local ou on-prem](https://canot.io/docs.html#sortie-en-local-ou-on-prem)
 - [Le scan en lecture seule](https://canot.io/docs.html#scan): ce qui est lu, avec quels droits
-- [Avec un agent (MCP)](https://canot.io/docs.html#avec-un-agent-mcp): `claude mcp add canot -- uvx --from "canot[mcp]" canot mcp`
+- [Avec un agent (MCP)](https://canot.io/docs.html#avec-un-agent-mcp): `claude mcp add canot -- uvx canot mcp`
 
 ## Autres
 - [Catalogue des écarts](https://canot.io/ecarts.html): ce que deux moteurs rendent différemment, mesuré
@@ -170,7 +170,7 @@ head = (root / "head.partial.html").read_text()
 tail = (root / "tail.partial.html").read_text()
 strip = '<section class="s contact-strip"><div class="wrap"><p>Une question, ou un test à proposer ? <a class="btn btn-accent" href="/#contact">Nous écrire</a></p></div></section>'
 for name, (title, desc, parts) in PAGES.items():
-    hd = head.replace("<title>Canot : prouvez que vous pouvez partir</title>", f"<title>{title} | Canot</title>")
+    hd = head.replace("<title>Canot : reprenez la main sur vos données</title>", f"<title>{title} | Canot</title>")
     hd = re.sub(r'<meta name="description" content="[^"]*">', f'<meta name="description" content="{desc}">', hd)
     hd = hd.replace('<link rel="canonical" href="https://canot.io/">', f'<link rel="canonical" href="https://canot.io/{name}.html">')
     hd = re.sub(r'<meta property="og:[^>]*>\n', "", hd)

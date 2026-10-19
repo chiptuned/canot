@@ -23,6 +23,11 @@ dependencies = [
   "pyiceberg[sql-sqlite]>=0.8",
   "sqlglot>=25",
   "cryptography>=42",
+  # les connecteurs sont installés d'office : `uvx canot drill …` marche sans option
+  "snowflake-connector-python>=3.12",
+  "google-cloud-bigquery[bqstorage]>=3.25",
+  "databricks-sql-connector>=3.5",
+  "mcp>=1.2",
 ]
 
 [project.urls]
@@ -31,12 +36,13 @@ Source = "https://github.com/chiptuned/canot"
 Issues = "https://github.com/chiptuned/canot/issues"
 
 [project.optional-dependencies]
-snowflake = ["snowflake-connector-python[pandas]>=3.12"]
-bigquery = ["google-cloud-bigquery[bqstorage]>=3.25"]
-databricks = ["databricks-sql-connector>=3.5"]
+# anciens extras, gardés pour que `canot[snowflake]` etc. continuent de s'installer
+snowflake = []
+bigquery = []
+databricks = []
 postgres = ["psycopg2-binary>=2.9"]
-mcp = ["mcp>=1.2"]
-all = ["snowflake-connector-python[pandas]>=3.12", "google-cloud-bigquery[bqstorage]>=3.25", "databricks-sql-connector>=3.5", "psycopg2-binary>=2.9"]
+mcp = []  # installé d'office
+all = ["psycopg2-binary>=2.9"]
 dev = ["pytest>=8", "moto[server,s3]>=5"]
 
 [project.scripts]

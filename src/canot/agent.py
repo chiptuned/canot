@@ -181,7 +181,7 @@ def serve() -> None:
         try:
             from mcp.server.fastmcp import FastMCP as Server  # mcp 1.x
         except ImportError as e:
-            raise ModuleNotFoundError("Il manque le connecteur MCP. Lancez : uvx --from \"canot[mcp]\" canot mcp", name="mcp") from e
+            raise ModuleNotFoundError("Il manque le connecteur MCP. Réinstallez Canot : pip install -U canot", name="mcp") from e
     server = Server("canot")
     for fn in TOOLS:
         server.tool()(fn)

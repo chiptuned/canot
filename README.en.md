@@ -22,7 +22,7 @@ It runs entirely in your accounts. No telemetry. It is **not** a certification: 
 ## On your data (read-only)
 
 ```bash
-uvx --from "canot[bigquery]" canot scan "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER"
+uvx canot scan "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER"
 ```
 
 Snowflake: `canot snowflake-setup --generate-key` prints the SQL a platform admin reviews and runs (read-only role, small warehouse, credit cap, public key).

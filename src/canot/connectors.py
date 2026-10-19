@@ -252,9 +252,9 @@ def table() -> str:
             return f"complet (niveaux {cap.niveaux[0]}-{cap.niveaux[-1]})" if cap.niveaux else "complet"
         return cap.inventaire
 
-    head = ("Connecteur", "URL", "Inventaire (scan)", "Export (drill)", "Preuve", "Statut", "Extra pip")
+    head = ("Connecteur", "URL", "Inventaire (scan)", "Export (drill)", "Preuve", "Statut", "Installation")
     rows = [(c.label, c.url, inv(c), ", ".join(c.capabilities.export) or "aucun", ", ".join(c.capabilities.preuve) or "aucune",
-             c.status, f"canot[{c.extra}]" if c.extra else "aucun") for c in CONNECTORS.values()]
+             c.status, "inclus") for c in CONNECTORS.values()]
     w = [max(len(r[i]) for r in (head, *rows)) for i in range(len(head))]
     lines = ["  ".join(v.ljust(w[i]) for i, v in enumerate(r)).rstrip() for r in (head, *rows)]
     used = sorted({p for c in CONNECTORS.values() for p in c.capabilities.preuve})
