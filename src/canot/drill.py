@@ -81,7 +81,9 @@ def run_drill(src: Source, target: Target, out: Path, key_path: Path, queries_fi
     qres = []
     if queries:
         log(f"→ replaying {len(queries)} query(ies) on both sides")
-        qres = replay_queries(src, queries[:top_n], cat, [t for t in tables if not copies[t.fqn].error], tol,
+        # a table that was copied but could not be compared is still replayed
+        replayable = [t for t in tables if not copies[t.fqn].error or copies[t.fqn].error.startswith("comparison failed")]
+        qres = replay_queries(src, queries[:top_n], cat, replayable, tol,
                               {k: v.bytes for k, v in copies.items()}, int(replay_max_gb * 1e9))
         for q in qres:
             log(f"   [{q.status}] {q.sql[:70].replace(chr(10), ' ')}")
