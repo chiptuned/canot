@@ -149,7 +149,7 @@ def test_errors_are_readable():
     from canot.cli import explain
 
     msg = explain(ModuleNotFoundError("x", name="google.cloud"), ["scan", "--from", "bigquery://p/d"])
-    assert "canot[bigquery]" in msg and "uvx --from" in msg
+    assert "canot[bigquery]" in msg and "uvx" in msg
     assert "gcloud auth application-default login" in explain(type("DefaultCredentialsError", (Exception,), {})("x"), [])
     assert explain(RuntimeError("something else"), []) is None
 

@@ -37,8 +37,8 @@ class EvidenceLog:
         key = load_or_create_key(key_path, announce)
         sig = key.sign(self.prev.encode())
         pub = key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
-        self.path.write_text("\n".join(json.dumps(e, sort_keys=True, default=str) for e in self.entries) + "\n")
-        (self.out / "evidence.sig").write_text(sig.hex())
+        self.path.write_text("\n".join(json.dumps(e, sort_keys=True, default=str) for e in self.entries) + "\n", encoding="utf-8", newline="\n")
+        (self.out / "evidence.sig").write_text(sig.hex(), encoding="utf-8", newline="\n")
         (self.out / "evidence.pub").write_bytes(pub)
         return {"last_hash": self.prev, "signature": sig.hex(), "entries": len(self.entries)}
 
@@ -59,7 +59,7 @@ def verify_dir(d: Path, expect_pub: Path | None = None) -> tuple[bool, str]:
     try:
         if expect_pub is not None and (d / "evidence.pub").read_bytes().strip() != expect_pub.read_bytes().strip():
             return False, "the folder's public key is not the expected one"
-        lines = [json.loads(l) for l in (d / "evidence.jsonl").read_text().splitlines() if l.strip()]
+        lines = [json.loads(l) for l in (d / "evidence.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
         prev = "0" * 64
         for e in lines:
             body = {k: e[k] for k in ("seq", "ts", "event", "data", "prev")}
@@ -68,7 +68,7 @@ def verify_dir(d: Path, expect_pub: Path | None = None) -> tuple[bool, str]:
             prev = e["hash"]
         pub = serialization.load_pem_public_key((d / "evidence.pub").read_bytes())
         assert isinstance(pub, Ed25519PublicKey)
-        pub.verify(bytes.fromhex((d / "evidence.sig").read_text().strip()), prev.encode())
+        pub.verify(bytes.fromhex((d / "evidence.sig").read_text(encoding="utf-8").strip()), prev.encode())
         return True, f"{len(lines)} entries, chain intact, signature valid"
     except InvalidSignature:
         return False, "invalid signature"

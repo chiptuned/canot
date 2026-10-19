@@ -486,7 +486,7 @@ def write_relire_sql(res: dict, out: Path) -> Path:
         path = meta[len("file://"):] if meta.startswith("file://") else meta
         lines.append(f"SELECT '{fqn}' AS table_name, count(*) AS row_count FROM iceberg_scan('{path}');")
     p = out / REREAD_FILE
-    p.write_text("\n".join(lines) + "\n")
+    p.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     return p
 
 
@@ -682,7 +682,7 @@ def _body(res: dict, out: Path, lang: str, stamp: datetime) -> str:
 
 def write_report(res: dict, out: Path, lang: str | None = None) -> Path:
     """report.json (English) and report.html: both languages in one file; `lang` (or the locale) picks the pane shown first."""
-    (out / "report.json").write_text(json.dumps(res, indent=2, default=str, ensure_ascii=False))
+    (out / "report.json").write_text(json.dumps(res, indent=2, default=str, ensure_ascii=False), encoding="utf-8", newline="\n")
     default = default_lang(lang)
     stamp = datetime.now()
     both = bilingual(_body(res, out, "en", stamp), _body(res, out, "fr", stamp), default)
@@ -694,5 +694,5 @@ def write_report(res: dict, out: Path, lang: str | None = None) -> Path:
             f"<style>{CSS}{BRAND_CSS}</style>\n{top}\n{panes}\n</html>")
     write_relire_sql(res, out)
     p = out / "report.html"
-    p.write_text(page)
+    p.write_text(page, encoding="utf-8", newline="\n")
     return p

@@ -25,7 +25,7 @@ class Tolerances:
     def load(cls, path: str | None) -> "Tolerances":
         if not path:
             return cls()
-        d = tomllib.loads(Path(path).read_text()).get("tolerance", {})
+        d = tomllib.loads(Path(path).read_text(encoding="utf-8")).get("tolerance", {})
         return cls(float(d.get("float_rel", 1e-9)), float(d.get("decimal_abs", 0.0)),
                    {k.upper(): float(v) for k, v in d.get("columns", {}).items()})
 

@@ -63,7 +63,7 @@ def _scw_config() -> tuple[str | None, str | None]:
     ak = sk = None
     section = None  # None = top of the file; otherwise the current profile name
     try:
-        for raw in path.read_text().splitlines():
+        for raw in path.read_text(encoding="utf-8").splitlines():
             if not raw.strip() or raw.lstrip().startswith("#"):
                 continue
             indent = len(raw) - len(raw.lstrip())

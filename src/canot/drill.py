@@ -77,7 +77,7 @@ def run_drill(src: Source, target: Target, out: Path, key_path: Path, queries_fi
                     for f, r in copies.items() if r.error]
     levels = [c.proof_level for c in checks] + [x["proof_level"] for x in not_compared]
 
-    queries = split_sql(Path(queries_file).read_text()) if queries_file else src.history_queries(top_n)
+    queries = split_sql(Path(queries_file).read_text(encoding="utf-8")) if queries_file else src.history_queries(top_n)
     qres = []
     if queries:
         log(f"→ replaying {len(queries)} query(ies) on both sides")

@@ -1,6 +1,6 @@
 [project]
 name = "canot"
-version = "0.6.0"
+version = "0.6.1"
 description = "Prouvez que vous pouvez partir : exercice de sortie Snowflake/Databricks vers Apache Iceberg, avec dossier de preuve."
 readme = "README.md"
 license = "Apache-2.0"
@@ -24,10 +24,6 @@ dependencies = [
   "sqlglot>=25",
   "cryptography>=42",
   "pyyaml>=6",  # dbt_project.yml and profiles.yml (canot drill dbt://), read with safe_load
-  # les connecteurs sont installés d'office : `uvx canot drill …` marche sans option
-  "snowflake-connector-python>=3.12",
-  "google-cloud-bigquery[bqstorage]>=3.25",
-  "databricks-sql-connector>=3.5",
   "mcp>=1.2",
 ]
 
@@ -37,14 +33,14 @@ Source = "https://github.com/chiptuned/canot"
 Issues = "https://github.com/chiptuned/canot/issues"
 
 [project.optional-dependencies]
-# anciens extras, gardés pour que `canot[snowflake]` etc. continuent de s'installer
-snowflake = []
-bigquery = []
-databricks = []
+# drivers of the warehouses, installed on demand: uvx "canot[snowflake]" drill …
+snowflake = ["snowflake-connector-python>=3.12"]
+bigquery = ["google-cloud-bigquery[bqstorage]>=3.25"]
+databricks = ["databricks-sql-connector>=3.5"]
 postgres = ["psycopg2-binary>=2.9"]
 mcp = []  # installé d'office
-all = ["psycopg2-binary>=2.9"]
-dev = ["pytest>=8", "moto[server,s3]>=5"]
+all = ["psycopg2-binary>=2.9", "snowflake-connector-python>=3.12", "google-cloud-bigquery[bqstorage]>=3.25", "databricks-sql-connector>=3.5"]
+dev = ["pytest>=8", "moto[server,s3]>=5", "snowflake-connector-python>=3.12", "google-cloud-bigquery[bqstorage]>=3.25", "databricks-sql-connector>=3.5"]
 docs = ["mkdocs-material>=9.5", "mkdocs<2"]
 
 [project.scripts]

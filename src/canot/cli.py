@@ -21,8 +21,8 @@ def explain(exc: BaseException, argv: list[str]) -> str | None:
     if isinstance(exc, ModuleNotFoundError) and exc.name:
         for prefix, (label, extra) in {"mcp": ("MCP", "mcp"), **driver_hints()}.items():
             if exc.name.startswith(prefix):
-                return (f"The {label} connector is missing. Run: uvx --from \"canot[{extra}]\" canot {' '.join(argv)}\n"
-                        f"or install it: pip install 'canot[{extra}]'  (or 'canot[all]' for all three).")
+                return (f"The {label} connector is missing. Run: uvx \"canot[{extra}]\" {' '.join(argv)}\n"
+                        f"or install it: pip install 'canot[{extra}]'  (or 'canot[all]' for all of them).")
     if name == "DefaultCredentialsError":
         return "Google credentials not found. Run: gcloud auth application-default login"
     if name in ("Forbidden", "PermissionDenied") or "403" in str(exc)[:40]:
@@ -230,7 +230,7 @@ def run(argv: list[str] | None = None) -> int:
                 db.unlink()
             make_retail(str(db), a.rows)
             queries = RETAIL_QUERIES
-        qf.write_text(queries)
+        qf.write_text(queries, encoding="utf-8", newline="\n")
         src = open_demo(str(db))
         try:
             res = run_drill(src, target, evidence, Path.home() / ".canot" / "evidence.key", str(qf), Tolerances(), log=_p)
@@ -250,7 +250,7 @@ def run(argv: list[str] | None = None) -> int:
     if a.cmd == "init-tolerances":
         from .tolerances import DEFAULT_TOML
 
-        Path(a.path).write_text(DEFAULT_TOML)
+        Path(a.path).write_text(DEFAULT_TOML, encoding="utf-8", newline="\n")
         _p(f"written: {a.path}")
         return 0
     if a.cmd == "demo-data":
@@ -263,7 +263,7 @@ def run(argv: list[str] | None = None) -> int:
         else:
             make_demo(a.path, a.rows)
         q = Path(a.path).with_suffix(".queries.sql")
-        q.write_text(TPCH_QUERIES if a.tpch else RETAIL_QUERIES if a.retail else DEMO_QUERIES)
+        q.write_text(TPCH_QUERIES if a.tpch else RETAIL_QUERIES if a.retail else DEMO_QUERIES, encoding="utf-8", newline="\n")
         _p(f"written: {a.path} and {q}")
         return 0
     if a.cmd == "verify-evidence":
@@ -349,7 +349,7 @@ def run(argv: list[str] | None = None) -> int:
 
             res = scan(src, a.credit_price)
             out.mkdir(parents=True, exist_ok=True)
-            (out / "scan.json").write_text(json.dumps(res, indent=2, default=str, ensure_ascii=False))
+            (out / "scan.json").write_text(json.dumps(res, indent=2, default=str, ensure_ascii=False), encoding="utf-8", newline="\n")
             tt = res["totals"]
             _p(f"Source: {res['source']}")
             _p(f"{tt['tables']} tables, {tt['rows']} rows, {tt['gb']} GB")

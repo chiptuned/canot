@@ -203,7 +203,7 @@
     { id: 'aws', label: 'AWS (Paris)', word: 'aws:eu-west-3', rest: BUCKET },
     { id: 'onprem', label: tr('S3 sur site', 'On-prem S3'), word: '"s3://MY_BUCKET/canot?endpoint=https://s3.internal:9000"', rest: '' }
   ];
-  // How to run Canot: uv (uvx), pipx or pip. The connectors are installed with Canot.
+  // How to run Canot: uv (uvx), pipx or pip. The warehouse drivers (Snowflake, BigQuery, Databricks) are optional extras added to the command when needed.
   var RUNNERS = [
     { id: 'uvx', label: 'uvx', word: 'uvx canot' },
     { id: 'pipx', label: 'pipx', word: 'pipx run canot' },
@@ -252,7 +252,9 @@
     function command() {
       if (mobile) return RUNNERS[0].word + ' demo';
       var r = RUNNERS[st.run], a = ACTIONS[st.act], s = SOURCES[st.src], d = DESTS[st.dst];
-      var out = r.word + ' ' + a.word;
+      var ex = a.src && ['snowflake', 'bigquery', 'databricks'].indexOf(s.id) >= 0 ? s.id : '';  // heavy drivers are optional extras
+      var rw = !ex ? r.word : r.id === 'uvx' ? 'uvx "canot[' + ex + ']"' : r.id === 'pipx' ? 'pipx run --spec "canot[' + ex + ']" canot' : 'pip install "canot[' + ex + ']" && canot';
+      var out = rw + ' ' + a.word;
       if (a.src) out += ' "' + s.id + s.rest + '"';
       if (a.dst) out += (a.id === 'replay' ? ' --iceberg ' : ' ') + d.word + (a.id === 'replay' ? '' : d.rest);
       return out;
