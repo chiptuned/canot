@@ -100,9 +100,10 @@ def parser() -> argparse.ArgumentParser:
     bs = sub.add_parser("bigquery-setup", help="affiche le script gcloud d'accès en lecture seule (rôle personnalisé) à relire")
     bs.add_argument("--project", help="projet à scanner")
     bs.add_argument("--member", help="user:... ou serviceAccount:... qui recevra le rôle")
-    dm = sub.add_parser("demo", help="démonstration complète en 30 secondes, sans compte : distributeur fictif, exercice, dossier de preuve")
+    dm = sub.add_parser("demo", help="démonstration complète en 30 secondes, sans compte : jeu TPC-H, exercice de sortie, dossier de preuve")
     dm.add_argument("--out", default="canot-demo")
-    dm.add_argument("--rows", type=int, default=50_000)
+    dm.add_argument("--sf", type=float, default=0.1, help="taille de TPC-H (0.1 : 600 000 lignes de lignes de commande)")
+    dm.add_argument("--rows", type=int, default=50_000, help=argparse.SUPPRESS)  # repli hors ligne : jeu fictif
     dm.add_argument("--no-open", action="store_true", help="n'ouvre pas le rapport dans le navigateur")
     it = sub.add_parser("init-tolerances", help="écrit un fichier de tolérances à relire avec le client")
     it.add_argument("path", nargs="?", default="tolerances.toml")
@@ -114,9 +115,9 @@ def parser() -> argparse.ArgumentParser:
     rd = sub.add_parser("rejeu-dbt", help="preuve P3 : rejoue les modèles d'un projet dbt dans DuckDB sur la copie et compare aux tables d'origine")
     rd.add_argument("projet", help="dbt://CHEMIN_DU_PROJET (dossier qui contient target/manifest.json, SQL compilé compris)")
     rd.add_argument("--base", help="copie en base DuckDB : tables sources et tables d'origine des modèles")
-    rd.add_argument("--lac", help="ou le lac Iceberg écrit par canot drill (même DESTINATION que pour drill)")
-    rd.add_argument("--drill-out", help="avec --lac : le dossier --out du drill, qui contient son catalogue (défaut canot-out)")
-    rd.add_argument("--catalog", help="avec --lac : le même catalogue que pour drill")
+    rd.add_argument("--iceberg", "--lac", dest="lac", help="ou la copie Iceberg écrite par canot drill (même DESTINATION que pour drill)")
+    rd.add_argument("--drill-out", help="avec --iceberg : le dossier --out du drill, qui contient son catalogue (défaut canot-out)")
+    rd.add_argument("--catalog", help="avec --iceberg : le même catalogue que pour drill")
     rd.add_argument("--out", default="canot-rejeu-dbt")
     rd.add_argument("--tolerances", help="fichier TOML (voir `canot init-tolerances`)")
     rd.add_argument("--key", default=os.environ.get("CANOT_EVIDENCE_KEY_PATH", str(Path.home() / ".canot" / "evidence.key")),
@@ -177,7 +178,7 @@ def run(argv: list[str] | None = None) -> int:
     if a.cmd == "demo":
         import webbrowser
 
-        from .demo import RETAIL_QUERIES, make_retail
+        from .demo import RETAIL_QUERIES, TPCH_QUERIES, make_retail, make_tpch
         from .drill import run_drill
         from .report import write_report
         from .source_loader import open_demo
@@ -186,16 +187,24 @@ def run(argv: list[str] | None = None) -> int:
 
         work = Path(a.out)
         work.mkdir(parents=True, exist_ok=True)
-        db = work / "maison.duckdb"
+        db = work / "demo.duckdb"
         if db.exists():
             db.unlink()
-        _p("Canot : démonstration sur un distributeur fictif (données inventées)\n")
-        make_retail(str(db), a.rows)
+        try:
+            _p("Canot : démonstration sur TPC-H, le jeu de référence des bancs d'essai de bases de données (généré ici, aucune donnée réelle)\n")
+            make_tpch(str(db), a.sf)
+            queries = TPCH_QUERIES
+        except Exception as e:  # noqa: BLE001 : l'extension tpch se télécharge au premier usage ; hors ligne, jeu de secours
+            _p(f"TPC-H indisponible ({type(e).__name__}) : jeu fictif de secours, générable hors ligne\n")
+            if db.exists():
+                db.unlink()
+            make_retail(str(db), a.rows)
+            queries = RETAIL_QUERIES
         qf = work / "requetes.sql"
-        qf.write_text(RETAIL_QUERIES)
+        qf.write_text(queries)
         src = open_demo(str(db))
         try:
-            res = run_drill(src, parse_target(str(work / "lac"), None, work), work / "dossier", Path.home() / ".canot" / "evidence.key", str(qf), Tolerances(), log=_p)
+            res = run_drill(src, parse_target(str(work / "iceberg"), None, work), work / "dossier", Path.home() / ".canot" / "evidence.key", str(qf), Tolerances(), log=_p)
         finally:
             src.close()
         rep = write_report(res, work / "dossier")

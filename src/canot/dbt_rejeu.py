@@ -3,7 +3,7 @@ puis chaque sortie est comparée à la table que la plateforme avait matérialis
 (nombre de lignes, statistiques par colonne, empreinte de contenu : verify.check_table).
 
 Entrée : les artefacts dbt (target/manifest.json, SQL compilé) et une copie qui contient les tables sources et les tables
-d'origine des modèles : une base DuckDB, ou le lac Iceberg écrit par `canot drill`. Rien n'est envoyé à la plateforme.
+d'origine des modèles : une base DuckDB, ou la copie Iceberg écrite par `canot drill`. Rien n'est envoyé à la plateforme.
 
 Chaque modèle est classé : `identique` (rejoué, comparé, égal), `different` (rejoué, comparé, écart), `non_compare`
 (rejoué, aucune table d'origine dans la copie : une vue par exemple ; sa sortie sert aux modèles suivants) ou
@@ -99,9 +99,9 @@ def ouvrir_copie(base: str | None = None, lac: str | None = None, drill_out: str
                 con.execute(f"create table {COPIE}.{q(schema)}.{q(name)} as select * from _canot_tmp")
                 con.unregister("_canot_tmp")
                 rows.append((schema, name))
-        desc = f"lac Iceberg {lac}"
+        desc = f"copie Iceberg {lac}"
     else:
-        raise ValueError("indiquez la copie : --base FICHIER.duckdb, ou --lac DESTINATION (le lac écrit par canot drill)")
+        raise ValueError("indiquez la copie : --base FICHIER.duckdb, ou --iceberg DESTINATION (la copie écrite par canot drill)")
     con.execute(f"create schema {SCHEMA_REJEU}")
     return con, {(s.upper(), n.upper()): (s, n) for s, n in rows}, desc
 

@@ -9,13 +9,13 @@
 
 ## Try it
 
-Thirty seconds, no account, no data. A fictional retailer, a full exit exercise, and the evidence report opens in your browser.
+Thirty seconds, no account, no data. The TPC-H benchmark dataset (generated locally), a full exit exercise, and the evidence report opens in your browser.
 
 ```bash
 uvx canot drill "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" ./iceberg
 ```
 
-No data at hand? `uvx canot demo` runs a fictional retailer in thirty seconds, no account. Canot copies tables from BigQuery, Snowflake or Databricks into Apache Iceberg on storage you control, compares each table (row counts, per-column statistics, content fingerprint), replays your key queries on both sides, and writes a report with a hash-chained, signed log.
+No data at hand? `uvx canot demo` runs the TPC-H benchmark dataset in thirty seconds, no account. Canot copies tables from BigQuery, Snowflake or Databricks into Apache Iceberg on storage you control, compares each table (row counts, per-column statistics, content fingerprint), replays your key queries on both sides, and writes a report with a hash-chained, signed log.
 
 It runs entirely in your accounts. No telemetry. It is **not** a certification: it is a dated record of measurements on the scope you ran.
 

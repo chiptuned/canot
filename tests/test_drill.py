@@ -114,8 +114,9 @@ def test_scaleway_named_profile(tmp_path, monkeypatch):
     assert t.props["s3.access-key-id"] == "TOPKEY"
 
 
-def test_demo_command_end_to_end_and_synthesis(tmp_path, capsys):
+def test_demo_command_end_to_end_and_synthesis(tmp_path, capsys, monkeypatch):
     from canot.cli import main
+    monkeypatch.setattr("canot.demo.make_tpch", lambda *a, **k: (_ for _ in ()).throw(OSError("hors ligne")))  # jeu de secours, sans réseau
     from canot.evidence import verify_dir
 
     assert main(["demo", "--out", str(tmp_path / "d"), "--rows", "2000", "--no-open"]) == 0
@@ -153,10 +154,11 @@ def test_errors_are_readable():
     assert explain(RuntimeError("autre chose"), []) is None
 
 
-def test_relire_sql_runs_with_plain_duckdb(tmp_path):
+def test_relire_sql_runs_with_plain_duckdb(tmp_path, monkeypatch):
     """La copie doit se relire sans Canot : on exécute vraiment relire.sql avec DuckDB."""
     import duckdb
     from canot.cli import main
+    monkeypatch.setattr("canot.demo.make_tpch", lambda *a, **k: (_ for _ in ()).throw(OSError("hors ligne")))
 
     assert main(["demo", "--out", str(tmp_path / "d"), "--rows", "1000", "--no-open"]) == 0
     sql = (tmp_path / "d" / "dossier" / "relire.sql").read_text()
@@ -199,3 +201,20 @@ def test_table_vide_et_fuseau_non_utc(tmp_path):
     cat = SqlCatalog("c", uri=f"sqlite:///{tmp_path}/c.db", warehouse=f"file://{tmp_path}/w")
     r = copy_table(Vide(), t, cat)
     assert r.error is None and cat.table_exists(("RAW", "VIDE"))
+
+
+def test_demo_tpch_si_l_extension_est_disponible(tmp_path):
+    """La démo par défaut est TPC-H (si l'extension peut se télécharger) : 8 tables, et l'écart de nanosecondes est signalé."""
+    import duckdb
+    import pytest
+
+    try:
+        duckdb.connect().execute("install tpch")
+    except Exception:
+        pytest.skip("extension tpch indisponible (hors ligne)")
+    from canot.cli import main
+
+    assert main(["demo", "--out", str(tmp_path / "d"), "--sf", "0.01", "--no-open"]) in (0, 1)
+    html = (tmp_path / "d" / "dossier" / "report.html").read_text()
+    assert "TPC-H" in html or "lineitem" in html.lower()
+    assert "TIMESTAMP_NS" in html

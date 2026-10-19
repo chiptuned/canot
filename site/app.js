@@ -104,10 +104,16 @@
     { id: 'stackit', label: 'STACKIT', word: 'stackit:eu01', rest: BUCKET },
     { id: 'onprem', label: 'S3 sur site', word: '"s3://MY_BUCKET/canot?endpoint=https://s3.internal:9000"', rest: '' }
   ];
+  // Comment lancer Canot : uv (uvx), pipx ou pip. Le connecteur de la plateforme choisie est demandé tel quel (canot[snowflake]).
+  var RUNNERS = [
+    { id: 'uvx', label: 'uvx', word: 'uvx', rest: function (x) { return ' --from "canot[' + x + ']" canot'; } },
+    { id: 'pipx', label: 'pipx', word: 'pipx run', rest: function (x) { return ' --spec "canot[' + x + ']" canot'; } },
+    { id: 'pip', label: 'pip', word: 'pip install', rest: function (x) { return ' "canot[' + x + ']" && canot'; } }
+  ];
   var INTRO_DELAY = 1400, INTRO_STEP = 650;
 
   function init(root) {
-    var st = { src: 0, dst: 0 };
+    var st = { src: 0, dst: 0, run: 0 };
     var touched = false;
     var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var qs = new URLSearchParams(location.search);
@@ -118,17 +124,20 @@
 
     var restEls = root.querySelectorAll('[data-cs-rest]');
     var destRestEls = root.querySelectorAll('[data-cs-dest-rest]');
+    var runRestEls = root.querySelectorAll('[data-cs-run-rest]');
+    var qr = RUNNERS.findIndex(function (p) { return p.id === qs.get('outil'); });
+    if (qr >= 0) { st.run = qr; touched = true; }
     var pickEls = root.querySelectorAll('[data-cs-pick]');
     var pickOutEls = root.querySelectorAll('[data-cs-pick-out]');
     var copyEls = root.querySelectorAll('[data-cs-copy]');
     var drums = Array.prototype.map.call(root.querySelectorAll('[data-cs-drum]'), buildDrum);
 
     function command() {
-      var a = SOURCES[st.src], b = DESTS[st.dst];
-      return 'uvx canot drill "' + a.id + a.rest + '" ' + b.word + b.rest;
+      var a = SOURCES[st.src], b = DESTS[st.dst], r = RUNNERS[st.run];
+      return r.word + r.rest(a.id) + ' drill "' + a.id + a.rest + '" ' + b.word + b.rest;
     }
     function set(kind, i, byUser) {
-      var list = kind === 'dst' ? DESTS : SOURCES;
+      var list = kind === 'dst' ? DESTS : kind === 'run' ? RUNNERS : SOURCES;
       i = Math.max(0, Math.min(list.length - 1, i));
       if (byUser) touched = true;
       if (i === st[kind]) return;
@@ -139,14 +148,15 @@
       drums.forEach(function (dr) { dr.render(); });
       restEls.forEach(function (el) { el.textContent = SOURCES[st.src].rest; });
       destRestEls.forEach(function (el) { el.textContent = DESTS[st.dst].rest; });
+      runRestEls.forEach(function (el) { el.textContent = RUNNERS[st.run].rest(SOURCES[st.src].id); });
       pickEls.forEach(function (el) { el.setAttribute('aria-current', el.getAttribute('data-cs-pick') === SOURCES[st.src].id ? 'true' : 'false'); });
       pickOutEls.forEach(function (el) { el.setAttribute('aria-current', el.getAttribute('data-cs-pick-out') === DESTS[st.dst].id ? 'true' : 'false'); });
     }
 
     function buildDrum(el) {
       var field = el.getAttribute('data-cs-drum'); // label | scheme (source), dest (destination)
-      var kind = field === 'dest' ? 'dst' : 'src';
-      var list = kind === 'dst' ? DESTS : SOURCES;
+      var kind = field === 'dest' ? 'dst' : field === 'runner' ? 'run' : 'src';
+      var list = kind === 'dst' ? DESTS : kind === 'run' ? RUNNERS : SOURCES;
       el.textContent = '';
       el.classList.add('cs-drum');
       el.tabIndex = 0;
@@ -156,7 +166,7 @@
       var items = list.map(function (p, j) {
         var s = document.createElement('span');
         s.className = 'cs-drum__item';
-        s.textContent = field === 'label' ? p.label : field === 'dest' ? p.word : p.id;
+        s.textContent = field === 'label' ? p.label : (field === 'dest' || field === 'runner') ? p.word : p.id;
         s.addEventListener('click', function () { set(kind, j, true); });
         col.appendChild(s);
         return s;
@@ -191,7 +201,7 @@
             it.setAttribute('data-dist', dd);
             it.setAttribute('aria-hidden', dd ? 'true' : 'false');
           });
-          el.setAttribute('aria-label', (kind === 'dst' ? 'Destination : ' : 'Plateforme : ') + list[i].label + '. Flèches haut et bas pour changer.');
+          el.setAttribute('aria-label', (kind === 'dst' ? 'Destination : ' : kind === 'run' ? 'Outil de lancement : ' : 'Plateforme : ') + list[i].label + '. Flèches haut et bas pour changer.');
         }
       };
     }
@@ -225,7 +235,7 @@
     if (!touched && !reduce && drums.length) {
       setTimeout(function () {
         if (touched) return;
-        drums.forEach(function (dr) { if (dr.el.getAttribute('data-cs-drum') !== 'dest') dr.el.classList.add('is-open'); });
+        drums.forEach(function (dr) { if (['label', 'scheme'].indexOf(dr.el.getAttribute('data-cs-drum')) >= 0) dr.el.classList.add('is-open'); });
         [1, 2, 0].forEach(function (v, n) { setTimeout(function () { if (!touched) set('src', v, false); }, INTRO_STEP * (n + 1)); });
         setTimeout(function () {
           if (!touched) drums.forEach(function (dr) { dr.el.classList.remove('is-open'); });

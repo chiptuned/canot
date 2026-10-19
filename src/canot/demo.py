@@ -96,3 +96,36 @@ select p.category, sum(l.qty * p.unit_price) as revenue
 from distrib.tickets t, unnest(t.lines) as u(l) join distrib.products p on p.product_id = l.product_id
 group by 1 order by 2 desc;
 """
+
+
+TPCH_QUERIES = """\
+select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price,
+       sum(l_extendedprice * (1 - l_discount)) as sum_disc_price, avg(l_discount) as avg_disc, count(*) as n
+from tpch.lineitem where l_shipdate <= date '1998-12-01' - interval '90' day
+group by 1, 2 order by 1, 2;
+
+select l_orderkey, sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate
+from tpch.customer, tpch.orders, tpch.lineitem
+where c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey
+  and o_orderdate < date '1995-03-15' and l_shipdate > date '1995-03-15'
+group by l_orderkey, o_orderdate order by revenue desc, o_orderdate limit 10;
+
+select sum(l_extendedprice * l_discount) as revenue from tpch.lineitem
+where l_shipdate >= date '1994-01-01' and l_shipdate < date '1995-01-01' and l_discount between 0.05 and 0.07 and l_quantity < 24;
+
+select * from tpch.lineitem order by l_orderkey, l_linenumber limit 50;
+"""
+
+
+def make_tpch(path: str, sf: float = 0.1) -> None:
+    """TPC-H (le jeu de référence des bancs d'essai de bases de données), généré localement par l'extension tpch de DuckDB.
+    Canot ajoute à LINEITEM une colonne horodatée à la nanoseconde, pour montrer ce qu'Iceberg v2 ne garde pas."""
+    con = duckdb.connect(path)
+    con.execute("install tpch")
+    con.execute("load tpch")
+    con.execute("create schema if not exists tpch")
+    con.execute("use tpch")
+    con.execute(f"call dbgen(sf={sf})")
+    con.execute("alter table lineitem add column l_loaded_at timestamp_ns")
+    con.execute("update lineitem set l_loaded_at = make_timestamp_ns(epoch_ns(l_commitdate::timestamp) + l_orderkey * 1000 + l_linenumber)")
+    con.close()
