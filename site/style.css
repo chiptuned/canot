@@ -402,3 +402,22 @@ input[type=file]{font:inherit;padding:8px 0}
 /* on narrow screens the end of the sentence wraps under the drum: while the drum is open that text steps aside so its neighbours stay readable */
 .hero-copy .big .after{transition:opacity .15s}
 @media (max-width:640px){.hero-copy .big:has(.cs-drum--title.is-open) .after{opacity:0}}
+
+/* mobile: one-line header (logo, example, language, try it) and a short hero so the boat and the waves show high on the page */
+.short{display:none}
+@media (max-width:640px){
+  header.top .wrap{flex-wrap:nowrap;gap:8px;padding-block:12px}
+  header.top .brand span{font-size:19px}
+  nav.main{gap:10px;font-size:13px;flex-wrap:nowrap;white-space:nowrap}
+  nav.main .long{display:none}nav.main .short{display:inline}
+  nav.main .btn{padding:8px 12px;font-size:13px}
+  .lang-switch{font-size:13px}
+  .hero .cmd-note,.hero-copy .sub{display:none}
+  .hero-copy .big{margin:14px 0}
+  .hero .cmd{margin-top:2px}
+}
+@media (max-width:640px){
+  .hero .wrap{padding-block:28px 96px;gap:14px}
+  .hero .ctas{display:none}
+  .hero-copy{gap:0}
+}

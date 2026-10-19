@@ -213,6 +213,12 @@
     clamp();
 
     var parts = root.querySelectorAll('[data-cs-show]');
+    // Phones: nobody runs a long command there, and the drums are heavy on a small screen: offer the short demo command
+    var mobile = !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches);
+    if (mobile) {
+      var cmdCode = root.querySelector('.cmd code');
+      if (cmdCode) cmdCode.textContent = RUNNERS[0].word + ' demo';
+    }
     var restEls = root.querySelectorAll('[data-cs-rest]');
     var destRestEls = root.querySelectorAll('[data-cs-dest-rest]');
     var prefixEls = root.querySelectorAll('[data-cs-dest-prefix]');
@@ -222,6 +228,7 @@
     var drums = Array.prototype.map.call(root.querySelectorAll('[data-cs-drum]'), buildDrum);
 
     function command() {
+      if (mobile) return RUNNERS[0].word + ' demo';
       var r = RUNNERS[st.run], a = ACTIONS[st.act], s = SOURCES[st.src], d = DESTS[st.dst];
       var out = r.word + ' ' + a.word;
       if (a.src) out += ' "' + s.id + s.rest + '"';
