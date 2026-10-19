@@ -218,3 +218,28 @@ def test_demo_tpch_si_l_extension_est_disponible(tmp_path):
     html = (tmp_path / "d" / "dossier" / "report.html").read_text()
     assert "TPC-H" in html or "lineitem" in html.lower()
     assert "TIMESTAMP_NS" in html
+
+
+def test_demo_est_un_raccourci_exact(tmp_path, capsys, monkeypatch):
+    """Les deux commandes affichées par `canot demo` donnent le même résultat que la démo : on les rejoue à la main."""
+    import re
+
+    from canot.cli import main
+
+    monkeypatch.setattr("canot.demo.make_tpch", lambda *a, **k: (_ for _ in ()).throw(OSError("hors ligne")))
+    out = tmp_path / "d"
+    assert main(["demo", "--out", str(out), "--no-open"]) == 0
+    shown = capsys.readouterr().out
+    assert f"canot demo-data {out}/demo.duckdb --tpch" in shown
+    m = re.search(r"canot drill (\S+) (\S+) --queries (\S+) --out (\S+)", shown)
+    assert m and m.group(2) == f"{out}/iceberg"
+    # même source, mêmes requêtes, même dossier de sortie : la commande longue rejoue l'exercice
+    assert main(["drill", m.group(1), str(tmp_path / "autre"), "--queries", m.group(3), "--out", str(tmp_path / "o2")]) in (0, 1)
+    assert (tmp_path / "o2" / "report.json").exists()
+
+
+def test_demo_refuse_tout_de_suite_une_destination_incomplete(tmp_path, capsys):
+    from canot.cli import main
+
+    assert main(["demo", "aws:eu-west-3", "--out", str(tmp_path / "d"), "--no-open"]) == 1
+    assert "bucket" in capsys.readouterr().err.lower()

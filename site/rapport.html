@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Exemple de rapport | Canot</title>
-<meta name="description" content="Un exemple de synthèse d'exercice de sortie produite par Canot, sur des données publiques BigQuery.">
+<meta name="description" content="Un exemple de synthèse d'exercice de sortie produite par Canot, sur le jeu de référence TPC-H.">
 <link rel="canonical" href="https://canot.io/rapport.html">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css?v=7c3e969ff7">
@@ -18,25 +18,25 @@
   <main>
   <article>
     <div class="head">
-      <div class="top-row"><span>Synthèse de l'exercice de sortie</span><span class="tagex">Exemple · données publiques</span></div>
+      <div class="top-row"><span>Synthèse de l'exercice de sortie</span><span class="tagex">Exemple · jeu TPC-H</span></div>
       <h1>Sortie faisable sur ce périmètre. Un point à traiter avant de partir.</h1>
       <dl class="meta">
-        <div><dt>Plateforme quittée</dt><dd>BigQuery</dd></div>
+        <div><dt>Source</dt><dd>DuckDB (TPC-H généré en local)</dd></div>
         <div><dt>Destination</dt><dd>Apache Iceberg</dd></div>
-        <div><dt>Périmètre</dt><dd>7 tables</dd></div>
-        <div><dt>Date</dt><dd>13 octobre 2026</dd></div>
+        <div><dt>Périmètre</dt><dd>8 tables, 8,7 millions de lignes</dd></div>
+        <div><dt>Date</dt><dd>19 octobre 2026</dd></div>
       </dl>
     </div>
     <ul class="findings">
-      <li><span class="tag ok">Identique</span><div><span class="t">Le contenu arrive à l'identique.</span><span class="d">Les 7 tables ont été copiées puis comparées : nombre de lignes, statistiques par colonne et empreinte du contenu. Aucune différence.</span></div></li>
-      <li><span class="tag info">3 sur 4</span><div><span class="t">Vos rapports donnent les mêmes chiffres.</span><span class="d">Quatre requêtes de reporting ont été rejouées des deux côtés. Trois rendent exactement le même résultat.</span></div></li>
-      <li><span class="tag warn">À traiter</span><div><span class="t">Un rapport mensuel change de format de date.</span><span class="d">BigQuery rend une date, la destination rend une date avec une heure. Les chiffres sont justes, la présentation diffère. Mieux vaut le savoir avant le départ que le lendemain.</span></div></li>
-      <li><span class="tag info">Signé</span><div><span class="t">Toute modification de la preuve se voit.</span><span class="d">Chaque étape est enregistrée dans un journal signé avec une clé créée chez vous. Si quelqu'un le modifie après coup, la vérification échoue.</span></div></li>
+      <li><span class="tag ok">Identique</span><div><span class="t">Sept tables sur huit arrivent à l'identique.</span><span class="d">Les 8 tables de TPC-H ont été copiées puis comparées : nombre de lignes, statistiques par colonne et empreinte du contenu de chaque table. La huitième ne diffère que par la précision d'une colonne, voir plus bas.</span></div></li>
+      <li><span class="tag info">3 sur 4</span><div><span class="t">Trois requêtes sur quatre donnent les mêmes chiffres.</span><span class="d">Quatre requêtes TPC-H ont été rejouées des deux côtés. Trois rendent exactement le même résultat ; la quatrième lit toutes les colonnes de la plus grosse table et révèle l'écart ci-dessous.</span></div></li>
+      <li><span class="tag warn">À traiter</span><div><span class="t">Une colonne horodatée perd de la précision.</span><span class="d">La source garde la nanoseconde, Apache Iceberg (version 2) s'arrête à la microseconde. L'instant est identique à la microseconde près. Cette colonne a été ajoutée par Canot pour la démonstration : sur vos données, le même écart se trouve sur les colonnes horodatées à la nanoseconde.</span></div></li>
+      <li><span class="tag info">Signé</span><div><span class="t">Toute modification de la preuve se voit.</span><span class="d">Chaque étape est enregistrée dans un journal signé avec une clé créée chez vous. Si une ligne du journal change, la vérification échoue. La signature atteste l'intégrité du dossier, pas son auteur ni sa date.</span></div></li>
     </ul>
     <div class="use"><b>Ce que vous pouvez en faire</b><span>Joindre ce dossier à votre plan de sortie, le présenter à votre comité des risques, ou l'utiliser comme base chiffrée pour votre prochain renouvellement.</span></div>
     <div class="foot">
       <span>Relevé de mesures pour votre propre évaluation. Ce n'est pas une certification et il ne dit rien de la conformité de vos contrats.</span>
-      <a href="https://github.com/chiptuned/canot/tree/main/examples/bigquery-thelook">Rapport technique complet</a>
+      <a href="https://github.com/chiptuned/canot/tree/main/examples/tpch">Rapport technique complet</a>
     </div>
   </article>
   </main>

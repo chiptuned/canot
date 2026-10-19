@@ -1,0 +1,47 @@
+<!doctype html><html lang="fr"><meta charset="utf-8"><title>Dossier de preuve Canot</title><style>body{font:15px/1.5 system-ui,sans-serif;max-width:960px;margin:2rem auto;padding:0 1rem;color:#14212b}
+h1{font-size:1.7rem}h2{margin-top:2rem;border-bottom:1px solid #cdd7de;padding-bottom:.3rem}
+table{border-collapse:collapse;width:100%;font-size:14px}td,th{border-bottom:1px solid #e1e8ec;padding:6px 8px;text-align:left;vertical-align:top}
+.ok{color:#1b7a3a;font-weight:600}.ko{color:#b3261e;font-weight:600}.warn{color:#9a5b00;font-weight:600}
+code{background:#eef3f6;padding:1px 4px;border-radius:3px;word-break:break-all}.box{background:#eef3f6;padding:.8rem 1rem;border-radius:6px}
+.verdict{font-size:1.6rem;line-height:1.2;margin:.4rem 0 1rem}.find{display:grid;grid-template-columns:110px 1fr;gap:16px;padding:14px 0;border-bottom:1px solid #e1e8ec}
+.tag{align-self:start;font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;text-align:center}.tag.ok{background:#e7f2ea;color:#2f7a4b}.tag.warn{background:#fbf1ea;color:#c8652f}.tag.info{background:#e6ecf2;color:#1f3a5f}
+.find b{display:block;font-size:1.05rem}.find span{color:#41566b}.cta{background:#1f3a5f;color:#fff;padding:1rem 1.2rem;border-radius:8px;margin-top:2rem}.cta a{color:#ffb88f;font-weight:600}
+@media(max-width:560px){.find{grid-template-columns:1fr}}</style>
+<h1>Dossier de preuve : exercice de sortie</h1>
+<p>Source : <code>duckdb:demo.duckdb</code> · Cible : <code>local:iceberg</code> · Constat daté du 19/10/2026 à 10:34, sur le périmètre exécuté · Canot 0.2.0</p>
+<h2 style="border:0;margin-bottom:0">Synthèse</h2><p class="verdict"><b>Sortie faisable sur ce périmètre. 2 points à traiter avant de partir.</b></p><div class="find"><span class="tag ok">Identique</span><div><b>Le contenu arrive, à une précision près.</b><span>Les 8 tables  soit 8 661 245 lignes  ont été copiées puis comparées : nombre de lignes  statistiques par colonne et empreinte du contenu. Seules les colonnes signalées plus bas diffèrent.</span></div></div><div class="find"><span class="tag info">3 sur 4</span><div><b>Vos rapports donnent presque les mêmes chiffres.</b><span>4 requêtes de reporting ont été rejouées des deux côtés. 3 rendent exactement le même résultat.</span></div></div><div class="find"><span class="tag warn">À traiter</span><div><b>Un rapport rend un résultat différent.</b><span>select * from tpch.lineitem order by l_orderkey, l_linenumber limit 50… : ligne triée 0, colonne 16 : Timestamp(&#x27;1996-02-12 00:00:00.000001001&#x27;) / datetime.datetime(1996, 2, 12, 0, 0, 0, 1). Les chiffres sont peut-être justes et la présentation diffère : mieux vaut le savoir avant le départ.</span></div></div><div class="find"><span class="tag warn">À traiter</span><div><b>1 colonne(s) perdent de la précision à l&#x27;arrivée.</b><span>tpch.lineitem.l_loaded_at : TIMESTAMP_NS devient timestamp[us]. Les valeurs diffèrent au-delà de la précision du type d&#x27;arrivée. Ce n&#x27;est pas une corruption : c&#x27;est un choix de type à décider avant de partir.</span></div></div><div class="find"><span class="tag info">Signé</span><div><b>Toute modification du journal se voit.</b><span>Chaque étape est enregistrée dans un journal signé avec une clé créée chez vous. La signature garantit l&#x27;intégrité du journal, pas l&#x27;identité de son auteur ni la date : l&#x27;empreinte de la clé est indiquée en bas du dossier.</span></div></div>
+<div class="box"><b>Constat :</b> <span class="warn">écarts à examiner</span> —
+7/8 tables identiques, 3/4 requêtes identiques,
+0 non rejouables, 1 avec écart, 1 conversion(s) avec perte possible.</div>
+<h2>Mesures de cet exercice</h2><ul>
+<li>Débit de copie mesuré : 323.26 Mo/s</li>
+<li>Temps de reprise estimé (fourchette) : 3.2 à 6.9 s — débit mesuré ±, hors validation humaine et reprise des applications</li>
+
+<li>Durée totale de l'exercice : 9.0 s</li></ul>
+<p class="small">Ces mesures décrivent cet exercice, sur ce périmètre. Elles ne comparent pas deux plateformes.</p>
+<h2>Où est la copie</h2>
+<p>Destination : <code>local:iceberg</code> · emplacement : <code>…/iceberg/warehouse</code> · catalogue : SQLite (catalog.db dans le dossier de sortie).<br>
+La copie est au format Apache Iceberg : vous pouvez la relire sans Canot. Le fichier <code>relire.sql</code> à côté de ce dossier contient les commandes DuckDB pour le faire.</p>
+<h2>Tables</h2><table><tr><th>Table</th><th>Lignes source</th><th>Lignes cible</th><th>Résultat</th><th>Détail</th></tr><tr><td>tpch.customer</td><td>150000</td><td>150000</td><td class='ok'>identique</td><td></td></tr><tr><td>tpch.lineitem</td><td>6001215</td><td>6001215</td><td class='warn'>précision</td><td>l_loaded_at.min : Timestamp(&#x27;1992-01-31 00:00:00.287971001&#x27;) / datetime.datetime(1992, 1, 31, 0, 0, 0, 287971); l_loaded_at.max : Timestamp(&#x27;1998-10-31 00:00:05.354144001&#x27;) / datetime.datetime(1998, 10, 31, 0, 0, 5, 354144)</td></tr><tr><td>tpch.nation</td><td>25</td><td>25</td><td class='ok'>identique</td><td></td></tr><tr><td>tpch.orders</td><td>1500000</td><td>1500000</td><td class='ok'>identique</td><td></td></tr><tr><td>tpch.part</td><td>200000</td><td>200000</td><td class='ok'>identique</td><td></td></tr><tr><td>tpch.partsupp</td><td>800000</td><td>800000</td><td class='ok'>identique</td><td></td></tr><tr><td>tpch.region</td><td>5</td><td>5</td><td class='ok'>identique</td><td></td></tr><tr><td>tpch.supplier</td><td>10000</td><td>10000</td><td class='ok'>identique</td><td></td></tr></table>
+<h2>Requêtes rejouées des deux côtés</h2><table><tr><th>Requête</th><th>Résultat</th><th>Détail</th></tr><tr><td><code>select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price,
+       sum(l_extendedprice * (1 - l_d</code></td><td class='ok'>match</td><td></td></tr><tr><td><code>select l_orderkey, sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate
+from tpch.customer, tpch.orders, tpch.lineitem
+where c_mk</code></td><td class='ok'>match</td><td></td></tr><tr><td><code>select sum(l_extendedprice * l_discount) as revenue from tpch.lineitem
+where l_shipdate &gt;= date &#x27;1994-01-01&#x27; and l_shipdate &lt; date &#x27;1995-01-</code></td><td class='ok'>match</td><td></td></tr><tr><td><code>select * from tpch.lineitem order by l_orderkey, l_linenumber limit 50</code></td><td class='ko'>mismatch</td><td>ligne triée 0, colonne 16 : Timestamp(&#x27;1996-02-12 00:00:00.000001001&#x27;) / datetime.datetime(1996, 2, 12, 0, 0, 0, 1)</td></tr></table>
+<h2>Conversions de types</h2><table><tr><td>tpch.lineitem.l_loaded_at</td><td>TIMESTAMP_NS → timestamp[us]</td><td class='warn'>ns -&gt; us (Iceberg v2 ne garde pas les nanosecondes) (perte possible)</td></tr></table>
+<h2>Ce qui ne part pas tel quel</h2>
+<p>Colonnes à type propre à la plateforme : 0. Objets à reconstruire (vues, procédures, tâches…) :</p>
+<table><tr><th>Type</th><th>Nombre</th><th>Exemples</th></tr><tr><td colspan=3>aucun détecté</td></tr></table>
+<h2>Ce que ces chiffres ne disent pas</h2>
+<ul><li>Ils concernent le périmètre exécuté, à la date du constat. Ils ne disent rien des autres tables ni de demain.</li>
+<li>Ils ne comparent pas deux plateformes : ni durées, ni coûts, ni performances.</li>
+<li>Ils ne couvrent ni les droits d'accès, ni les vues, ni les tâches planifiées, ni les applications branchées sur la plateforme.</li>
+<li>Ce n'est pas une certification et ce n'est pas un avis juridique sur vos contrats.</li></ul>
+<h2>Tolérances appliquées</h2><p><code>{&quot;float_rel&quot;: 1e-09, &quot;decimal_abs&quot;: 0.0, &quot;columns&quot;: {}}</code></p>
+<h2>Intégrité du dossier</h2>
+<p>Journal chaîné : 23 entrées, dernière empreinte <code>9cafe72219d813cac7cb580e770a671f7427ee1a97d8befcdafb219ca1d0793b</code>.
+Toute modification du journal se voit. Vérification : <code>canot verify-evidence dossier</code></p>
+<p>Empreinte de la clé publique de signature : <code>47371597 1591e860 04c9cf93 0acc0d7d</code>.
+La signature garantit l'intégrité du journal. Elle n'établit ni l'identité de l'auteur ni la date : pour cela, conservez le dossier dans votre propre archivage horodaté.</p>
+<p class="small"><i>Ce rapport est un relevé de mesures pour votre propre évaluation. Ce n'est pas une certification et il ne dit pas si vos contrats ou votre organisation sont conformes à un règlement.</i></p>
+<div class="cta">Ce dossier couvre le périmètre que vous avez choisi. Pour l'obtenir sur votre environnement, avec trois scénarios de coût de sortie et la marche à suivre : <a href="https://canot.io/#contact">canot.io</a>.</div></html>

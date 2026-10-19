@@ -101,6 +101,9 @@ def parser() -> argparse.ArgumentParser:
     bs.add_argument("--project", help="projet à scanner")
     bs.add_argument("--member", help="user:... ou serviceAccount:... qui recevra le rôle")
     dm = sub.add_parser("demo", help="démonstration complète en 30 secondes, sans compte : jeu TPC-H, exercice de sortie, dossier de preuve")
+    dm.add_argument("dest", nargs="?", help="où écrire la copie (comme pour drill : ./iceberg, s3://…, scaleway:fr-par, aws:eu-west-3…). Défaut : OUT/iceberg")
+    dm.add_argument("--bucket", help="obligatoire avec un raccourci d'hébergeur (voir canot drill)")
+    dm.add_argument("--catalog", help="catalogue Iceberg (voir canot drill)")
     dm.add_argument("--out", default="canot-demo")
     dm.add_argument("--sf", type=float, default=0.1, help="taille de TPC-H (0.1 : 600 000 lignes de lignes de commande)")
     dm.add_argument("--rows", type=int, default=50_000, help=argparse.SUPPRESS)  # repli hors ligne : jeu fictif
@@ -111,6 +114,8 @@ def parser() -> argparse.ArgumentParser:
     dd.add_argument("path")
     dd.add_argument("--rows", type=int, default=20_000)
     dd.add_argument("--retail", action="store_true", help="jeu fictif de distributeur (tickets avec lignes imbriquées)")
+    dd.add_argument("--tpch", action="store_true", help="jeu TPC-H, le benchmark de référence (généré en local)")
+    dd.add_argument("--sf", type=float, default=0.1, help="avec --tpch : taille (1 = environ 1 Go)")
     sub.add_parser("connecteurs", help="les plateformes connues : inventaire, export, preuve, statut de validation")
     rd = sub.add_parser("rejeu-dbt", help="preuve P3 : rejoue les modèles d'un projet dbt dans DuckDB sur la copie et compare aux tables d'origine")
     rd.add_argument("projet", help="dbt://CHEMIN_DU_PROJET (dossier qui contient target/manifest.json, SQL compilé compris)")
@@ -187,11 +192,18 @@ def run(argv: list[str] | None = None) -> int:
 
         work = Path(a.out)
         work.mkdir(parents=True, exist_ok=True)
-        db = work / "demo.duckdb"
+        db, qf, dossier = work / "demo.duckdb", work / "requetes.sql", work / "dossier"
+        dest = a.dest or str(work / "iceberg")
+        bucket = f" --bucket {a.bucket}" if a.bucket else ""
+        _p("canot demo est un raccourci de deux commandes, que vous pouvez lancer et modifier vous-même :")
+        _p(f"  canot demo-data {db} --tpch --sf {a.sf:g}")
+        _p(f"  canot drill {db} {dest}{bucket} --queries {qf} --out {dossier}")
+        _p("Changez la destination pour jouer la même démo ailleurs : canot demo aws:eu-west-3 --bucket MON-COFFRE\n")
         if db.exists():
             db.unlink()
+        target = parse_target(dest, a.bucket, dossier, a.catalog)  # refuse tout de suite une destination incomplète
         try:
-            _p("Canot : démonstration sur TPC-H, le jeu de référence des bancs d'essai de bases de données (généré ici, aucune donnée réelle)\n")
+            _p("TPC-H : le jeu de référence des bancs d'essai de bases de données, généré ici (aucune donnée réelle)\n")
             make_tpch(str(db), a.sf)
             queries = TPCH_QUERIES
         except Exception as e:  # noqa: BLE001 : l'extension tpch se télécharge au premier usage ; hors ligne, jeu de secours
@@ -200,17 +212,16 @@ def run(argv: list[str] | None = None) -> int:
                 db.unlink()
             make_retail(str(db), a.rows)
             queries = RETAIL_QUERIES
-        qf = work / "requetes.sql"
         qf.write_text(queries)
         src = open_demo(str(db))
         try:
-            res = run_drill(src, parse_target(str(work / "iceberg"), None, work), work / "dossier", Path.home() / ".canot" / "evidence.key", str(qf), Tolerances(), log=_p)
+            res = run_drill(src, target, dossier, Path.home() / ".canot" / "evidence.key", str(qf), Tolerances(), log=_p)
         finally:
             src.close()
-        rep = write_report(res, work / "dossier")
+        rep = write_report(res, dossier)
         _p(f"\n{res['summary']['parity'] == 'complète' and 'Parité complète' or 'Des écarts ont été trouvés'} : {res['summary']['tables_ok']}/{res['summary']['tables_total']} tables, {res['summary']['queries_match']}/{res['summary']['queries_total']} requêtes.")
         _p(f"Dossier de preuve : {rep}")
-        _p("Vérifier qu'il n'a pas été modifié : canot verify-evidence " + str(work / "dossier"))
+        _p("Vérifier qu'il n'a pas été modifié : canot verify-evidence " + str(dossier))
         _p("\nEt maintenant, sur vos données (lecture seule) :  canot scan \"snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER\"")
         _p("Besoin d'aide pour l'exécuter sur votre périmètre ? https://canot.io/#contact")
         if not a.no_open:
@@ -223,14 +234,16 @@ def run(argv: list[str] | None = None) -> int:
         _p(f"écrit : {a.path}")
         return 0
     if a.cmd == "demo-data":
-        from .demo import DEMO_QUERIES, RETAIL_QUERIES, make_demo, make_retail
+        from .demo import DEMO_QUERIES, RETAIL_QUERIES, TPCH_QUERIES, make_demo, make_retail, make_tpch
 
-        if a.retail:
+        if a.tpch:
+            make_tpch(a.path, a.sf)
+        elif a.retail:
             make_retail(a.path, a.rows)
         else:
             make_demo(a.path, a.rows)
         q = Path(a.path).with_suffix(".queries.sql")
-        q.write_text(RETAIL_QUERIES if a.retail else DEMO_QUERIES)
+        q.write_text(TPCH_QUERIES if a.tpch else RETAIL_QUERIES if a.retail else DEMO_QUERIES)
         _p(f"écrit : {a.path} et {q}")
         return 0
     if a.cmd == "verify-evidence":

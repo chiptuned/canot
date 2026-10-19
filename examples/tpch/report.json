@@ -1,0 +1,309 @@
+{
+  "summary": {
+    "tables_total": 8,
+    "tables_ok": 7,
+    "tables_error": [],
+    "queries_total": 4,
+    "queries_match": 3,
+    "queries_mismatch": 1,
+    "queries_untranslatable": 0,
+    "queries_skipped": 0,
+    "tables_precision_only": 1,
+    "queries_order_differs": 0,
+    "lossy_conversions": 1,
+    "throughput_mb_s": 323.26,
+    "rto": {
+      "seconds": [
+        3.2,
+        6.9
+      ],
+      "basis": "débit mesuré ±, hors validation humaine et reprise des applications"
+    },
+    "warehouse_credits_used_est": null,
+    "cost_usd_est": null,
+    "cost_basis": null,
+    "duration_s": 9.0,
+    "parity": "écarts"
+  },
+  "copy_location": {
+    "target": "local:/private/tmp/canot-sf1/iceberg",
+    "warehouse": "file:///private/tmp/canot-sf1/iceberg/warehouse",
+    "kind": "local",
+    "catalog": "SQLite (catalog.db dans le dossier de sortie)",
+    "metadata": {
+      "tpch.customer": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/customer/metadata/00001-62224463-142a-4c59-aa49-37be8280f9de.metadata.json",
+      "tpch.lineitem": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/lineitem/metadata/00013-afea1f76-aee8-4ec6-b715-1a3b7e63d7af.metadata.json",
+      "tpch.nation": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/nation/metadata/00001-c99cd2b1-7212-4fec-adb1-f9730570450c.metadata.json",
+      "tpch.orders": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/orders/metadata/00003-8e0fc456-f7c5-4a5e-b97f-8addde2771df.metadata.json",
+      "tpch.part": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/part/metadata/00001-5a49b6b8-7d26-4526-8c2b-07c583fc65a6.metadata.json",
+      "tpch.partsupp": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/partsupp/metadata/00002-e07e766f-e86d-4011-ad1b-589d8f151b79.metadata.json",
+      "tpch.region": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/region/metadata/00001-96ba3933-1d8e-4f27-b27a-a72e5c3ca7e4.metadata.json",
+      "tpch.supplier": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/supplier/metadata/00001-6e40ec3e-9614-4c34-96cd-9cd8d6abe707.metadata.json"
+    }
+  },
+  "scan": {
+    "source": "duckdb:/tmp/canot-sf1/demo.duckdb",
+    "tables": [
+      {
+        "name": "tpch.customer",
+        "rows": 150000,
+        "bytes": 28282500,
+        "columns": 8
+      },
+      {
+        "name": "tpch.lineitem",
+        "rows": 6001215,
+        "bytes": 1104631642,
+        "columns": 17
+      },
+      {
+        "name": "tpch.nation",
+        "rows": 25,
+        "bytes": 2450,
+        "columns": 4
+      },
+      {
+        "name": "tpch.orders",
+        "rows": 1500000,
+        "bytes": 194154000,
+        "columns": 9
+      },
+      {
+        "name": "tpch.part",
+        "rows": 200000,
+        "bytes": 29905800,
+        "columns": 9
+      },
+      {
+        "name": "tpch.partsupp",
+        "rows": 800000,
+        "bytes": 134131200,
+        "columns": 5
+      },
+      {
+        "name": "tpch.region",
+        "rows": 5,
+        "bytes": 427,
+        "columns": 3
+      },
+      {
+        "name": "tpch.supplier",
+        "rows": 10000,
+        "bytes": 1651220,
+        "columns": 7
+      }
+    ],
+    "totals": {
+      "tables": 8,
+      "rows": 8661245,
+      "bytes": 1492759239,
+      "gb": 1.493
+    },
+    "non_portable_columns": [],
+    "objects_that_do_not_move": {
+      "views": [],
+      "macros": []
+    },
+    "object_counts": {
+      "views": 0,
+      "macros": 0
+    },
+    "usage_90d": null,
+    "exit_estimate": {
+      "duration_hours": [
+        0.01,
+        0.02
+      ],
+      "credits": [
+        0.01,
+        0.02
+      ],
+      "assumed_throughput_mb_s": [
+        20.0,
+        80.0
+      ],
+      "note": "estimation de planification ; remplacée par la mesure après un `canot drill`"
+    },
+    "exit_cost": {
+      "reading_usd": null,
+      "reading_basis": null,
+      "rework_days": [
+        0.0,
+        0.0
+      ],
+      "rework_basis": "0 objet(s) à reconstruire et 0 colonne(s) à type propre à la plateforme ; hypothèses de q4o (0.25 à 1.5 jour par objet, 0.1 à 0.5 par colonne), à discuter.",
+      "not_included": "Tarif de votre contrat, stockage d'arrivée, double exploitation, coût de fonctionnement après la sortie : ils dépendent de votre contrat et de votre architecture, et ne sont pas estimés ici."
+    },
+    "egress_note": ""
+  },
+  "checks": [
+    {
+      "table": "tpch.customer",
+      "rows_source": 150000,
+      "rows_target": 150000,
+      "schema_ok": true,
+      "stats_ok": true,
+      "stats_diffs": [],
+      "fingerprint_ok": true,
+      "bad_buckets": [],
+      "precision_cols": [],
+      "ok": true
+    },
+    {
+      "table": "tpch.lineitem",
+      "rows_source": 6001215,
+      "rows_target": 6001215,
+      "schema_ok": true,
+      "stats_ok": false,
+      "stats_diffs": [
+        "l_loaded_at.min : Timestamp('1992-01-31 00:00:00.287971001') / datetime.datetime(1992, 1, 31, 0, 0, 0, 287971)",
+        "l_loaded_at.max : Timestamp('1998-10-31 00:00:05.354144001') / datetime.datetime(1998, 10, 31, 0, 0, 5, 354144)"
+      ],
+      "fingerprint_ok": true,
+      "bad_buckets": [],
+      "precision_cols": [
+        "l_loaded_at"
+      ],
+      "ok": false
+    },
+    {
+      "table": "tpch.nation",
+      "rows_source": 25,
+      "rows_target": 25,
+      "schema_ok": true,
+      "stats_ok": true,
+      "stats_diffs": [],
+      "fingerprint_ok": true,
+      "bad_buckets": [],
+      "precision_cols": [],
+      "ok": true
+    },
+    {
+      "table": "tpch.orders",
+      "rows_source": 1500000,
+      "rows_target": 1500000,
+      "schema_ok": true,
+      "stats_ok": true,
+      "stats_diffs": [],
+      "fingerprint_ok": true,
+      "bad_buckets": [],
+      "precision_cols": [],
+      "ok": true
+    },
+    {
+      "table": "tpch.part",
+      "rows_source": 200000,
+      "rows_target": 200000,
+      "schema_ok": true,
+      "stats_ok": true,
+      "stats_diffs": [],
+      "fingerprint_ok": true,
+      "bad_buckets": [],
+      "precision_cols": [],
+      "ok": true
+    },
+    {
+      "table": "tpch.partsupp",
+      "rows_source": 800000,
+      "rows_target": 800000,
+      "schema_ok": true,
+      "stats_ok": true,
+      "stats_diffs": [],
+      "fingerprint_ok": true,
+      "bad_buckets": [],
+      "precision_cols": [],
+      "ok": true
+    },
+    {
+      "table": "tpch.region",
+      "rows_source": 5,
+      "rows_target": 5,
+      "schema_ok": true,
+      "stats_ok": true,
+      "stats_diffs": [],
+      "fingerprint_ok": true,
+      "bad_buckets": [],
+      "precision_cols": [],
+      "ok": true
+    },
+    {
+      "table": "tpch.supplier",
+      "rows_source": 10000,
+      "rows_target": 10000,
+      "schema_ok": true,
+      "stats_ok": true,
+      "stats_diffs": [],
+      "fingerprint_ok": true,
+      "bad_buckets": [],
+      "precision_cols": [],
+      "ok": true
+    }
+  ],
+  "queries": [
+    {
+      "sql": "select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, sum(l_extendedprice) as sum_base_price,\n       sum(l_extendedprice * (1 - l_discount)) as sum_disc_price, avg(l_discount) as avg_disc, count(*) as n\nfrom tpch.lineitem where l_shipdate <= date '1998-12-01' - interval '90' day\ngroup by 1, 2 order by 1, 2",
+      "translated": "SELECT l_returnflag, l_linestatus, SUM(l_quantity) AS sum_qty, SUM(l_extendedprice) AS sum_base_price, SUM(l_extendedprice * (1 - l_discount)) AS sum_disc_price, AVG(l_discount) AS avg_disc, COUNT(*) AS n FROM tpch.lineitem WHERE l_shipdate <= CAST('1998-12-01' AS DATE) - INTERVAL '90' DAY GROUP BY 1, 2 ORDER BY 1, 2",
+      "status": "match",
+      "detail": "",
+      "rows_source": 4,
+      "rows_target": 4,
+      "order_differs": false
+    },
+    {
+      "sql": "select l_orderkey, sum(l_extendedprice * (1 - l_discount)) as revenue, o_orderdate\nfrom tpch.customer, tpch.orders, tpch.lineitem\nwhere c_mktsegment = 'BUILDING' and c_custkey = o_custkey and l_orderkey = o_orderkey\n  and o_orderdate < date '1995-03-15' and l_shipdate > date '1995-03-15'\ngroup by l_orderkey, o_orderdate order by revenue desc, o_orderdate limit 10",
+      "translated": "SELECT l_orderkey, SUM(l_extendedprice * (1 - l_discount)) AS revenue, o_orderdate FROM tpch.customer, tpch.orders, tpch.lineitem WHERE c_mktsegment = 'BUILDING' AND c_custkey = o_custkey AND l_orderkey = o_orderkey AND o_orderdate < CAST('1995-03-15' AS DATE) AND l_shipdate > CAST('1995-03-15' AS DATE) GROUP BY l_orderkey, o_orderdate ORDER BY revenue DESC, o_orderdate LIMIT 10",
+      "status": "match",
+      "detail": "",
+      "rows_source": 10,
+      "rows_target": 10,
+      "order_differs": false
+    },
+    {
+      "sql": "select sum(l_extendedprice * l_discount) as revenue from tpch.lineitem\nwhere l_shipdate >= date '1994-01-01' and l_shipdate < date '1995-01-01' and l_discount between 0.05 and 0.07 and l_quantity < 24",
+      "translated": "SELECT SUM(l_extendedprice * l_discount) AS revenue FROM tpch.lineitem WHERE l_shipdate >= CAST('1994-01-01' AS DATE) AND l_shipdate < CAST('1995-01-01' AS DATE) AND l_discount BETWEEN 0.05 AND 0.07 AND l_quantity < 24",
+      "status": "match",
+      "detail": "",
+      "rows_source": 1,
+      "rows_target": 1,
+      "order_differs": false
+    },
+    {
+      "sql": "select * from tpch.lineitem order by l_orderkey, l_linenumber limit 50",
+      "translated": "SELECT * FROM tpch.lineitem ORDER BY l_orderkey, l_linenumber LIMIT 50",
+      "status": "mismatch",
+      "detail": "ligne triée 0, colonne 16 : Timestamp('1996-02-12 00:00:00.000001001') / datetime.datetime(1996, 2, 12, 0, 0, 0, 1)",
+      "rows_source": 50,
+      "rows_target": 50,
+      "order_differs": false
+    }
+  ],
+  "conversions": [
+    {
+      "table": "tpch.lineitem",
+      "column": "l_loaded_at",
+      "source_type": "TIMESTAMP_NS",
+      "target_type": "timestamp[us]",
+      "lossy": true,
+      "note": "ns -> us (Iceberg v2 ne garde pas les nanosecondes)"
+    }
+  ],
+  "env": {
+    "canot": "0.2.0",
+    "duckdb": "1.5.6",
+    "pyarrow": "26.0.0",
+    "pyiceberg": "0.12.0",
+    "sqlglot": "30.22.0"
+  },
+  "seal": {
+    "last_hash": "9cafe72219d813cac7cb580e770a671f7427ee1a97d8befcdafb219ca1d0793b",
+    "signature": "3468e8becf2201ad59715be8a8864686b95ab28f70a94f8343c9f1454f2e2255b5344824b54afccf3ea889d67d5cd152069bcb53f36cc15693e18ed7be04cb09",
+    "entries": 23
+  },
+  "source": "duckdb:/tmp/canot-sf1/demo.duckdb",
+  "target": "local:/private/tmp/canot-sf1/iceberg",
+  "tolerances": {
+    "float_rel": 1e-09,
+    "decimal_abs": 0.0,
+    "columns": {}
+  }
+}
