@@ -105,7 +105,7 @@ def parser() -> argparse.ArgumentParser:
     dm.add_argument("--bucket", help="obligatoire avec un raccourci d'hébergeur (voir canot drill)")
     dm.add_argument("--catalog", help="catalogue Iceberg (voir canot drill)")
     dm.add_argument("--out", default="canot-demo")
-    dm.add_argument("--sf", type=float, default=0.1, help="taille de TPC-H (0.1 : 600 000 lignes de lignes de commande)")
+    dm.add_argument("--sf", type=float, default=1.0, help="taille de TPC-H : 1 = environ 1 Go de données (6 millions de lignes de commande), 0.1 = version légère de 100 Mo")
     dm.add_argument("--rows", type=int, default=50_000, help=argparse.SUPPRESS)  # repli hors ligne : jeu fictif
     dm.add_argument("--no-open", action="store_true", help="n'ouvre pas le rapport dans le navigateur")
     it = sub.add_parser("init-tolerances", help="écrit un fichier de tolérances à relire avec le client")
@@ -115,7 +115,7 @@ def parser() -> argparse.ArgumentParser:
     dd.add_argument("--rows", type=int, default=20_000)
     dd.add_argument("--retail", action="store_true", help="jeu fictif de distributeur (tickets avec lignes imbriquées)")
     dd.add_argument("--tpch", action="store_true", help="jeu TPC-H, le benchmark de référence (généré en local)")
-    dd.add_argument("--sf", type=float, default=0.1, help="avec --tpch : taille (1 = environ 1 Go)")
+    dd.add_argument("--sf", type=float, default=1.0, help="avec --tpch : taille (1 = environ 1 Go, 0.1 = 100 Mo)")
     sub.add_parser("connecteurs", help="les plateformes connues : inventaire, export, preuve, statut de validation")
     rd = sub.add_parser("rejeu-dbt", help="preuve P3 : rejoue les modèles d'un projet dbt dans DuckDB sur la copie et compare aux tables d'origine")
     rd.add_argument("projet", help="dbt://CHEMIN_DU_PROJET (dossier qui contient target/manifest.json, SQL compilé compris)")
@@ -203,7 +203,9 @@ def run(argv: list[str] | None = None) -> int:
             db.unlink()
         target = parse_target(dest, a.bucket, dossier, a.catalog)  # refuse tout de suite une destination incomplète
         try:
-            _p("TPC-H : le jeu de référence des bancs d'essai de bases de données, généré ici (aucune donnée réelle)\n")
+            taille = f"{a.sf:g} Go" if a.sf >= 1 else f"{round(a.sf * 1000)} Mo"
+            _p(f"TPC-H : le jeu de référence des bancs d'essai de bases de données (8 tables, 22 requêtes dont 4 rejouées ici), généré en local : environ {taille} de données, aucune donnée réelle.")
+            _p("Version légère : canot demo --sf 0.1 (100 Mo)\n" if a.sf >= 1 else "")
             make_tpch(str(db), a.sf)
             queries = TPCH_QUERIES
         except Exception as e:  # noqa: BLE001 : l'extension tpch se télécharge au premier usage ; hors ligne, jeu de secours

@@ -84,14 +84,24 @@
   document.querySelectorAll("form[data-lead], form#form").forEach(setup);
 })();
 
-/* Sélecteurs de plateforme source et de destination (tools/selecteur/, étendu à la destination) */
+/* Sélecteurs d'outil, d'action, de source et de destination (tools/selecteur/, étendu) */
 (function () {
   'use strict';
 
-  // Ordre = ordre du tambour. Commande la plus longue en dernier : les voisines affichées dessous ne recouvrent pas la 2e ligne.
+  var ACTIONS = [
+    { id: 'demo', word: 'demo', label: 'démo', src: false, dst: true, dstIds: null, srcIds: [],
+      text: "Génère TPC-H en local, le copie, compare tout et écrit un dossier de preuve signé. Sans compte ni données." },
+    { id: 'scan', word: 'scan', label: 'scan', src: true, dst: false, srcIds: ['snowflake', 'bigquery', 'databricks', 'dbt'],
+      text: "Radiographie en lecture seule : inventaire, coûts, ce qui ne part pas tel quel. Rien n'est modifié chez vous." },
+    { id: 'drill', word: 'drill', label: 'drill', src: true, dst: true, dstIds: null, srcIds: ['snowflake', 'bigquery', 'databricks'],
+      text: "Copie, compare tout, rejoue vos requêtes les plus coûteuses et écrit un dossier de preuve signé." },
+    { id: 'rejeu', word: 'rejeu-dbt', label: 'rejeu dbt', src: true, dst: true, dstIds: ['local', 'onprem'], srcIds: ['dbt'],
+      text: "Rejoue les modèles dbt dans DuckDB sur la copie et compare le résultat aux tables d'origine." }
+  ];
   var SOURCES = [
     { id: 'snowflake', label: 'Snowflake', rest: '://MY_ACCOUNT/MY_DATABASE?user=MY_USER' },
     { id: 'bigquery', label: 'BigQuery', rest: '://MY_PROJECT/MY_DATASET?location=EU' },
+    { id: 'dbt', label: 'dbt', rest: '://MY_DBT_PROJECT' },
     { id: 'databricks', label: 'Databricks', rest: '://MY_WORKSPACE.cloud.databricks.com/sql/1.0/warehouses/MY_WAREHOUSE_ID?catalog=MY_CATALOG' }
   ];
   var BUCKET = ' --bucket MY_BUCKET';
@@ -102,61 +112,84 @@
     { id: 'outscale', label: 'Outscale', word: 'outscale:eu-west-2', rest: BUCKET },
     { id: 'ionos', label: 'IONOS', word: 'ionos:eu-central-1', rest: BUCKET },
     { id: 'stackit', label: 'STACKIT', word: 'stackit:eu01', rest: BUCKET },
+    { id: 'aws', label: 'AWS (Paris)', word: 'aws:eu-west-3', rest: BUCKET },
     { id: 'onprem', label: 'S3 sur site', word: '"s3://MY_BUCKET/canot?endpoint=https://s3.internal:9000"', rest: '' }
   ];
   // Comment lancer Canot : uv (uvx), pipx ou pip. Les connecteurs sont installés d'office avec Canot.
   var RUNNERS = [
-    { id: 'uvx', label: 'uvx', word: 'uvx canot', rest: function () { return ''; } },
-    { id: 'pipx', label: 'pipx', word: 'pipx run canot', rest: function () { return ''; } },
-    { id: 'pip', label: 'pip', word: 'pip install canot && canot', rest: function () { return ''; } }
+    { id: 'uvx', label: 'uvx', word: 'uvx canot' },
+    { id: 'pipx', label: 'pipx', word: 'pipx run canot' },
+    { id: 'pip', label: 'pip', word: 'pip install canot && canot' }
   ];
+  var LISTS = { run: RUNNERS, act: ACTIONS, src: SOURCES, dst: DESTS };
   var INTRO_DELAY = 1400, INTRO_STEP = 650;
 
   function init(root) {
-    var st = { src: 0, dst: 0, run: 0 };
+    var st = { run: 0, act: 2, src: 0, dst: 0 }; // action par défaut : drill
     var touched = false;
     var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var qs = new URLSearchParams(location.search);
-    var u = SOURCES.findIndex(function (p) { return p.id === qs.get('source'); });
-    var d = DESTS.findIndex(function (p) { return p.id === qs.get('sortie'); });
-    if (u >= 0) { st.src = u; touched = true; }
-    if (d >= 0) { st.dst = d; touched = true; }
+    [['outil', 'run'], ['action', 'act'], ['source', 'src'], ['sortie', 'dst']].forEach(function (pair) {
+      var k = LISTS[pair[1]].findIndex(function (p) { return p.id === qs.get(pair[0]); });
+      if (k >= 0) { st[pair[1]] = k; touched = true; }
+    });
 
+    function allowed(kind) {  // indices de la liste utilisables avec l'action courante
+      var a = ACTIONS[st.act], ids = kind === 'src' ? a.srcIds : kind === 'dst' ? a.dstIds : null;
+      return LISTS[kind].map(function (p, j) { return !ids || ids.indexOf(p.id) >= 0 ? j : -1; }).filter(function (j) { return j >= 0; });
+    }
+    function clamp() {
+      ['src', 'dst'].forEach(function (k) {
+        var ok = allowed(k);
+        if (ok.length && ok.indexOf(st[k]) < 0) st[k] = ok[0];
+      });
+    }
+    clamp();
+
+    var parts = root.querySelectorAll('[data-cs-show]');
     var restEls = root.querySelectorAll('[data-cs-rest]');
     var destRestEls = root.querySelectorAll('[data-cs-dest-rest]');
-    var runRestEls = root.querySelectorAll('[data-cs-run-rest]');
-    var qr = RUNNERS.findIndex(function (p) { return p.id === qs.get('outil'); });
-    if (qr >= 0) { st.run = qr; touched = true; }
-    var pickEls = root.querySelectorAll('[data-cs-pick]');
-    var pickOutEls = root.querySelectorAll('[data-cs-pick-out]');
+    var prefixEls = root.querySelectorAll('[data-cs-dest-prefix]');
+    var textEls = root.querySelectorAll('[data-cs-action-text]');
+    var picks = [['data-cs-pick', 'src'], ['data-cs-pick-out', 'dst'], ['data-cs-pick-act', 'act']].map(function (x) { return { attr: x[0], kind: x[1], els: root.querySelectorAll('[' + x[0] + ']') }; });
     var copyEls = root.querySelectorAll('[data-cs-copy]');
     var drums = Array.prototype.map.call(root.querySelectorAll('[data-cs-drum]'), buildDrum);
 
     function command() {
-      var a = SOURCES[st.src], b = DESTS[st.dst], r = RUNNERS[st.run];
-      return r.word + r.rest(a.id) + ' drill "' + a.id + a.rest + '" ' + b.word + b.rest;
+      var r = RUNNERS[st.run], a = ACTIONS[st.act], s = SOURCES[st.src], d = DESTS[st.dst];
+      var out = r.word + ' ' + a.word;
+      if (a.src) out += ' "' + s.id + s.rest + '"';
+      if (a.dst) out += (a.id === 'rejeu' ? ' --iceberg ' : ' ') + d.word + (a.id === 'rejeu' ? '' : d.rest);
+      return out;
     }
     function set(kind, i, byUser) {
-      var list = kind === 'dst' ? DESTS : kind === 'run' ? RUNNERS : SOURCES;
-      i = Math.max(0, Math.min(list.length - 1, i));
+      if (kind === 'src' || kind === 'dst') { if (allowed(kind).indexOf(i) < 0) return; }
       if (byUser) touched = true;
       if (i === st[kind]) return;
       st[kind] = i;
+      if (kind === 'act') clamp();
       render();
     }
     function render() {
+      var a = ACTIONS[st.act];
+      parts.forEach(function (el) { el.hidden = el.getAttribute('data-cs-show').split(' ').indexOf(a.id) < 0; });
       drums.forEach(function (dr) { dr.render(); });
       restEls.forEach(function (el) { el.textContent = SOURCES[st.src].rest; });
-      destRestEls.forEach(function (el) { el.textContent = DESTS[st.dst].rest; });
-      runRestEls.forEach(function (el) { el.textContent = RUNNERS[st.run].rest(SOURCES[st.src].id); });
-      pickEls.forEach(function (el) { el.setAttribute('aria-current', el.getAttribute('data-cs-pick') === SOURCES[st.src].id ? 'true' : 'false'); });
-      pickOutEls.forEach(function (el) { el.setAttribute('aria-current', el.getAttribute('data-cs-pick-out') === DESTS[st.dst].id ? 'true' : 'false'); });
+      destRestEls.forEach(function (el) { el.textContent = a.id === 'rejeu' ? '' : DESTS[st.dst].rest; });
+      prefixEls.forEach(function (el) { el.textContent = a.id === 'rejeu' ? ' --iceberg ' : ' '; });
+      textEls.forEach(function (el) { el.textContent = a.text; });
+      picks.forEach(function (p) {
+        p.els.forEach(function (el) {
+          var j = LISTS[p.kind].findIndex(function (x) { return x.id === el.getAttribute(p.attr); });
+          el.setAttribute('aria-current', j === st[p.kind] ? 'true' : 'false');
+        });
+      });
     }
 
     function buildDrum(el) {
-      var field = el.getAttribute('data-cs-drum'); // label | scheme (source), dest (destination)
-      var kind = field === 'dest' ? 'dst' : field === 'runner' ? 'run' : 'src';
-      var list = kind === 'dst' ? DESTS : kind === 'run' ? RUNNERS : SOURCES;
+      var field = el.getAttribute('data-cs-drum'); // runner | action | label | scheme (source) | dest
+      var kind = field === 'dest' ? 'dst' : field === 'runner' ? 'run' : field === 'action' ? 'act' : 'src';
+      var list = LISTS[kind];
       el.textContent = '';
       el.classList.add('cs-drum');
       el.tabIndex = 0;
@@ -166,42 +199,51 @@
       var items = list.map(function (p, j) {
         var s = document.createElement('span');
         s.className = 'cs-drum__item';
-        s.textContent = field === 'label' ? p.label : (field === 'dest' || field === 'runner') ? p.word : p.id;
+        s.textContent = field === 'label' ? p.label : (field === 'dest' || field === 'runner' || field === 'action') ? p.word : p.id;
         s.addEventListener('click', function () { set(kind, j, true); });
         col.appendChild(s);
         return s;
       });
       el.appendChild(col);
+      function vis() { return kind === 'src' || kind === 'dst' ? allowed(kind) : list.map(function (_, j) { return j; }); }
       var acc = 0;
       el.addEventListener('wheel', function (e) {
-        var dir = e.deltaY > 0 ? 1 : -1;
-        var next = Math.max(0, Math.min(list.length - 1, st[kind] + dir));
-        if (next === st[kind]) return; // en bout de liste, la page défile
+        var v = vis(), pos = v.indexOf(st[kind]), dir = e.deltaY > 0 ? 1 : -1, np = pos + dir;
+        if (np < 0 || np >= v.length) return; // en bout de liste, la page défile
         e.preventDefault();
         touched = true;
         acc += e.deltaY;
         if (Math.abs(acc) < 40) return;
         acc = 0;
-        set(kind, next, true);
+        set(kind, v[np], true);
       }, { passive: false });
       el.addEventListener('keydown', function (e) {
-        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); set(kind, st[kind] + (e.key === 'ArrowDown' ? 1 : -1), true); }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          var v = vis(), np = v.indexOf(st[kind]) + (e.key === 'ArrowDown' ? 1 : -1);
+          if (np >= 0 && np < v.length) set(kind, v[np], true);
+        }
       });
       ['pointerenter', 'focus'].forEach(function (ev) { el.addEventListener(ev, function () { touched = true; el.classList.add('is-open'); }); });
       ['pointerleave', 'blur'].forEach(function (ev) { el.addEventListener(ev, function () { el.classList.remove('is-open'); }); });
       return {
         el: el,
         render: function () {
-          var i = st[kind], h = items[0].offsetHeight;
+          var v = vis(), pos = Math.max(0, v.indexOf(st[kind]));
+          if (!v.length) return; // aucune valeur possible pour cette action : la partie est masquée
+          items.forEach(function (it, j) { it.hidden = v.indexOf(j) < 0; });
+          var first = items[v[0]], h = first.offsetHeight;
           el.style.height = h + 'px';
-          el.style.width = items[i].offsetWidth + 'px';
-          col.style.transform = 'translateY(' + (-i * h) + 'px)';
-          items.forEach(function (it, j) {
-            var dd = Math.min(Math.abs(j - i), 2);
-            it.setAttribute('data-dist', dd);
-            it.setAttribute('aria-hidden', dd ? 'true' : 'false');
+          el.style.width = items[v[pos]].offsetWidth + 'px';
+          col.style.transform = 'translateY(' + (-pos * h) + 'px)';
+          v.forEach(function (j, n) {
+            var dd = Math.min(Math.abs(n - pos), 2);
+            items[j].setAttribute('data-dist', dd);
+            items[j].setAttribute('aria-hidden', dd ? 'true' : 'false');
           });
-          el.setAttribute('aria-label', (kind === 'dst' ? 'Destination : ' : kind === 'run' ? 'Outil de lancement : ' : 'Plateforme : ') + list[i].label + '. Flèches haut et bas pour changer.');
+          var names = { dst: 'Destination : ', run: 'Outil de lancement : ', act: 'Action : ', src: 'Plateforme : ' };
+          el.setAttribute('aria-label', names[kind] + (list[st[kind]].label || list[st[kind]].word) + '. Flèches haut et bas pour changer.');
+          el.hidden = false;
         }
       };
     }
@@ -215,17 +257,15 @@
         else { fallbackCopy(text); done(); }
       });
     });
-    function pick(els, attr, list, kind) {
-      els.forEach(function (el) {
+    picks.forEach(function (p) {
+      p.els.forEach(function (el) {
         el.addEventListener('click', function (e) {
           e.preventDefault();
-          var j = list.findIndex(function (p) { return p.id === el.getAttribute(attr); });
-          if (j >= 0) set(kind, j, true);
+          var j = LISTS[p.kind].findIndex(function (x) { return x.id === el.getAttribute(p.attr); });
+          if (j >= 0) set(p.kind, j, true);
         });
       });
-    }
-    pick(pickEls, 'data-cs-pick', SOURCES, 'src');
-    pick(pickOutEls, 'data-cs-pick-out', DESTS, 'dst');
+    });
 
     render();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
@@ -235,11 +275,10 @@
     if (!touched && !reduce && drums.length) {
       setTimeout(function () {
         if (touched) return;
+        var order = allowed('src');
         drums.forEach(function (dr) { if (['label', 'scheme'].indexOf(dr.el.getAttribute('data-cs-drum')) >= 0) dr.el.classList.add('is-open'); });
-        [1, 2, 0].forEach(function (v, n) { setTimeout(function () { if (!touched) set('src', v, false); }, INTRO_STEP * (n + 1)); });
-        setTimeout(function () {
-          if (!touched) drums.forEach(function (dr) { dr.el.classList.remove('is-open'); });
-        }, INTRO_STEP * 4);
+        [order[1], order[2], order[0]].forEach(function (v, n) { setTimeout(function () { if (!touched && v !== undefined) set('src', v, false); }, INTRO_STEP * (n + 1)); });
+        setTimeout(function () { if (!touched) drums.forEach(function (dr) { dr.el.classList.remove('is-open'); }); }, INTRO_STEP * 4);
       }, INTRO_DELAY);
     }
   }

@@ -34,7 +34,7 @@
 uvx canot demo
 ```
 
-Sans compte ni données : Canot génère **TPC-H**, le benchmark de référence des bases de données (8 tables, 22 requêtes, jusqu'à 1 Go de données à l'échelle 1), le copie en Apache Iceberg, compare tout, rejoue des requêtes TPC-H des deux côtés et écrit un dossier de preuve signé. Quelques secondes par défaut (version réduite, 100 Mo) ; `uvx canot demo --sf 1` pour l'échelle 1, environ 20 secondes sur un poste portable.
+Sans compte ni données : Canot génère **TPC-H**, le benchmark de référence des bases de données (8 tables, 22 requêtes, jusqu'à 1 Go de données à l'échelle 1), le copie en Apache Iceberg, compare tout, rejoue des requêtes TPC-H des deux côtés et écrit un dossier de preuve signé. Par défaut l'échelle 1 (environ 1 Go, une vingtaine de secondes sur un poste portable) ; `uvx canot demo --sf 0.1` pour une version légère de 100 Mo. La commande affiche les deux commandes qu'elle lance (`canot demo-data` puis `canot drill`) : copiez-les pour changer la destination, par exemple `uvx canot demo aws:eu-west-3 --bucket MON-COFFRE`.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/chiptuned/canot/main/docs/assets/demo.svg" alt="uvx canot demo copie les 8 tables de TPC-H, compare tout, et signale un écart" width="860">

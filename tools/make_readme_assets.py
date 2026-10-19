@@ -47,12 +47,14 @@ text{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sa
 
 TERM = [
     ("cmd", "$ uvx canot demo"),
-    ("dim", "Canot : démonstration sur TPC-H, le jeu de référence des bancs d'essai de bases de données"),
-    ("dim", "→ inventaire"),
+    ("dim", "canot demo est un raccourci de deux commandes :"),
+    ("txt", "  canot demo-data canot-demo/demo.duckdb --tpch --sf 1"),
+    ("txt", "  canot drill canot-demo/demo.duckdb canot-demo/iceberg --queries … --out …"),
+    ("dim", "TPC-H : 8 tables, 22 requêtes dont 4 rejouées ici : environ 1 Go de données"),
     ("dim", "→ copie de 8 table(s) vers local:canot-demo/iceberg"),
-    ("txt", "   tpch.lineitem   600 572 lignes"),
-    ("txt", "   tpch.orders     150 000 lignes"),
-    ("txt", "   tpch.partsupp    80 000 lignes"),
+    ("txt", "   tpch.lineitem   6 001 215 lignes   1 097,6 Mo"),
+    ("txt", "   tpch.orders     1 500 000 lignes     195,1 Mo"),
+    ("txt", "   tpch.partsupp     800 000 lignes     134,6 Mo"),
     ("dim", "→ comparaison des tables"),
     ("ok", "   customer OK   nation OK   orders OK   part OK   partsupp OK   region OK   supplier OK"),
     ("warn", "   lineitem  ÉCART"),
@@ -69,7 +71,7 @@ TERM = [
 def terminal() -> str:
     W, H, LH, X0, Y0 = 940, 56 + len(TERM) * 25 + 30, 25, 28, 86
     colors = {"cmd": "#E6EDF3", "dim": "#7D8FA3", "txt": "#B9C6D3", "ok": "#56D364", "warn": "#FF9A55", "bold": "#FFFFFF"}
-    cycle = 22.0
+    cycle = max(22.0, 0.6 + len(TERM) * 0.95 + 4)
     css, rows = [], []
     for i, (k, t) in enumerate(TERM):
         start = 0.6 + i * 0.95 if i else 0.4
