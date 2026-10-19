@@ -40,8 +40,6 @@ No account, no data: it runs the TPC-H benchmark dataset through a full exit exe
   <img src="https://raw.githubusercontent.com/chiptuned/canot/main/docs/assets/demo.svg" alt="uvx canot demo copies the 8 TPC-H tables, compares everything and flags a discrepancy" width="860">
 </p>
 
-Result: 7 tables out of 8 identical, 3 queries out of 4 returning the same result. The discrepancy is a nanosecond timestamp column: Iceberg v2 reduces it to microseconds. The kind of discrepancy you want to find **before** you leave.
-
 ## ▶ Connectors
 
 `canot connectors` lists them with what each can do (inventory, export, evidence) and whether it has been validated.
