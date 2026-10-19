@@ -10,11 +10,11 @@ from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 
 from .. import prices
-from ..connectors import profile
+from ..connectors import FAMILLES, capacites, get as connecteur, profile
 from ..scan import NON_PORTABLE, THROUGHPUT_MBPS
 from .model import NATURES, bucket_only, fig
 
-SCHEMA = "canot.scan/1"
+SCHEMA = "canot.scan/2"
 ETIQUETTE = "À examiner"
 LIBELLES = {
     "F01": "Dépendance externe",
@@ -29,19 +29,38 @@ LIBELLES = {
     "F10": "Sécurité à reconstruire",
     "F11": "Chaîne planifiée et ses échecs",
     "F12": "Lecture incomplète",
+    # hors entrepôt : ne se déclenchent que sur des objets que la collecte a lus avec les champs /2 qu'ils exigent
+    "F13": "Traitement sans équivalent exécutable hors plateforme",
+    "F14": "Extension propriétaire",
+    "F15": "Modèle sans export ouvert lisible",
+    "F16": "Logique métier dans la couche de présentation",
 }
+CODES_HORS_ENTREPOT = ("F13", "F14", "F15", "F16")
 KIND_LABELS = {
     "vue": "vue", "vue_materialisee": "vue matérialisée", "fonction": "fonction", "procedure": "procédure", "tache": "tâche",
     "flux": "flux", "pipe": "pipe", "stage": "stage", "base_importee": "base importée", "partage": "partage",
     "table_dynamique": "table dynamique", "modele_ml": "modèle ML", "politique_masquage": "politique de masquage",
     "politique_lignes": "politique de lignes", "requete_planifiee": "requête planifiée", "connexion": "connexion",
     "integration": "intégration", "reservation": "réservation", "etiquette": "étiquette",
+    # canot.scan/2, plateformes hors entrepôt
+    "recette_sql": "recette SQL", "recette_python": "recette Python", "recette_visuelle": "recette visuelle",
+    "recette_plugin": "recette de plugin", "scenario": "scénario", "modele_entraine": "modèle entraîné", "notebook": "notebook",
+    "dossier_gere": "dossier géré", "service_api": "service d'API", "env_code": "environnement de code", "plugin": "plugin",
+    "mesure": "mesure", "calcul_rapport": "calcul de rapport", "rapport": "rapport", "flux_etl": "flux ETL", "dag": "DAG",
+    "programme_sas": "programme SAS",
 }
 # objets à reconstruire sur la destination (comptés dans le travail de reprise)
 REBUILD_KINDS = ("vue", "vue_materialisee", "fonction", "procedure", "tache", "flux", "pipe", "stage", "table_dynamique",
                  "modele_ml", "politique_masquage", "politique_lignes", "requete_planifiee", "connexion", "integration")
-SCHEDULED_KINDS = ("tache", "requete_planifiee", "pipe", "table_dynamique", "flux")
+SCHEDULED_KINDS = ("tache", "requete_planifiee", "pipe", "table_dynamique", "flux", "scenario", "dag")
 POLICY_KINDS = ("politique_masquage", "politique_lignes", "etiquette")
+# F13 : traitements dont le moteur reste sur la plateforme (type d'objet lu, jamais supposé)
+SANS_MOTEUR_KINDS = ("recette_visuelle", "recette_plugin")
+EXTENSION_KINDS = ("plugin",)
+MODELE_KINDS = ("modele_entraine",)
+PRESENTATION_KINDS = ("mesure", "calcul_rapport")
+FORMATS_OUVERTS = ("mlflow", "onnx", "pmml", "python")
+F16_LIGNES = 5  # sans critère déclaré par le connecteur, une mesure de 5 lignes ou plus compte comme non triviale
 
 VIVANTE_JOURS = 30   # écriture observée dans les 30 derniers jours
 RECREEE_JOURS = 7    # DDL dans les 7 derniers jours, sans écriture postérieure
@@ -162,7 +181,7 @@ def cap(s: str) -> str:
 _EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 _URI = re.compile(r"\b[a-z][a-z0-9+.-]*://[^\s'\"<>)]+", re.I)
 _DENY_KEYS = {"sql", "texte", "text", "definition", "body", "corps", "query", "erreur", "error", "message", "email",
-              "login", "ip", "bind", "binds", "password", "secret", "token", "environment"}
+              "login", "ip", "bind", "binds", "password", "secret", "token", "environment", "code", "script"}
 
 
 def _bucket(uri: str) -> str:
@@ -322,7 +341,35 @@ def _table(t: dict, as_of: datetime) -> dict:
                      "n_pruning": detail.get("requetes_pruning_n"), "partage": detail.get("lectures_partage_n")},
         "ecritures": {"n": t.get("n_ecritures"), "derniere": t.get("derniere_ecriture")},
         "mouvement": mv, "mouvement_preuve": preuve, "detail": detail, "drapeaux": [],
+        **({"stockage": _stockage(t["stockage"])} if "stockage" in t else {}),
     }
+
+
+def _stockage(s) -> dict | None:
+    if not isinstance(s, dict):
+        return None
+    return {"connexion": scrub(s.get("connexion")), "type": scrub(s.get("type"))}
+
+
+def _objet_v2(o: dict) -> dict:
+    """Champs optionnels de canot.scan/2 : recopiés seulement s'ils sont présents, jamais de code brut (empreinte et compte de lignes)."""
+    out = {}
+    for k in ("famille_objet", "portabilite", "moteur"):
+        if k in o:
+            out[k] = scrub(o[k])
+    for k in ("entrees", "sorties", "extensions"):
+        if k in o:
+            out[k] = sorted({scrub(str(x)) for x in o[k] or []})
+    if "formats_export" in o:
+        out["formats_export"] = None if o["formats_export"] is None else sorted({str(x).lower() for x in o["formats_export"]})
+    if "empreinte_code" in o:
+        e = o["empreinte_code"]
+        out["empreinte_code"] = e if isinstance(e, str) and re.fullmatch(r"[0-9a-f]{64}", e) else None
+    if "lignes_code" in o:
+        out["lignes_code"] = o["lignes_code"] if isinstance(o["lignes_code"], int) else None
+    if "non_triviale" in o:
+        out["non_triviale"] = o["non_triviale"] if isinstance(o["non_triviale"], bool) else None
+    return out
 
 
 def _objet(o: dict) -> dict:
@@ -333,7 +380,7 @@ def _objet(o: dict) -> dict:
         "reference": sorted({scrub(str(r)) for r in o.get("reference") or []}), "etat": scrub(o.get("etat")),
         "planification": scrub(o.get("planification")), "executions_n": o.get("executions_n"), "echecs_n": o.get("echecs_n"),
         "derniere_execution": o.get("derniere_execution"), "sql_dynamique": o.get("sql_dynamique"),
-        "detail": _safe_detail(o.get("detail")), "drapeaux": [],
+        "detail": _safe_detail(o.get("detail")), "drapeaux": [], **_objet_v2(o),
     }
 
 
@@ -439,7 +486,7 @@ def _f03(ctx: _Ctx) -> list[dict]:
     for o in ctx.objets:
         if o["kind"] in SCHEDULED_KINDS + ("procedure",) and (o["detail"].get("ecriture_externe") or o["detail"].get("exporte")):
             loc = o["dependances_externes"]
-            texte = (f"{cap(KIND_LABELS[o['kind']])} qui écrit hors de la plateforme (déclaré dans sa définition) ; "
+            texte = (f"{cap(KIND_LABELS.get(o['kind'], o['kind']))} qui écrit hors de la plateforme (déclaré dans sa définition) ; "
                      f"destination : {', '.join(loc) if loc else 'non lue'}.")
             flags.append(_flag("F03", "objet", o["id"], texte, ctx.kind_ids(o["kind"]), {"mode": "déclaré", "emplacements": loc}))
     stage_locs = {o["id"].upper(): o["dependances_externes"] for o in ctx.objets if o["kind"] == "stage"}
@@ -704,7 +751,7 @@ def _f11(ctx: _Ctx) -> list[dict]:
 
     flags = []
     for i, o in sorted(sched.items()):
-        head = [cap(KIND_LABELS[o["kind"]])]
+        head = [cap(KIND_LABELS.get(o["kind"], o["kind"]))]
         if o["planification"]:
             head.append(f"planification {o['planification']}")
         if o["etat"]:
@@ -721,6 +768,105 @@ def _f11(ctx: _Ctx) -> list[dict]:
         texte = ", ".join(head) + f" ; {runs}" + (f" ; chaîne : {' → '.join(ch)}" if len(ch) > 1 else "") + "."
         flags.append(_flag("F11", "objet", i, texte, ctx.kind_ids(o["kind"]),
                            {"chaine": ch, "executions_n": o["executions_n"], "echecs_n": o["echecs_n"], "etat": o["etat"]}))
+    return flags
+
+
+def _label(o: dict) -> str:
+    return cap(KIND_LABELS.get(o["kind"], str(o["kind"])))
+
+
+def _f13(ctx: _Ctx) -> list[dict]:
+    """Traitement dont le moteur ne sort pas de la plateforme : recette visuelle ou de plugin lue, ou traitement déclaré à reconstruire."""
+    flags = []
+    for o in ctx.objets:
+        port = o.get("portabilite", "absente")
+        if not ((o["kind"] in SANS_MOTEUR_KINDS and port in ("absente", "a_reconstruire"))
+                or (o.get("famille_objet") == "traitement" and port == "a_reconstruire")):
+            continue
+        io = []
+        if "entrees" in o:
+            io.append(pl(len(o["entrees"]), "entrée"))
+        if "sorties" in o:
+            io.append(pl(len(o["sorties"]), "sortie"))
+        texte = (f"{_label(o)} sans équivalent exécutable hors plateforme (type lu : {o['kind']}"
+                 + (f", moteur {o['moteur']}" if o.get("moteur") else "") + ")"
+                 + (f" ; {', '.join(io)}" if io else "") + " ; à reconstruire : compté, non rejoué.")
+        flags.append(_flag("F13", "objet", o["id"], texte, ctx.kind_ids(o["kind"]),
+                           {"kind": o["kind"], "portabilite": o.get("portabilite"), "moteur": o.get("moteur"),
+                            "entrees": o.get("entrees", [])[:10], "sorties": o.get("sorties", [])[:10]}))
+    return flags
+
+
+def _f14(ctx: _Ctx) -> list[dict]:
+    """Extension propriétaire : plugin inventorié dont le code n'est pas lu ou est sous licence ; recette de plugin sans plugin inventorié."""
+    plugins = {o["id"]: o for o in ctx.objets if o["kind"] in EXTENSION_KINDS or o.get("famille_objet") == "extension"}
+    usage_lu = any("extensions" in o for o in ctx.objets)
+    flags = []
+    for i, o in sorted(plugins.items()):
+        licence = o["detail"].get("licence")
+        code_non_lu = o.get("empreinte_code") is None
+        if not (code_non_lu or licence):
+            continue
+        users = sorted(x["id"] for x in ctx.objets if i in x.get("extensions", []))
+        etat = []
+        if o["detail"].get("version"):
+            etat.append(f"version {o['detail']['version']}")
+        if code_non_lu:
+            etat.append("code non lu")
+        if licence:
+            etat.append(f"licence {licence}")
+        usage = ((f"utilisé par {pl(len(users), 'objet')} : {', '.join(users[:5])}" + (" …" if len(users) > 5 else "")) if users
+                 else "aucun usage observé dans les objets lus") if usage_lu else "usage par objet non lu"
+        texte = f"{_label(o)} ({', '.join(etat)}) ; {usage}."
+        flags.append(_flag("F14", "objet", i, texte, ctx.kind_ids(o["kind"]),
+                           {"version": o["detail"].get("version"), "code_lu": not code_non_lu, "licence": licence, "utilise_par": users[:10]}))
+    for o in ctx.objets:
+        if o["kind"] == "recette_plugin" and not any(e in plugins for e in o.get("extensions", [])):
+            ext = o.get("extensions", [])
+            texte = (f"{_label(o)} : extension utilisée non inventoriée"
+                     + (f" ({', '.join(ext[:5])})" if ext else " (plugin non nommé par la collecte)") + " ; code de l'extension non lu.")
+            flags.append(_flag("F14", "objet", o["id"], texte, ctx.kind_ids(o["kind"]), {"extensions": ext[:10], "code_lu": False}))
+    return flags
+
+
+def _f15(ctx: _Ctx) -> list[dict]:
+    """Modèle entraîné sans format ouvert déclaré ; formats non lus (licence, droits) = « non déterminé », jamais « non exportable »."""
+    flags = []
+    for o in ctx.objets:
+        if not (o["kind"] in MODELE_KINDS or o.get("famille_objet") == "modele"):
+            continue
+        fx = o.get("formats_export")
+        algo = o["detail"].get("algorithme")
+        head = _label(o) + (f" ({algo})" if algo else "")
+        if fx is None:
+            texte = f"{head} : formats d'export non lus (licence ou droits) ; export ouvert non déterminé."
+        elif any(f in FORMATS_OUVERTS for f in fx):
+            continue
+        else:
+            texte = (f"{head} : aucun format ouvert déclaré parmi MLflow, ONNX, PMML, Python"
+                     + (f" (formats lus : {', '.join(fx)})" if fx else " (aucun format lu)") + ".")
+        flags.append(_flag("F15", "objet", o["id"], texte, ctx.kind_ids(o["kind"]),
+                           {"formats_export": fx, "determine": fx is not None}))
+    return flags
+
+
+def _f16(ctx: _Ctx) -> list[dict]:
+    """Mesure ou calcul de la couche de présentation non trivial : critère déclaré par le connecteur, sinon nombre de lignes."""
+    flags = []
+    for o in ctx.objets:
+        if not (o["kind"] in PRESENTATION_KINDS or o.get("famille_objet") == "rapport"):
+            continue
+        nt, lignes = o.get("non_triviale"), o.get("lignes_code")
+        if nt is True:
+            pourquoi = "non triviale selon le connecteur"
+        elif nt is None and isinstance(lignes, int) and lignes >= F16_LIGNES:
+            pourquoi = f"{pl(lignes, 'ligne')} de calcul"
+        else:
+            continue
+        texte = (f"{_label(o)} de la couche de présentation, {pourquoi}" + (f" ; langage {o['langage']}" if o.get("langage") else "")
+                 + " ; recalcul hors outil non comparé.")
+        flags.append(_flag("F16", "objet", o["id"], texte, ctx.kind_ids(o["kind"]),
+                           {"non_triviale": nt, "lignes_code": lignes, "langage": o.get("langage")}))
     return flags
 
 
@@ -931,7 +1077,7 @@ def _fourchettes(ctx: _Ctx, credit_price: float | None, ne: _NonEstime) -> dict:
         out["cout_lecture"] = ne.track("Coût de lecture de la copie (API Storage Read, sortie réseau)",
                                        fig(nature="non_estimé", unite="USD", raison=CONTRAT_NON_LU,
                                            hypotheses=["lecture par l'API Storage Read, facturée par Tio lu, et sortie réseau hors de Google Cloud"]))
-    n_obj = sum(o["kind"] in REBUILD_KINDS for o in ctx.objets)
+    n_obj = sum(o["kind"] in REBUILD_KINDS or o.get("portabilite") == "a_reconstruire" for o in ctx.objets)
     n_cols = sum(len(t["colonnes_non_portables"]) for t in ctx.present)
     lo, hi = prices.rework_days(n_obj, n_cols)
     hyp = [f"{pl(n_obj, 'objet')} à reconstruire et {pl(n_cols, 'colonne')} à type propre à la plateforme",
@@ -1044,7 +1190,7 @@ def _fraicheur_phrase(fr: dict | None) -> str | None:
 def _resume(ctx: _Ctx, res: dict, by_code: Counter) -> dict:
     r, couts, fr = ctx.reads, res["couts"], res["fourchettes"]
     vol = fr["volume"]["valeur"]
-    n_obj = sum(o["kind"] in REBUILD_KINDS for o in ctx.objets)
+    n_obj = sum(o["kind"] in REBUILD_KINDS or o.get("portabilite") == "a_reconstruire" for o in ctx.objets)
     mv = res["mouvements"]
     fraiche = _fraicheur_phrase(res.get("fraicheur"))  # dans la première phrase : l'encadré garde trois entrées
     dsi = [f"{pl(len(ctx.present), 'table présente', 'tables présentes')} ({fr_bytes(vol) if vol is not None else 'volume non lu'}) "
@@ -1105,11 +1251,37 @@ def _resume(ctx: _Ctx, res: dict, by_code: Counter) -> dict:
     return {"DSI": dsi, "DAF": daf, "RSSI": rssi}
 
 
+def _capacites_snapshot(c) -> dict | None:
+    """Capacités déclarées par un connecteur hors registre : recopiées (clés connues seulement), sans rien deviner."""
+    if not isinstance(c, dict):
+        return None
+    keys = ("plateforme", "libelle", "famille", "inventaire", "niveaux", "export", "preuve", "statut", "teste_sur")
+    return {k: c.get(k) for k in keys}
+
+
+def _liens(liens) -> list[dict]:
+    out = [{"de": scrub(str(x.get("de"))), "vers": scrub(str(x.get("vers"))), "nature": x.get("nature")}
+           for x in liens or [] if isinstance(x, dict) and x.get("de") and x.get("vers")]
+    return sorted(out, key=lambda x: (x["de"], x["vers"], str(x["nature"])))
+
+
+def _carte_sortie(objets: list[dict]) -> dict:
+    """Objets par portabilité × famille d'objet ; vide tant qu'aucun objet ne porte de portabilité (snapshot /1)."""
+    carte: dict = {}
+    for o in objets:
+        if "portabilite" not in o:
+            continue
+        p, f = o["portabilite"] or "non_determine", o.get("famille_objet") or "non_precisee"
+        carte.setdefault(p, {})
+        carte[p][f] = carte[p].get(f, 0) + 1
+    return {p: dict(sorted(v.items())) for p, v in sorted(carte.items())}
+
+
 # --- point d'entrée --------------------------------------------------------------------------------------
 
 
 def analyze(snapshot: dict, *, credit_price: float | None = None) -> dict:
-    """snapshot (model.py) -> scan.json (schema canot.scan/1). Fonction pure."""
+    """snapshot /1 ou /2 (model.py) -> scan.json (schema canot.scan/2 : /1 + champs ajoutés). Fonction pure."""
     as_of = parse_dt(snapshot.get("as_of"))
     if as_of is None:
         raise ValueError("snapshot sans as_of : l'analyse n'a pas d'horloge")
@@ -1130,7 +1302,8 @@ def analyze(snapshot: dict, *, credit_price: float | None = None) -> dict:
     f09, shared = _f09(ctx)
     f04, unresolved = _f04(ctx)
     drapeaux = (_f01_f02(ctx, ext) + _f03(ctx) + f04 + _f05(ctx, sources, shared) + _f06_f07(ctx) + _f08(ctx) + f09
-                + _f10(ctx) + _f11(ctx) + _f12(ctx, edition_missing, unresolved, sources))
+                + _f10(ctx) + _f11(ctx) + _f12(ctx, edition_missing, unresolved, sources)
+                + _f13(ctx) + _f14(ctx) + _f15(ctx) + _f16(ctx))
     drapeaux.sort(key=lambda d: (d["code"], d["cible_type"], str(d["cible"])))
     by_id = {("table", t["id"]): t for t in tables} | {("objet", o["id"]): o for o in objets}
     for d in drapeaux:
@@ -1221,6 +1394,11 @@ def analyze(snapshot: dict, *, credit_price: float | None = None) -> dict:
         "regles": {"vivante_jours": VIVANTE_JOURS, "recreee_jours": RECREEE_JOURS, "horizon_lectures_jours": profile(plat).get("horizon_jours", 365),
                    "debit_mo_s": list(THROUGHPUT_MBPS)},
         "sources_prix": [profile(plat)["source_prix"]] if "source_prix" in profile(plat) else [],
+        # canot.scan/2 : déclarations du connecteur (registre d'abord, sinon celles du snapshot), lignage et carte de sortie
+        "famille": connecteur(plat).famille if connecteur(plat) else (snapshot.get("famille") if snapshot.get("famille") in FAMILLES else None),
+        "capacites": capacites(plat) or _capacites_snapshot(snapshot.get("capacites")),
+        "liens": _liens(snapshot.get("liens")),
+        "carte_sortie": _carte_sortie(objets),
     }
     res["resume"] = _resume(ctx, res, by_code)
     return res

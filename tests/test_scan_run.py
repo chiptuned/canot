@@ -31,7 +31,7 @@ def test_scan_full_de_bout_en_bout_sans_fuite(monkeypatch, tmp_path):
         src, raw = _src(monkeypatch, dialect)
         out = tmp_path / dialect
         res = run.scan_full(src, out, level=3)
-        assert res["schema"] == "canot.scan/1"
+        assert res["schema"] == "canot.scan/2" and res["famille"] == "entrepot" and res["capacites"]["plateforme"] == dialect
         for name in ("scan.json", "scan.html", "tables.csv", "drapeaux.csv", "familles.csv", "lectures.csv"):
             assert (out / name).exists()
         everything = "".join(p.read_text(encoding="utf-8") for p in out.iterdir())

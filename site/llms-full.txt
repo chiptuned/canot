@@ -133,6 +133,7 @@ Outils exposés :
 | `commandes` | Liste les commandes et leurs options. |
 | `chercher_doc(requete)` | Cherche dans la documentation et rend les passages. |
 | `lire_doc(sujet)` | Rend une page entière : `commandes`, `scan`, `sur-site`, `cibles`, `ecarts`. |
+| `capacites(plateforme)` | Ce que Canot sait faire sur chaque plateforme (inventaire, export, forme de preuve), avec le statut (testé ou écrit, non testé) et la date de test consignée. Sans argument : toutes les plateformes. |
 | `expliquer_scan(chemin)` | Lit un `scan.json` et le résume : constats, lectures non faites, chiffres estimés, ce qui est à examiner. |
 | `expliquer_rapport(chemin)` | Lit un `report.json` d'exercice : écarts, tables et requêtes en cause, causes connues du catalogue. |
 

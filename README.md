@@ -60,6 +60,6 @@ uvx canot scan "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER"    # radiograph
 uvx canot drill "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" ./iceberg   # exercice de sortie complet, en local
 ```
 
-Sortie sur votre infrastructure (dossier, NAS, stockage S3 maison), commandes, droits et accès pour un agent (MCP) : la [documentation](docs/commandes.md). Le site, [canot.io](https://canot.io), explique le reste.
+Sortie sur votre infrastructure (dossier, NAS, stockage S3 maison), commandes, droits et accès pour un agent (MCP) : la [documentation](docs/commandes.md). `uvx canot connecteurs` liste les plateformes prises en charge, ce que Canot sait faire sur chacune (inventaire, export, preuve) et si le connecteur est testé. Le site, [canot.io](https://canot.io), explique le reste.
 
 <sub>Apache-2.0 · Aucun pisteur, aucune télémétrie · [q4o](https://q4o.com)</sub>

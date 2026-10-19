@@ -1,0 +1,573 @@
+{
+ "schema": "canot.scan/2",
+ "plateforme": "dataiku",
+ "famille": "science_donnees",
+ "as_of": "2026-10-19T10:00:00Z",
+ "perimetre": "projet BANC (synthétique)",
+ "edition": null,
+ "niveau_droits": 2,
+ "mode_sql": "lecture seule",
+ "capacites": {
+  "plateforme": "dataiku",
+  "libelle": "Dataiku",
+  "famille": "science_donnees",
+  "inventaire": "partiel",
+  "niveaux": [
+   1,
+   2
+  ],
+  "export": [],
+  "preuve": [],
+  "statut": "écrit, non testé",
+  "teste_sur": null
+ },
+ "versions": {
+  "canot": "X"
+ },
+ "lectures": [
+  {
+   "id": "D01",
+   "vue": "GET /public/api/projects/",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 1,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "D02",
+   "vue": "GET /public/api/projects/{p}/datasets/",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 3,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "D03",
+   "vue": "GET /public/api/projects/{p}/recipes/",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 5,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "D05",
+   "vue": "GET /public/api/projects/{p}/savedmodels/",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 3,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "D06",
+   "vue": "GET /public/api/projects/{p}/scenarios/",
+   "statut": "lu",
+   "raison": null,
+   "lignes": 1,
+   "fenetre": null,
+   "latence_max_h": null
+  },
+  {
+   "id": "D10",
+   "vue": "GET /public/api/plugins/",
+   "statut": "non_lu",
+   "raison": "droit absent",
+   "lignes": null,
+   "fenetre": null,
+   "latence_max_h": null
+  }
+ ],
+ "tables": [
+  {
+   "id": "BANC.CLIENTS",
+   "base": "BANC",
+   "schema": "BANC",
+   "nom": "CLIENTS",
+   "type": "TABLE",
+   "flags": [],
+   "lignes": 120,
+   "octets_actifs": null,
+   "octets_historique": null,
+   "clone_de": null,
+   "colonnes": [
+    {
+     "nom": "id",
+     "type": "bigint"
+    }
+   ],
+   "retention_jours": null,
+   "derniere_ddl": null,
+   "derniere_ecriture": null,
+   "derniere_lecture": null,
+   "n_lectures": null,
+   "n_ecritures": null,
+   "proprietaire": "id-1a2b3c4d",
+   "politiques": [],
+   "etiquettes": [],
+   "supprimee_le": null,
+   "externe_uri": null,
+   "partitionnement": null,
+   "clustering": [],
+   "stockage": {
+    "connexion": "postgres-banc",
+    "type": "postgres"
+   }
+  },
+  {
+   "id": "BANC.VENTES_CSV",
+   "base": "BANC",
+   "schema": "BANC",
+   "nom": "VENTES_CSV",
+   "type": "TABLE",
+   "flags": [],
+   "lignes": 500,
+   "octets_actifs": null,
+   "octets_historique": null,
+   "clone_de": null,
+   "colonnes": [
+    {
+     "nom": "id",
+     "type": "bigint"
+    }
+   ],
+   "retention_jours": null,
+   "derniere_ddl": null,
+   "derniere_ecriture": null,
+   "derniere_lecture": null,
+   "n_lectures": null,
+   "n_ecritures": null,
+   "proprietaire": "id-1a2b3c4d",
+   "politiques": [],
+   "etiquettes": [],
+   "supprimee_le": null,
+   "externe_uri": null,
+   "partitionnement": null,
+   "clustering": [],
+   "stockage": {
+    "connexion": "managed",
+    "type": "fichiers_plateforme"
+   }
+  },
+  {
+   "id": "BANC.VENTES_PREP",
+   "base": "BANC",
+   "schema": "BANC",
+   "nom": "VENTES_PREP",
+   "type": "TABLE",
+   "flags": [],
+   "lignes": 480,
+   "octets_actifs": null,
+   "octets_historique": null,
+   "clone_de": null,
+   "colonnes": [
+    {
+     "nom": "id",
+     "type": "bigint"
+    }
+   ],
+   "retention_jours": null,
+   "derniere_ddl": null,
+   "derniere_ecriture": null,
+   "derniere_lecture": null,
+   "n_lectures": null,
+   "n_ecritures": null,
+   "proprietaire": "id-1a2b3c4d",
+   "politiques": [],
+   "etiquettes": [],
+   "supprimee_le": null,
+   "externe_uri": null,
+   "partitionnement": null,
+   "clustering": [],
+   "stockage": {
+    "connexion": "managed",
+    "type": "fichiers_plateforme"
+   }
+  }
+ ],
+ "objets": [
+  {
+   "kind": "recette_visuelle",
+   "id": "BANC.prepare_ventes",
+   "schema": "BANC",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {},
+   "famille_objet": "traitement",
+   "portabilite": "a_reconstruire",
+   "moteur": "dss",
+   "entrees": [
+    "BANC.VENTES_CSV"
+   ],
+   "sorties": [
+    "BANC.VENTES_PREP"
+   ]
+  },
+  {
+   "kind": "recette_visuelle",
+   "id": "BANC.groupe_ventes",
+   "schema": "BANC",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {},
+   "famille_objet": "traitement",
+   "portabilite": "a_reconstruire",
+   "moteur": "dss",
+   "entrees": [
+    "BANC.VENTES_PREP"
+   ],
+   "sorties": [
+    "BANC.VENTES_AGG"
+   ]
+  },
+  {
+   "kind": "recette_plugin",
+   "id": "BANC.geo_enrichit",
+   "schema": "BANC",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {},
+   "famille_objet": "traitement",
+   "portabilite": "a_reconstruire",
+   "extensions": [
+    "PLUGIN.geo"
+   ],
+   "entrees": [
+    "BANC.CLIENTS"
+   ],
+   "sorties": [
+    "BANC.CLIENTS_GEO"
+   ]
+  },
+  {
+   "kind": "recette_sql",
+   "id": "BANC.jointure_sql",
+   "schema": "BANC",
+   "langage": "SQL",
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {},
+   "famille_objet": "traitement",
+   "portabilite": "traduisible",
+   "moteur": "sql",
+   "empreinte_code": "822ae07d4783158bc1912bb623e5107cc9002d519e1143a9c200ed6ee18b6d0f",
+   "lignes_code": 12,
+   "entrees": [
+    "BANC.CLIENTS"
+   ],
+   "sorties": [
+    "BANC.CLIENTS_SQL"
+   ]
+  },
+  {
+   "kind": "recette_python",
+   "id": "BANC.score_py",
+   "schema": "BANC",
+   "langage": "Python",
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {
+    "code": "print('CANOT_SENTINELLE_7f3a'); password = 'x'"
+   },
+   "famille_objet": "traitement",
+   "portabilite": "traduisible",
+   "moteur": "python",
+   "empreinte_code": "f9b38bccbe0671bfc5ed2943662f34ba1bcf21059d9168a65e9cc71f3291d6a6",
+   "lignes_code": 40
+  },
+  {
+   "kind": "plugin",
+   "id": "PLUGIN.geo",
+   "schema": "BANC",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {
+    "version": "1.2.0"
+   },
+   "famille_objet": "extension",
+   "portabilite": "a_reconstruire",
+   "empreinte_code": null
+  },
+  {
+   "kind": "plugin",
+   "id": "PLUGIN.ouvert",
+   "schema": "BANC",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {
+    "version": "0.3"
+   },
+   "famille_objet": "extension",
+   "portabilite": "traduisible",
+   "empreinte_code": "b77be6c67df389f1f2c7bbf59b7e65b718880501b69289a2eb6f3a5a237db8cf"
+  },
+  {
+   "kind": "modele_entraine",
+   "id": "BANC.modele_churn",
+   "schema": "BANC",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {
+    "algorithme": "forêt aléatoire"
+   },
+   "famille_objet": "modele",
+   "portabilite": "non_determine",
+   "formats_export": null
+  },
+  {
+   "kind": "modele_entraine",
+   "id": "BANC.modele_mlflow",
+   "schema": "BANC",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {},
+   "famille_objet": "modele",
+   "portabilite": "portable_tel_quel",
+   "formats_export": [
+    "MLflow"
+   ]
+  },
+  {
+   "kind": "modele_entraine",
+   "id": "BANC.modele_zip",
+   "schema": "BANC",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {},
+   "famille_objet": "modele",
+   "portabilite": "exporte_proprietaire",
+   "formats_export": [
+    "zip_projet"
+   ]
+  },
+  {
+   "kind": "scenario",
+   "id": "BANC.nuit",
+   "schema": "BANC",
+   "langage": null,
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [
+    "BANC.VENTES_PREP"
+   ],
+   "etat": null,
+   "planification": "quotidienne",
+   "executions_n": 2,
+   "echecs_n": 1,
+   "derniere_execution": "2026-10-18T02:00:00Z",
+   "sql_dynamique": null,
+   "detail": {},
+   "famille_objet": "planification",
+   "portabilite": "a_reconstruire"
+  },
+  {
+   "kind": "notebook",
+   "id": "BANC.exploration",
+   "schema": "BANC",
+   "langage": "Python",
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {},
+   "famille_objet": "code",
+   "portabilite": "traduisible"
+  },
+  {
+   "kind": "mesure",
+   "id": "MODELE.marge_cumulee",
+   "schema": "BANC",
+   "langage": "DAX",
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {},
+   "famille_objet": "rapport",
+   "portabilite": "a_reconstruire",
+   "non_triviale": true
+  },
+  {
+   "kind": "mesure",
+   "id": "MODELE.ventes_total",
+   "schema": "BANC",
+   "langage": "DAX",
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {},
+   "famille_objet": "rapport",
+   "portabilite": "traduisible",
+   "non_triviale": false,
+   "lignes_code": 9
+  },
+  {
+   "kind": "mesure",
+   "id": "MODELE.ratio_annuel",
+   "schema": "BANC",
+   "langage": "DAX",
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {},
+   "famille_objet": "rapport",
+   "portabilite": "a_reconstruire",
+   "lignes_code": 6
+  },
+  {
+   "kind": "mesure",
+   "id": "MODELE.compte",
+   "schema": "BANC",
+   "langage": "DAX",
+   "proprietaire": null,
+   "externe": false,
+   "dependances_externes": [],
+   "reference": [],
+   "etat": null,
+   "planification": null,
+   "executions_n": null,
+   "echecs_n": null,
+   "derniere_execution": null,
+   "sql_dynamique": null,
+   "detail": {},
+   "famille_objet": "rapport",
+   "portabilite": "traduisible",
+   "lignes_code": 1
+  }
+ ],
+ "liens": [
+  {
+   "de": "BANC.VENTES_CSV",
+   "vers": "BANC.prepare_ventes",
+   "nature": "lit"
+  },
+  {
+   "de": "BANC.prepare_ventes",
+   "vers": "BANC.VENTES_PREP",
+   "nature": "ecrit"
+  },
+  {
+   "de": "BANC.nuit",
+   "vers": "BANC.groupe_ventes",
+   "nature": "declenche"
+  }
+ ],
+ "metering": null
+}

@@ -1,6 +1,33 @@
 {
   "as_of": "2026-10-17T10:00:00Z",
   "avec_sql_brut": false,
+  "capacites": {
+    "export": [
+      "iceberg"
+    ],
+    "famille": "entrepot",
+    "inventaire": "complet",
+    "libelle": "BigQuery",
+    "niveaux": [
+      1,
+      2,
+      3
+    ],
+    "plateforme": "bigquery",
+    "preuve": [
+      {
+        "forme": "P1",
+        "libelle": "parité des données"
+      },
+      {
+        "forme": "P2",
+        "libelle": "rejeu de requêtes"
+      }
+    ],
+    "statut": "testé",
+    "teste_sur": "canot drill, 13/10/2026 : jeu public thelook_ecommerce (docs/ecarts.md)"
+  },
+  "carte_sortie": {},
   "cout_du_scan": {
     "duree": {
       "bas": null,
@@ -658,6 +685,7 @@
   ],
   "edition": "non déterminée",
   "f04_lu": false,
+  "famille": "entrepot",
   "familles": [
     {
       "app": null,
@@ -1013,6 +1041,7 @@
       "vue": "`region-eu`.INFORMATION_SCHEMA.JOBS_BY_ORGANIZATION"
     }
   ],
+  "liens": [],
   "mode_sql": "lecture seule",
   "mouvements": {
     "base": [
@@ -1522,7 +1551,7 @@
       "Rôles propriétaires (F04) : sans objet sur BigQuery, où les droits sont portés par les datasets et les tables."
     ]
   },
-  "schema": "canot.scan/1",
+  "schema": "canot.scan/2",
   "schemas_caches": [
     "_tmp"
   ],

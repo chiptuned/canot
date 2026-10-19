@@ -1,6 +1,33 @@
 {
   "as_of": "2026-10-17T10:00:00Z",
   "avec_sql_brut": false,
+  "capacites": {
+    "export": [
+      "iceberg"
+    ],
+    "famille": "entrepot",
+    "inventaire": "complet",
+    "libelle": "Snowflake",
+    "niveaux": [
+      1,
+      2,
+      3
+    ],
+    "plateforme": "snowflake",
+    "preuve": [
+      {
+        "forme": "P1",
+        "libelle": "parité des données"
+      },
+      {
+        "forme": "P2",
+        "libelle": "rejeu de requêtes"
+      }
+    ],
+    "statut": "testé",
+    "teste_sur": "canot drill, 17/10/2026 : compte d'essai Snowflake, TPC-H SF10 (docs/banc-essai.md)"
+  },
+  "carte_sortie": {},
   "cout_du_scan": {
     "duree": {
       "bas": null,
@@ -935,6 +962,7 @@
   ],
   "edition": "enterprise",
   "f04_lu": true,
+  "famille": "entrepot",
   "familles": [
     {
       "app": "dbt",
@@ -1530,6 +1558,7 @@
       "vue": "SHOW WAREHOUSES"
     }
   ],
+  "liens": [],
   "mode_sql": "lecture seule",
   "mouvements": {
     "base": [
@@ -2330,7 +2359,7 @@
       "1 rôle propriétaire sans titulaire (F04)."
     ]
   },
-  "schema": "canot.scan/1",
+  "schema": "canot.scan/2",
   "schemas_caches": [],
   "sources_prix": [
     "https://www.snowflake.com/pricing/pricing-guide/"

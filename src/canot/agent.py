@@ -8,6 +8,7 @@ from pathlib import Path
 
 TOPICS = {"commandes": "commandes.md", "scan": "scan.md", "sur-site": "sur-site.md", "cibles": "cibles-ue.md", "ecarts": "ecarts.md"}
 MAX_JSON_BYTES = 50_000_000
+SCAN_SCHEMAS = ("canot.scan/1", "canot.scan/2")  # /2 = /1 + famille, capacités, liens, carte de sortie
 
 
 def _docs_dir() -> Path:
@@ -86,7 +87,7 @@ def _fig(f) -> str:
 def expliquer_scan(chemin: str, max_constats: int = 40) -> dict:
     """Résumé d'un scan.json : périmètre, constats « à examiner », lectures non faites, ce qui n'est pas chiffré."""
     r = _load(chemin)
-    if r.get("schema") != "canot.scan/1":
+    if r.get("schema") not in SCAN_SCHEMAS:
         raise ValueError("ce fichier n'est pas un scan.json de Canot")
     flags = [{"code": f["code"], "cible": f["cible"], "observe": f["texte"]} for f in r.get("drapeaux", [])[:max_constats]]
     nl = [{"lecture": f"{l['id']} {l['vue']}", "raison": l.get("raison")} for l in r.get("lectures", []) if l.get("statut") == "non_lu"]
@@ -95,10 +96,45 @@ def expliquer_scan(chemin: str, max_constats: int = 40) -> dict:
         "resume": r.get("resume"), "constats": flags, "constats_total": len(r.get("drapeaux", [])),
         "lectures_non_faites": nl, "non_estime": r.get("non_estime"), "fraicheur": r.get("fraicheur"),
         "rejouabilite": (r.get("rejouabilite") or {}).get("base"),
+        # /2 seulement ; None sur un scan.json /1
+        "famille": r.get("famille"), "capacites": r.get("capacites"), "carte_sortie": r.get("carte_sortie") or None,
+        "non_prouvable": _non_prouvable(r),
         "a_savoir": ["Chaque constat est « À examiner », sans niveau de gravité : il dit ce qui est observé et ce qui ne l'est pas.",
                      "Une absence de constat ne vaut que pour les lectures faites.",
-                     "Accepté par DuckDB ne veut pas dire résultat identique : seul canot drill compare les résultats."],
+                     "Accepté par DuckDB ne veut pas dire résultat identique : seul canot drill compare les résultats.",
+                     "Un scan inventorie : il n'exporte rien et ne prouve rien. Export et preuve sont des capacités de canot drill."],
     }
+
+
+def _non_prouvable(r: dict) -> dict | None:
+    """Ce qui est compté sans pouvoir être prouvé hors plateforme : objets « à reconstruire » et constats F13 à F16."""
+    if r.get("schema") != "canot.scan/2":
+        return None
+    a_rec = sum((r.get("carte_sortie") or {}).get("a_reconstruire", {}).values())
+    codes = {}
+    for f in r.get("drapeaux", []):
+        if f["code"] in ("F13", "F14", "F15", "F16"):
+            codes[f["code"]] = codes.get(f["code"], 0) + 1
+    preuve = [p.get("forme") for p in (r.get("capacites") or {}).get("preuve") or []]
+    return {"objets_a_reconstruire": a_rec, "constats": codes, "formes_de_preuve_declarees": preuve}
+
+
+def capacites(plateforme: str | None = None) -> dict:
+    """Ce que Canot sait faire par plateforme (inventaire, export, preuve P1-P5), son statut de validation et la date de test consignée.
+    Lu dans le registre des connecteurs, jamais deviné."""
+    from . import connectors
+
+    if plateforme:
+        c = connectors.get(plateforme.strip().lower())
+        if c is None:
+            return {"erreur": f"Plateforme inconnue : {plateforme!r}. Plateformes : {', '.join(connectors.CONNECTORS)}."}
+        items = [c.capacites()]
+    else:
+        items = [c.capacites() for c in connectors.CONNECTORS.values()]
+    return {"connecteurs": items, "formes_de_preuve": connectors.PREUVES,
+            "a_savoir": ["statut « testé » : vu sur une vraie plateforme ; « écrit, non testé » : code présent, jamais exécuté sur un vrai compte.",
+                         "teste_sur : date et objet du test consignés dans la documentation du dépôt ; vide si aucun test n'y est consigné.",
+                         "Inventaire = canot scan ; export et preuve = canot drill. Une forme de preuve absente n'est remplacée par aucun score."]}
 
 
 def expliquer_rapport(chemin: str, max_lignes: int = 30) -> dict:
@@ -122,6 +158,9 @@ def expliquer_rapport(chemin: str, max_lignes: int = 30) -> dict:
                          "La signature du dossier atteste son intégrité, pas l'auteur ni la date."]}
 
 
+TOOLS = (commandes, chercher_doc, lire_doc, capacites, expliquer_scan, expliquer_rapport)
+
+
 def serve() -> None:
     try:
         from mcp.server.mcpserver import MCPServer as Server  # mcp >= 2
@@ -131,6 +170,6 @@ def serve() -> None:
         except ImportError as e:
             raise ModuleNotFoundError("Il manque le connecteur MCP. Lancez : uvx --from \"canot[mcp]\" canot mcp", name="mcp") from e
     server = Server("canot")
-    for fn in (commandes, chercher_doc, lire_doc, expliquer_scan, expliquer_rapport):
+    for fn in TOOLS:
         server.tool()(fn)
     server.run()

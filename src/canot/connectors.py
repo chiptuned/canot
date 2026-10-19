@@ -14,6 +14,9 @@ from . import prices
 PREUVES = {"P1": "parité des données", "P2": "rejeu de requêtes", "P3": "rejeu de traitements",
            "P4": "parité de scoring", "P5": "parité de mesures"}
 TESTE, NON_TESTE = "testé", "écrit, non testé"
+# familles de plateformes (mémo généraliste §1) ; « fichiers » = artefacts lus hors ligne (dbt, .sas…)
+FAMILLES = {"entrepot": "entrepôt", "lakehouse": "lakehouse", "science_donnees": "science des données", "integration": "intégration / ETL",
+            "bi_semantique": "BI sémantique", "orchestrateur": "orchestrateur", "sas": "SAS", "fichiers": "fichiers"}
 
 
 @dataclass(frozen=True)
@@ -22,6 +25,8 @@ class Capabilities:
     niveaux: tuple[int, ...] = ()        # --level acceptés par l'inventaire complet
     export: tuple[str, ...] = ()         # formats écrits par drill
     preuve: tuple[str, ...] = ()         # clés de PREUVES
+    # date réelle d'un test consigné dans le dépôt (docs/), avec ce qui a été testé ; None si le dépôt n'en garde aucune trace
+    teste_sur: str | None = None
 
 
 class Connector(ABC):
@@ -33,9 +38,21 @@ class Connector(ABC):
     extra: ClassVar[str | None] = None   # pip install 'canot[extra]'
     driver: ClassVar[str | None] = None  # préfixe du module du pilote (message « connecteur absent »)
     status: ClassVar[str] = NON_TESTE
+    famille: ClassVar[str] = "entrepot"  # clé de FAMILLES
     capabilities: ClassVar[Capabilities]
-    # fiche d'analyse : constantes propres à la plateforme, lues par scanner/analyze.py
+    # fiche d'analyse : constantes propres à la plateforme, lues par scanner/analyze.py et scanner/render.py
+    # (droits demandés par niveau, droits jamais demandés…)
     profile: ClassVar[dict] = {}
+    # garde HTTP (scanner/http_guard.py) : POST admis seulement sur ces chemins de lecture (motifs regex du chemin d'URL)
+    http_post_lecture: ClassVar[tuple[str, ...]] = ()
+
+    def capacites(self) -> dict:
+        """Déclaration sérialisable (scan.json, MCP) : ce que Canot sait faire ici, et si c'est testé."""
+        cap = self.capabilities
+        return {"plateforme": self.name, "libelle": self.label, "famille": self.famille, "inventaire": cap.inventaire,
+                "niveaux": list(cap.niveaux), "export": list(cap.export),
+                "preuve": [{"forme": p, "libelle": PREUVES[p]} for p in cap.preuve],
+                "statut": self.status, "teste_sur": cap.teste_sur}
 
     def open(self, url: str):
         from . import sources
@@ -43,7 +60,7 @@ class Connector(ABC):
         return sources.open_source(url)
 
     def scan_collect(self, src, *, level: int, salt: bytes, days: int | None = None) -> tuple[dict, list[dict]]:
-        """Inventaire complet : (snapshot canot.scan/1, familles brutes). Le texte SQL brut ne vit que dans le second retour."""
+        """Inventaire complet : (snapshot canot.scan/1 ou /2, familles brutes). Le texte SQL brut ne vit que dans le second retour."""
         raise ValueError(f"scan complet non disponible pour {self.dialect}")
 
 
@@ -52,8 +69,11 @@ class Snowflake(Connector):
     url = "snowflake://COMPTE/BASE"
     extra = driver = "snowflake"
     status = TESTE
-    capabilities = Capabilities("complet", (1, 2, 3), ("iceberg",), ("P1", "P2"))
+    capabilities = Capabilities("complet", (1, 2, 3), ("iceberg",), ("P1", "P2"),
+                                teste_sur="canot drill, 17/10/2026 : compte d'essai Snowflake, TPC-H SF10 (docs/banc-essai.md)")
     profile = {
+        "droits": {1: ["SNOWFLAKE.OBJECT_VIEWER", "SNOWFLAKE.USAGE_VIEWER"], 2: ["SNOWFLAKE.GOVERNANCE_VIEWER"], 3: ["SNOWFLAKE.SECURITY_VIEWER"]},
+        "droits_jamais": "IMPORTED PRIVILEGES, MANAGE GRANTS, IMPORT SHARE, USAGE sur les fonctions, READ sur les stages",
         "horizon_jours": 365,
         "imports_systeme": ("SNOWFLAKE",),  # base système présente dans tout compte : pas une dépendance du client
         # sources des lectures par table, de la plus sûre à la moins sûre : (vue, libellé, confiance, champs de t["lectures"])
@@ -77,8 +97,14 @@ class BigQuery(Connector):
     url = "bigquery://PROJET/DATASET"
     extra, driver = "bigquery", "google.cloud"
     status = TESTE
-    capabilities = Capabilities("complet", (1, 2, 3), ("iceberg",), ("P1", "P2"))
+    capabilities = Capabilities("complet", (1, 2, 3), ("iceberg",), ("P1", "P2"),
+                                teste_sur="canot drill, 13/10/2026 : jeu public thelook_ecommerce (docs/ecarts.md)")
     profile = {
+        "droits": {1: ["bigquery.jobs.create", "jobs.listAll", "datasets.get", "tables.list", "tables.get", "routines.list", "routines.get",
+                       "models.list", "models.getMetadata"],
+                   2: ["rowAccessPolicies.list", "transfers.get", "connections.list", "dataPolicies.list (optionnelles)"],
+                   3: ["reservations.list", "reservationAssignments.list", "capacityCommitments.list", "droits d'organisation"]},
+        "droits_jamais": "tables.getData, rôles bigquery.user et jobUser",
         "horizon_jours": 180,
         "sources_lectures": (("JOBS", "INFORMATION_SCHEMA.JOBS", "moyenne", ("n",)),),
         "non_vus": {"JOBS": ["lectures par l'API Storage Read", "requêtes lancées depuis d'autres projets", "consommateurs Analytics Hub"]},
@@ -98,6 +124,7 @@ class Databricks(Connector):
     name, label, schemes, dialect = "databricks", "Databricks", ("databricks",), "databricks"
     url = "databricks://HÔTE/CHEMIN_HTTP?catalog=…"
     extra = driver = "databricks"
+    famille = "lakehouse"
     capabilities = Capabilities("léger", (), ("iceberg",), ("P1", "P2"))
 
 
@@ -105,7 +132,9 @@ class DuckDB(Connector):
     name, label, schemes, dialect = "duckdb", "DuckDB", ("duckdb",), "duckdb"
     url = "fichier .duckdb ou duckdb://CHEMIN"
     status = TESTE
-    capabilities = Capabilities("léger", (), ("iceberg",), ("P1", "P2"))
+    # moteur SQL embarqué : rangé avec les entrepôts (tables, SQL), faute de famille plus juste
+    capabilities = Capabilities("léger", (), ("iceberg",), ("P1", "P2"),
+                                teste_sur="canot drill, 17/10/2026 : base de démonstration canot demo (docs/ecarts.md)")
 
 
 CONNECTORS: dict[str, Connector] = {c.name: c for c in (Snowflake(), BigQuery(), Databricks(), DuckDB())}
@@ -133,6 +162,16 @@ def supports_full(src) -> bool:
 def profile(plateforme: str | None) -> dict:
     c = get(plateforme)
     return c.profile if c else {}
+
+
+def capacites(plateforme: str | None) -> dict | None:
+    c = get(plateforme)
+    return c.capacites() if c else None
+
+
+def label(plateforme: str | None) -> str:
+    c = get(plateforme)
+    return c.label if c else str(plateforme)
 
 
 def driver_hints() -> dict[str, tuple[str, str]]:

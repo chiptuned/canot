@@ -18,7 +18,7 @@ NATURES = ("mesuré", "calculé", "estimé", "non_lu", "non_estimé")
 
 # --- Snapshot ---------------------------------------------------------------------------------------------
 # snapshot = {
-#   "schema": "canot.scan/1", "plateforme": "snowflake"|"bigquery", "as_of": "2026-10-17T10:00:00Z",
+#   "schema": "canot.scan/1"|"canot.scan/2", "plateforme": "snowflake"|"bigquery"|..., "as_of": "2026-10-17T10:00:00Z",
 #   "perimetre": "texte lisible", "edition": str|None, "niveau_droits": 1|2|3, "mode_sql": "lecture seule",
 #   "versions": {"canot": "...", "sqlglot": "...", "duckdb": "..."},
 #   "lectures": [Lecture, ...],
@@ -64,6 +64,60 @@ NATURES = ("mesuré", "calculé", "estimé", "non_lu", "non_estimé")
 #                 "base": "X/Y familles, du … au …, sqlglot …, duckdb …", "mention": "accepté ≠ résultat identique"}
 #   C0 = traduit et accepté par DuckDB ; C1 = non analysable ; C2 = commande (non analysée) ; C3 = traduction impossible ;
 #   C4 = erreur d'analyse DuckDB ; C5 = erreur de liaison (objet/fonction propre) ; C6 = variable ; C7 = DDL/COPY/MERGE (compté à part)
+#
+# --- canot.scan/2 = canot.scan/1 + champs optionnels (un snapshot /1 reste valide en /2) ----------------------
+# Racine   : + "famille" (clé de connectors.FAMILLES), + "capacites" (Connector.capacites()), + "liens" [Lien] ;
+#            "plateforme" devient une chaîne libre. "metering" peut valoir None (consommation non lisible).
+# Table    : + "stockage" = {"connexion": str, "type": "snowflake"|"postgres"|"s3"|"fichiers_plateforme"|...} (optionnel)
+# Objet    : "kind" ouvert (KINDS_V2 pour les plateformes hors entrepôt) ; champs optionnels, présents seulement si la collecte les lit :
+#            "famille_objet" (FAMILLES_OBJET), "entrees"/"sorties" [ids], "portabilite" (PORTABILITES), "formats_export" [str]|None
+#            (None = non lu), "empreinte_code" (sha256 de la forme normalisée, jamais le code), "lignes_code" int, "moteur" str,
+#            "extensions" [ids d'objets plugin utilisés], "non_triviale" bool (mesure ou calcul de présentation, critère du connecteur).
+# Lien     = {"de": id, "vers": id, "nature": "lit"|"ecrit"|"declenche"|"depend"}
+# Lecture  : "vue" accepte un chemin d'API (« GET /public/api/projects/{p}/recipes/ »).
+
+SCHEMAS = ("canot.scan/1", "canot.scan/2")
+PORTABILITES = ("portable_tel_quel", "traduisible", "exporte_proprietaire", "a_reconstruire", "non_determine")
+FAMILLES_OBJET = ("donnees", "traitement", "modele", "rapport", "planification", "connexion", "securite", "code", "extension")
+NATURES_LIEN = ("lit", "ecrit", "declenche", "depend")
+KINDS_V2 = ("recette_sql", "recette_python", "recette_visuelle", "recette_plugin", "scenario", "modele_entraine", "notebook", "dossier_gere",
+            "service_api", "env_code", "plugin", "mesure", "calcul_rapport", "rapport", "flux_etl", "dag", "programme_sas")
+CHAMPS_OBJET_V2 = ("famille_objet", "entrees", "sorties", "portabilite", "formats_export", "empreinte_code", "lignes_code", "moteur",
+                   "extensions", "non_triviale")
+# clés qui porteraient du code ou du texte brut : refusées au premier niveau des tables / objets / liens
+CHAMPS_BRUTS = ("code", "sql", "texte", "text", "source", "corps", "body", "definition", "script")
+
+
+def valider_snapshot(snap: dict) -> list[str]:
+    """Erreurs de contrat d'un snapshot /1 ou /2 (liste vide = valide). Ne corrige rien, ne lève pas."""
+    err = []
+    if snap.get("schema") not in SCHEMAS:
+        err.append(f"schema inattendu : {snap.get('schema')!r}")
+    if not isinstance(snap.get("plateforme"), str) or not snap.get("plateforme"):
+        err.append("plateforme absente")
+    for lec in snap.get("lectures") or []:
+        if lec.get("statut") not in ("lu", "non_lu"):
+            err.append(f"lecture {lec.get('id')} : statut {lec.get('statut')!r}")
+        elif lec["statut"] == "non_lu" and not lec.get("raison"):
+            err.append(f"lecture {lec.get('id')} non lue sans raison")
+    for where in ("tables", "objets", "liens"):
+        for x in snap.get(where) or []:
+            # detail peut porter une définition pour l'analyse (analyze._safe_detail la retire) ; les champs de premier niveau, jamais
+            bruts = [k for k in x if str(k).lower() in CHAMPS_BRUTS]
+            if bruts:
+                err.append(f"{where} {x.get('id', x.get('de'))} : champ brut refusé ({', '.join(bruts)})")
+    for o in snap.get("objets") or []:
+        if "portabilite" in o and o["portabilite"] not in PORTABILITES:
+            err.append(f"objet {o.get('id')} : portabilité {o['portabilite']!r}")
+        if "famille_objet" in o and o["famille_objet"] not in FAMILLES_OBJET:
+            err.append(f"objet {o.get('id')} : famille d'objet {o['famille_objet']!r}")
+        e = o.get("empreinte_code")
+        if e is not None and not (isinstance(e, str) and len(e) == 64 and all(c in "0123456789abcdef" for c in e)):
+            err.append(f"objet {o.get('id')} : empreinte_code n'est pas un sha256")
+    for lien in snap.get("liens") or []:
+        if lien.get("nature") not in NATURES_LIEN or not lien.get("de") or not lien.get("vers"):
+            err.append(f"lien {lien!r} incomplet")
+    return err
 
 
 def now_iso() -> str:

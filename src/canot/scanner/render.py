@@ -11,26 +11,22 @@ import html
 import io
 from pathlib import Path
 
-from .analyze import ETIQUETTE, KIND_LABELS, LIBELLES, MENTION_REJOUABILITE, cap, fr_bytes, fr_date, fr_num, parse_dt, pl, short_vue
+from .. import connectors
+from .analyze import (CODES_HORS_ENTREPOT, ETIQUETTE, KIND_LABELS, LIBELLES, MENTION_REJOUABILITE, cap, fr_bytes, fr_date, fr_num, parse_dt,
+                      pl, short_vue)
 
 MAX_ROWS = 20
 CANOT_URL = "https://canot.io"
-PLATEFORMES = {"snowflake": "Snowflake", "bigquery": "BigQuery"}
 NATURES = {"mesuré": "mesuré", "calculé": "calculé", "estimé": "estimé", "non_lu": "non lu", "non_estimé": "non estimé"}
 CATEGORIES = {"C0": "traduit et accepté par DuckDB", "C1": "non analysable", "C2": "commande, non analysée", "C3": "traduction impossible",
               "C4": "erreur d'analyse DuckDB", "C5": "erreur de liaison (objet ou fonction propre)", "C6": "variable",
               "C7": "DDL, COPY, MERGE, requêtes de métadonnées : comptés à part"}
 NIVEAUX = {1: "inventaire, volumes, consommation", 2: "+ requêtes (formes normalisées), lectures par table, politiques",
            3: "+ droits et outils (pseudonymisés)"}
-DROITS = {
-    "snowflake": {1: ["SNOWFLAKE.OBJECT_VIEWER", "SNOWFLAKE.USAGE_VIEWER"], 2: ["SNOWFLAKE.GOVERNANCE_VIEWER"], 3: ["SNOWFLAKE.SECURITY_VIEWER"]},
-    "bigquery": {1: ["bigquery.jobs.create", "jobs.listAll", "datasets.get", "tables.list", "tables.get", "routines.list", "routines.get",
-                     "models.list", "models.getMetadata"],
-                 2: ["rowAccessPolicies.list", "transfers.get", "connections.list", "dataPolicies.list (optionnelles)"],
-                 3: ["reservations.list", "reservationAssignments.list", "capacityCommitments.list", "droits d'organisation"]},
-}
-DROITS_JAMAIS = {"snowflake": "IMPORTED PRIVILEGES, MANAGE GRANTS, IMPORT SHARE, USAGE sur les fonctions, READ sur les stages",
-                 "bigquery": "tables.getData, rôles bigquery.user et jobUser"}
+# libellé, droits demandés et droits jamais demandés : fiche du connecteur (connectors.py), plus de table ici
+PORTABILITES = {"portable_tel_quel": "portable tel quel", "traduisible": "traduisible (texte ouvert, rejeu possible)",
+                "exporte_proprietaire": "exporté au format de l'éditeur", "a_reconstruire": "à reconstruire",
+                "non_determine": "non déterminé (non lu)"}
 
 CSS = """:root{--bg:#ffffff;--fg:#14212b;--mut:#4d6173;--line:#dfe6eb;--soft:#eef3f6;--acc:#1f3a5f;--tag:#8a4b0f;--tagbg:#fbf1e6}
 @media (prefers-color-scheme:dark){:root{--bg:#10171d;--fg:#e3eaf0;--mut:#9aaebe;--line:#2a3742;--soft:#18232c;--acc:#9cc3e6;--tag:#f0b77a;--tagbg:#2e2318}}
@@ -140,6 +136,13 @@ def _poids(v, plateforme: str) -> str:
     return fr_bytes(v) if plateforme == "bigquery" else f"{fr_num(v, 2)} crédits"
 
 
+def _plateforme(r: dict) -> str:
+    c = connectors.get(r["plateforme"])
+    if c:
+        return c.label
+    return (r.get("capacites") or {}).get("libelle") or r["plateforme"]
+
+
 def _section(sid: str, title: str, body: str) -> str:
     return f'<section id="{sid}"><h2>{_e(title)}</h2>{body}</section>'
 
@@ -163,7 +166,7 @@ def _entete(r: dict) -> str:
               "Il n'est pas destiné à la diffusion.</p>") if r.get("avec_sql_brut") else ""
     boxes = "".join(f"<div class=box><h3>{k}</h3><p>{_e(' '.join(r['resume'][k]))}</p></div>" for k in ("DSI", "DAF", "RSSI"))
     return (f'<header id="entete"><p class=diffusion>Diffusion interne</p>'
-            f"<h1>Scan de sortie : {_e(PLATEFORMES.get(r['plateforme'], r['plateforme']))}</h1>"
+            f"<h1>Scan de sortie : {_e(_plateforme(r))}</h1>"
             f"<p class=meta>{_e(' · '.join(meta))}</p>{alerte}<div class=trio>{boxes}</div></header>")
 
 
@@ -171,7 +174,7 @@ def _perimetre(r: dict) -> str:
     lec = r["cout_du_scan"]["lectures"]
     kinds = r["ne_part_pas"]["objets_par_type"]
     items = [
-        f"Plateforme : {PLATEFORMES.get(r['plateforme'], r['plateforme'])}",
+        f"Plateforme : {_plateforme(r)}",
         f"Périmètre : {r['perimetre'] or 'non précisé'}",
         f"Niveau de droits : {r['niveau_droits']} ({NIVEAUX.get(r['niveau_droits'], 'non précisé')})",
         f"Mode SQL : {r['mode_sql']}",
@@ -190,6 +193,46 @@ def _perimetre(r: dict) -> str:
     v = r.get("versions") or {}
     items.append("Versions : " + ", ".join(f"{k} {v[k]}" for k in sorted(v)))
     return _section("perimetre", "Périmètre", "<ul>" + "".join(f"<li>{_e(i)}</li>" for i in items) + "</ul>")
+
+
+def _capacites(r: dict) -> str:
+    """Ce que Canot sait faire sur cette plateforme (déclaré par le connecteur), et ce que ce rapport a fait : un inventaire."""
+    c = r.get("capacites")
+    if not c:
+        return ""
+    lab = _plateforme(r)
+    niv = c.get("niveaux") or []
+    inv = c.get("inventaire") or "non déclaré"
+    if niv:
+        inv += f", niveaux {niv[0]} à {niv[-1]}" if len(niv) > 1 else f", niveau {niv[0]}"
+    export, preuve = c.get("export") or [], [p for p in c.get("preuve") or [] if isinstance(p, dict)]
+    rows = [[_e("Inventaire"), _e(f"fait par ce scan (niveau {r['niveau_droits']})" if r.get("niveau_droits") else "fait par ce scan"), _e(inv)],
+            [_e("Export"), _e("non fait par ce scan"), _e(f"{', '.join(export)}, avec canot drill" if export else "aucun format déclaré")],
+            [_e("Preuve"), _e("non faite par ce scan"),
+             _e(" ; ".join(f"{p.get('forme')} {p.get('libelle')}" for p in preuve) + ", avec canot drill" if preuve else "aucune forme déclarée")]]
+    statut = f"Connecteur {lab} : {c.get('statut') or 'statut non déclaré'}"
+    statut += f" ; test consigné : {c['teste_sur']}." if c.get("teste_sur") else " ; aucune date de test consignée dans le dépôt."
+    if preuve:
+        limite = (f"Ce que Canot ne peut pas prouver ici : les formes déclarées ({', '.join(str(p.get('forme')) for p in preuve)}) portent sur "
+                  "les tables et les requêtes ; les objets à reconstruire hors tables sont comptés, pas prouvés.")
+    else:
+        limite = f"Aucune forme de preuve n'est déclarée pour {lab} : les objets sont comptés, pas prouvés."
+    body = (f"<p>Ce rapport est un inventaire : inventorié, ni exporté ni rejoué.</p>"
+            + _list_table(["Niveau", "Ce rapport", f"Canot sur {lab}"], rows, "scan.json")
+            + f"<p class=mut>{_e(statut)}</p><p>{_e(limite)}</p>")
+    return _section("capacites", "Capacités", body)
+
+
+def _carte_sortie(r: dict) -> str:
+    """Objets par portabilité et famille d'objet : seulement si la collecte a lu la portabilité (canot.scan/2)."""
+    carte = r.get("carte_sortie") or {}
+    if not carte:
+        return ""
+    rows = [[_e(PORTABILITES.get(p, p)), _e(f.replace("_", " ")), _e(fr_num(n))] for p, fams in carte.items() for f, n in fams.items()]
+    body = ("<p class=mut>Portabilité déclarée par la collecte pour chaque objet lu. « Exporté » n'est pas « portable » : "
+            "une archive au format de l'éditeur ne s'exploite qu'avec lui.</p>"
+            + _list_table(["Portabilité", "Famille d'objet", "Objets"], rows, "scan.json", (2,)))
+    return _section("carte-sortie", "Carte de sortie", body)
 
 
 def _couts(r: dict) -> str:
@@ -334,7 +377,8 @@ def _constats(r: dict) -> str:
         rows = [[_e(f"{d['cible_type']} {d['cible']}"), _e(d["texte"])] for d in items]
         body += (f"<h3>{code} · {_e(label)}<span class=tag>{_e(ETIQUETTE)}</span></h3><p class=mut>{pl(len(items), 'constat')}</p>"
                  + _list_table(["Cible", "Observé"], rows, "drapeaux.csv"))
-    empty = [c for c in LIBELLES if c not in by]
+    hors_entrepot = r.get("famille") not in (None, "entrepot")  # F13-F16 ne concernent pas les entrepôts
+    empty = [c for c in LIBELLES if c not in by and (hors_entrepot or c not in CODES_HORS_ENTREPOT)]
     if empty:
         body += (f"<p class=mut>Aucun constat pour : {', '.join(empty)}. "
                  "Une absence de constat ne vaut que pour les lectures faites (voir F12 et la méthode).</p>")
@@ -360,7 +404,8 @@ def _methode(r: dict) -> str:
         rows.append([_e(x["id"]), _e(short_vue(x["vue"])), _e("lu" if x["statut"] == "lu" else "non lu"), _e(raison), _e(_num(x["lignes"])),
                      _e(fenetre), _e("" if x["latence_max_h"] is None else f"{_trim(fr_num(x['latence_max_h'], 1))} h")])
     plat, niv = r["plateforme"], r["niveau_droits"] or 0
-    droits = [d for lvl, ds in sorted(DROITS.get(plat, {}).items()) if lvl <= niv for d in ds]
+    fiche = connectors.profile(plat)
+    droits = [d for lvl, ds in sorted((fiche.get("droits") or {}).items()) if lvl <= niv for d in ds]
     cs = r["cout_du_scan"]
     cost = [("Requêtes émises", cs["requetes"]), ("Durée de lecture", cs["duree"])]
     if "octets_factures" in cs:
@@ -372,7 +417,7 @@ def _methode(r: dict) -> str:
             "et sa raison ; une valeur non lue reste vide, jamais 0.</p>"
             + _list_table(["Id", "Vue", "Statut", "Raison", "Lignes", "Fenêtre", "Latence"], rows, "lectures.csv", (4,))
             + f"<h3>Droits utilisés</h3><p>Niveau {_e(niv)} : {_e(', '.join(droits) or 'non précisés')}. "
-            f"Jamais demandés : {_e(DROITS_JAMAIS.get(plat, 'droits d’écriture'))}.</p>"
+            f"Jamais demandés : {_e(fiche.get('droits_jamais', 'droits d’écriture'))}.</p>"
             + "<h3>Coût du scan</h3>" + _fig_table(cost)
             + "<h3>Garde-fous</h3><ul>"
             "<li>Tout SQL envoyé passe par une garde lecture seule : seules les instructions SELECT, SHOW, DESCRIBE et ALTER SESSION SET partent. "
@@ -402,8 +447,8 @@ def render_html(result: dict) -> str:
     """scan.json -> page HTML autonome. Aucun script, aucune ressource externe (CSP stricte : seule la feuille de style inline, par empreinte)."""
     css_hash = base64.b64encode(hashlib.sha256(CSS.encode()).digest()).decode()
     csp = f"default-src 'none'; style-src 'sha256-{css_hash}'; img-src 'none'; base-uri 'none'; form-action 'none'"
-    body = "".join([_entete(result), "<main>", _perimetre(result), _couts(result), _mouvements(result), _ne_part_pas(result),
-                    _dependances(result), _rejouabilite(result), _fourchettes(result), _constats(result), _non_estime(result),
+    body = "".join([_entete(result), "<main>", _perimetre(result), _capacites(result), _couts(result), _mouvements(result),
+                    _ne_part_pas(result), _carte_sortie(result), _dependances(result), _rejouabilite(result), _fourchettes(result), _constats(result), _non_estime(result),
                     _methode(result), _suite(), "</main>"])
     return (f'<!doctype html><html lang="fr"><head><meta charset="utf-8">'
             f'<meta http-equiv="Content-Security-Policy" content="{csp}">'

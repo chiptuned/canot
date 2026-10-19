@@ -68,7 +68,19 @@ def partage(result: dict) -> dict:
         "rejouabilite_familles_pct": rj.get("valeur") if rj.get("nature") == "calculé" else None,
         "lectures": {"faites": sum(1 for l in lectures if l["statut"] == "lu"), "non_lues": sum(1 for l in lectures if l["statut"] == "non_lu")},
         "versions": result.get("versions"),
+        # ajouts optionnels (le schéma reste canot.partage/1, seul accepté par le site) : noms de capacités et comptes, rien d'autre
+        **_partage_v2(result),
     }
+
+
+def _partage_v2(result: dict) -> dict:
+    if result.get("schema") != "canot.scan/2":
+        return {}
+    c = result.get("capacites") or {}
+    return {"famille": result.get("famille"),
+            "capacites": {"inventaire": c.get("inventaire"), "export": list(c.get("export") or []),
+                          "preuve": [p.get("forme") for p in c.get("preuve") or [] if isinstance(p, dict)], "statut": c.get("statut")} if c else None,
+            "portabilite": {k: sum(v.values()) for k, v in sorted((result.get("carte_sortie") or {}).items())}}
 
 
 def scan_full(src, out: Path, *, level: int = 3, credit_price: float | None = None, include_sql_text: bool = False,

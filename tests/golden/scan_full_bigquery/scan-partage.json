@@ -1,5 +1,16 @@
 {
   "as_of": "2026-10-17T10:00:00Z",
+  "capacites": {
+    "export": [
+      "iceberg"
+    ],
+    "inventaire": "complet",
+    "preuve": [
+      "P1",
+      "P2"
+    ],
+    "statut": "testé"
+  },
   "constats": {
     "F01": 2,
     "F02": 1,
@@ -12,6 +23,7 @@
     "F11": 4,
     "F12": 3
   },
+  "famille": "entrepot",
   "lectures": {
     "faites": 18,
     "non_lues": 4
@@ -28,6 +40,7 @@
     "vue_materialisee": 1
   },
   "plateforme": "bigquery",
+  "portabilite": {},
   "rejouabilite_familles_pct": 33.3,
   "resume": {
     "DAF": [
