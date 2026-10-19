@@ -140,43 +140,61 @@ wheels = [
 
 [[package]]
 name = "canot"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "cryptography" },
-    { name = "databricks-sql-connector" },
     { name = "duckdb" },
-    { name = "google-cloud-bigquery", extra = ["bqstorage"] },
     { name = "mcp" },
     { name = "pyarrow" },
     { name = "pyiceberg", extra = ["sql-sqlite"] },
     { name = "pyyaml" },
-    { name = "snowflake-connector-python" },
     { name = "sqlglot" },
 ]
 
 [package.optional-dependencies]
 all = [
+    { name = "databricks-sql-connector" },
+    { name = "google-cloud-bigquery", extra = ["bqstorage"] },
     { name = "psycopg2-binary" },
+    { name = "snowflake-connector-python" },
+]
+bigquery = [
+    { name = "google-cloud-bigquery", extra = ["bqstorage"] },
+]
+databricks = [
+    { name = "databricks-sql-connector" },
 ]
 dev = [
+    { name = "databricks-sql-connector" },
+    { name = "google-cloud-bigquery", extra = ["bqstorage"] },
     { name = "moto", extra = ["s3", "server"] },
     { name = "pytest" },
+    { name = "snowflake-connector-python" },
 ]
 docs = [
+    { name = "mkdocs" },
     { name = "mkdocs-material" },
 ]
 postgres = [
     { name = "psycopg2-binary" },
 ]
+snowflake = [
+    { name = "snowflake-connector-python" },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "cryptography", specifier = ">=42" },
-    { name = "databricks-sql-connector", specifier = ">=3.5" },
+    { name = "databricks-sql-connector", marker = "extra == 'all'", specifier = ">=3.5" },
+    { name = "databricks-sql-connector", marker = "extra == 'databricks'", specifier = ">=3.5" },
+    { name = "databricks-sql-connector", marker = "extra == 'dev'", specifier = ">=3.5" },
     { name = "duckdb", specifier = ">=1.1" },
-    { name = "google-cloud-bigquery", extras = ["bqstorage"], specifier = ">=3.25" },
+    { name = "google-cloud-bigquery", extras = ["bqstorage"], marker = "extra == 'all'", specifier = ">=3.25" },
+    { name = "google-cloud-bigquery", extras = ["bqstorage"], marker = "extra == 'bigquery'", specifier = ">=3.25" },
+    { name = "google-cloud-bigquery", extras = ["bqstorage"], marker = "extra == 'dev'", specifier = ">=3.25" },
     { name = "mcp", specifier = ">=1.2" },
+    { name = "mkdocs", marker = "extra == 'docs'", specifier = "<2" },
     { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.5" },
     { name = "moto", extras = ["server", "s3"], marker = "extra == 'dev'", specifier = ">=5" },
     { name = "psycopg2-binary", marker = "extra == 'all'", specifier = ">=2.9" },
@@ -185,7 +203,9 @@ requires-dist = [
     { name = "pyiceberg", extras = ["sql-sqlite"], specifier = ">=0.8" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "pyyaml", specifier = ">=6" },
-    { name = "snowflake-connector-python", specifier = ">=3.12" },
+    { name = "snowflake-connector-python", marker = "extra == 'all'", specifier = ">=3.12" },
+    { name = "snowflake-connector-python", marker = "extra == 'dev'", specifier = ">=3.12" },
+    { name = "snowflake-connector-python", marker = "extra == 'snowflake'", specifier = ">=3.12" },
     { name = "sqlglot", specifier = ">=25" },
 ]
 provides-extras = ["snowflake", "bigquery", "databricks", "postgres", "mcp", "all", "dev", "docs"]
@@ -3360,8 +3380,8 @@ name = "uvicorn"
 version = "0.54.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "click" },
-    { name = "h11" },
+    { name = "click", marker = "sys_platform != 'emscripten'" },
+    { name = "h11", marker = "sys_platform != 'emscripten'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/da/34/30e9280707135d2cfc589dfff3cb796bd07a3aeb1a3e415ba09dd89d7bb4/uvicorn-0.54.0.tar.gz", hash = "sha256:a2e33cbfaa0306f8e6b0c13e0cb89d7d7a2da3e62b90c66e18c33d9807b28620", size = 112283, upload-time = "2026-09-25T06:52:37.601Z" }
 wheels = [
