@@ -374,3 +374,4 @@ input[type=file]{font:inherit;padding:8px 0}
 .cmd-note a{color:inherit}
 [data-cs-pick-out]{color:inherit;text-underline-offset:3px;cursor:pointer}[data-cs-pick-out][aria-current="true"]{font-weight:600;text-decoration:none;cursor:default}
 @media (max-width:640px){.cmd{overflow-x:auto}.cmd code{overflow-wrap:normal}.cmd .cs-drum{max-width:none}}
+.hero .cmd-note{max-width:none}
