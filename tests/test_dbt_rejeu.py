@@ -177,3 +177,36 @@ def test_mcp_explique_un_rejeu(tmp_path):
     e = agent.expliquer_rapport(str(tmp_path / "out" / "rejeu-dbt.json"))
     assert e["forme"] == "P3 rejeu de traitements" and [d["modele"] for d in e["differents"]] == ["model.canot_lab.dbt_daily_revenue"]
     assert len(e["non_compares"]) == 4 and e["non_rejouables"] == []
+
+
+def _copie_flottante(path: Path, decalage: str) -> Path:
+    """Cas du premier rejeu réel : UNIT_PRICE en DOUBLE, BASKET_VALUE somme flottante, ITEMS en INTEGER (rejeu : HUGEINT)."""
+    copie_duckdb(path)
+    con = duckdb.connect(str(path))
+    con.execute("alter table RAW.products alter unit_price type double")
+    con.execute("drop table DBT_dbt_mart.int_order_totals")
+    con.execute("""create table DBT_dbt_mart.int_order_totals as select l.order_id, sum(l.qty * p.unit_price) as basket_value,
+                   cast(sum(l.qty) as integer) as items
+                   from RAW.order_lines l join RAW.products p on p.product_id = l.product_id group by l.order_id""")
+    # somme flottante dans un autre ordre côté plateforme : la valeur diffère de la nôtre (ici au dernier bit)
+    con.execute(f"update DBT_dbt_mart.int_order_totals set basket_value = {decalage} where order_id % 3 = 0")
+    con.close()
+    return path
+
+
+def test_regression_somme_flottante_au_dernier_bit(tmp_path):
+    db = _copie_flottante(tmp_path / "c.duckdb", "nextafter(basket_value, 1e300)")
+    par = _par(run_rejeu(f"dbt://{FIX}", tmp_path / "out", tmp_path / "k.key", base=str(db), log=lambda *_: None))
+    r = par["int_order_totals"]
+    assert r["verification"]["fingerprint_ok"] is False and r["verification"]["stats_ok"] is True  # l'empreinte exacte diffère
+    assert any(c.startswith("items : HUGEINT -> INTEGER") for c in r["conversions"])
+    ef = r["verification"]["empreinte_flottants"]
+    assert ef["egale"] and ef["chiffres_significatifs"] == 12 and ef["colonnes"] == ["basket_value"]
+    assert ef["ecarts_exacts"]["basket_value"]["valeurs_differentes_au_bit"] > 0 and ef["ecarts_exacts"]["basket_value"]["ecart_relatif_max"] < 1e-12
+    assert r["statut"] == "identique" and "dernier bit" in r["note"]
+
+
+def test_regression_ecart_flottant_reel_reste_different(tmp_path):
+    db = _copie_flottante(tmp_path / "c.duckdb", "basket_value * (1 + 1e-7)")
+    r = _par(run_rejeu(f"dbt://{FIX}", tmp_path / "out", tmp_path / "k.key", base=str(db), log=lambda *_: None))["int_order_totals"]
+    assert r["statut"] == "different" and "note" not in r

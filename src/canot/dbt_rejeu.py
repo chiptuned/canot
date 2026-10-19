@@ -12,6 +12,7 @@ Chaque modèle est classé : `identique` (rejoué, comparé, égal), `different`
 from __future__ import annotations
 
 import json
+import math
 import time
 from dataclasses import asdict
 from pathlib import Path
@@ -197,6 +198,42 @@ def _raison_duckdb(e: BaseException) -> str:
     return "échec d'exécution DuckDB" if r == "liaison refusée par DuckDB" else r
 
 
+def chiffres_flottants(tol: Tolerances) -> int:
+    """Chiffres significatifs gardés pour l'empreinte des flottants : plus fins que la tolérance relative (1e-9 -> 12)."""
+    return max(6, min(15, round(-math.log10(tol.float_rel)) + 3)) if tol.float_rel > 0 else 15
+
+
+def _arrondir(tb: pa.Table, cols: list[str], chiffres: int) -> pa.Table:
+    for c in cols:
+        i = tb.schema.get_field_index(c)
+        vals = [None if v is None else format(v, f".{chiffres}g") for v in tb.column(i).to_pylist()]
+        tb = tb.set_column(i, c, pa.array(vals, type=pa.string()))
+    return tb
+
+
+def _empreinte_flottants(orig: pa.Table, rej: pa.Table, tol: Tolerances, res: dict) -> bool:
+    """Lignes et statistiques égales, empreinte différente : si des colonnes sont flottantes, une somme flottante calculée dans un
+    autre ordre diffère au dernier bit (non-associativité de l'addition IEEE 754), et l'empreinte hache le texte exact.
+    On recalcule l'empreinte des deux côtés avec ces colonnes arrondies à N chiffres significatifs (N plus fin que la tolérance)
+    et on mesure l'écart exact. Égale : identique dans la tolérance, consigné ; sinon l'écart reste."""
+    cols = [f.name for f in orig.schema if pa.types.is_floating(f.type)]
+    if not cols:
+        return False
+    n = chiffres_flottants(tol)
+    egal = fingerprint(_arrondir(orig, cols, n)) == fingerprint(_arrondir(rej, cols, n))
+    exacts = {}
+    for c in cols:
+        a = sorted(x for x in orig.column(c).to_pylist() if x is not None)
+        b = sorted(x for x in rej.column(c).to_pylist() if x is not None)
+        rel = max((abs(x - y) / max(abs(x), abs(y)) for x, y in zip(a, b) if x != y), default=0.0)
+        exacts[c] = {"valeurs_differentes_au_bit": sum(1 for x, y in zip(a, b) if x != y), "ecart_relatif_max": rel}
+    res["verification"]["empreinte_flottants"] = {"colonnes": cols, "chiffres_significatifs": n, "egale": egal, "ecarts_exacts": exacts}
+    if egal:
+        res["note"] = (f"identique dans la tolérance : empreinte recalculée avec {', '.join(cols)} arrondi(s) à {n} chiffres significatifs ; "
+                       "valeurs flottantes différentes au dernier bit (somme flottante dans un autre ordre), voir verification.empreinte_flottants")
+    return egal
+
+
 def rejouer(projet: dbt_scan.ProjetDbt, con, copie: dict, tol: Tolerances, log=lambda s: None) -> list[dict]:
     """Rejoue les modèles du projet dans `con` (schéma rejeu) et compare chaque sortie à sa table d'origine dans la copie."""
     man = json.loads((projet.cible / "manifest.json").read_text(encoding="utf-8"))
@@ -281,11 +318,15 @@ def rejouer(projet: dbt_scan.ProjetDbt, con, copie: dict, tol: Tolerances, log=l
             continue
         orig_tb = _arrow(con.execute(f"select * from {oref}"))
         t = TableInfo(origine[0], origine[1], orig_tb.num_rows, None, [ColumnInfo(f.name, str(f.type)) for f in orig_tb.schema])
-        chk = check_table(_Copie(con, copie), t, _Rejoue(_arrow(con.execute(f"select * from {ref}"))), fingerprint(orig_tb), tol)
+        rej_tb = _arrow(con.execute(f"select * from {ref}"))
+        chk = check_table(_Copie(con, copie), t, _Rejoue(rej_tb), fingerprint(orig_tb), tol)
         res["verification"] = asdict(chk) | {"ok": chk.ok}
-        res["statut"] = "identique" if chk.ok else "different"
-        res["raison"] = None if chk.ok else "; ".join(chk.stats_diffs[:3]) or "empreinte de contenu différente"
-        log(f"   [rejoué, {'identique' if chk.ok else 'différent'}] {uid}")
+        ok = chk.ok
+        if not ok and chk.schema_ok and chk.stats_ok and chk.rows_source == chk.rows_target and not chk.fingerprint_ok:
+            ok = _empreinte_flottants(orig_tb, rej_tb, tol, res)
+        res["statut"] = "identique" if ok else "different"
+        res["raison"] = None if ok else "; ".join(chk.stats_diffs[:3]) or "empreinte de contenu différente"
+        log(f"   [rejoué, {'identique' if ok else 'différent'}] {uid}")
     return out
 
 
