@@ -11,6 +11,6 @@
 
 ## Other
 - [Discrepancy catalogue](https://canot.io/discrepancies.html): what two engines return differently, measured
-- [Source code](https://github.com/chiptuned/canot)
+- [Source code](https://github.com/q4o-paris/canot)
 - [Offers](https://canot.io/en/offers.html)
 - [Site in French](https://canot.io/)

@@ -22,7 +22,7 @@
       <a class="hide-s" href="/en/offers.html">Offers</a>
       <a href="/en/report.html"><span class="long">Example report</span><span class="short">Example</span></a>
       <span class="lang-switch" aria-label="Language / Langue"><a href="/" hreflang="fr" lang="fr">FR</a> | <b aria-current="true">EN</b></span>
-      <a class="btn btn-dark" href="https://github.com/chiptuned/canot">Try it free</a>
+      <a class="btn btn-dark" href="https://github.com/q4o-paris/canot">Try it free</a>
     </nav>
   </div>
 </header>
@@ -47,7 +47,7 @@ from tpch_sf1.lineitem group by l_returnflag, l_linestatus</code></pre>
 <dl class="duo"><div><dt>Source (Snowflake (the date the dbt model stored, in the zone of each value))</dt><dd><code>2025-08-22</code></dd></div><div><dt>Copy (DuckDB on the Iceberg copy (session zone Europe/Paris))</dt><dd><code>2025-08-23</code></dd></div></dl>
 <p><b>Why.</b> Iceberg stores a timestamp with time zone as an instant in UTC: the instant is kept, the zone of each value is not (canot drill logs the conversion as lossy). Snowflake casts a TIMESTAMP_TZ to a date in the zone stored with the value; on the copy the cast happens in the session zone of the engine. An order placed in the evening in Los Angeles falls on the next day in Paris. On the test bench dbt project (canot drill dbt://), the copy of the 8 tables is identical, and the 3 marts that derive a date from ORDER_TS differ: dbt_daily_revenue has 14,423 rows instead of 14,399, and the latest order date moves from 2025-08-22 to 2025-08-23.</p><p><b>What to do.</b> Decide which zone the business dates are in, and write it into the pipeline on the destination side: SET TimeZone in DuckDB, or convert explicitly before the cast (timezone(&#x27;America/Los_Angeles&#x27;, order_ts)). If the zone of each value matters, copy it as a separate column before leaving.</p></article>
 <h2>To be measured</h2><p class="lead-p">Not measured yet: draw no conclusion from it.</p><ul class="todo-list"><li><b>Time zones (BigQuery)</b>: BigQuery TIMESTAMP (UTC) and DATETIME (no zone): what the copy and a date derived from them return</li><li><b>Null ordering</b>: Each engine puts NULLs first or last by default: an ORDER BY can return a different order.</li><li><b>Case and collation</b>: Text comparisons and sorting depend on the platform&#x27;s collation.</li><li><b>Semi-structured data</b>: VARIANT (Snowflake), JSON (BigQuery), STRUCT and ARRAY: text form and key order.</li><li><b>Large decimals</b>: Snowflake NUMBER(38), BigQuery BIGNUMERIC: how far is precision preserved?</li><li><b>Geography</b>: GEOGRAPHY / GEOMETRY: serialization format on the destination side.</li></ul>
-<p class="sources">Another discrepancy to suggest? Open an <a href="https://github.com/chiptuned/canot/issues">issue</a> with the query or the type, the result from each engine, the versions and the date.</p>
+<p class="sources">Another discrepancy to suggest? Open an <a href="https://github.com/q4o-paris/canot/issues">issue</a> with the query or the type, the result from each engine, the versions and the date.</p>
 </div></section>
 <section class="s contact-strip"><div class="wrap"><p>A question, or a test to suggest? <a class="btn btn-accent" href="/en/#contact">Write to us</a></p></div></section>
 </main>
@@ -55,7 +55,7 @@ from tpch_sf1.lineitem group by l_returnflag, l_linestatus</code></pre>
 <footer class="bot">
   <div class="wrap">
     <span>Canot · a free tool (Apache-2.0) and engagements by <a href="https://q4o.com">Q4O</a>. This is not a certification.</span>
-    <span class="foot-links"><a href="/en/faq.html">FAQ</a> · <a href="/en/legal.html">Legal notice and privacy</a> · <a href="https://github.com/chiptuned/canot">Source code</a></span>
+    <span class="foot-links"><a href="/en/faq.html">FAQ</a> · <a href="/en/legal.html">Legal notice and privacy</a> · <a href="https://github.com/q4o-paris/canot">Source code</a></span>
   </div>
 </footer>
 <script src="/app.js?v=747fffdbfa" defer></script>

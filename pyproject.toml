@@ -29,8 +29,8 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://canot.io"
-Source = "https://github.com/chiptuned/canot"
-Issues = "https://github.com/chiptuned/canot/issues"
+Source = "https://github.com/q4o-paris/canot"
+Issues = "https://github.com/q4o-paris/canot/issues"
 
 [project.optional-dependencies]
 # drivers of the warehouses, installed on demand: uvx "canot[snowflake]" drill …

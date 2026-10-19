@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/chiptuned/canot/main/docs/assets/banner-dark.svg">
-    <img src="https://raw.githubusercontent.com/chiptuned/canot/main/docs/assets/banner-light.svg" alt="Canot: prove you can leave" width="100%">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/q4o-paris/canot/main/docs/assets/banner-dark.svg">
+    <img src="https://raw.githubusercontent.com/q4o-paris/canot/main/docs/assets/banner-light.svg" alt="Canot: prove you can leave" width="100%">
   </picture>
 </p>
 
@@ -19,7 +19,7 @@
 
 <p align="center">
   <a href="https://canot.io"><b>canot.io</b></a> ·
-  <a href="https://chiptuned.github.io/canot/">Documentation</a> ·
+  <a href="https://q4o-paris.github.io/canot/">Documentation</a> ·
   <a href="docs/discrepancies.md">Measured discrepancies</a> ·
   <a href="#-try-it">Try it</a> ·
   <a href="#-why">Why</a> ·
@@ -37,7 +37,7 @@ uvx canot demo
 No account, no data: it runs the TPC-H benchmark dataset through a full exit exercise (copy to Apache Iceberg, comparison, signed evidence report) in a few seconds.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/chiptuned/canot/main/docs/assets/demo.svg" alt="uvx canot demo copies the 8 TPC-H tables, compares everything and flags a discrepancy" width="860">
+  <img src="https://raw.githubusercontent.com/q4o-paris/canot/main/docs/assets/demo.svg" alt="uvx canot demo copies the 8 TPC-H tables, compares everything and flags a discrepancy" width="860">
 </p>
 
 ## ▶ Connectors
@@ -76,4 +76,4 @@ uvx canot scan "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER"    # read-only 
 uvx canot drill "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" ./iceberg   # full exit exercise, to a local folder
 ```
 
-Exit to your own infrastructure (folder, NAS, self-hosted S3 storage), commands, permissions and agent access (MCP): see the [documentation](https://chiptuned.github.io/canot/). `uvx canot connectors` lists the supported platforms, what Canot can do on each (inventory, export, evidence) and whether the connector is tested. Canot is **not** a certification: it produces a dated record of measurements on the scope you ran. The website, [canot.io](https://canot.io), explains the rest.
+Exit to your own infrastructure (folder, NAS, self-hosted S3 storage), commands, permissions and agent access (MCP): see the [documentation](https://q4o-paris.github.io/canot/). `uvx canot connectors` lists the supported platforms, what Canot can do on each (inventory, export, evidence) and whether the connector is tested. Canot is **not** a certification: it produces a dated record of measurements on the scope you ran. The website, [canot.io](https://canot.io), explains the rest.

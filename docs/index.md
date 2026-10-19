@@ -11,4 +11,4 @@ uvx canot demo
 - [On-prem exit](on-prem.md) and [targets](targets.md): where the copy can live.
 - [Benchmark](bench.md) and [known discrepancies](discrepancies.md): measurements and the differences observed between engines.
 
-Source and issues: [github.com/chiptuned/canot](https://github.com/chiptuned/canot). Canot does not certify or guarantee compliance: it produces evidence.
+Source and issues: [github.com/q4o-paris/canot](https://github.com/q4o-paris/canot). Canot does not certify or guarantee compliance: it produces evidence.

@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/chiptuned/canot/main/docs/assets/banner-dark.svg">
-    <img src="https://raw.githubusercontent.com/chiptuned/canot/main/docs/assets/banner-light.svg" alt="Canot : prouvez que vous pouvez partir" width="100%">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/q4o-paris/canot/main/docs/assets/banner-dark.svg">
+    <img src="https://raw.githubusercontent.com/q4o-paris/canot/main/docs/assets/banner-light.svg" alt="Canot : prouvez que vous pouvez partir" width="100%">
   </picture>
 </p>
 
@@ -27,7 +27,7 @@ uvx canot demo
 Sans compte ni données : la commande joue un exercice de sortie complet sur le jeu de référence TPC-H (copie en Apache Iceberg, comparaison, dossier de preuve signé) en quelques secondes.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/chiptuned/canot/main/docs/assets/demo.svg" alt="uvx canot demo copie les 8 tables de TPC-H, compare tout et signale un écart" width="860">
+  <img src="https://raw.githubusercontent.com/q4o-paris/canot/main/docs/assets/demo.svg" alt="uvx canot demo copie les 8 tables de TPC-H, compare tout et signale un écart" width="860">
 </p>
 
 ## ▶ Connecteurs

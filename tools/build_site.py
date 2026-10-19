@@ -209,7 +209,7 @@ def discrepancies():
 <p class="lead-p">What two engines return differently for the same query or the same type, measured with Canot: the query, the result on each side, the versions and the date. What is not measured yet is listed separately.</p>
 {cards}
 <h2>To be measured</h2><p class="lead-p">Not measured yet: draw no conclusion from it.</p><ul class="todo-list">{todo}</ul>
-<p class="sources">Another discrepancy to suggest? Open an <a href="https://github.com/chiptuned/canot/issues">issue</a> with the query or the type, the result from each engine, the versions and the date.</p>
+<p class="sources">Another discrepancy to suggest? Open an <a href="https://github.com/q4o-paris/canot/issues">issue</a> with the query or the type, the result from each engine, the versions and the date.</p>
 </div></section>'''
 
 
@@ -336,7 +336,7 @@ def docs():
 
 ## Other
 - [Discrepancy catalogue](https://canot.io/discrepancies.html): what two engines return differently, measured
-- [Source code](https://github.com/chiptuned/canot)
+- [Source code](https://github.com/q4o-paris/canot)
 - [Offers](https://canot.io/en/offers.html)
 - [Site in French](https://canot.io/)
 """)

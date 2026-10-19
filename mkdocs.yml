@@ -1,8 +1,8 @@
 site_name: Canot
 site_description: Rehearse your exit from a data platform, and keep the evidence.
-site_url: https://chiptuned.github.io/canot/
-repo_url: https://github.com/chiptuned/canot
-repo_name: chiptuned/canot
+site_url: https://q4o-paris.github.io/canot/
+repo_url: https://github.com/q4o-paris/canot
+repo_name: q4o-paris/canot
 docs_dir: docs
 exclude_docs: |
   landing-brief.md

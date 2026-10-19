@@ -53,7 +53,7 @@ A single visitor must be able to go from "why" to `uvx canot scan` in under a mi
 - No form collects personal data beyond what is necessary; no third-party trackers (consistent with "no telemetry").
 
 ## 8. Materials provided
-- Repository: `~/repos/canot` (GitHub: chiptuned/canot).
+- Repository: `~/repos/canot` (GitHub: q4o-paris/canot).
 - `README.md`: short version of the page. `docs/deliverables.md`: what the client receives. `docs/targets.md`: hosting providers and countries.
 - `examples/tpch/report.html`: a real report, signed.
 - Internal briefing (context, vocabulary, sales arguments): `docs/briefing.html`.
