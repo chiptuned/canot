@@ -55,11 +55,28 @@ select min(scanned_at), max(scanned_at) from distrib.tickets
 
 **What to do.** Decide whether sub-microsecond precision matters (sensor logs, trading, traceability). If it does, store the timestamp as text or as an integer (nanoseconds since 1970) alongside it, or target an Iceberg v3-compatible engine.
 
+## Snowflake TIMESTAMP_TZ: the copy keeps the instant, not the zone, so a date derived from it can shift by a day
+
+*Measured on 2026-10-19. Snowflake (trial account, test bench dbt project); DuckDB 1.5.6; pyiceberg 0.12; Canot 0.3.5 (`canot drill dbt://`).*
+
+```sql
+select max(cast(order_ts as date)) as last_order_date from RAW.ORDERS  -- order_ts: TIMESTAMP_TZ, America/Los_Angeles
+```
+
+| | |
+|---|---|
+| **Source** (Snowflake (the date the dbt model stored, in the zone of each value)) | `2025-08-22` |
+| **Copy** (DuckDB on the Iceberg copy (session zone Europe/Paris)) | `2025-08-23` |
+
+**Why.** Iceberg stores a timestamp with time zone as an instant in UTC: the instant is kept, the zone of each value is not (canot drill logs the conversion as lossy). Snowflake casts a TIMESTAMP_TZ to a date in the zone stored with the value; on the copy the cast happens in the session zone of the engine. An order placed in the evening in Los Angeles falls on the next day in Paris. On the test bench dbt project (canot drill dbt://), the copy of the 8 tables is identical, and the 3 marts that derive a date from ORDER_TS differ: dbt_daily_revenue has 14,423 rows instead of 14,399, and the latest order date moves from 2025-08-22 to 2025-08-23.
+
+**What to do.** Decide which zone the business dates are in, and write it into the pipeline on the destination side: SET TimeZone in DuckDB, or convert explicitly before the cast (timezone('America/Los_Angeles', order_ts)). If the zone of each value matters, copy it as a separate column before leaving.
+
 ## To be measured
 
 Not measured yet: draw no conclusion from it.
 
-- **Time zones**: Snowflake TIMESTAMP_TZ, BigQuery TIMESTAMP (UTC): is the original offset preserved?
+- **Time zones (BigQuery)**: BigQuery TIMESTAMP (UTC) and DATETIME (no zone): what the copy and a date derived from them return
 - **Null ordering**: Each engine puts NULLs first or last by default: an ORDER BY can return a different order.
 - **Case and collation**: Text comparisons and sorting depend on the platform's collation.
 - **Semi-structured data**: VARIANT (Snowflake), JSON (BigQuery), STRUCT and ARRAY: text form and key order.
