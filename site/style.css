@@ -399,6 +399,6 @@ input[type=file]{font:inherit;padding:8px 0}
 /* the title drum shows one neighbour above and one below, inside the spacing around the line: it never overlaps the text */
 .hero-copy .big{margin:36px 0}
 .cs-drum--title.is-open .cs-drum__item[data-dist="2"]{opacity:0;pointer-events:none}
-/* while the title drum is open its neighbours use the space of the second line: that line steps aside */
+/* on narrow screens the end of the sentence wraps under the drum: while the drum is open that text steps aside so its neighbours stay readable */
 .hero-copy .big .after{transition:opacity .15s}
-.hero-copy .big:has(.cs-drum--title.is-open) .after{opacity:0}
+@media (max-width:640px){.hero-copy .big:has(.cs-drum--title.is-open) .after{opacity:0}}
