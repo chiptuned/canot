@@ -18,7 +18,7 @@ def test_app_js_a_une_syntaxe_valide():
 def test_le_hero_garde_les_quatre_tambours_et_les_parties_conditionnelles(page):
     """La traduction du site avait retiré les tambours d'action et de destination sans qu'aucun test ne le voie."""
     html = (SITE / page).read_text(encoding="utf-8")
-    for drum in ("runner", "action", "scheme", "dest", "label"):
+    for drum in ("runner", "scheme", "dest", "label"):  # the hero command is always `drill`: no action drum
         assert f'data-cs-drum="{drum}"' in html, drum
-    for marker in ("data-cs-show=", "data-cs-rest", "data-cs-dest-prefix", "data-cs-copy", "data-cs-action-text", "data-cs-pick-act="):
+    for marker in ("data-cs-show=", "data-cs-rest", "data-cs-dest-prefix", "data-cs-copy", "data-cs-action-text"):
         assert marker in html, marker

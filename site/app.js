@@ -160,15 +160,15 @@
   ];
   var SOURCES = [
     { id: 'snowflake', label: 'Snowflake', rest: '://MY_ACCOUNT/MY_DATABASE?user=MY_USER' },
+    { id: 'databricks', label: 'Databricks', rest: '://MY_WORKSPACE.cloud.databricks.com/sql/1.0/warehouses/MY_WAREHOUSE_ID?catalog=MY_CATALOG' },
     { id: 'bigquery', label: 'BigQuery', rest: '://MY_PROJECT/MY_DATASET?location=EU' },
-    { id: 'dbt', label: 'dbt', rest: '://MY_DBT_PROJECT' },
-    { id: 'fabric', label: 'Microsoft Fabric / Synapse', rest: '://MY_WORKSPACE', soon: true },
     { id: 'redshift', label: 'Amazon Redshift', rest: '://MY_CLUSTER/MY_DATABASE', soon: true },
+    { id: 'fabric', label: 'Microsoft Fabric / Synapse', rest: '://MY_WORKSPACE', soon: true },
     { id: 'teradata', label: 'Teradata', rest: '://MY_HOST/MY_DATABASE', soon: true },
     { id: 'oracle', label: 'Oracle', rest: '://MY_HOST/MY_SERVICE', soon: true },
     { id: 'sap', label: 'SAP Datasphere', rest: '://MY_TENANT', soon: true },
     { id: 'clickhouse', label: 'ClickHouse', rest: '://MY_HOST/MY_DATABASE', soon: true },
-    { id: 'databricks', label: 'Databricks', rest: '://MY_WORKSPACE.cloud.databricks.com/sql/1.0/warehouses/MY_WAREHOUSE_ID?catalog=MY_CATALOG' }
+    { id: 'dbt', label: 'dbt', rest: '://MY_DBT_PROJECT' }  // scan and replay only: not offered with drill
   ];
   var BUCKET = ' --bucket MY_BUCKET';
   var DESTS = [
@@ -195,7 +195,7 @@
     var touched = false;
     var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var qs = new URLSearchParams(location.search);
-    [['outil', 'run'], ['action', 'act'], ['source', 'src'], ['sortie', 'dst']].forEach(function (pair) {
+    [['outil', 'run'], ['source', 'src'], ['sortie', 'dst']].forEach(function (pair) {
       var k = LISTS[pair[1]].findIndex(function (p) { return p.id === norm(qs.get(pair[0])); });
       if (k >= 0) { st[pair[1]] = k; touched = true; }
     });
