@@ -27,7 +27,7 @@ Les connecteurs Snowflake, BigQuery et Databricks sont installés avec Canot : r
 |---|---|
 | `canot scan SOURCE` | Radiographie en lecture seule : inventaire, volumes, consommation, ce qui ne part pas, rejouabilité des requêtes. Écrit `scan.html` (à transmettre), `scan.json` et des CSV. Voir [scan](scan.md). |
 | `canot drill SOURCE DESTINATION` | Exercice de sortie complet : copie, comparaison table par table, rejeu des requêtes, dossier de preuve signé. |
-| `canot demo` | Démonstration de 30 secondes, sans compte ni données : le jeu TPC-H (référence des bancs d'essai de bases de données, généré en local, environ 1 Go ; `--sf 0.1` pour 100 Mo) et un exercice complet. Elle affiche les deux commandes qu'elle lance (`demo-data`, `drill`) et accepte une destination : `canot demo aws:eu-west-3 --bucket MON-COFFRE`. Hors ligne, un jeu fictif de secours. |
+| `canot demo` | Démonstration de 30 secondes, sans compte ni données : le jeu TPC-H (référence des bancs d'essai de bases de données, généré en local, 100 Mo par défaut ; `--sf 1` pour environ 1 Go) et un exercice complet. Elle affiche les deux commandes qu'elle lance (`demo-data`, `drill`) et accepte une destination : `canot demo aws:eu-west-3 --bucket MON-COFFRE`. Hors ligne, un jeu fictif de secours. |
 | `canot verify-evidence DOSSIER` | Vérifie la chaîne et la signature d'un dossier de preuve. `--expect-pub` refuse un dossier signé par une autre clé. |
 | `canot teardown DESTINATION` | Supprime les données copiées. |
 | `canot snowflake-setup` | Écrit le script SQL d'accès en lecture seule à faire relire et lancer par un administrateur. `--generate-key` crée la paire de clés. |

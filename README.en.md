@@ -13,7 +13,7 @@
 uvx canot demo
 ```
 
-No account, no data. Canot generates **TPC-H**, the standard database benchmark (8 tables, 22 queries, up to 1 GB of data at scale factor 1), copies it to Apache Iceberg, compares everything, replays TPC-H queries on both sides and writes a signed evidence report. Scale factor 1 by default (about 1 GB, around 20 seconds on a laptop); `uvx canot demo --sf 0.1` for a light 100 MB version. The command prints the two commands it runs (`canot demo-data`, then `canot drill`): copy them to change the destination, for example `uvx canot demo aws:eu-west-3 --bucket MY-BUCKET`.
+No account, no data. Canot generates **TPC-H**, the standard database benchmark (8 tables, 22 queries, up to 1 GB of data at scale factor 1), copies it to Apache Iceberg, compares everything, replays TPC-H queries on both sides and writes a signed evidence report. A 100 MB version by default (a few seconds); `uvx canot demo --sf 1` runs scale factor 1, about 1 GB (around 20 seconds on a laptop). The command prints the two commands it runs (`canot demo-data`, then `canot drill`): copy them to change the destination, for example `uvx canot demo aws:eu-west-3 --bucket MY-BUCKET`.
 
 Canot copies tables from BigQuery, Snowflake or Databricks into Apache Iceberg on storage you control, compares each table (row counts, per-column statistics, content fingerprint), replays your key queries on both sides, and writes a report with a hash-chained, signed log.
 
