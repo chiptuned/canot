@@ -1,0 +1,68 @@
+/* Canot · sélecteur de plateforme source (variante 3b) */
+:root {
+  --cs-accent: #1f3a5f;   /* mot actif, liens */
+  --cs-muted: #7d8a92;    /* voisines du tambour */
+  --cs-chip: #e9eff5;     /* fond du mot dans la commande */
+  --cs-line: #d5dcdf;
+}
+
+.cs-drum {
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+  outline: none;
+  cursor: ns-resize;
+  transition: width .28s cubic-bezier(.2, .8, .2, 1);
+}
+.cs-drum:focus-visible { outline: 2px solid var(--cs-accent); outline-offset: 3px; border-radius: 3px; }
+
+.cs-drum__col {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: transform .32s cubic-bezier(.2, .8, .2, 1);
+}
+.cs-drum__item {
+  display: block;
+  white-space: nowrap;
+  color: var(--cs-accent);
+  cursor: pointer;
+  transition: opacity .25s, color .25s;
+}
+.cs-drum__item[data-dist="1"],
+.cs-drum__item[data-dist="2"] {
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+  color: var(--cs-muted);
+}
+
+/* Accroche : « Enfermé chez Snowflake ? » */
+.cs-drum--title .cs-drum__item[data-dist="0"] {
+  text-decoration: underline dotted;
+  text-decoration-thickness: 2px;
+  text-underline-offset: .23em;
+}
+.cs-drum--title.is-open .cs-drum__item[data-dist="1"] { opacity: .35; pointer-events: auto; }
+.cs-drum--title.is-open .cs-drum__item[data-dist="2"] { opacity: .15; pointer-events: auto; }
+
+/* Ligne de commande */
+.cs-drum--code { background: var(--cs-chip); border-radius: 3px; font-weight: 600; }
+.cs-drum--code .cs-drum__item { padding: 0 5px; border-radius: 3px; }
+.cs-drum--code.is-open .cs-drum__item[data-dist="1"] {
+  opacity: 1;
+  pointer-events: auto;
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--cs-line);
+}
+
+/* Liens du paragraphe : la plateforme active n'est plus un lien */
+[data-cs-pick] { color: var(--cs-accent); text-underline-offset: 3px; cursor: pointer; }
+[data-cs-pick][aria-current="true"] { color: inherit; font-weight: 600; text-decoration: none; cursor: default; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-drum, .cs-drum__col, .cs-drum__item { transition: none; }
+}

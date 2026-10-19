@@ -34,11 +34,10 @@ h1{margin:0;font-weight:700;font-size:clamp(40px,7vw,88px);line-height:1;letter-
 .hero-copy .big{margin:0;font-size:clamp(18px,2.2vw,27px);line-height:1.25;font-weight:600;text-wrap:balance}
 .hero-copy .big .rot{color:var(--accent-ink);display:inline-grid;vertical-align:bottom;overflow:hidden}
 .hero-copy .sub{margin:0;font-size:17px;line-height:1.55;color:var(--muted);text-wrap:pretty}
-.cmd{align-self:flex-start;max-width:100%;display:flex;align-items:center;gap:14px;background:var(--ink);border:0;border-radius:8px;padding:14px 18px;cursor:pointer;color:#fff;font-family:var(--mono);text-align:left}
-.cmd:hover{background:var(--ink-2)}
+.cmd{align-self:flex-start;max-width:100%;display:flex;align-items:flex-start;gap:14px;background:var(--ink);border:0;border-radius:8px;padding:14px 18px;color:#fff;font-family:var(--mono);text-align:left}
 .cmd .p{color:var(--accent);align-self:flex-start}
-.cmd code{font:14px/1.6 var(--mono);white-space:pre;overflow-x:auto;min-width:0}
-.cmd .c{font-family:var(--sans);font-size:13px;color:#C9D4DE;border-left:1px solid var(--muted);padding-left:14px;flex:none}
+.cmd code{font:14px/1.6 var(--mono);white-space:normal;overflow-wrap:anywhere;min-width:0;flex:1}
+.cmd .c{font-family:var(--sans);font-size:13px;color:#C9D4DE;background:none;border:0;border-left:1px solid var(--muted);padding:0 0 0 14px;flex:none;cursor:pointer}
 .ctas{display:flex;gap:12px;flex-wrap:wrap}
 
 /* seals */
@@ -301,3 +300,77 @@ input[type=file]{font:inherit;padding:8px 0}
 .onprem .cmds code{overflow-wrap:anywhere}
 [hidden]{display:none!important}
 .sov .note{max-width:62ch;margin:20px 0 8px;color:var(--muted);font-size:15px}
+
+/* sélecteur de plateforme (tools/selecteur/) */
+:root{--cs-accent:var(--accent-ink,#1F3A5F);--cs-muted:#7d8a92;--cs-chip:#e9eff5;--cs-line:#d5dcdf}
+/* Canot · sélecteur de plateforme source (variante 3b) */
+
+
+.cs-drum {
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+  outline: none;
+  cursor: ns-resize;
+  transition: width .28s cubic-bezier(.2, .8, .2, 1);
+}
+.cs-drum:focus-visible { outline: 2px solid var(--cs-accent); outline-offset: 3px; border-radius: 3px; }
+
+.cs-drum__col {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: transform .32s cubic-bezier(.2, .8, .2, 1);
+}
+.cs-drum__item {
+  display: block;
+  white-space: nowrap;
+  color: var(--cs-accent);
+  cursor: pointer;
+  transition: opacity .25s, color .25s;
+}
+.cs-drum__item[data-dist="1"],
+.cs-drum__item[data-dist="2"] {
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+  color: var(--cs-muted);
+}
+
+/* Accroche : « Enfermé chez Snowflake ? » */
+.cs-drum--title .cs-drum__item[data-dist="0"] {
+  text-decoration: underline dotted;
+  text-decoration-thickness: 2px;
+  text-underline-offset: .23em;
+}
+.cs-drum--title.is-open .cs-drum__item[data-dist="1"] { opacity: .35; pointer-events: auto; }
+.cs-drum--title.is-open .cs-drum__item[data-dist="2"] { opacity: .15; pointer-events: auto; }
+
+/* Ligne de commande */
+.cs-drum--code { background: var(--cs-chip); border-radius: 3px; font-weight: 600; }
+.cs-drum--code .cs-drum__item { padding: 0 5px; border-radius: 3px; }
+.cs-drum--code.is-open .cs-drum__item[data-dist="1"] {
+  opacity: 1;
+  pointer-events: auto;
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--cs-line);
+}
+
+/* Liens du paragraphe : la plateforme active n'est plus un lien */
+[data-cs-pick] { color: var(--cs-accent); text-underline-offset: 3px; cursor: pointer; }
+[data-cs-pick][aria-current="true"] { color: inherit; font-weight: 600; text-decoration: none; cursor: default; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-drum, .cs-drum__col, .cs-drum__item { transition: none; }
+}
+
+.cmd .cs-drum--code{background:rgba(255,255,255,.14);color:#fff}
+.cmd .cs-drum--code .cs-drum__item{color:#fff}
+.cmd .cs-drum--code.is-open .cs-drum__item[data-dist="1"]{background:var(--ink-2);color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.3)}
+.hero-copy .big .cs-drum--title{color:var(--accent-ink)}
+.cmd-note a{color:inherit}
+[data-cs-pick-out]{color:inherit;text-underline-offset:3px;cursor:pointer}[data-cs-pick-out][aria-current="true"]{font-weight:600;text-decoration:none;cursor:default}
+@media (max-width:640px){.cmd{overflow-x:auto}.cmd code{overflow-wrap:normal}.cmd .cs-drum{max-width:none}}

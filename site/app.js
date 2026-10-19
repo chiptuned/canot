@@ -3,40 +3,6 @@
   document.documentElement.classList.add("js");
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Mot qui change dans l'accroche : le sortant monte, l'entrant arrive du bas (fixe si l'utilisateur préfère moins de mouvement)
-  var rot = document.getElementById("rot");
-  if (rot && !reduce) {
-    ["BigQuery", "Databricks"].forEach(function (name, k) {
-      var s = document.createElement("span");
-      s.className = "w d" + (k + 1); s.textContent = name; s.setAttribute("aria-hidden", "true");
-      rot.appendChild(s);
-    });
-    var ws = rot.querySelectorAll(".w"), cur = 0;
-    setInterval(function () {
-      cur = (cur + 1) % ws.length;
-      ws.forEach(function (w, i) {
-        var d = (i - cur + ws.length) % ws.length; // 0 : affiché, 1 : en attente (en bas), 2 : sorti (en haut)
-        w.className = "w d" + d;
-        w.setAttribute("aria-hidden", d === 0 ? "false" : "true");
-      });
-    }, 2200);
-  }
-
-  // Copier la commande
-  var btn = document.getElementById("copy"), label = document.getElementById("copy-label"), cmd = document.getElementById("cmd");
-  if (btn && cmd) {
-    btn.addEventListener("click", function () {
-      var text = cmd.textContent;
-      var done = function () { label.textContent = "copié"; setTimeout(function () { label.textContent = "copier"; }, 1800); };
-      var fallback = function () {
-        var r = document.createRange(); r.selectNodeContents(cmd);
-        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
-      else fallback();
-    });
-  }
-
   // Apparitions au défilement (le texte reste lisible sans ce script ; rien ne bouge si l'on réduit les animations)
   var targets = document.querySelectorAll(".seal-grid, .card");
   if (reduce || !("IntersectionObserver" in window)) {
@@ -116,4 +82,166 @@
     if (again) again.addEventListener("click", function () { form.reset(); thanks.hidden = true; form.hidden = false; });
   }
   document.querySelectorAll("form[data-lead], form#form").forEach(setup);
+})();
+
+/* Sélecteurs de plateforme source et de destination (tools/selecteur/, étendu à la destination) */
+(function () {
+  'use strict';
+
+  // Ordre = ordre du tambour. Commande la plus longue en dernier : les voisines affichées dessous ne recouvrent pas la 2e ligne.
+  var SOURCES = [
+    { id: 'snowflake', label: 'Snowflake', rest: '://MY_ACCOUNT/MY_DATABASE?user=MY_USER' },
+    { id: 'bigquery', label: 'BigQuery', rest: '://MY_PROJECT/MY_DATASET?location=EU' },
+    { id: 'databricks', label: 'Databricks', rest: '://MY_WORKSPACE.cloud.databricks.com/sql/1.0/warehouses/MY_WAREHOUSE_ID?catalog=MY_CATALOG' }
+  ];
+  var BUCKET = ' --bucket MY_BUCKET';
+  var DESTS = [
+    { id: 'local', label: 'Dossier local (DuckDB)', word: './iceberg', rest: '' },
+    { id: 'scaleway', label: 'Scaleway', word: 'scaleway:fr-par', rest: BUCKET },
+    { id: 'ovh', label: 'OVHcloud', word: 'ovh:gra', rest: BUCKET },
+    { id: 'outscale', label: 'Outscale', word: 'outscale:eu-west-2', rest: BUCKET },
+    { id: 'ionos', label: 'IONOS', word: 'ionos:eu-central-1', rest: BUCKET },
+    { id: 'stackit', label: 'STACKIT', word: 'stackit:eu01', rest: BUCKET },
+    { id: 'onprem', label: 'S3 sur site', word: '"s3://MY_BUCKET/canot?endpoint=https://s3.internal:9000"', rest: '' }
+  ];
+  var INTRO_DELAY = 1400, INTRO_STEP = 650;
+
+  function init(root) {
+    var st = { src: 0, dst: 0 };
+    var touched = false;
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var qs = new URLSearchParams(location.search);
+    var u = SOURCES.findIndex(function (p) { return p.id === qs.get('source'); });
+    var d = DESTS.findIndex(function (p) { return p.id === qs.get('sortie'); });
+    if (u >= 0) { st.src = u; touched = true; }
+    if (d >= 0) { st.dst = d; touched = true; }
+
+    var restEls = root.querySelectorAll('[data-cs-rest]');
+    var destRestEls = root.querySelectorAll('[data-cs-dest-rest]');
+    var pickEls = root.querySelectorAll('[data-cs-pick]');
+    var pickOutEls = root.querySelectorAll('[data-cs-pick-out]');
+    var copyEls = root.querySelectorAll('[data-cs-copy]');
+    var drums = Array.prototype.map.call(root.querySelectorAll('[data-cs-drum]'), buildDrum);
+
+    function command() {
+      var a = SOURCES[st.src], b = DESTS[st.dst];
+      return 'uvx canot drill "' + a.id + a.rest + '" ' + b.word + b.rest;
+    }
+    function set(kind, i, byUser) {
+      var list = kind === 'dst' ? DESTS : SOURCES;
+      i = Math.max(0, Math.min(list.length - 1, i));
+      if (byUser) touched = true;
+      if (i === st[kind]) return;
+      st[kind] = i;
+      render();
+    }
+    function render() {
+      drums.forEach(function (dr) { dr.render(); });
+      restEls.forEach(function (el) { el.textContent = SOURCES[st.src].rest; });
+      destRestEls.forEach(function (el) { el.textContent = DESTS[st.dst].rest; });
+      pickEls.forEach(function (el) { el.setAttribute('aria-current', el.getAttribute('data-cs-pick') === SOURCES[st.src].id ? 'true' : 'false'); });
+      pickOutEls.forEach(function (el) { el.setAttribute('aria-current', el.getAttribute('data-cs-pick-out') === DESTS[st.dst].id ? 'true' : 'false'); });
+    }
+
+    function buildDrum(el) {
+      var field = el.getAttribute('data-cs-drum'); // label | scheme (source), dest (destination)
+      var kind = field === 'dest' ? 'dst' : 'src';
+      var list = kind === 'dst' ? DESTS : SOURCES;
+      el.textContent = '';
+      el.classList.add('cs-drum');
+      el.tabIndex = 0;
+      el.setAttribute('role', 'button');
+      var col = document.createElement('span');
+      col.className = 'cs-drum__col';
+      var items = list.map(function (p, j) {
+        var s = document.createElement('span');
+        s.className = 'cs-drum__item';
+        s.textContent = field === 'label' ? p.label : field === 'dest' ? p.word : p.id;
+        s.addEventListener('click', function () { set(kind, j, true); });
+        col.appendChild(s);
+        return s;
+      });
+      el.appendChild(col);
+      var acc = 0;
+      el.addEventListener('wheel', function (e) {
+        var dir = e.deltaY > 0 ? 1 : -1;
+        var next = Math.max(0, Math.min(list.length - 1, st[kind] + dir));
+        if (next === st[kind]) return; // en bout de liste, la page défile
+        e.preventDefault();
+        touched = true;
+        acc += e.deltaY;
+        if (Math.abs(acc) < 40) return;
+        acc = 0;
+        set(kind, next, true);
+      }, { passive: false });
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); set(kind, st[kind] + (e.key === 'ArrowDown' ? 1 : -1), true); }
+      });
+      ['pointerenter', 'focus'].forEach(function (ev) { el.addEventListener(ev, function () { touched = true; el.classList.add('is-open'); }); });
+      ['pointerleave', 'blur'].forEach(function (ev) { el.addEventListener(ev, function () { el.classList.remove('is-open'); }); });
+      return {
+        el: el,
+        render: function () {
+          var i = st[kind], h = items[0].offsetHeight;
+          el.style.height = h + 'px';
+          el.style.width = items[i].offsetWidth + 'px';
+          col.style.transform = 'translateY(' + (-i * h) + 'px)';
+          items.forEach(function (it, j) {
+            var dd = Math.min(Math.abs(j - i), 2);
+            it.setAttribute('data-dist', dd);
+            it.setAttribute('aria-hidden', dd ? 'true' : 'false');
+          });
+          el.setAttribute('aria-label', (kind === 'dst' ? 'Destination : ' : 'Plateforme : ') + list[i].label + '. Flèches haut et bas pour changer.');
+        }
+      };
+    }
+
+    copyEls.forEach(function (btn) {
+      var original = btn.textContent, timer;
+      btn.addEventListener('click', function () {
+        var text = command();
+        var done = function () { btn.textContent = 'copié'; clearTimeout(timer); timer = setTimeout(function () { btn.textContent = original; }, 1600); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
+        else { fallbackCopy(text); done(); }
+      });
+    });
+    function pick(els, attr, list, kind) {
+      els.forEach(function (el) {
+        el.addEventListener('click', function (e) {
+          e.preventDefault();
+          var j = list.findIndex(function (p) { return p.id === el.getAttribute(attr); });
+          if (j >= 0) set(kind, j, true);
+        });
+      });
+    }
+    pick(pickEls, 'data-cs-pick', SOURCES, 'src');
+    pick(pickOutEls, 'data-cs-pick-out', DESTS, 'dst');
+
+    render();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
+    window.addEventListener('resize', render);
+
+    // Un seul tour au chargement (sur la source), annulé dès que l'utilisateur touche à un tambour, jamais relancé.
+    if (!touched && !reduce && drums.length) {
+      setTimeout(function () {
+        if (touched) return;
+        drums.forEach(function (dr) { if (dr.el.getAttribute('data-cs-drum') !== 'dest') dr.el.classList.add('is-open'); });
+        [1, 2, 0].forEach(function (v, n) { setTimeout(function () { if (!touched) set('src', v, false); }, INTRO_STEP * (n + 1)); });
+        setTimeout(function () {
+          if (!touched) drums.forEach(function (dr) { dr.el.classList.remove('is-open'); });
+        }, INTRO_STEP * 4);
+      }, INTRO_DELAY);
+    }
+  }
+
+  function fallbackCopy(text) {
+    var t = document.createElement('textarea');
+    t.value = text; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select();
+    try { document.execCommand('copy'); } catch (e) { /* rien */ }
+    document.body.removeChild(t);
+  }
+
+  function boot() { document.querySelectorAll('[data-cs-root]').forEach(init); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
