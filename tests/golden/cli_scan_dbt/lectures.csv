@@ -1,4 +1,0 @@
-id,vue,statut,raison,limite,lignes,fenetre_du,fenetre_au,latence_max_h
-B01,target/manifest.json,lu,,,583,,,
-B02,target/run_results.json,lu,,,16,2026-10-17T08:42:58.456644Z,2026-10-17T08:43:24.336260Z,
-B03,target/catalog.json,non_lu,absent ou non exposé,"colonnes, types et volumes des relations ; rejouabilité non testée par EXPLAIN DuckDB",,,,

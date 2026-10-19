@@ -1,62 +1,62 @@
-# Brief : landing page de Canot (pour l'agent de design)
+# Brief: the Canot landing page (for the design agent)
 
-Ce document donne la matière, pas la mise en page. Le design est libre, dans les limites de la dernière section.
+This document provides the material, not the layout. The design is free, within the limits of the last sections.
 
-## 1. Le produit en une phrase
-Canot fait un **exercice de sortie** de Snowflake, BigQuery ou Databricks : il copie les données vers un format ouvert (Apache Iceberg) sur un cloud que le client contrôle, compare table par table (lignes, statistiques, empreinte du contenu), rejoue ses requêtes clés des deux côtés, et signe un **dossier de preuve**. Une commande, dans les comptes du client, aucune donnée ne passe par nous.
+## 1. The product in one sentence
+Canot runs an **exit exercise** from Snowflake, BigQuery or Databricks: it copies the data to an open format (Apache Iceberg) on a cloud the client controls, compares table by table (rows, statistics, content fingerprint), replays the client's key queries on both sides, and signs an **evidence log**. One command, in the client's accounts, no data goes through us.
 
-## 2. À qui parle la page (trois lecteurs, dans cet ordre)
-1. **Le responsable des risques ou de la conformité** d'une banque, assurance ou société de gestion : il doit prouver que le plan de sortie de son prestataire cloud est réaliste et testé (DORA).
-2. **Le DSI ou directeur data** d'une entreprise de taille intermédiaire qui renouvelle bientôt son contrat de plateforme de données : il veut un coût de sortie mesuré pour négocier.
-3. **L'ingénieur data** qui lit le dépôt GitHub : il veut voir la commande, le code, le format du rapport, et savoir ce qui est testé ou non.
+## 2. Who the page speaks to (three readers, in this order)
+1. **The risk or compliance officer** at a bank, insurer or asset manager: they must prove that the exit plan for their cloud provider is realistic and tested (DORA).
+2. **The CIO or head of data** at a mid-sized company about to renew its data platform contract: they want a measured exit cost to negotiate with.
+3. **The data engineer** reading the GitHub repository: they want to see the command, the code, the report format, and know what is tested and what is not.
 
-Un même visiteur doit pouvoir aller du « pourquoi » à `uvx canot scan` en moins d'une minute.
+A single visitor must be able to go from "why" to `uvx canot scan` in under a minute.
 
-## 3. Le message
-- **Titre candidat :** « Prouvez que vous pouvez partir. » (EN : *Prove you can leave.*)
-- **Sous-titre candidat :** « Une répétition de départ de Snowflake, BigQuery ou Databricks, dans vos propres comptes, avec un dossier de preuve signé. »
-- **Accroche d'actualité (bandeau, pas titre) :** « Le 12 janvier 2027, les frais de changement de cloud disparaissent en Europe (Data Act). Le travail de sortie, lui, reste. »
-- **Alternatives de titre à tester :** « Votre plan de sortie, exécuté et mesuré. » · « Combien coûterait vraiment votre sortie ? » · « Ce que vos contrats cloud ne vous disent pas : si vous pouvez partir. »
+## 3. The message
+- **Candidate headline:** "Prove you can leave." (FR: *Prouvez que vous pouvez partir.*)
+- **Candidate subheadline:** "A rehearsal of your exit from Snowflake, BigQuery or Databricks, in your own accounts, with a signed evidence log."
+- **News hook (banner, not headline):** "On 12 Jan 2027, cloud switching charges disappear in Europe (Data Act). The exit work remains."
+- **Alternative headlines to test:** "Your exit plan, executed and measured." · "What would your exit really cost?" · "What your cloud contracts don't tell you: whether you can leave."
 
-## 4. Structure proposée
-1. **Hero** : titre, sous-titre, la commande copiable, deux boutons (« Lancer un scan gratuit » vers GitHub, « Parler à q4o »). Visuel : voir §5.
-2. **Le problème en trois lignes** : les fournisseurs offrent des outils gratuits pour entrer, personne n'offre celui qui vérifie la sortie ; DORA et le Data Act demandent de pouvoir partir ; un plan de sortie sur papier n'a jamais été exécuté.
-3. **Comment ça marche** : cinq étapes (installer, copier, rejouer, comparer, signer) sur un schéma où le **périmètre du client** est une frontière dessinée, avec « q4o n'envoie rien » à l'extérieur.
-4. **Le dossier de preuve** : une capture réelle du rapport (voir `examples/bigquery-thelook/report.html`), avec trois annotations : parité par table, requête qui diverge, journal signé.
-5. **Preuve par l'exemple** : « 7 tables au contenu identique. Et une requête qui diverge : `DATE_TRUNC` rend une `DATE` chez BigQuery, un horodatage ailleurs. C'est exactement ce que vous voulez savoir avant de partir. »
-6. **Pour qui, et pourquoi maintenant** : trois cartes (risques / DSI / ingénieur) avec une phrase chacune, et une frise courte : 17 janv. 2025 DORA, 12 sept. 2025 Data Act, **12 janv. 2027** fin des frais de changement.
-7. **Cibles souveraines** : Scaleway, OVHcloud, Outscale, IONOS, STACKIT, AWS ; bandeau « France, Allemagne, Pays-Bas, Italie, Espagne ». Ne pas écrire « qualifié SecNumCloud » sans la mention « selon l'hébergeur choisi ».
-8. **Offres** : outil gratuit (Apache-2.0) · diagnostic de réversibilité 22 k€ HT, 3 semaines · test de sortie DORA à partir de 25 k€ · abonnement Canot Vigie 15 k€/an. Une ligne de livrables par offre (voir `docs/livrables.md`).
-9. **Honnêteté** : un tableau d'état du projet (testé, écrit mais non testé). C'est un argument de confiance, pas un défaut à cacher.
-10. **FAQ / objections** : « Si l'outil est gratuit, pourquoi payer ? » · « Que voyez-vous de nos données ? (rien) » · « Est-ce une certification ? (non) » · « Pouvez-vous lire nos contrats ? (non, c'est un travail d'avocat, nous travaillons avec un cabinet) » · « Que faire si on ne veut pas partir ? (l'exercice ne vous fait pas partir) ».
-11. **Appel final** : la commande, le lien GitHub, un formulaire court (nom, société, plateforme actuelle, date de renouvellement).
+## 4. Proposed structure
+1. **Hero**: headline, subheadline, the copyable command, two buttons ("Run a free scan" to GitHub, "Talk to q4o"). Visual: see §5.
+2. **The problem in three lines**: providers offer free tools to move in, nobody offers the one that checks the way out; DORA and the Data Act require being able to leave; an exit plan on paper has never been executed.
+3. **How it works**: five steps (install, copy, replay, compare, sign) on a diagram where the **client's perimeter** is a drawn boundary, with "q4o sends nothing" outside it.
+4. **The evidence report**: a real screenshot of the report (see `examples/tpch/report.html`), with three annotations: parity per table, a diverging query, the signed log.
+5. **Proof by example**: "7 tables with identical content. And one diverging query: `DATE_TRUNC` returns a `DATE` in BigQuery, a timestamp elsewhere. This is exactly what you want to know before you leave."
+6. **Who it is for, and why now**: three cards (risk / CIO / engineer) with one sentence each, and a short timeline: 17 Jan 2025 DORA, 12 Sep 2025 Data Act, **12 Jan 2027** end of switching charges.
+7. **Sovereign targets**: Scaleway, OVHcloud, Outscale, IONOS, STACKIT, AWS; banner "France, Germany, Netherlands, Italy, Spain". Never write "SecNumCloud-qualified" without the mention "depending on the chosen provider".
+8. **Offers**: free tool (Apache-2.0) · reversibility assessment €22k excl. VAT, 3 weeks · DORA exit test from €25k · Canot Vigie subscription €15k per year. One line of deliverables per offer (see `docs/deliverables.md`).
+9. **Honesty**: a project status table (tested, written but untested). It is a trust argument, not a flaw to hide.
+10. **FAQ / objections**: "If the tool is free, why pay?" · "What do you see of our data? (nothing)" · "Is this a certification? (no)" · "Can you read our contracts? (no, that is a lawyer's job, we work with a law firm)" · "What if we don't want to leave? (the exercise does not make you leave)".
+11. **Final call to action**: the command, the GitHub link, a short form (name, company, current platform, renewal date).
 
-## 5. Idées visuelles
-- **Métaphore du canot de sauvetage**, discrète : un tracé de canot ou une bouée, jamais un clip-art. On répète un départ, on ne le subit pas. Le mot « exercice » (un exercice d'évacuation) porte l'idée.
-- **Le périmètre** : le schéma central est une frontière en pointillés autour des comptes du client, avec les flèches de la source vers la cible à l'intérieur. C'est l'image qui rassure un RSSI.
-- **Le rapport comme héros** : le vrai rapport, lisible, plutôt qu'un mockup abstrait. Le dossier de preuve est le produit.
-- **Le terminal** : la commande dans un bloc sombre copiable, avec une vraie sortie (les lignes `OK`, `[match]`, `[mismatch]`).
-- **Ton graphique** : sobre et technique, plutôt institutionnel que « startup ». Palette de départ : marine profond, un orange de sécurité (couleur d'un gilet de sauvetage) comme seul accent, des gris bleutés. Chiffres en police à chasse fixe.
-- **À éviter** : dégradés violet-bleu, illustrations de nuage, cadenas partout, captures de dashboards inventés, statistiques sans source.
+## 5. Visual ideas
+- **Lifeboat metaphor**, understated: an outline of a boat or a life buoy, never clip art. You rehearse a departure, you don't suffer it. The word "exercise" (as in an evacuation drill) carries the idea.
+- **The perimeter**: the central diagram is a dotted boundary around the client's accounts, with the arrows from source to target inside it. This is the image that reassures a CISO.
+- **The report as hero**: the real, readable report rather than an abstract mockup. The evidence report is the product.
+- **The terminal**: the command in a dark copyable block, with real output (the `OK`, `[match]`, `[mismatch]` lines).
+- **Graphic tone**: sober and technical, more institutional than "startup". Starting palette: deep navy, a safety orange (the color of a life jacket) as the only accent, bluish grays. Figures in a monospace font.
+- **To avoid**: purple-blue gradients, cloud illustrations, padlocks everywhere, screenshots of made-up dashboards, statistics without a source.
 
-## 6. Ton et vocabulaire
-- Français d'abord, anglais ensuite (page jumelle). Tutoiement exclu, vouvoiement sobre.
-- Phrases courtes, concrètes, chiffrées. Pas de « révolutionnaire », « seamless », « 100 % sécurisé ».
-- Mots à utiliser : exercice de sortie, dossier de preuve, parité, dans vos comptes, réversibilité.
-- Mots à ne jamais utiliser : « conforme DORA », « certifié », « garanti », « gratuit » à propos du départ (l'outil est gratuit, partir ne l'est pas), « clone ».
+## 6. Tone and vocabulary
+- The site is French by default, with a language switcher; the repository and the documentation are in English. In French, formal "vous", never "tu".
+- Short, concrete sentences with figures. No "revolutionary", "seamless", "100% secure".
+- Words to use: exit exercise, evidence report, evidence log, parity, in your accounts, reversibility.
+- Words never to use: "DORA compliant", "certified", "guaranteed", "free" about leaving (the tool is free, leaving is not), "clone".
 
-## 7. Contraintes à respecter (juridiques et de confiance)
-- Dire « rien ne quitte vos comptes », jamais « aucune donnée ne sort » (les données sont copiées, chez le client).
-- Ne citer aucun client. Aucun logo de tiers hors des hébergeurs en liste de compatibilité, sous forme de texte.
-- Chaque chiffre de marché porte sa source en note (voir `docs/livrables.md` et le briefing). Les prix sont des « à partir de ».
-- Le nom **Canot** est provisoire (marque non vérifiée) : prévoir de le changer facilement, ne pas le dessiner dans un logo figé.
-- Aucun formulaire ne collecte de données personnelles au-delà du nécessaire ; pas de pisteur tiers (cohérent avec « aucune télémétrie »).
+## 7. Constraints (legal and trust)
+- Say "nothing leaves your accounts", never "no data leaves" (the data is copied, at the client's).
+- Name no client. No third-party logos beyond the hosting providers in the compatibility list, as text.
+- Every market figure carries its source in a footnote (see `docs/deliverables.md` and the briefing). Prices are "starting from".
+- The name **Canot** is provisional (trademark not cleared): make it easy to change, do not bake it into a fixed logo.
+- No form collects personal data beyond what is necessary; no third-party trackers (consistent with "no telemetry").
 
-## 8. Matériaux fournis
-- Dépôt : `~/repos/canot` (GitHub : chiptuned/canot).
-- `README.md` : version courte de la page. `docs/livrables.md` : ce que le client reçoit. `docs/cibles-ue.md` : hébergeurs et pays.
-- `examples/bigquery-thelook/report.html` et `examples/distributeur-fictif/report.html` : deux vrais rapports.
-- Briefing interne (contexte, vocabulaire, argumentaire) : `docs/briefing.html`.
+## 8. Materials provided
+- Repository: `~/repos/canot` (GitHub: chiptuned/canot).
+- `README.md`: short version of the page. `docs/deliverables.md`: what the client receives. `docs/targets.md`: hosting providers and countries.
+- `examples/tpch/report.html`: a real report, signed.
+- Internal briefing (context, vocabulary, sales arguments): `docs/briefing.html`.
 
-## 9. Mesure de réussite
-Le nombre de visiteurs qui lancent `canot scan` (clic sur la commande copiée) et le nombre de demandes de rendez-vous qualifiées (plateforme actuelle + date de renouvellement renseignées). Pas les pages vues.
+## 9. Success metric
+The number of visitors who run `canot scan` (click on the copied command) and the number of qualified meeting requests (current platform + renewal date filled in). Not page views.

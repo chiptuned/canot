@@ -1,9 +1,9 @@
-# Banc de test
+# Test bench
 
-Un entrepôt de données volontairement complexe, pour valider `canot scan` et `canot drill` sans client.
+A deliberately complex data warehouse, to validate `canot scan` and `canot drill` without a customer.
 
-- `bigquery_lab.py PROJET` : 5 jeux de données (brut, préparation, modèle, ML, externe) dans un projet personnel, niveau gratuit. Tables partitionnée et clusterisée, STRUCT/ARRAY/JSON/GEOGRAPHY/NUMERIC/BIGNUMERIC, vues, vue matérialisée, snapshot, clone, politique d'accès aux lignes, table externe, routines SQL et JavaScript, modèle BigQuery ML, charge de travail étiquetée.
-- `snowflake_lab.py COMPTE` : base CANOT_LAB dans un compte d'essai. VARIANT/OBJECT/ARRAY/GEOGRAPHY/TIMESTAMP_TZ, clustering, vue sécurisée, vue matérialisée, table dynamique, routines SQL/JavaScript/Python, flux, tâches, stage externe et intégration (factices), politiques de masquage et d'accès, étiquettes, rôles, partage sortant, charge étiquetée. Chaque création est tentée séparément : ce qui exige une édition supérieure est signalé puis sauté.
-- `dbt/` : un projet dbt (préparation, modèles, tests) qui tourne sur les deux plateformes et produit le trafic réaliste, avec les commentaires JSON que dbt ajoute à ses requêtes.
+- `bigquery_lab.py PROJECT`: 5 datasets (raw, staging, mart, ML, external) in a personal project, free tier. Partitioned and clustered tables, STRUCT/ARRAY/JSON/GEOGRAPHY/NUMERIC/BIGNUMERIC, views, a materialized view, a snapshot, a clone, a row access policy, an external table, SQL and JavaScript routines, a BigQuery ML model, a labeled workload.
+- `snowflake_lab.py ACCOUNT`: a CANOT_LAB database in a trial account. VARIANT/OBJECT/ARRAY/GEOGRAPHY/TIMESTAMP_TZ, clustering, a secure view, a materialized view, a dynamic table, SQL/JavaScript/Python routines, a stream, tasks, an external stage and integration (dummy), masking and row access policies, tags, roles, an outbound share, a tagged workload. Each object is created separately: anything that requires a higher edition is reported, then skipped.
+- `dbt/`: a dbt project (staging, models, tests) that runs on both platforms and produces realistic traffic, including the JSON comments dbt adds to its queries.
 
-Rien n'est stocké ici de secret : l'authentification passe par les identifiants applicatifs Google et par une clé Snowflake locale.
+No secrets are stored here: authentication goes through Google application default credentials and a local Snowflake key.

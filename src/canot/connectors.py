@@ -1,7 +1,7 @@
-"""Registre des connecteurs : ce que chaque plateforme sait faire (inventaire, export, preuve), déclaré et non deviné.
+"""Connector registry: what each platform supports (inventory, export, evidence), declared, never guessed.
 
-Le CLI, la collecte du scan et `canot connecteurs` lisent ces déclarations. Aucun pilote n'est importé ici :
-l'ouverture passe par `sources.open_source`, la collecte par `scanner.<plateforme>`, à l'appel seulement.
+The CLI, the scan collection and `canot connectors` read these declarations. No driver is imported here:
+opening goes through `sources.open_source`, collection through `scanner.<platform>`, only when called.
 """
 from __future__ import annotations
 
@@ -11,21 +11,23 @@ from typing import ClassVar
 
 from . import prices
 
-PREUVES = {"P1": "parité des données", "P2": "rejeu de requêtes", "P3": "rejeu de traitements",
-           "P4": "parité de scoring", "P5": "parité de mesures"}
-TESTE, NON_TESTE = "testé", "écrit, non testé"
-# familles de plateformes (mémo généraliste §1) ; « fichiers » = artefacts lus hors ligne (dbt, .sas…)
-FAMILLES = {"entrepot": "entrepôt", "lakehouse": "lakehouse", "science_donnees": "science des données", "integration": "intégration / ETL",
-            "bi_semantique": "BI sémantique", "orchestrateur": "orchestrateur", "sas": "SAS", "fichiers": "fichiers"}
+PREUVES = {"P1": "data parity", "P2": "query replay", "P3": "pipeline replay",
+           "P4": "scoring parity", "P5": "metrics parity"}
+TESTE, NON_TESTE = "tested", "written, untested"
+# platform families (generalist memo §1); keys are data values; "fichiers" = artifacts read offline (dbt, .sas…)
+FAMILLES = {"entrepot": "warehouse", "lakehouse": "lakehouse", "science_donnees": "data science", "integration": "integration / ETL",
+            "bi_semantique": "semantic BI", "orchestrateur": "orchestrator", "sas": "SAS", "fichiers": "files"}
+# display labels of the inventory levels (the values themselves are data, read by the scan: unchanged)
+INVENTAIRE_LABELS = {"complet": "full", "léger": "light", "partiel": "partial", "aucun": "none"}
 
 
 @dataclass(frozen=True)
 class Capabilities:
-    inventaire: str                      # "complet" (scan complet), "léger" (scan.py), "aucun"
-    niveaux: tuple[int, ...] = ()        # --level acceptés par l'inventaire complet
-    export: tuple[str, ...] = ()         # formats écrits par drill
-    preuve: tuple[str, ...] = ()         # clés de PREUVES
-    # date réelle d'un test consigné dans le dépôt (docs/), avec ce qui a été testé ; None si le dépôt n'en garde aucune trace
+    inventaire: str                      # data value: "complet" (full scan), "léger" (light, scan.py), "aucun" (none)
+    niveaux: tuple[int, ...] = ()        # --level values accepted by the full inventory
+    export: tuple[str, ...] = ()         # formats written by drill
+    preuve: tuple[str, ...] = ()         # PREUVES keys
+    # actual date of a test recorded in the repository (docs/), with what was tested; None if the repository keeps no record
     teste_sur: str | None = None
 
 
@@ -33,23 +35,23 @@ class Connector(ABC):
     name: ClassVar[str]
     label: ClassVar[str]
     schemes: ClassVar[tuple[str, ...]]
-    url: ClassVar[str]                   # forme d'URL, pour l'aide
+    url: ClassVar[str]                   # URL form, for the help
     dialect: ClassVar[str]
     extra: ClassVar[str | None] = None   # pip install 'canot[extra]'
-    driver: ClassVar[str | None] = None  # préfixe du module du pilote (message « connecteur absent »)
+    driver: ClassVar[str | None] = None  # driver module prefix ("missing connector" message)
     status: ClassVar[str] = NON_TESTE
-    famille: ClassVar[str] = "entrepot"  # clé de FAMILLES
+    famille: ClassVar[str] = "entrepot"  # FAMILLES key
     capabilities: ClassVar[Capabilities]
-    # fiche d'analyse : constantes propres à la plateforme, lues par scanner/analyze.py et scanner/render.py
-    # (droits demandés par niveau, droits jamais demandés…)
+    # analysis profile: platform-specific constants, read by scanner/analyze.py and scanner/render.py
+    # (grants requested per level, grants never requested…)
     profile: ClassVar[dict] = {}
-    # garde HTTP (scanner/http_guard.py) : POST admis seulement sur ces chemins de lecture (motifs regex du chemin d'URL)
+    # HTTP guard (scanner/http_guard.py): POST allowed only on these read paths (regex patterns of the URL path)
     http_post_lecture: ClassVar[tuple[str, ...]] = ()
-    # rejouabilité des familles de l'historique (scanner/replay.py), calculée après la collecte
+    # replayability of the history's query families (scanner/replay.py), computed after collection
     rejeu_familles: ClassVar[bool] = True
 
     def capacites(self) -> dict:
-        """Déclaration sérialisable (scan.json, MCP) : ce que Canot sait faire ici, et si c'est testé."""
+        """Serializable declaration (scan.json, MCP): what Canot supports here, and whether it is tested."""
         cap = self.capabilities
         return {"plateforme": self.name, "libelle": self.label, "famille": self.famille, "inventaire": cap.inventaire,
                 "niveaux": list(cap.niveaux), "export": list(cap.export),
@@ -62,28 +64,28 @@ class Connector(ABC):
         return sources.open_source(url)
 
     def scan_collect(self, src, *, level: int, salt: bytes, days: int | None = None) -> tuple[dict, list[dict]]:
-        """Inventaire complet : (snapshot canot.scan/1 ou /2, familles brutes). Le texte SQL brut ne vit que dans le second retour."""
-        raise ValueError(f"scan complet non disponible pour {self.dialect}")
+        """Full inventory: (canot.scan/1 or /2 snapshot, raw families). The raw SQL text lives only in the second return value."""
+        raise ValueError(f"full scan not available for {self.dialect}")
 
 
 class Snowflake(Connector):
     name, label, schemes, dialect = "snowflake", "Snowflake", ("snowflake",), "snowflake"
-    url = "snowflake://COMPTE/BASE"
+    url = "snowflake://ACCOUNT/DATABASE"
     extra = driver = "snowflake"
     status = TESTE
     capabilities = Capabilities("complet", (1, 2, 3), ("iceberg",), ("P1", "P2"),
-                                teste_sur="canot drill, 17/10/2026 : compte d'essai Snowflake, TPC-H SF10 (docs/banc-essai.md)")
+                                teste_sur="canot drill, 2026-10-17: Snowflake trial account, TPC-H SF10 (docs/banc-essai.md)")
     profile = {
         "droits": {1: ["SNOWFLAKE.OBJECT_VIEWER", "SNOWFLAKE.USAGE_VIEWER"], 2: ["SNOWFLAKE.GOVERNANCE_VIEWER"], 3: ["SNOWFLAKE.SECURITY_VIEWER"]},
-        "droits_jamais": "IMPORTED PRIVILEGES, MANAGE GRANTS, IMPORT SHARE, USAGE sur les fonctions, READ sur les stages",
+        "droits_jamais": "IMPORTED PRIVILEGES, MANAGE GRANTS, IMPORT SHARE, USAGE on functions, READ on stages",
         "horizon_jours": 365,
-        "imports_systeme": ("SNOWFLAKE",),  # base système présente dans tout compte : pas une dépendance du client
-        # sources des lectures par table, de la plus sûre à la moins sûre : (vue, libellé, confiance, champs de t["lectures"])
+        "imports_systeme": ("SNOWFLAKE",),  # system database present in every account: not a client dependency
+        # sources of reads per table, most to least reliable: (view, label, confidence [data value], fields of t["lectures"])
         "sources_lectures": (("ACCESS_HISTORY", "ACCESS_HISTORY", "haute", ("n",)),
                              ("TABLE_QUERY_PRUNING_HISTORY", "TABLE_QUERY_PRUNING_HISTORY", "moyenne", ("n_pruning", "n"))),
-        "non_vus": {"ACCESS_HISTORY": ["consommateurs de partages", "RESULT_SCAN"],
-                    "TABLE_QUERY_PRUNING_HISTORY": ["consommateurs de partages", "résultats servis par le cache",
-                                                    "requêtes résolues par les métadonnées"]},
+        "non_vus": {"ACCESS_HISTORY": ["share consumers", "RESULT_SCAN"],
+                    "TABLE_QUERY_PRUNING_HISTORY": ["share consumers", "results served from the cache",
+                                                    "queries answered from metadata"]},
         "source_prix": prices.SNOWFLAKE_SOURCE,
     }
 
@@ -96,22 +98,22 @@ class Snowflake(Connector):
 
 class BigQuery(Connector):
     name, label, schemes, dialect = "bigquery", "BigQuery", ("bigquery",), "bigquery"
-    url = "bigquery://PROJET/DATASET"
+    url = "bigquery://PROJECT/DATASET"
     extra, driver = "bigquery", "google.cloud"
     status = TESTE
     capabilities = Capabilities("complet", (1, 2, 3), ("iceberg",), ("P1", "P2"),
-                                teste_sur="canot drill, 13/10/2026 : jeu public thelook_ecommerce (docs/ecarts.md)")
+                                teste_sur="canot drill, 2026-10-13: public dataset thelook_ecommerce (docs/ecarts.md)")
     profile = {
         "droits": {1: ["bigquery.jobs.create", "jobs.listAll", "datasets.get", "tables.list", "tables.get", "routines.list", "routines.get",
                        "models.list", "models.getMetadata"],
-                   2: ["rowAccessPolicies.list", "transfers.get", "connections.list", "dataPolicies.list (optionnelles)"],
-                   3: ["reservations.list", "reservationAssignments.list", "capacityCommitments.list", "droits d'organisation"]},
-        "droits_jamais": "tables.getData, rôles bigquery.user et jobUser",
+                   2: ["rowAccessPolicies.list", "transfers.get", "connections.list", "dataPolicies.list (optional)"],
+                   3: ["reservations.list", "reservationAssignments.list", "capacityCommitments.list", "organization-level permissions"]},
+        "droits_jamais": "tables.getData, bigquery.user and jobUser roles",
         "horizon_jours": 180,
         "sources_lectures": (("JOBS", "INFORMATION_SCHEMA.JOBS", "moyenne", ("n",)),),
-        "non_vus": {"JOBS": ["lectures par l'API Storage Read", "requêtes lancées depuis d'autres projets", "consommateurs Analytics Hub"]},
-        # un « non vu » qui disparaît quand une autre lecture l'a couvert
-        "non_vus_couverts": {"requêtes lancées depuis d'autres projets": "JOBS_BY_ORGANIZATION"},
+        "non_vus": {"JOBS": ["reads through the Storage Read API", "queries run from other projects", "Analytics Hub consumers"]},
+        # a "not seen" item that disappears when another read covered it
+        "non_vus_couverts": {"queries run from other projects": "JOBS_BY_ORGANIZATION"},
         "source_prix": prices.BIGQUERY_SOURCE,
     }
 
@@ -124,7 +126,7 @@ class BigQuery(Connector):
 
 class Databricks(Connector):
     name, label, schemes, dialect = "databricks", "Databricks", ("databricks",), "databricks"
-    url = "databricks://HÔTE/CHEMIN_HTTP?catalog=…"
+    url = "databricks://HOST/HTTP_PATH?catalog=…"
     extra = driver = "databricks"
     famille = "lakehouse"
     capabilities = Capabilities("léger", (), ("iceberg",), ("P1", "P2"))
@@ -132,31 +134,31 @@ class Databricks(Connector):
 
 class DuckDB(Connector):
     name, label, schemes, dialect = "duckdb", "DuckDB", ("duckdb",), "duckdb"
-    url = "fichier .duckdb ou duckdb://CHEMIN"
+    url = ".duckdb file or duckdb://PATH"
     status = TESTE
-    # moteur SQL embarqué : rangé avec les entrepôts (tables, SQL), faute de famille plus juste
+    # embedded SQL engine: grouped with warehouses (tables, SQL), for lack of a better family
     capabilities = Capabilities("léger", (), ("iceberg",), ("P1", "P2"),
-                                teste_sur="canot drill, 17/10/2026 : base de démonstration canot demo (docs/ecarts.md)")
+                                teste_sur="canot drill, 2026-10-17: canot demo database (docs/ecarts.md)")
 
 
 class Dbt(Connector):
-    """Projet dbt lu par ses artefacts (target/manifest.json, run_results.json, catalog.json) : ni réseau, ni commande dbt."""
+    """dbt project read through its artifacts (target/manifest.json, run_results.json, catalog.json): no network, no dbt command."""
     name, label, schemes, dialect = "dbt", "dbt", ("dbt", "dbt+file"), "dbt"
-    url = "dbt://CHEMIN_DU_PROJET"
+    url = "dbt://PROJECT_PATH"
     famille = "fichiers"
     status = TESTE
     capabilities = Capabilities("complet", (1,), (), ("P3",),
-                                teste_sur="19/10/2026 : canot scan dbt://lab/dbt (projet dbt du banc, manifest dbt 1.12.6, adaptateur Snowflake) ; "
-                                          "canot rejeu-dbt sur ces artefacts et une copie DuckDB locale construite par les tests (docs/scan.md)")
-    rejeu_familles = False  # pas d'historique de requêtes : la rejouabilité est calculée par modèle à la collecte
+                                teste_sur="2026-10-19: canot scan dbt://lab/dbt (test bench dbt project, dbt 1.12.6 manifest, Snowflake adapter); "
+                                          "canot replay-dbt on these artifacts and a local DuckDB copy built by the tests (docs/scan.md)")
+    rejeu_familles = False  # no query history: replayability is computed per model during collection
     profile = {
-        "droits": {1: ["lecture des fichiers manifest.json, run_results.json et catalog.json du dossier target/"]},
-        "droits_jamais": "aucune connexion à l'entrepôt, aucune commande dbt (ni parse, ni compile, ni run)",
-        # lus par render.py (section Capacités)
-        "commande_preuve": "canot rejeu-dbt",
-        "limite_preuve": ("P3 porte sur les modèles SQL que DuckDB rejoue et dont la table d'origine est dans la copie ; les vues sont "
-                          "rejouées sans comparaison, les modèles Python, incrémentaux, les snapshots et les modèles à reconstruire (F13) "
-                          "sont comptés, pas prouvés."),
+        "droits": {1: ["read the manifest.json, run_results.json and catalog.json files in the target/ folder"]},
+        "droits_jamais": "no connection to the warehouse, no dbt command (no parse, compile or run)",
+        # read by render.py (Capabilities section)
+        "commande_preuve": "canot replay-dbt",
+        "limite_preuve": ("P3 covers the SQL models that DuckDB replays and whose original table is in the copy; views are "
+                          "replayed without comparison; Python models, incremental models, snapshots and models to rebuild (F13) "
+                          "are counted, not proven."),
     }
 
     def open(self, url: str):
@@ -174,7 +176,7 @@ CONNECTORS: dict[str, Connector] = {c.name: c for c in (Snowflake(), BigQuery(),
 
 
 def for_url(url: str) -> Connector | None:
-    """Connecteur désigné par le schéma de l'URL ; sans schéma, un dossier qui contient un manifest dbt est un projet dbt."""
+    """Connector named by the URL scheme; without a scheme, a folder that holds a dbt manifest is a dbt project."""
     if "://" in url:
         scheme = url.split("://", 1)[0].lower()
         return next((c for c in CONNECTORS.values() if scheme in c.schemes), None)
@@ -187,7 +189,7 @@ def for_url(url: str) -> Connector | None:
 
 
 def open_url(url: str):
-    """Ouvre la source par le registre ; repli sur sources.open_source (même message pour un schéma inconnu)."""
+    """Open the source through the registry; falls back to sources.open_source (same message for an unknown scheme)."""
     c = for_url(url)
     if c is not None:
         return c.open(url)
@@ -197,7 +199,7 @@ def open_url(url: str):
 
 
 def effective_level(src, level: int) -> int:
-    """Niveau demandé, borné au plus haut niveau déclaré par le connecteur."""
+    """Requested level, capped at the highest level the connector declares."""
     c = for_source(src)
     if c and c.capabilities.niveaux:
         return min(level, max(c.capabilities.niveaux))
@@ -243,21 +245,22 @@ def driver_hints() -> dict[str, tuple[str, str]]:
 
 
 def table() -> str:
-    """Le tableau imprimé par `canot connecteurs`."""
+    """The table printed by `canot connectors`."""
     def inv(c: Connector) -> str:
         cap = c.capabilities
+        label = INVENTAIRE_LABELS.get(cap.inventaire, cap.inventaire)
         if cap.inventaire == "complet":
             if len(cap.niveaux) == 1:
-                return f"complet (niveau {cap.niveaux[0]})"
-            return f"complet (niveaux {cap.niveaux[0]}-{cap.niveaux[-1]})" if cap.niveaux else "complet"
-        return cap.inventaire
+                return f"{label} (level {cap.niveaux[0]})"
+            return f"{label} (levels {cap.niveaux[0]}-{cap.niveaux[-1]})" if cap.niveaux else label
+        return label
 
-    head = ("Connecteur", "URL", "Inventaire (scan)", "Export (drill)", "Preuve", "Statut", "Installation")
-    rows = [(c.label, c.url, inv(c), ", ".join(c.capabilities.export) or "aucun", ", ".join(c.capabilities.preuve) or "aucune",
-             c.status, "inclus") for c in CONNECTORS.values()]
+    head = ("Connector", "URL", "Inventory (scan)", "Export (drill)", "Evidence", "Status", "Installation")
+    rows = [(c.label, c.url, inv(c), ", ".join(c.capabilities.export) or "none", ", ".join(c.capabilities.preuve) or "none",
+             c.status, "included") for c in CONNECTORS.values()]
     w = [max(len(r[i]) for r in (head, *rows)) for i in range(len(head))]
     lines = ["  ".join(v.ljust(w[i]) for i, v in enumerate(r)).rstrip() for r in (head, *rows)]
     used = sorted({p for c in CONNECTORS.values() for p in c.capabilities.preuve})
-    lines += ["", "Preuve : " + " ; ".join(f"{p} {PREUVES[p]}" for p in used) + ".",
-              "Inventaire complet : canot scan (lectures consignées, niveaux 1 à 3 selon le connecteur). Léger : tables, volumes, objets, sans historique."]
+    lines += ["", "Evidence: " + "; ".join(f"{p} {PREUVES[p]}" for p in used) + ".",
+              "Full inventory: canot scan (logged reads, levels 1 to 3 depending on the connector). Light: tables, volumes, objects, no history."]
     return "\n".join(lines)

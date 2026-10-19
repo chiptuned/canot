@@ -23,7 +23,7 @@ class CopyResult:
 
 
 def empty_table(t: TableInfo, dialect: str) -> pa.Table:
-    """Table Arrow vide dont les types viennent des colonnes de la source (types traduits par sqlglot, VARCHAR à défaut)."""
+    """Empty Arrow table whose types come from the source columns (types translated by sqlglot, VARCHAR as a fallback)."""
     import duckdb
     from sqlglot import exp
 
@@ -35,8 +35,8 @@ def empty_table(t: TableInfo, dialect: str) -> pa.Table:
         seen.add(c.name.upper())
         try:
             typ = exp.DataType.build(c.type, dialect=dialect).sql("duckdb")
-            con.execute(f"select cast(null as {typ})").fetch_arrow_table()  # le type doit aussi passer en Arrow (VARIANT non)
-        except Exception:  # noqa: BLE001 : type inconnu de DuckDB ou sans équivalent Arrow, texte à défaut
+            con.execute(f"select cast(null as {typ})").fetch_arrow_table()  # the type must also convert to Arrow (VARIANT does not)
+        except Exception:  # noqa: BLE001 : type unknown to DuckDB or with no Arrow equivalent, text as a fallback
             typ = "VARCHAR"
         defs.append(f"{exp.to_identifier(c.name, quoted=True).sql('duckdb')} {typ}")
     con.execute(f"create table e ({', '.join(defs)})")
@@ -78,7 +78,7 @@ def copy_table(src: Source, t: TableInfo, catalog, chunk_rows: int = 500_000) ->
             buf_rows += batch.num_rows
             if buf_rows >= chunk_rows:
                 flush()
-        if ice is None:  # table vide : la lecture ne rend aucun lot, donc aucun schéma Arrow ; on le reconstruit depuis la liste des colonnes
+        if ice is None:  # empty table: the read returns no batch, hence no Arrow schema; rebuild it from the column list
             empty = None
             if src.dialect == "duckdb":
                 empty = src.query(f"select * from {t.sql} limit 0")

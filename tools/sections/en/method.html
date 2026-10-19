@@ -1,0 +1,22 @@
+<section class="s method" id="method">
+  <div class="wrap">
+    <h2>A departure rehearsal, in your accounts.</h2>
+    <p class="lead-p">Your administrator sets up read-only access, then one command runs everything. You do not leave your provider, and you have nothing to request from them.</p>
+    <div class="perimeter">
+      <span class="plabel">Everything happens in your accounts: your data platform, and the host you choose</span>
+      <ol class="steps">
+        <li><b>Set up</b><span>A small open warehouse is created at the host you chose: one machine, one storage bucket, one catalog of Iceberg tables.</span></li>
+        <li><b>Copy</b><span>Your data is read with no ability to modify it, then written in Iceberg format to another of your accounts.</span></li>
+        <li><b>Replay</b><span>The 20 most important queries, chosen with you, run on both sides.</span></li>
+        <li><b>Compare</b><span>Tables and results are compared (row counts, per-column statistics, content fingerprint), with tolerances written in advance.</span></li>
+        <li><b>Sign</b><span>An evidence file is produced: parity, duration, cost, and what does not move as is.</span></li>
+      </ol>
+    </div>
+    <p class="outside">Canot sends nothing to Q4O: no telemetry, no server.</p>
+    <ul class="cmds">
+      <li><code>canot scan</code><span>Free read-only X-ray: volumes, objects that do not move on their own, estimated exit duration and cost.</span></li>
+      <li><code>canot drill</code><span>The full drill and the evidence file.</span></li>
+      <li><code>canot teardown</code><span>Deletes what was copied.</span></li>
+    </ul>
+  </div>
+</section>

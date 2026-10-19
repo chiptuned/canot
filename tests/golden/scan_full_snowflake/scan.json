@@ -17,15 +17,15 @@
     "preuve": [
       {
         "forme": "P1",
-        "libelle": "parité des données"
+        "libelle": "data parity"
       },
       {
         "forme": "P2",
-        "libelle": "rejeu de requêtes"
+        "libelle": "query replay"
       }
     ],
-    "statut": "testé",
-    "teste_sur": "canot drill, 17/10/2026 : compte d'essai Snowflake, TPC-H SF10 (docs/banc-essai.md)"
+    "statut": "tested",
+    "teste_sur": "canot drill, 2026-10-17: Snowflake trial account, TPC-H SF10 (docs/banc-essai.md)"
   },
   "carte_sortie": {},
   "cout_du_scan": {
@@ -36,9 +36,9 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "mesuré",
+      "nature": "measured",
       "raison": null,
-      "unite": "secondes",
+      "unite": "seconds",
       "valeur": 412.0
     },
     "lectures": {
@@ -53,9 +53,9 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "mesuré",
+      "nature": "measured",
       "raison": null,
-      "unite": "requêtes",
+      "unite": "queries",
       "valeur": 35
     }
   },
@@ -66,12 +66,12 @@
         "S05"
       ],
       "confiance": null,
-      "formule": "somme des crédits par service sur 365 jours",
+      "formule": "sum of credits per service over 365 days",
       "haut": null,
       "hypotheses": [],
-      "nature": "calculé",
+      "nature": "computed",
       "raison": null,
-      "unite": "crédits",
+      "unite": "credits",
       "valeur": 43.5
     },
     "credits_par_entrepot": [
@@ -85,9 +85,9 @@
           "formule": null,
           "haut": null,
           "hypotheses": [],
-          "nature": "mesuré",
+          "nature": "measured",
           "raison": null,
-          "unite": "crédits",
+          "unite": "credits",
           "valeur": 40.0
         },
         "entrepot": "CANOT_WH"
@@ -102,9 +102,9 @@
           "formule": null,
           "haut": null,
           "hypotheses": [],
-          "nature": "mesuré",
+          "nature": "measured",
           "raison": null,
-          "unite": "crédits",
+          "unite": "credits",
           "valeur": 1.5
         },
         "entrepot": "COMPUTE_WH"
@@ -121,9 +121,9 @@
           "formule": null,
           "haut": null,
           "hypotheses": [],
-          "nature": "mesuré",
+          "nature": "measured",
           "raison": null,
-          "unite": "crédits",
+          "unite": "credits",
           "valeur": 41.5
         },
         "service": "WAREHOUSE_METERING"
@@ -138,9 +138,9 @@
           "formule": null,
           "haut": null,
           "hypotheses": [],
-          "nature": "mesuré",
+          "nature": "measured",
           "raison": null,
-          "unite": "crédits",
+          "unite": "credits",
           "valeur": 1.2
         },
         "service": "SERVERLESS_TASK"
@@ -155,9 +155,9 @@
           "formule": null,
           "haut": null,
           "hypotheses": [],
-          "nature": "mesuré",
+          "nature": "measured",
           "raison": null,
-          "unite": "crédits",
+          "unite": "credits",
           "valeur": 0.8
         },
         "service": "AUTO_CLUSTERING"
@@ -169,19 +169,19 @@
       "base": [
         "S05"
       ],
-      "confiance": "basse",
-      "formule": "crédits × prix catalogue du crédit, du plus bas au plus haut",
+      "confiance": "low",
+      "formule": "credits × list price of the credit, from lowest to highest",
       "haut": 226.2,
       "hypotheses": [
-        "prix catalogue Snowflake du 17/10/2026, AWS Paris/Francfort : 2,60 $ (Standard) à 5,20 $ (Business Critical), https://www.snowflake.com/pricing/pricing-guide/",
-        "prix de votre contrat non lu ; votre région peut différer"
+        "Snowflake list price as of 17/10/2026, AWS Paris/Frankfurt: $2.60 (Standard edition) to $5.20 (highest edition), https://www.snowflake.com/pricing/pricing-guide/",
+        "your contract price not read; your region may differ"
       ],
-      "nature": "estimé",
+      "nature": "estimated",
       "raison": null,
       "unite": "USD",
       "valeur": null
     },
-    "note": "Crédits mesurés ; en dollars, seulement avec le prix fourni ou une fourchette catalogue datée.",
+    "note": "Credits measured; in dollars, only with the price provided or a dated list-price range.",
     "stockage_monnaie": {
       "bas": null,
       "base": [],
@@ -189,8 +189,8 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_estimé",
-      "raison": "prix de votre contrat non lu",
+      "nature": "not_estimated",
+      "raison": "your contract price not read",
       "unite": "USD",
       "valeur": null
     },
@@ -203,9 +203,9 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "mesuré",
+      "nature": "measured",
       "raison": null,
-      "unite": "octets",
+      "unite": "bytes",
       "valeur": 24000000000
     },
     "transferts": []
@@ -312,7 +312,7 @@
         "emplacements": [
           "s3://canot-lab-public"
         ],
-        "mode": "observé"
+        "mode": "observed"
       },
       {
         "cible": "CANOT_LAB.OPS.T_EXPORT_NIGHTLY",
@@ -320,7 +320,7 @@
         "emplacements": [
           "s3://canot-lab-export"
         ],
-        "mode": "déclaré"
+        "mode": "declared"
       }
     ],
     "externes": [
@@ -353,7 +353,7 @@
       {
         "executions": 21,
         "familles": 4,
-        "outil": "non identifié"
+        "outil": "unidentified"
       },
       {
         "executions": 2,
@@ -371,15 +371,15 @@
       "cible_type": "objet",
       "code": "F01",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Dépendance externe",
+      "etiquette": "To review",
+      "libelle": "External dependency",
       "preuve": {
         "emplacements": [
           "s3://canot-lab-public"
         ],
         "type": "stage"
       },
-      "texte": "Stage externe (s3://canot-lab-public)."
+      "texte": "External stage (s3://canot-lab-public)."
     },
     {
       "base": [
@@ -389,13 +389,13 @@
       "cible_type": "objet",
       "code": "F01",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Dépendance externe",
+      "etiquette": "To review",
+      "libelle": "External dependency",
       "preuve": {
         "emplacements": [],
         "type": "base_importee"
       },
-      "texte": "Base importée d'un partage entrant."
+      "texte": "Database imported from an inbound share."
     },
     {
       "base": [
@@ -405,15 +405,15 @@
       "cible_type": "table",
       "code": "F01",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Dépendance externe",
+      "etiquette": "To review",
+      "libelle": "External dependency",
       "preuve": {
         "emplacements": [
           "s3://canot-lab-public"
         ],
         "type": "table"
       },
-      "texte": "Table externe : données hors de la plateforme (s3://canot-lab-public)."
+      "texte": "External table: data outside the platform (s3://canot-lab-public)."
     },
     {
       "base": [
@@ -424,8 +424,8 @@
       "cible_type": "objet",
       "code": "F02",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Dépendance externe cachée",
+      "etiquette": "To review",
+      "libelle": "Hidden external dependency",
       "preuve": {
         "chemin": [
           "CANOT_LAB.MART.V_KPI",
@@ -436,7 +436,7 @@
           "s3://canot-lab-public"
         ]
       },
-      "texte": "Dépend de CANOT_LAB.EXT.US_STATES, hors de la plateforme, par 2 niveaux : CANOT_LAB.MART.V_KPI → CANOT_LAB.STG.V_STATES → CANOT_LAB.EXT.US_STATES (s3://canot-lab-public)."
+      "texte": "Depends on CANOT_LAB.EXT.US_STATES, outside the platform, through 2 levels: CANOT_LAB.MART.V_KPI → CANOT_LAB.STG.V_STATES → CANOT_LAB.EXT.US_STATES (s3://canot-lab-public)."
     },
     {
       "base": [
@@ -447,8 +447,8 @@
       "cible_type": "objet",
       "code": "F02",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Dépendance externe cachée",
+      "etiquette": "To review",
+      "libelle": "Hidden external dependency",
       "preuve": {
         "chemin": [
           "CANOT_LAB.STG.V_STATES",
@@ -458,7 +458,7 @@
           "s3://canot-lab-public"
         ]
       },
-      "texte": "Dépend de CANOT_LAB.EXT.US_STATES, hors de la plateforme, par 1 niveau : CANOT_LAB.STG.V_STATES → CANOT_LAB.EXT.US_STATES (s3://canot-lab-public)."
+      "texte": "Depends on CANOT_LAB.EXT.US_STATES, outside the platform, through 1 level: CANOT_LAB.STG.V_STATES → CANOT_LAB.EXT.US_STATES (s3://canot-lab-public)."
     },
     {
       "base": [
@@ -468,19 +468,19 @@
       "cible_type": "famille",
       "code": "F03",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Écriture hors de la plateforme",
+      "etiquette": "To review",
+      "libelle": "Write outside the platform",
       "preuve": {
         "emplacements": [
           "s3://canot-lab-public"
         ],
-        "mode": "observé",
+        "mode": "observed",
         "n_exec": 3,
         "tables": [
           "CANOT_LAB.RAW.ORDERS"
         ]
       },
-      "texte": "Écriture hors de la plateforme observée : 3 exécutions ; destination : s3://canot-lab-public."
+      "texte": "Write outside the platform observed: 3 executions; destination: s3://canot-lab-public."
     },
     {
       "base": [
@@ -492,15 +492,15 @@
       "cible_type": "objet",
       "code": "F03",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Écriture hors de la plateforme",
+      "etiquette": "To review",
+      "libelle": "Write outside the platform",
       "preuve": {
         "emplacements": [
           "s3://canot-lab-export"
         ],
-        "mode": "déclaré"
+        "mode": "declared"
       },
-      "texte": "Tâche qui écrit hors de la plateforme (déclaré dans sa définition) ; destination : s3://canot-lab-export."
+      "texte": "Task that writes outside the platform (declared in its definition); destination: s3://canot-lab-export."
     },
     {
       "base": [
@@ -511,15 +511,15 @@
       "cible_type": "role",
       "code": "F04",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Rôle propriétaire sans titulaire",
+      "etiquette": "To review",
+      "libelle": "Owner role with no holder",
       "preuve": {
         "exemples": [
           "CANOT_LAB.SANDBOX.OLD_EXPORT_2023"
         ],
         "objets_n": 1
       },
-      "texte": "Le rôle LAB_ORPHAN possède 1 objet et n'est accordé à aucun utilisateur, ni directement ni par un autre rôle."
+      "texte": "Role LAB_ORPHAN owns 1 object and is granted to no user, neither directly nor through another role."
     },
     {
       "base": [
@@ -529,21 +529,21 @@
       "cible": "CANOT_LAB.RAW.ARCHIVE_1",
       "cible_type": "table",
       "code": "F05",
-      "confiance": "haute",
-      "etiquette": "À examiner",
-      "libelle": "Stockage sans lecture observée",
+      "confiance": "high",
+      "etiquette": "To review",
+      "libelle": "Storage with no observed read",
       "preuve": {
         "au": "2026-10-17",
         "du": "2025-10-18",
         "jours": 364,
         "non_vus": [
-          "consommateurs de partages",
+          "share consumers",
           "RESULT_SCAN"
         ],
         "octets_actifs": 5000000000,
         "source": "ACCESS_HISTORY"
       },
-      "texte": "5 Go stockés. Aucune lecture observée dans ACCESS_HISTORY du 18/10/2025 au 17/10/2026 ; non vus : consommateurs de partages, RESULT_SCAN. Partagée avec 2 consommateurs externes : leurs lectures ne sont pas vues."
+      "texte": "5 GB stored. No read observed in ACCESS_HISTORY from 2025-10-18 to 2026-10-17; blind spots: share consumers, RESULT_SCAN. Shared with 2 external consumers: their reads are not seen."
     },
     {
       "base": [
@@ -553,21 +553,21 @@
       "cible": "CANOT_LAB.RAW.ARCHIVE_2",
       "cible_type": "table",
       "code": "F05",
-      "confiance": "haute",
-      "etiquette": "À examiner",
-      "libelle": "Stockage sans lecture observée",
+      "confiance": "high",
+      "etiquette": "To review",
+      "libelle": "Storage with no observed read",
       "preuve": {
         "au": "2026-10-17",
         "du": "2025-10-18",
         "jours": 364,
         "non_vus": [
-          "consommateurs de partages",
+          "share consumers",
           "RESULT_SCAN"
         ],
         "octets_actifs": 5000000000,
         "source": "ACCESS_HISTORY"
       },
-      "texte": "5 Go stockés. Aucune lecture observée dans ACCESS_HISTORY du 18/10/2025 au 17/10/2026 ; non vus : consommateurs de partages, RESULT_SCAN."
+      "texte": "5 GB stored. No read observed in ACCESS_HISTORY from 2025-10-18 to 2026-10-17; blind spots: share consumers, RESULT_SCAN."
     },
     {
       "base": [
@@ -577,21 +577,21 @@
       "cible": "CANOT_LAB.RAW.ARCHIVE_3",
       "cible_type": "table",
       "code": "F05",
-      "confiance": "haute",
-      "etiquette": "À examiner",
-      "libelle": "Stockage sans lecture observée",
+      "confiance": "high",
+      "etiquette": "To review",
+      "libelle": "Storage with no observed read",
       "preuve": {
         "au": "2026-10-17",
         "du": "2025-10-18",
         "jours": 364,
         "non_vus": [
-          "consommateurs de partages",
+          "share consumers",
           "RESULT_SCAN"
         ],
         "octets_actifs": 5000000000,
         "source": "ACCESS_HISTORY"
       },
-      "texte": "5 Go stockés. Aucune lecture observée dans ACCESS_HISTORY du 18/10/2025 au 17/10/2026 ; non vus : consommateurs de partages, RESULT_SCAN."
+      "texte": "5 GB stored. No read observed in ACCESS_HISTORY from 2025-10-18 to 2026-10-17; blind spots: share consumers, RESULT_SCAN."
     },
     {
       "base": [
@@ -601,14 +601,14 @@
       "cible_type": "table",
       "code": "F06",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Historique payé non transférable",
+      "etiquette": "To review",
+      "libelle": "Billed history that does not transfer",
       "preuve": {
         "octets_actifs": 2000000000,
         "octets_historique": 6000000000,
         "retention_jours": 30
       },
-      "texte": "6 Go d'historique facturé (Time Travel et Fail-safe), rétention 30 jours, pour 2 Go actifs ; cet historique ne part pas avec la copie."
+      "texte": "6 GB of billed history (Time Travel and Fail-safe), retention 30 days, for 2 GB active; this history does not leave with the copy."
     },
     {
       "base": [
@@ -619,13 +619,13 @@
       "cible_type": "table",
       "code": "F07",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Table supprimée encore facturée",
+      "etiquette": "To review",
+      "libelle": "Dropped table still billed",
       "preuve": {
         "octets": 300000000,
         "supprimee_le": "2026-10-10T12:00:00Z"
       },
-      "texte": "Supprimée le 10/10/2026 ; 300 Mo encore facturés (Time Travel et Fail-safe)."
+      "texte": "Dropped on 2026-10-10; 300 MB still billed (Time Travel and Fail-safe)."
     },
     {
       "base": [
@@ -635,12 +635,12 @@
       "cible_type": "objet",
       "code": "F08",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "SQL dynamique",
+      "etiquette": "To review",
+      "libelle": "Dynamic SQL",
       "preuve": {
         "langage": "JAVASCRIPT"
       },
-      "texte": "Procédure en JAVASCRIPT : construit du SQL à l'exécution ; les objets touchés ne se lisent pas dans le code."
+      "texte": "Procedure (JAVASCRIPT): builds SQL at run time; the objects it touches cannot be read from the code."
     },
     {
       "base": [
@@ -650,12 +650,12 @@
       "cible_type": "objet",
       "code": "F08",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "SQL dynamique",
+      "etiquette": "To review",
+      "libelle": "Dynamic SQL",
       "preuve": {
         "langage": "PYTHON"
       },
-      "texte": "Procédure en PYTHON : construit du SQL à l'exécution ; les objets touchés ne se lisent pas dans le code."
+      "texte": "Procedure (PYTHON): builds SQL at run time; the objects it touches cannot be read from the code."
     },
     {
       "base": [
@@ -665,8 +665,8 @@
       "cible_type": "objet",
       "code": "F09",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Consommateurs externes",
+      "etiquette": "To review",
+      "libelle": "External consumers",
       "preuve": {
         "consommateurs": 2,
         "objets": [
@@ -674,7 +674,7 @@
           "CANOT_LAB.RAW.ARCHIVE_1"
         ]
       },
-      "texte": "Partage vers 2 comptes cibles ; 2 objets partagés. Les lectures des consommateurs ne sont pas vues par ce scan."
+      "texte": "Share to 2 target accounts; 2 shared objects. Consumer reads are not seen by this scan."
     },
     {
       "base": [
@@ -684,14 +684,14 @@
       "cible_type": "objet",
       "code": "F10",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Sécurité à reconstruire",
+      "etiquette": "To review",
+      "libelle": "Security to rebuild",
       "preuve": {
         "objets": [
           "CANOT_LAB.RAW.CUSTOMERS"
         ]
       },
-      "texte": "Politique de masquage appliquée à 1 objet ; elle ne part pas avec la copie ; la copie demande un principal non filtré."
+      "texte": "Masking policy applied to 1 object; it does not leave with the copy; the copy requires an unfiltered principal."
     },
     {
       "base": [
@@ -701,14 +701,14 @@
       "cible_type": "objet",
       "code": "F10",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Sécurité à reconstruire",
+      "etiquette": "To review",
+      "libelle": "Security to rebuild",
       "preuve": {
         "objets": [
           "CANOT_LAB.RAW.CUSTOMERS"
         ]
       },
-      "texte": "Étiquette appliquée à 1 objet ; elle ne part pas avec la copie."
+      "texte": "Tag applied to 1 object; it does not leave with the copy."
     },
     {
       "base": [
@@ -718,14 +718,14 @@
       "cible_type": "objet",
       "code": "F10",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Sécurité à reconstruire",
+      "etiquette": "To review",
+      "libelle": "Security to rebuild",
       "preuve": {
         "objets": [
           "CANOT_LAB.MART.FCT_ORDERS"
         ]
       },
-      "texte": "Politique de lignes appliquée à 1 objet ; elle ne part pas avec la copie ; la copie demande un principal non filtré."
+      "texte": "Row access policy applied to 1 object; it does not leave with the copy; the copy requires an unfiltered principal."
     },
     {
       "base": [
@@ -736,15 +736,15 @@
       "cible_type": "table",
       "code": "F10",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Sécurité à reconstruire",
+      "etiquette": "To review",
+      "libelle": "Security to rebuild",
       "preuve": {
         "etiquettes_n": 0,
         "politiques": [
           "OPS.RAP_COUNTRY"
         ]
       },
-      "texte": "Politiques : OPS.RAP_COUNTRY. Elles ne partent pas avec la copie ; la copie demande un principal non filtré par ces politiques."
+      "texte": "Policies: OPS.RAP_COUNTRY. They do not leave with the copy; the copy requires a principal not filtered by these policies."
     },
     {
       "base": [
@@ -755,15 +755,15 @@
       "cible_type": "table",
       "code": "F10",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Sécurité à reconstruire",
+      "etiquette": "To review",
+      "libelle": "Security to rebuild",
       "preuve": {
         "etiquettes_n": 1,
         "politiques": [
           "OPS.MP_EMAIL"
         ]
       },
-      "texte": "Politiques : OPS.MP_EMAIL ; 1 étiquette. Elles ne partent pas avec la copie ; la copie demande un principal non filtré par ces politiques."
+      "texte": "Policies: OPS.MP_EMAIL; 1 tag. They do not leave with the copy; the copy requires a principal not filtered by these policies."
     },
     {
       "base": [
@@ -773,8 +773,8 @@
       "cible_type": "objet",
       "code": "F11",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Chaîne planifiée et ses échecs",
+      "etiquette": "To review",
+      "libelle": "Scheduled chain and its failures",
       "preuve": {
         "chaine": [
           "CANOT_LAB.MART.DT_COUNTRY_REVENUE"
@@ -783,7 +783,7 @@
         "etat": null,
         "executions_n": null
       },
-      "texte": "Table dynamique, planification 1 day ; exécutions non lues."
+      "texte": "Dynamic table, schedule 1 day; runs not read."
     },
     {
       "base": [],
@@ -791,8 +791,8 @@
       "cible_type": "objet",
       "code": "F11",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Chaîne planifiée et ses échecs",
+      "etiquette": "To review",
+      "libelle": "Scheduled chain and its failures",
       "preuve": {
         "chaine": [
           "CANOT_LAB.OPS.ORDERS_STREAM"
@@ -801,7 +801,7 @@
         "etat": null,
         "executions_n": null
       },
-      "texte": "Flux ; sur CANOT_LAB.RAW.ORDERS."
+      "texte": "Stream; on CANOT_LAB.RAW.ORDERS."
     },
     {
       "base": [
@@ -812,8 +812,8 @@
       "cible_type": "objet",
       "code": "F11",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Chaîne planifiée et ses échecs",
+      "etiquette": "To review",
+      "libelle": "Scheduled chain and its failures",
       "preuve": {
         "chaine": [
           "CANOT_LAB.OPS.P_EVENTS"
@@ -822,7 +822,7 @@
         "etat": "RUNNING",
         "executions_n": null
       },
-      "texte": "Pipe, état RUNNING ; exécutions non lues."
+      "texte": "Pipe, state RUNNING; runs not read."
     },
     {
       "base": [
@@ -834,8 +834,8 @@
       "cible_type": "objet",
       "code": "F11",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Chaîne planifiée et ses échecs",
+      "etiquette": "To review",
+      "libelle": "Scheduled chain and its failures",
       "preuve": {
         "chaine": [
           "CANOT_LAB.OPS.T_DAILY"
@@ -844,7 +844,7 @@
         "etat": "started",
         "executions_n": 365
       },
-      "texte": "Tâche, planification USING CRON 0 3 * * * Europe/Paris, état started ; 365 exécutions, 2 échecs, dernière le 17/10/2026."
+      "texte": "Task, schedule USING CRON 0 3 * * * Europe/Paris, state started; 365 runs, 2 failures, last on 2026-10-17."
     },
     {
       "base": [
@@ -856,8 +856,8 @@
       "cible_type": "objet",
       "code": "F11",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Chaîne planifiée et ses échecs",
+      "etiquette": "To review",
+      "libelle": "Scheduled chain and its failures",
       "preuve": {
         "chaine": [
           "CANOT_LAB.OPS.T_EXPORT_NIGHTLY"
@@ -866,7 +866,7 @@
         "etat": "started",
         "executions_n": 30
       },
-      "texte": "Tâche, planification USING CRON 0 2 * * * UTC, état started ; 30 exécutions, 30 échecs, dernière le 17/10/2026."
+      "texte": "Task, schedule USING CRON 0 2 * * * UTC, state started; 30 runs, 30 failures, last on 2026-10-17."
     },
     {
       "base": [
@@ -878,8 +878,8 @@
       "cible_type": "objet",
       "code": "F11",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Chaîne planifiée et ses échecs",
+      "etiquette": "To review",
+      "libelle": "Scheduled chain and its failures",
       "preuve": {
         "chaine": [
           "CANOT_LAB.OPS.T_DAILY",
@@ -889,7 +889,7 @@
         "etat": "started",
         "executions_n": 365
       },
-      "texte": "Tâche, état started ; 365 exécutions, 0 échec, dernière le 17/10/2026 ; chaîne : CANOT_LAB.OPS.T_DAILY → CANOT_LAB.OPS.T_REFRESH."
+      "texte": "Task, state started; 365 runs, 0 failures, last on 2026-10-17; chain: CANOT_LAB.OPS.T_DAILY → CANOT_LAB.OPS.T_REFRESH."
     },
     {
       "base": [
@@ -901,8 +901,8 @@
       "cible_type": "objet",
       "code": "F11",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Chaîne planifiée et ses échecs",
+      "etiquette": "To review",
+      "libelle": "Scheduled chain and its failures",
       "preuve": {
         "chaine": [
           "CANOT_LAB.OPS.T_SERVERLESS"
@@ -911,7 +911,7 @@
         "etat": "suspended",
         "executions_n": 0
       },
-      "texte": "Tâche, planification 60 MINUTE, état suspended ; 0 exécution, 0 échec."
+      "texte": "Task, schedule 60 MINUTE, state suspended; 0 runs, 0 failures."
     },
     {
       "base": [],
@@ -919,13 +919,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "droit absent",
+        "raison": "missing privilege",
         "vue": "SNOWFLAKE.ACCOUNT_USAGE.STREAMS"
       },
-      "texte": "STREAMS non lue (droit absent) ; limite : flux (F11)."
+      "texte": "STREAMS not read (missing privilege); limits: streams (F11)."
     },
     {
       "base": [],
@@ -933,13 +933,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "droit absent",
+        "raison": "missing privilege",
         "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASK_VERSIONS"
       },
-      "texte": "TASK_VERSIONS non lue (droit absent) ; limite : versions des tâches (F11)."
+      "texte": "TASK_VERSIONS not read (missing privilege); limits: task versions (F11)."
     },
     {
       "base": [
@@ -950,14 +950,14 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
         "tables": [
           "CANOT_LAB.MART.DIM_LEGACY"
         ]
       },
-      "texte": "Lectures non déterminées pour 1 table ; limite : stockage sans lecture observée (F05)."
+      "texte": "Reads not determined for 1 table; limits: storage with no observed read (F05)."
     }
   ],
   "edition": "enterprise",
@@ -1091,14 +1091,14 @@
       "base": [
         "S03"
       ],
-      "confiance": "basse",
-      "formule": "crédits × prix catalogue du crédit, du plus bas au plus haut",
+      "confiance": "low",
+      "formule": "credits × list price of the credit, from lowest to highest",
       "haut": 1.4,
       "hypotheses": [
-        "prix catalogue Snowflake du 17/10/2026, AWS Paris/Francfort : 2,60 $ (Standard) à 5,20 $ (Business Critical), https://www.snowflake.com/pricing/pricing-guide/",
-        "prix de votre contrat non lu ; votre région peut différer"
+        "Snowflake list price as of 17/10/2026, AWS Paris/Frankfurt: $2.60 (Standard edition) to $5.20 (highest edition), https://www.snowflake.com/pricing/pricing-guide/",
+        "your contract price not read; your region may differ"
       ],
-      "nature": "estimé",
+      "nature": "estimated",
       "raison": null,
       "unite": "USD",
       "valeur": null
@@ -1108,16 +1108,16 @@
       "base": [
         "S03"
       ],
-      "confiance": "basse",
-      "formule": "durée × crédits par heure",
+      "confiance": "low",
+      "formule": "time × credits per hour",
       "haut": 0.27,
       "hypotheses": [
-        "débit supposé de 20 à 80 Mo/s, remplacé par la mesure d'un canot drill",
-        "entrepôt XS, 1 crédit par heure"
+        "assumed throughput of 20 to 80 MB/s, replaced by the measurement of a canot drill",
+        "XS warehouse, 1 credit per hour"
       ],
-      "nature": "estimé",
+      "nature": "estimated",
       "raison": null,
-      "unite": "crédits",
+      "unite": "credits",
       "valeur": null
     },
     "duree_lecture": {
@@ -1125,15 +1125,15 @@
       "base": [
         "S03"
       ],
-      "confiance": "basse",
-      "formule": "volume ÷ débit supposé",
+      "confiance": "low",
+      "formule": "volume ÷ assumed throughput",
       "haut": 0.27,
       "hypotheses": [
-        "débit supposé de 20 à 80 Mo/s, remplacé par la mesure d'un canot drill"
+        "assumed throughput of 20 to 80 MB/s, replaced by the measurement of a canot drill"
       ],
-      "nature": "estimé",
+      "nature": "estimated",
       "raison": null,
-      "unite": "heures",
+      "unite": "hours",
       "valeur": null
     },
     "reprise": {
@@ -1146,16 +1146,16 @@
         "S14",
         "S17"
       ],
-      "confiance": "basse",
-      "formule": "objets × jours par objet + colonnes × jours par colonne",
+      "confiance": "low",
+      "formule": "objects × days per object + columns × days per column",
       "haut": 31.0,
       "hypotheses": [
-        "20 objets à reconstruire et 2 colonnes à type propre à la plateforme",
-        "hypothèses de q4o : 0,25 à 1,5 jour par objet, 0,1 à 0,5 par colonne, à discuter"
+        "20 objects to rebuild and 2 columns with a platform-specific type",
+        "q4o assumptions: 0.25 to 1.5 day per object, 0.1 to 0.5 per column, open to discussion"
       ],
-      "nature": "estimé",
+      "nature": "estimated",
       "raison": null,
-      "unite": "jours",
+      "unite": "days",
       "valeur": null
     },
     "volume": {
@@ -1164,16 +1164,16 @@
         "S03"
       ],
       "confiance": null,
-      "formule": "somme des octets actifs",
+      "formule": "sum of active bytes",
       "haut": null,
       "hypotheses": [
-        "octets actifs des tables présentes, hors tables externes et temporaires",
-        "volume compressé stocké ; le volume lu par la copie peut être plus élevé",
-        "clones : seuls leurs octets propres sont comptés"
+        "active bytes of present tables, excluding external and temporary tables",
+        "compressed stored volume; the volume read by the copy may be higher",
+        "clones: only their own bytes are counted"
       ],
-      "nature": "calculé",
+      "nature": "computed",
       "raison": null,
-      "unite": "octets",
+      "unite": "bytes",
       "valeur": 19440000000
     }
   },
@@ -1187,7 +1187,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLES"
     },
     {
@@ -1197,7 +1197,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.COLUMNS"
     },
     {
@@ -1207,7 +1207,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_STORAGE_METRICS"
     },
     {
@@ -1220,7 +1220,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.STORAGE_USAGE"
     },
     {
@@ -1233,7 +1233,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.METERING_DAILY_HISTORY"
     },
     {
@@ -1246,7 +1246,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY"
     },
     {
@@ -1256,7 +1256,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.QUERY_ATTRIBUTION_HISTORY"
     },
     {
@@ -1269,7 +1269,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_DML_HISTORY"
     },
     {
@@ -1282,7 +1282,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_QUERY_PRUNING_HISTORY"
     },
     {
@@ -1292,7 +1292,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.OBJECT_DEPENDENCIES"
     },
     {
@@ -1302,7 +1302,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.VIEWS"
     },
     {
@@ -1312,7 +1312,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.FUNCTIONS"
     },
     {
@@ -1322,7 +1322,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.PROCEDURES"
     },
     {
@@ -1332,7 +1332,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASKS"
     },
     {
@@ -1345,7 +1345,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASK_HISTORY"
     },
     {
@@ -1355,7 +1355,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.SERVERLESS_TASK_HISTORY"
     },
     {
@@ -1365,7 +1365,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.PIPES"
     },
     {
@@ -1375,7 +1375,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.COPY_HISTORY"
     },
     {
@@ -1385,7 +1385,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.STAGES"
     },
     {
@@ -1395,7 +1395,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.DATABASES"
     },
     {
@@ -1408,7 +1408,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.DATA_TRANSFER_HISTORY"
     },
     {
@@ -1418,7 +1418,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.DYNAMIC_TABLE_REFRESH_HISTORY"
     },
     {
@@ -1428,7 +1428,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.AUTOMATIC_CLUSTERING_HISTORY"
     },
     {
@@ -1441,7 +1441,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY"
     },
     {
@@ -1454,7 +1454,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY"
     },
     {
@@ -1464,7 +1464,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.POLICY_REFERENCES"
     },
     {
@@ -1474,7 +1474,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.TAG_REFERENCES"
     },
     {
@@ -1484,7 +1484,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_ROLES"
     },
     {
@@ -1494,7 +1494,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_USERS"
     },
     {
@@ -1504,7 +1504,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.USERS"
     },
     {
@@ -1514,7 +1514,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.SESSIONS"
     },
     {
@@ -1524,7 +1524,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.SHARES"
     },
     {
@@ -1532,9 +1532,9 @@
       "id": "S33",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "flux (F11)",
-      "raison": "droit absent",
-      "statut": "non_lu",
+      "limite": "streams (F11)",
+      "raison": "missing privilege",
+      "statut": "not_read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.STREAMS"
     },
     {
@@ -1542,9 +1542,9 @@
       "id": "S34",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "versions des tâches (F11)",
-      "raison": "droit absent",
-      "statut": "non_lu",
+      "limite": "task versions (F11)",
+      "raison": "missing privilege",
+      "statut": "not_read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASK_VERSIONS"
     },
     {
@@ -1554,12 +1554,12 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SHOW WAREHOUSES"
     }
   ],
   "liens": [],
-  "mode_sql": "lecture seule",
+  "mode_sql": "read-only",
   "mouvements": {
     "base": [
       "S01",
@@ -1569,7 +1569,7 @@
     "figée": 3,
     "non_determine": 1,
     "recréée": 1,
-    "regle": "recréée : DDL de moins de 7 jours sans écriture postérieure ; vivante : écriture de moins de 30 jours ; figée : dernière écriture plus ancienne ; non déterminée : écritures non lues",
+    "regle": "recreated: DDL less than 7 days old with no later write; live: write less than 30 days old; frozen: older last write; not determined: writes not read",
     "vivante": 7
   },
   "ne_part_pas": {
@@ -1634,12 +1634,12 @@
           "S03"
         ],
         "confiance": null,
-        "formule": "Time Travel + Fail-safe des tables présentes, + octets encore facturés des tables supprimées",
+        "formule": "Time Travel + Fail-safe of present tables, + bytes still billed for dropped tables",
         "haut": null,
         "hypotheses": [],
-        "nature": "calculé",
+        "nature": "computed",
         "raison": null,
-        "unite": "octets",
+        "unite": "bytes",
         "valeur": 6300000000
       },
       "tables": 2
@@ -1668,24 +1668,24 @@
   "niveau_droits": 3,
   "non_estime": [
     {
-      "raison": "prix de votre contrat non lu",
-      "sujet": "Coût du stockage"
+      "raison": "your contract price not read",
+      "sujet": "Storage cost"
     },
     {
-      "raison": "prix de votre contrat non lu",
-      "sujet": "Tarif de votre contrat"
+      "raison": "your contract price not read",
+      "sujet": "Your contract rate"
     },
     {
-      "raison": "dépendent de votre contrat et de votre architecture",
-      "sujet": "Stockage d'arrivée, double exploitation, fonctionnement après la sortie"
+      "raison": "depend on your contract and your architecture",
+      "sujet": "Destination storage, running both platforms in parallel, operations after the exit"
     },
     {
-      "raison": "accepté ≠ résultat identique : traduit vers DuckDB, non comparé ; un canot drill compare les résultats",
-      "sujet": "Résultat identique des requêtes traduites"
+      "raison": "accepted ≠ identical result: translated to DuckDB, not compared; a canot drill compares the results",
+      "sujet": "Identical results of translated queries"
     },
     {
-      "raison": "non reprises : elles ne se vérifient pas depuis le scan",
-      "sujet": "Projections de coût fournies par la plateforme"
+      "raison": "not used: they cannot be verified from the scan",
+      "sujet": "Cost projections provided by the platform"
     }
   ],
   "objets": [
@@ -2083,7 +2083,7 @@
       ],
       "derniere_execution": "2026-10-17T02:00:00Z",
       "detail": {
-        "commentaire": "export vers [masqué]",
+        "commentaire": "export to [masked]",
         "ecriture_externe": true
       },
       "drapeaux": [
@@ -2212,7 +2212,7 @@
       "sql_dynamique": null
     }
   ],
-  "perimetre": "compte xy12345, base CANOT_LAB",
+  "perimetre": "account xy12345, database CANOT_LAB",
   "plateforme": "snowflake",
   "regles": {
     "debit_mo_s": [
@@ -2224,11 +2224,11 @@
     "vivante_jours": 30
   },
   "rejouabilite": {
-    "base": "0/5 familles, fenêtre non lue, sqlglot X, duckdb X",
+    "base": "0/5 families, window not read, sqlglot X, duckdb X",
     "bases": {
-      "executions": "0/60 exécutions, fenêtre non lue, sqlglot X, duckdb X",
-      "familles": "0/5 familles, fenêtre non lue, sqlglot X, duckdb X",
-      "poids": "0/3,00 crédits, fenêtre non lue, sqlglot X, duckdb X"
+      "executions": "0/60 executions, window not read, sqlglot X, duckdb X",
+      "familles": "0/5 families, window not read, sqlglot X, duckdb X",
+      "poids": "0/3.00 credits, window not read, sqlglot X, duckdb X"
     },
     "categories": {
       "C0": {
@@ -2279,7 +2279,7 @@
       "stage": 1,
       "tablefromrows": 1
     },
-    "mention": "accepté ≠ résultat identique",
+    "mention": "accepted ≠ identical result",
     "non_testees": {
       "executions": 0,
       "familles": 0
@@ -2289,7 +2289,7 @@
       "executions": 1,
       "familles": 1
     },
-    "statut": "lu",
+    "statut": "read",
     "taux": {
       "executions": {
         "bas": null,
@@ -2297,12 +2297,12 @@
           "S24"
         ],
         "confiance": null,
-        "formule": "traduit et accepté par DuckDB (C0) / C0 à C6 ; C7 compté à part",
+        "formule": "translated and accepted by DuckDB (C0) / C0 to C6; C7 counted separately",
         "haut": null,
         "hypotheses": [
-          "accepté ≠ résultat identique"
+          "accepted ≠ identical result"
         ],
-        "nature": "calculé",
+        "nature": "computed",
         "raison": null,
         "unite": "%",
         "valeur": 0.0
@@ -2313,12 +2313,12 @@
           "S24"
         ],
         "confiance": null,
-        "formule": "traduit et accepté par DuckDB (C0) / C0 à C6 ; C7 compté à part",
+        "formule": "translated and accepted by DuckDB (C0) / C0 to C6; C7 counted separately",
         "haut": null,
         "hypotheses": [
-          "accepté ≠ résultat identique"
+          "accepted ≠ identical result"
         ],
-        "nature": "calculé",
+        "nature": "computed",
         "raison": null,
         "unite": "%",
         "valeur": 0.0
@@ -2329,13 +2329,13 @@
           "S24"
         ],
         "confiance": null,
-        "formule": "traduit et accepté par DuckDB (C0) / C0 à C6 ; C7 compté à part",
+        "formule": "translated and accepted by DuckDB (C0) / C0 to C6; C7 counted separately",
         "haut": null,
         "hypotheses": [
-          "accepté ≠ résultat identique",
-          "poids lu pour 4/5 familles"
+          "accepted ≠ identical result",
+          "weight read for 4/5 families"
         ],
-        "nature": "calculé",
+        "nature": "computed",
         "raison": null,
         "unite": "%",
         "valeur": 0.0
@@ -2344,19 +2344,19 @@
   },
   "resume": {
     "DAF": [
-      "Consommation mesurée sur 365 jours : 43,5 crédits.",
-      "En dollars, fourchette catalogue du 17/10/2026 : 113,10 à 226,20 $ ; prix de votre contrat non lu.",
-      "Historique facturé qui ne part pas avec la copie : 6,3 Go sur 2 tables (F06, F07)."
+      "Consumption measured over 365 days: 43.5 credits.",
+      "In dollars, list-price range as of 17/10/2026: $113.10 to $226.20; your contract price not read.",
+      "Billed history that does not leave with the copy: 6.3 GB across 2 tables (F06, F07)."
     ],
     "DSI": [
-      "12 tables présentes (19,4 Go) et 20 objets à reconstruire hors tables.",
-      "Mouvement : 3 figée(s), 7 vivante(s), 1 recréée(s), 1 non déterminée(s).",
-      "Rejouabilité : 0/5 familles acceptées par DuckDB ; accepté ≠ résultat identique."
+      "12 present tables (19.4 GB) and 20 objects to rebuild besides tables.",
+      "Movement: 3 frozen, 7 live, 1 recreated, 1 not determined.",
+      "Replayability: 0/5 families accepted by DuckDB; accepted ≠ identical result."
     ],
     "RSSI": [
-      "5 tables ou politiques à reconstruire côté sécurité (F10) ; la copie demande un principal non filtré.",
-      "5 dépendances externes (F01, F02), 2 écritures hors de la plateforme (F03), 1 partage avec consommateurs externes (F09).",
-      "1 rôle propriétaire sans titulaire (F04)."
+      "5 tables or policies to rebuild on the security side (F10); the copy requires an unfiltered principal.",
+      "5 external dependencies (F01, F02), 2 writes outside the platform (F03), 1 share with external consumers (F09).",
+      "1 owner role with no holder (F04)."
     ]
   },
   "schema": "canot.scan/2",
@@ -2391,8 +2391,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-15",
       "nom": "US_STATES",
       "octets_actifs": null,
       "octets_historique": null,
@@ -2429,7 +2429,7 @@
       },
       "lignes": 1000,
       "mouvement": null,
-      "mouvement_preuve": "écritures non lues",
+      "mouvement_preuve": "writes not read",
       "nom": "DIM_LEGACY",
       "octets_actifs": 10000000,
       "octets_historique": 0,
@@ -2467,8 +2467,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "recréée",
-      "mouvement_preuve": "dernière DDL le 17/10/2026, sans écriture postérieure",
+      "mouvement": "recreated",
+      "mouvement_preuve": "last DDL on 2026-10-17, no later write",
       "nom": "FCT_ORDERS",
       "octets_actifs": 1500000000,
       "octets_historique": 0,
@@ -2506,8 +2506,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 17/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-17",
       "nom": "EVENTS_LOG",
       "octets_actifs": 10000000,
       "octets_historique": 0,
@@ -2545,8 +2545,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "figée",
-      "mouvement_preuve": "dernière écriture le 10/01/2025",
+      "mouvement": "frozen",
+      "mouvement_preuve": "last write on 2025-01-10",
       "nom": "ARCHIVE_1",
       "octets_actifs": 5000000000,
       "octets_historique": 0,
@@ -2584,8 +2584,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "figée",
-      "mouvement_preuve": "dernière écriture le 10/01/2025",
+      "mouvement": "frozen",
+      "mouvement_preuve": "last write on 2025-01-10",
       "nom": "ARCHIVE_2",
       "octets_actifs": 5000000000,
       "octets_historique": 0,
@@ -2623,8 +2623,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "figée",
-      "mouvement_preuve": "dernière écriture le 10/01/2025",
+      "mouvement": "frozen",
+      "mouvement_preuve": "last write on 2025-01-10",
       "nom": "ARCHIVE_3",
       "octets_actifs": 5000000000,
       "octets_historique": 0,
@@ -2671,8 +2671,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-15",
       "nom": "CUSTOMERS",
       "octets_actifs": 800000000,
       "octets_historique": 0,
@@ -2711,7 +2711,7 @@
       },
       "lignes": 1000,
       "mouvement": null,
-      "mouvement_preuve": "supprimée le 10/01/2026",
+      "mouvement_preuve": "dropped on 2026-01-10",
       "nom": "OLD_DROPPED",
       "octets_actifs": 0,
       "octets_historique": 0,
@@ -2751,8 +2751,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 16/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-16",
       "nom": "ORDERS",
       "octets_actifs": 2000000000,
       "octets_historique": 6000000000,
@@ -2788,8 +2788,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-15",
       "nom": "ORDERS_CLONE",
       "octets_actifs": 100000000,
       "octets_historique": 0,
@@ -2828,7 +2828,7 @@
       },
       "lignes": 1000,
       "mouvement": null,
-      "mouvement_preuve": "supprimée le 10/10/2026",
+      "mouvement_preuve": "dropped on 2026-10-10",
       "nom": "TMP_DROPPED",
       "octets_actifs": 0,
       "octets_historique": 300000000,
@@ -2866,8 +2866,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-15",
       "nom": "OLD_EXPORT_2023",
       "octets_actifs": 10000000,
       "octets_historique": 0,
@@ -2903,8 +2903,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-15",
       "nom": "TEAM_WORK",
       "octets_actifs": 10000000,
       "octets_historique": 0,

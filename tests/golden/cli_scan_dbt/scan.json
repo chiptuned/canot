@@ -13,11 +13,11 @@
     "preuve": [
       {
         "forme": "P3",
-        "libelle": "rejeu de traitements"
+        "libelle": "pipeline replay"
       }
     ],
-    "statut": "testé",
-    "teste_sur": "19/10/2026 : canot scan dbt://lab/dbt (projet dbt du banc, manifest dbt 1.12.6, adaptateur Snowflake) ; canot rejeu-dbt sur ces artefacts et une copie DuckDB locale construite par les tests (docs/scan.md)"
+    "statut": "tested",
+    "teste_sur": "2026-10-19: canot scan dbt://lab/dbt (test bench dbt project, dbt 1.12.6 manifest, Snowflake adapter); canot replay-dbt on these artifacts and a local DuckDB copy built by the tests (docs/scan.md)"
   },
   "carte_sortie": {
     "portable_tel_quel": {
@@ -36,9 +36,9 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "mesuré",
+      "nature": "measured",
       "raison": null,
-      "unite": "secondes",
+      "unite": "seconds",
       "valeur": 0.0
     },
     "lectures": {
@@ -53,9 +53,9 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "mesuré",
+      "nature": "measured",
       "raison": null,
-      "unite": "requêtes",
+      "unite": "queries",
       "valeur": 0
     }
   },
@@ -67,9 +67,9 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_lu",
-      "raison": "fichiers de projet : ni crédits ni octets facturés ; le scan de la plateforme cible les mesure",
-      "unite": "crédits",
+      "nature": "not_read",
+      "raison": "project files: no credits and no billed bytes; the scan of the target platform measures them",
+      "unite": "credits",
       "valeur": null
     },
     "credits_par_entrepot": [],
@@ -82,12 +82,12 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_estimé",
-      "raison": "consommation non lue",
+      "nature": "not_estimated",
+      "raison": "consumption not read",
       "unite": "USD",
       "valeur": null
     },
-    "note": "Aucune consommation dans des fichiers de projet.",
+    "note": "No consumption in project files.",
     "stockage_monnaie": {
       "bas": null,
       "base": [],
@@ -95,8 +95,8 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_estimé",
-      "raison": "prix de votre contrat non lu",
+      "nature": "not_estimated",
+      "raison": "your contract price not read",
       "unite": "USD",
       "valeur": null
     },
@@ -107,9 +107,9 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_lu",
-      "raison": "fichiers de projet : ni crédits ni octets facturés ; le scan de la plateforme cible les mesure",
-      "unite": "octets",
+      "nature": "not_read",
+      "raison": "project files: no credits and no billed bytes; the scan of the target platform measures them",
+      "unite": "bytes",
       "valeur": null
     },
     "transferts": []
@@ -211,17 +211,17 @@
       "cible_type": "objet",
       "code": "F11",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Chaîne planifiée et ses échecs",
+      "etiquette": "To review",
+      "libelle": "Scheduled chain and its failures",
       "preuve": {
         "chaine": [
           "dbt:canot_lab"
         ],
         "echecs_n": 0,
-        "etat": "dernière invocation : build",
+        "etat": "last invocation: build",
         "executions_n": 1
       },
-      "texte": "DAG, planification non lue (orchestrateur hors des fichiers dbt), état dernière invocation : build ; 1 exécution, 0 échec, dernière le 17/10/2026."
+      "texte": "DAG, schedule not read (orchestrator outside the dbt files), state last invocation: build; 1 run, 0 failures, last on 2026-10-17."
     },
     {
       "base": [],
@@ -229,13 +229,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "absent ou non exposé",
+        "raison": "absent or not exposed",
         "vue": "target/catalog.json"
       },
-      "texte": "target/catalog.json non lue (absent ou non exposé) ; limite : colonnes, types et volumes des relations ; rejouabilité non testée par EXPLAIN DuckDB."
+      "texte": "target/catalog.json not read (absent or not exposed); limits: columns, types and volumes of relations; replayability not tested by DuckDB EXPLAIN."
     }
   ],
   "edition": "dbt 1.12.6",
@@ -250,8 +250,8 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_estimé",
-      "raison": "dépend de la plateforme qui héberge les tables, non lue ici",
+      "nature": "not_estimated",
+      "raison": "depends on the platform that hosts the tables, not read here",
       "unite": "USD",
       "valeur": null
     },
@@ -262,24 +262,24 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_estimé",
-      "raison": "volume non lu",
-      "unite": "heures",
+      "nature": "not_estimated",
+      "raison": "volume not read",
+      "unite": "hours",
       "valeur": null
     },
     "reprise": {
       "bas": 0.0,
       "base": [],
-      "confiance": "basse",
-      "formule": "objets × jours par objet + colonnes × jours par colonne",
+      "confiance": "low",
+      "formule": "objects × days per object + columns × days per column",
       "haut": 0.0,
       "hypotheses": [
-        "0 objet à reconstruire et 0 colonne à type propre à la plateforme",
-        "hypothèses de q4o : 0,25 à 1,5 jour par objet, 0,1 à 0,5 par colonne, à discuter"
+        "0 objects to rebuild and 0 columns with a platform-specific type",
+        "q4o assumptions: 0.25 to 1.5 day per object, 0.1 to 0.5 per column, open to discussion"
       ],
-      "nature": "estimé",
+      "nature": "estimated",
       "raison": null,
-      "unite": "jours",
+      "unite": "days",
       "valeur": null
     },
     "volume": {
@@ -289,9 +289,9 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_lu",
-      "raison": "catalog.json non lu",
-      "unite": "octets",
+      "nature": "not_read",
+      "raison": "catalog.json not read",
+      "unite": "bytes",
       "valeur": null
     }
   },
@@ -305,7 +305,7 @@
       "lignes": 583,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "target/manifest.json"
     },
     {
@@ -318,7 +318,7 @@
       "lignes": 16,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "target/run_results.json"
     },
     {
@@ -326,9 +326,9 @@
       "id": "B03",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "colonnes, types et volumes des relations ; rejouabilité non testée par EXPLAIN DuckDB",
-      "raison": "absent ou non exposé",
-      "statut": "non_lu",
+      "limite": "columns, types and volumes of relations; replayability not tested by DuckDB EXPLAIN",
+      "raison": "absent or not exposed",
+      "statut": "not_read",
       "vue": "target/catalog.json"
     }
   ],
@@ -429,7 +429,7 @@
       "vers": "model.canot_lab.stg_orders"
     }
   ],
-  "mode_sql": "aucun SQL émis (fichiers lus)",
+  "mode_sql": "no SQL issued (files read)",
   "mouvements": {
     "base": [
       "B02"
@@ -437,7 +437,7 @@
     "figée": 0,
     "non_determine": 4,
     "recréée": 0,
-    "regle": "recréée : DDL de moins de 7 jours sans écriture postérieure ; vivante : écriture de moins de 30 jours ; figée : dernière écriture plus ancienne ; non déterminée : écritures non lues",
+    "regle": "recreated: DDL less than 7 days old with no later write; live: write less than 30 days old; frozen: older last write; not determined: writes not read",
     "vivante": 4
   },
   "ne_part_pas": {
@@ -479,9 +479,9 @@
         "formule": null,
         "haut": null,
         "hypotheses": [],
-        "nature": "non_lu",
-        "raison": "fichiers de projet : ni crédits ni octets facturés ; le scan de la plateforme cible les mesure",
-        "unite": "octets",
+        "nature": "not_read",
+        "raison": "project files: no credits and no billed bytes; the scan of the target platform measures them",
+        "unite": "bytes",
         "valeur": null
       },
       "tables": 0
@@ -498,40 +498,40 @@
   "niveau_droits": 1,
   "non_estime": [
     {
-      "raison": "non lue : fichiers de projet : ni crédits ni octets facturés ; le scan de la plateforme cible les mesure",
-      "sujet": "Consommation de la plateforme"
+      "raison": "not read: project files: no credits and no billed bytes; the scan of the target platform measures them",
+      "sujet": "Platform consumption"
     },
     {
-      "raison": "catalog.json non lu",
-      "sujet": "Volume à copier"
+      "raison": "catalog.json not read",
+      "sujet": "Volume to copy"
     },
     {
-      "raison": "volume non lu",
-      "sujet": "Durée de lecture de la copie"
+      "raison": "volume not read",
+      "sujet": "Copy read time"
     },
     {
-      "raison": "dépend de la plateforme qui héberge les tables, non lue ici",
-      "sujet": "Coût de lecture de la copie"
+      "raison": "depends on the platform that hosts the tables, not read here",
+      "sujet": "Copy read cost"
     },
     {
-      "raison": "fichiers de projet : ni crédits ni octets facturés ; le scan de la plateforme cible les mesure",
-      "sujet": "Historique facturé"
+      "raison": "project files: no credits and no billed bytes; the scan of the target platform measures them",
+      "sujet": "Billed history"
     },
     {
-      "raison": "prix de votre contrat non lu",
-      "sujet": "Tarif de votre contrat"
+      "raison": "your contract price not read",
+      "sujet": "Your contract rate"
     },
     {
-      "raison": "dépendent de votre contrat et de votre architecture",
-      "sujet": "Stockage d'arrivée, double exploitation, fonctionnement après la sortie"
+      "raison": "depend on your contract and your architecture",
+      "sujet": "Destination storage, running both platforms in parallel, operations after the exit"
     },
     {
-      "raison": "accepté ≠ résultat identique : traduit vers DuckDB, non comparé ; un canot drill compare les résultats",
-      "sujet": "Résultat identique des requêtes traduites"
+      "raison": "accepted ≠ identical result: translated to DuckDB, not compared; a canot drill compares the results",
+      "sujet": "Identical results of translated queries"
     },
     {
-      "raison": "non reprises : elles ne se vérifient pas depuis le scan",
-      "sujet": "Projections de coût fournies par la plateforme"
+      "raison": "not used: they cannot be verified from the scan",
+      "sujet": "Cost projections provided by the platform"
     }
   ],
   "objets": [
@@ -541,7 +541,7 @@
       "detail": {
         "analyses_n": 0,
         "duree_s": 9.3,
-        "fenetre": "dernière invocation seulement (run_results.json)",
+        "fenetre": "last invocation only (run_results.json)",
         "noeuds_avertis_n": 0,
         "noeuds_en_echec_n": 0,
         "noeuds_executes_n": 16
@@ -550,7 +550,7 @@
         "F11"
       ],
       "echecs_n": 0,
-      "etat": "dernière invocation : build",
+      "etat": "last invocation: build",
       "executions_n": 1,
       "externe": false,
       "famille_objet": "planification",
@@ -558,7 +558,7 @@
       "kind": "dag",
       "langage": null,
       "moteur": "dbt",
-      "planification": "non lue (orchestrateur hors des fichiers dbt)",
+      "planification": "not read (orchestrator outside the dbt files)",
       "portabilite": "traduisible",
       "proprietaire": null,
       "reference": [],
@@ -570,7 +570,7 @@
       "derniere_execution": "2026-10-17T08:43:22Z",
       "detail": {
         "acces": "protected",
-        "analyse": "compilé",
+        "analyse": "compiled",
         "categorie": null,
         "colonnes_documentees_n": 1,
         "constructions": [],
@@ -584,8 +584,8 @@
         "macros_n": 0,
         "materialisation": "table",
         "paquet": "canot_lab",
-        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
-        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "raison_portabilite": "SQL translated to DuckDB by sqlglot, not tested",
+        "raison_rejeu": "columns not read: DuckDB EXPLAIN not run",
         "relation": "CANOT_LAB.DBT_dbt_mart.dbt_customer_ltv",
         "tests_n": 2
       },
@@ -621,7 +621,7 @@
       "derniere_execution": "2026-10-17T08:43:23Z",
       "detail": {
         "acces": "protected",
-        "analyse": "compilé",
+        "analyse": "compiled",
         "categorie": null,
         "colonnes_documentees_n": 0,
         "constructions": [],
@@ -635,8 +635,8 @@
         "macros_n": 0,
         "materialisation": "table",
         "paquet": "canot_lab",
-        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
-        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "raison_portabilite": "SQL translated to DuckDB by sqlglot, not tested",
+        "raison_rejeu": "columns not read: DuckDB EXPLAIN not run",
         "relation": "CANOT_LAB.DBT_dbt_mart.dbt_daily_revenue",
         "tests_n": 0
       },
@@ -672,7 +672,7 @@
       "derniere_execution": "2026-10-17T08:43:21Z",
       "detail": {
         "acces": "protected",
-        "analyse": "compilé",
+        "analyse": "compiled",
         "categorie": null,
         "colonnes_documentees_n": 1,
         "constructions": [],
@@ -686,8 +686,8 @@
         "macros_n": 0,
         "materialisation": "table",
         "paquet": "canot_lab",
-        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
-        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "raison_portabilite": "SQL translated to DuckDB by sqlglot, not tested",
+        "raison_rejeu": "columns not read: DuckDB EXPLAIN not run",
         "relation": "CANOT_LAB.DBT_dbt_mart.dbt_fct_orders",
         "tests_n": 2
       },
@@ -727,7 +727,7 @@
       "derniere_execution": "2026-10-17T08:43:19Z",
       "detail": {
         "acces": "protected",
-        "analyse": "compilé",
+        "analyse": "compiled",
         "categorie": null,
         "colonnes_documentees_n": 0,
         "constructions": [],
@@ -741,8 +741,8 @@
         "macros_n": 0,
         "materialisation": "table",
         "paquet": "canot_lab",
-        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
-        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "raison_portabilite": "SQL translated to DuckDB by sqlglot, not tested",
+        "raison_rejeu": "columns not read: DuckDB EXPLAIN not run",
         "relation": "CANOT_LAB.DBT_dbt_mart.int_order_totals",
         "tests_n": 0
       },
@@ -780,7 +780,7 @@
       "derniere_execution": "2026-10-17T08:43:18Z",
       "detail": {
         "acces": "protected",
-        "analyse": "compilé",
+        "analyse": "compiled",
         "categorie": null,
         "colonnes_documentees_n": 1,
         "constructions": [],
@@ -794,8 +794,8 @@
         "macros_n": 0,
         "materialisation": "view",
         "paquet": "canot_lab",
-        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
-        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "raison_portabilite": "SQL translated to DuckDB by sqlglot, not tested",
+        "raison_rejeu": "columns not read: DuckDB EXPLAIN not run",
         "relation": "CANOT_LAB.DBT_dbt_stg.stg_customers",
         "tests_n": 2
       },
@@ -831,7 +831,7 @@
       "derniere_execution": "2026-10-17T08:43:17Z",
       "detail": {
         "acces": "protected",
-        "analyse": "compilé",
+        "analyse": "compiled",
         "categorie": null,
         "colonnes_documentees_n": 0,
         "constructions": [],
@@ -845,8 +845,8 @@
         "macros_n": 0,
         "materialisation": "view",
         "paquet": "canot_lab",
-        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
-        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "raison_portabilite": "SQL translated to DuckDB by sqlglot, not tested",
+        "raison_rejeu": "columns not read: DuckDB EXPLAIN not run",
         "relation": "CANOT_LAB.DBT_dbt_stg.stg_order_lines",
         "tests_n": 0
       },
@@ -882,7 +882,7 @@
       "derniere_execution": "2026-10-17T08:43:18Z",
       "detail": {
         "acces": "protected",
-        "analyse": "compilé",
+        "analyse": "compiled",
         "categorie": null,
         "colonnes_documentees_n": 1,
         "constructions": [],
@@ -896,8 +896,8 @@
         "macros_n": 0,
         "materialisation": "view",
         "paquet": "canot_lab",
-        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
-        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "raison_portabilite": "SQL translated to DuckDB by sqlglot, not tested",
+        "raison_rejeu": "columns not read: DuckDB EXPLAIN not run",
         "relation": "CANOT_LAB.DBT_dbt_stg.stg_orders",
         "tests_n": 2
       },
@@ -933,7 +933,7 @@
       "derniere_execution": "2026-10-17T08:43:18Z",
       "detail": {
         "acces": "protected",
-        "analyse": "compilé",
+        "analyse": "compiled",
         "categorie": null,
         "colonnes_documentees_n": 0,
         "constructions": [],
@@ -947,8 +947,8 @@
         "macros_n": 0,
         "materialisation": "view",
         "paquet": "canot_lab",
-        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
-        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "raison_portabilite": "SQL translated to DuckDB by sqlglot, not tested",
+        "raison_rejeu": "columns not read: DuckDB EXPLAIN not run",
         "relation": "CANOT_LAB.DBT_dbt_stg.stg_products",
         "tests_n": 0
       },
@@ -1006,7 +1006,7 @@
       "derniere_execution": null,
       "detail": {
         "macros_n": 140,
-        "role": "adaptateur"
+        "role": "adapter"
       },
       "drapeaux": [],
       "echecs_n": null,
@@ -1151,7 +1151,7 @@
       "dependances_externes": [],
       "derniere_execution": "2026-10-17T08:43:23Z",
       "detail": {
-        "analyse": "compilé",
+        "analyse": "compiled",
         "attache_a": "model.canot_lab.dbt_customer_ltv",
         "categorie": null,
         "colonne": "customer_id",
@@ -1164,8 +1164,8 @@
         "macros_adaptateur_n": 2,
         "macros_n": 5,
         "paquet": "canot_lab",
-        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
-        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "raison_portabilite": "SQL translated to DuckDB by sqlglot, not tested",
+        "raison_rejeu": "columns not read: DuckDB EXPLAIN not run",
         "severite": "ERROR",
         "type": "not_null"
       },
@@ -1197,7 +1197,7 @@
       "dependances_externes": [],
       "derniere_execution": "2026-10-17T08:43:21Z",
       "detail": {
-        "analyse": "compilé",
+        "analyse": "compiled",
         "attache_a": "model.canot_lab.dbt_fct_orders",
         "categorie": null,
         "colonne": "order_id",
@@ -1210,8 +1210,8 @@
         "macros_adaptateur_n": 2,
         "macros_n": 5,
         "paquet": "canot_lab",
-        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
-        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "raison_portabilite": "SQL translated to DuckDB by sqlglot, not tested",
+        "raison_rejeu": "columns not read: DuckDB EXPLAIN not run",
         "severite": "ERROR",
         "type": "not_null"
       },
@@ -1243,7 +1243,7 @@
       "dependances_externes": [],
       "derniere_execution": "2026-10-17T08:43:18Z",
       "detail": {
-        "analyse": "compilé",
+        "analyse": "compiled",
         "attache_a": "model.canot_lab.stg_customers",
         "categorie": null,
         "colonne": "customer_id",
@@ -1256,8 +1256,8 @@
         "macros_adaptateur_n": 2,
         "macros_n": 5,
         "paquet": "canot_lab",
-        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
-        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "raison_portabilite": "SQL translated to DuckDB by sqlglot, not tested",
+        "raison_rejeu": "columns not read: DuckDB EXPLAIN not run",
         "severite": "ERROR",
         "type": "not_null"
       },
@@ -1289,7 +1289,7 @@
       "dependances_externes": [],
       "derniere_execution": "2026-10-17T08:43:18Z",
       "detail": {
-        "analyse": "compilé",
+        "analyse": "compiled",
         "attache_a": "model.canot_lab.stg_orders",
         "categorie": null,
         "colonne": "order_id",
@@ -1302,8 +1302,8 @@
         "macros_adaptateur_n": 2,
         "macros_n": 5,
         "paquet": "canot_lab",
-        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
-        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "raison_portabilite": "SQL translated to DuckDB by sqlglot, not tested",
+        "raison_rejeu": "columns not read: DuckDB EXPLAIN not run",
         "severite": "ERROR",
         "type": "not_null"
       },
@@ -1335,7 +1335,7 @@
       "dependances_externes": [],
       "derniere_execution": "2026-10-17T08:43:23Z",
       "detail": {
-        "analyse": "compilé",
+        "analyse": "compiled",
         "attache_a": "model.canot_lab.dbt_customer_ltv",
         "categorie": null,
         "colonne": "customer_id",
@@ -1348,8 +1348,8 @@
         "macros_adaptateur_n": 2,
         "macros_n": 5,
         "paquet": "canot_lab",
-        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
-        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "raison_portabilite": "SQL translated to DuckDB by sqlglot, not tested",
+        "raison_rejeu": "columns not read: DuckDB EXPLAIN not run",
         "severite": "ERROR",
         "type": "unique"
       },
@@ -1381,7 +1381,7 @@
       "dependances_externes": [],
       "derniere_execution": "2026-10-17T08:43:21Z",
       "detail": {
-        "analyse": "compilé",
+        "analyse": "compiled",
         "attache_a": "model.canot_lab.dbt_fct_orders",
         "categorie": null,
         "colonne": "order_id",
@@ -1394,8 +1394,8 @@
         "macros_adaptateur_n": 2,
         "macros_n": 5,
         "paquet": "canot_lab",
-        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
-        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "raison_portabilite": "SQL translated to DuckDB by sqlglot, not tested",
+        "raison_rejeu": "columns not read: DuckDB EXPLAIN not run",
         "severite": "ERROR",
         "type": "unique"
       },
@@ -1427,7 +1427,7 @@
       "dependances_externes": [],
       "derniere_execution": "2026-10-17T08:43:18Z",
       "detail": {
-        "analyse": "compilé",
+        "analyse": "compiled",
         "attache_a": "model.canot_lab.stg_customers",
         "categorie": null,
         "colonne": "customer_id",
@@ -1440,8 +1440,8 @@
         "macros_adaptateur_n": 2,
         "macros_n": 5,
         "paquet": "canot_lab",
-        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
-        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "raison_portabilite": "SQL translated to DuckDB by sqlglot, not tested",
+        "raison_rejeu": "columns not read: DuckDB EXPLAIN not run",
         "severite": "ERROR",
         "type": "unique"
       },
@@ -1473,7 +1473,7 @@
       "dependances_externes": [],
       "derniere_execution": "2026-10-17T08:43:18Z",
       "detail": {
-        "analyse": "compilé",
+        "analyse": "compiled",
         "attache_a": "model.canot_lab.stg_orders",
         "categorie": null,
         "colonne": "order_id",
@@ -1486,8 +1486,8 @@
         "macros_adaptateur_n": 2,
         "macros_n": 5,
         "paquet": "canot_lab",
-        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
-        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "raison_portabilite": "SQL translated to DuckDB by sqlglot, not tested",
+        "raison_rejeu": "columns not read: DuckDB EXPLAIN not run",
         "severite": "ERROR",
         "type": "unique"
       },
@@ -1516,7 +1516,7 @@
       "sql_dynamique": false
     }
   ],
-  "perimetre": "projet dbt canot_lab : adaptateur snowflake, dbt 1.12.6, manifest du 17/10/2026",
+  "perimetre": "dbt project canot_lab: adapter snowflake, dbt 1.12.6, manifest of 2026-10-17",
   "plateforme": "dbt",
   "regles": {
     "debit_mo_s": [
@@ -1528,9 +1528,9 @@
     "vivante_jours": 30
   },
   "rejouabilite": {
-    "base": "0/0 modèles testés, 8 non testé(s), SQL des modèles et snapshots du manifest, sqlglot X, duckdb X",
+    "base": "0/0 models tested, 8 not tested, SQL of the manifest models and snapshots, sqlglot X, duckdb X",
     "bases": {
-      "familles": "SQL des modèles et snapshots du manifest, sqlglot X, duckdb X"
+      "familles": "SQL of the manifest models and snapshots, sqlglot X, duckdb X"
     },
     "categories": {
       "C0": {
@@ -1575,7 +1575,7 @@
       }
     },
     "fonctions": {},
-    "mention": "accepté ≠ résultat identique",
+    "mention": "accepted ≠ identical result",
     "non_testees": {
       "executions": null,
       "familles": 8
@@ -1585,7 +1585,7 @@
       "executions": null,
       "familles": 0
     },
-    "statut": "lu",
+    "statut": "read",
     "taux": {
       "executions": {
         "bas": null,
@@ -1594,8 +1594,8 @@
         "formule": null,
         "haut": null,
         "hypotheses": [],
-        "nature": "non_estimé",
-        "raison": "sans objet : des fichiers dbt ne portent pas d'historique par requête",
+        "nature": "not_estimated",
+        "raison": "not applicable: dbt files carry no per-query history",
         "unite": null,
         "valeur": null
       },
@@ -1606,8 +1606,8 @@
         "formule": null,
         "haut": null,
         "hypotheses": [],
-        "nature": "non_estimé",
-        "raison": "catalog.json non lu : EXPLAIN DuckDB non exécuté",
+        "nature": "not_estimated",
+        "raison": "catalog.json not read: DuckDB EXPLAIN not run",
         "unite": null,
         "valeur": null
       },
@@ -1618,8 +1618,8 @@
         "formule": null,
         "haut": null,
         "hypotheses": [],
-        "nature": "non_lu",
-        "raison": "crédits et octets non lus (fichiers dbt)",
+        "nature": "not_read",
+        "raison": "credits and bytes not read (dbt files)",
         "unite": null,
         "valeur": null
       }
@@ -1627,16 +1627,16 @@
   },
   "resume": {
     "DAF": [
-      "Consommation non lue : fichiers de projet : ni crédits ni octets facturés ; le scan de la plateforme cible les mesure."
+      "Consumption not read: project files: no credits and no billed bytes; the scan of the target platform measures them."
     ],
     "DSI": [
-      "8 modèles dbt, 8 tests dbt, 4 sources dbt ; 8 relations stockées ; 19 liens de dépendance. Matérialisations : 4 table, 4 view.",
-      "Portabilité : 17 traduisible(s), 0 à reconstruire (F13), 0 non déterminée(s), 4 portable(s) tel quel.",
-      "Rejouabilité : 8 modèles traduit(s), non testé(s) par EXPLAIN DuckDB (catalog.json non lu : EXPLAIN DuckDB non exécuté)."
+      "8 dbt models, 8 dbt tests, 4 dbt sources; 8 stored relations; 19 dependency links. Materializations: 4 table, 4 view.",
+      "Portability: 17 translatable, 0 to rebuild (F13), 0 not determined, 4 portable as is.",
+      "Replayability: 8 models translated, not tested by DuckDB EXPLAIN (catalog.json not read: DuckDB EXPLAIN not run)."
     ],
     "RSSI": [
-      "Aucune connexion à une plateforme : fichiers lus localement ; le code est réduit à des empreintes et des comptes.",
-      "0 dépendance externe déclarée (F01) ; écritures hors plateforme, droits et politiques non lus ici."
+      "No connection to a platform: files read locally; code is reduced to fingerprints and counts.",
+      "0 declared external dependencies (F01); writes outside the platform, privileges and policies not read here."
     ]
   },
   "schema": "canot.scan/2",
@@ -1669,8 +1669,8 @@
         "partage": null
       },
       "lignes": null,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 17/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-17",
       "nom": "dbt_customer_ltv",
       "octets_actifs": null,
       "octets_historique": null,
@@ -1712,8 +1712,8 @@
         "partage": null
       },
       "lignes": null,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 17/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-17",
       "nom": "dbt_daily_revenue",
       "octets_actifs": null,
       "octets_historique": null,
@@ -1755,8 +1755,8 @@
         "partage": null
       },
       "lignes": null,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 17/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-17",
       "nom": "dbt_fct_orders",
       "octets_actifs": null,
       "octets_historique": null,
@@ -1798,8 +1798,8 @@
         "partage": null
       },
       "lignes": null,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 17/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-17",
       "nom": "int_order_totals",
       "octets_actifs": null,
       "octets_historique": null,
@@ -1842,7 +1842,7 @@
       },
       "lignes": null,
       "mouvement": null,
-      "mouvement_preuve": "écritures non lues",
+      "mouvement_preuve": "writes not read",
       "nom": "customers",
       "octets_actifs": null,
       "octets_historique": null,
@@ -1885,7 +1885,7 @@
       },
       "lignes": null,
       "mouvement": null,
-      "mouvement_preuve": "écritures non lues",
+      "mouvement_preuve": "writes not read",
       "nom": "order_lines",
       "octets_actifs": null,
       "octets_historique": null,
@@ -1928,7 +1928,7 @@
       },
       "lignes": null,
       "mouvement": null,
-      "mouvement_preuve": "écritures non lues",
+      "mouvement_preuve": "writes not read",
       "nom": "orders",
       "octets_actifs": null,
       "octets_historique": null,
@@ -1971,7 +1971,7 @@
       },
       "lignes": null,
       "mouvement": null,
-      "mouvement_preuve": "écritures non lues",
+      "mouvement_preuve": "writes not read",
       "nom": "products",
       "octets_actifs": null,
       "octets_historique": null,

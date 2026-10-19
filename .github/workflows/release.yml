@@ -1,6 +1,6 @@
-name: publication PyPI
-# Publication par « Trusted Publishing » : aucun jeton PyPI n'est stocké dans GitHub.
-# À configurer une fois sur pypi.org : projet canot, Publishing, Add a trusted publisher (GitHub : chiptuned/canot, workflow release.yml).
+name: PyPI release
+# Published with Trusted Publishing: no PyPI token is stored in GitHub.
+# One-time setup on pypi.org: project canot, Publishing, Add a trusted publisher (GitHub: chiptuned/canot, workflow release.yml).
 on:
   push:
     tags: ["v*"]

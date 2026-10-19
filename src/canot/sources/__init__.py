@@ -21,4 +21,4 @@ def open_source(url: str) -> Source:
         from .duckdb_src import DuckDBSource
 
         return DuckDBSource(url)
-    raise ValueError(f"Source inconnue : {url!r} (snowflake://, bigquery://, databricks://, duckdb://)")
+    raise ValueError(f"Unknown source: {url!r} (snowflake://, bigquery://, databricks://, duckdb://)")

@@ -1,11 +1,11 @@
-"""Filet de non-régression : les sorties du scan sont comparées à l'octet aux fichiers figés de tests/golden/.
+"""Regression safety net: scan outputs are compared byte for byte with the frozen files in tests/golden/.
 
-Seules les valeurs non déterministes sont neutralisées, ici et pas dans le code : sel des pseudonymes, versions
-(canot, sqlglot, duckdb), chemin du dossier temporaire. Une différence volontaire se régénère avec :
+Only non-deterministic values are neutralized, here and not in the code: pseudonym salt, versions
+(canot, sqlglot, duckdb), temporary directory path. An intended difference is regenerated with:
 
-    CANOT_REGENERER_DORES=1 .venv/bin/python -m pytest -q tests/test_golden.py
+    CANOT_REGEN_GOLDEN=1 .venv/bin/python -m pytest -q tests/test_golden.py
 
-puis relire le diff de tests/golden/ avant de le committer.
+(CANOT_REGENERER_DORES=1 still works), then review the diff of tests/golden/ before committing it.
 """
 import difflib
 import json
@@ -23,8 +23,8 @@ from canot.scanner import run
 
 FIX = Path(__file__).parent / "fixtures"
 GOLD = Path(__file__).parent / "golden"
-REGEN = os.environ.get("CANOT_REGENERER_DORES") == "1"
-FILES = ("scan.json", "scan.html", "tables.csv", "drapeaux.csv", "familles.csv", "lectures.csv", "scan-partage.json")
+REGEN = "1" in (os.environ.get("CANOT_REGEN_GOLDEN"), os.environ.get("CANOT_REGENERER_DORES"))
+FILES = ("scan.json", "scan.html", "tables.csv", "flags.csv", "families.csv", "reads.csv", "scan-share.json")
 SALT = b"canot-dore-sel-0"
 
 RAW = {
@@ -87,14 +87,14 @@ def _compare(case: str, produced: dict[str, str]):
     for name, text in produced.items():
         ref = d / name
         if not ref.exists():
-            diffs.append(f"{name} : référence absente")
+            diffs.append(f"{name}: reference missing")
             continue
         want = ref.read_bytes().decode("utf-8")
         if want != text:
-            diff = "".join(list(difflib.unified_diff(want.splitlines(True), text.splitlines(True), "référence", "produit", n=1))[:40])
-            diffs.append(f"{name} diffère :\n{diff}")
-    assert not diffs, (f"Sortie différente de tests/golden/{case}/. Si le changement est voulu : "
-                       "CANOT_REGENERER_DORES=1 .venv/bin/python -m pytest -q tests/test_golden.py, puis relire le diff.\n\n"
+            diff = "".join(list(difflib.unified_diff(want.splitlines(True), text.splitlines(True), "reference", "produced", n=1))[:40])
+            diffs.append(f"{name} differs:\n{diff}")
+    assert not diffs, (f"Output differs from tests/golden/{case}/. If the change is intended: "
+                       "CANOT_REGEN_GOLDEN=1 .venv/bin/python -m pytest -q tests/test_golden.py, then review the diff.\n\n"
                        + "\n".join(diffs))
 
 
@@ -111,7 +111,7 @@ def test_scan_full_identique(figer, monkeypatch, tmp_path, fixture):
 
 @pytest.mark.parametrize("fixture", ["snowflake", "bigquery", "degrade"])
 def test_analyse_seule_identique(tmp_path, fixture):
-    """Fixture intacte (ses familles comprises) : analyze -> render -> CSV -> partage, écrits comme scan_full."""
+    """Untouched fixture (its families included): analyze -> render -> CSV -> share file, written like scan_full."""
     from canot.scanner.analyze import analyze
     from canot.scanner.render import render_html, write_csv
 
@@ -120,7 +120,7 @@ def test_analyse_seule_identique(tmp_path, fixture):
     (tmp_path / "scan.json").write_text(json.dumps(result, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
     (tmp_path / "scan.html").write_text(render_html(result), encoding="utf-8")
     write_csv(result, tmp_path)
-    (tmp_path / "scan-partage.json").write_text(json.dumps(run.partage(result), indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+    (tmp_path / run.SHARE_FILE).write_text(json.dumps(run.partage(result), indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
     _compare(f"analyse_{fixture}", _read(tmp_path))
 
 
@@ -152,7 +152,7 @@ def test_cli_scan_leger_identique(tmp_path, capsys):
 
 
 def test_cli_scan_dbt_identique(figer, monkeypatch, tmp_path, capsys):
-    """Projet dbt du banc (copie des artefacts de lab/dbt) : canot scan dbt://… de bout en bout, sorties figées."""
+    """Test-bench dbt project (copy of the lab/dbt artifacts): canot scan dbt://… end to end, frozen outputs."""
     from canot.scanner import dbt as dbt_scan
 
     monkeypatch.setattr(dbt_scan, "now_iso", lambda: "2026-10-19T10:00:00Z")

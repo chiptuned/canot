@@ -1,0 +1,23 @@
+id,view,status,reason,limits,rows,window_from,window_to,max_latency_h
+B01,API datasets.list,read,,,10,,,
+B02,API datasets.get,read,,,10,,,
+B03,`region-eu`.INFORMATION_SCHEMA.TABLES,read,,,10,,,
+B04,`region-europe-west1`.INFORMATION_SCHEMA.TABLES,read,,,10,,,
+B05,`region-us`.INFORMATION_SCHEMA.TABLES,read,,,10,,,
+B06,`region-eu`.INFORMATION_SCHEMA.TABLE_STORAGE,not_read,absent or not exposed,none: tables.get read instead,,,,
+B07,API tables.get,read,,,10,,,
+B08,`region-eu`.INFORMATION_SCHEMA.TABLE_OPTIONS,read,,,10,,,
+B09,`region-eu`.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS,read,,,10,,,
+B10,`region-eu`.INFORMATION_SCHEMA.JOBS,read,,,10,2026-04-20T00:00:00Z,2026-10-17T09:00:00Z,0.1
+B11,`region-europe-west1`.INFORMATION_SCHEMA.JOBS,read,,,10,2026-04-20T00:00:00Z,2026-10-17T09:00:00Z,0.1
+B12,`region-us`.INFORMATION_SCHEMA.JOBS,read,,,10,2026-04-20T00:00:00Z,2026-10-17T09:00:00Z,0.1
+B13,API transferConfigs.list,read,,,10,,,
+B14,API rowAccessPolicies.list,read,,,10,,,
+B15,API connections.list,not_read,missing privilege,external connections (F01),,,,
+B16,`region-eu`.INFORMATION_SCHEMA.SCHEMATA_LINKS,read,,,10,,,
+B17,`region-eu`.INFORMATION_SCHEMA.SHARED_DATASET_USAGE,read,,,10,,,
+B18,`region-eu`.INFORMATION_SCHEMA.RESERVATIONS,not_read,privilege level not requested,reserved capacity,,,,
+B19,`region-eu`.INFORMATION_SCHEMA.ROUTINES,read,,,10,,,
+B20,`region-eu`.INFORMATION_SCHEMA.VIEWS,read,,,10,,,
+B21,API models.list,read,,,10,,,
+B22,`region-eu`.INFORMATION_SCHEMA.JOBS_BY_ORGANIZATION,not_read,privilege level not requested,queries run from other projects,,,,

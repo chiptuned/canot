@@ -1,4 +1,0 @@
-empreinte,hash_plateforme,categorie,n_exec,temps_ms,credits,octets,app,outil,entrepot,tables,fonctions,ecriture_externe,sql_normalise
-1111111111111111111111111111111111111111111111111111111111111111,,C0,900,108000.0,,2000000000000,,looker,,,,non,SELECT * FROM `lab-a.raw.orders` WHERE d >= ?
-3333333333333333333333333333333333333333333333333333333333333333,,C7,180,21600.0,,10000000000,scheduled_query,,,,,oui,"EXPORT DATA OPTIONS (uri = ?, format = ?) AS SELECT * FROM `lab-a.mart.kpi`"
-2222222222222222222222222222222222222222222222222222222222222222,,C4,40,4800.0,,500000000000,,notebook,,,,non,SELECT * FROM `lab-a.raw.events_*` WHERE _TABLE_SUFFIX = ?

@@ -9,7 +9,13 @@
   Cache-Control: public, max-age=0, must-revalidate
 /
   Cache-Control: public, max-age=0, must-revalidate
+/en/
+  Cache-Control: public, max-age=0, must-revalidate
+/en/*.html
+  Cache-Control: public, max-age=0, must-revalidate
 /style.css
   Cache-Control: public, max-age=0, must-revalidate
 /app.js
+  Cache-Control: public, max-age=0, must-revalidate
+/sitemap.xml
   Cache-Control: public, max-age=0, must-revalidate

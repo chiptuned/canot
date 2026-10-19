@@ -1,4 +1,4 @@
-"""Garde HTTP lecture seule : GET/HEAD admis, POST seulement sur la liste blanche du connecteur, rien n'est envoyé en cas de refus."""
+"""Read-only HTTP guard: GET/HEAD allowed, POST only on the connector allowlist, nothing is sent on refusal."""
 import pytest
 
 from canot import connectors
@@ -49,9 +49,9 @@ def test_lectures_admises():
 
 def test_surcharge_de_methode_et_chemins_get_limites():
     g, t = garde(get_chemins=(r"/public/api/projects/", r"/public/api/projects/[^/]+/recipes/"))
-    with pytest.raises(NotReadOnly, match="surcharge"):
+    with pytest.raises(NotReadOnly, match=r"(?i)override|surcharge"):  # message owned by scanner/http_guard.py
         g.request("GET", f"{BASE}/public/api/projects/", headers={"X-HTTP-Method-Override": "DELETE"})
-    with pytest.raises(NotReadOnly, match="hors de la liste"):
+    with pytest.raises(NotReadOnly, match=r"(?i)allow ?list|not (in|on) the list|hors de la liste"):
         g.request("GET", f"{BASE}/public/api/projects/A/datasets/D/data")
     with pytest.raises(NotReadOnly, match=r"\.\."):
         g.request("GET", f"{BASE}/public/api/projects/A/recipes/%2e%2e/export")
@@ -72,4 +72,4 @@ def test_liste_blanche_declaree_par_le_connecteur(monkeypatch):
     with pytest.raises(NotReadOnly):
         g.request("POST", "https://x.test/v1/scan/delete")
     assert t.appels == [("POST", "https://x.test/v1/scan/getInfo")]
-    assert all(c.http_post_lecture == () for c in connectors.CONNECTORS.values())  # aucun connecteur actuel ne déclare de POST
+    assert all(c.http_post_lecture == () for c in connectors.CONNECTORS.values())  # no current connector declares a POST

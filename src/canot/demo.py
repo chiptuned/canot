@@ -118,8 +118,8 @@ select * from tpch.lineitem order by l_orderkey, l_linenumber limit 50;
 
 
 def make_tpch(path: str, sf: float = 0.1) -> None:
-    """TPC-H (le jeu de référence des bancs d'essai de bases de données), généré localement par l'extension tpch de DuckDB.
-    Canot ajoute à LINEITEM une colonne horodatée à la nanoseconde, pour montrer ce qu'Iceberg v2 ne garde pas."""
+    """TPC-H (the reference dataset of database benchmarks), generated locally by the DuckDB tpch extension.
+    Canot adds a nanosecond timestamp column to LINEITEM, to show what Iceberg v2 does not keep."""
     con = duckdb.connect(path)
     con.execute("install tpch")
     con.execute("load tpch")

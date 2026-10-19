@@ -1,5 +1,5 @@
-"""Collecte Snowflake du scan, contre un faux compte : vérifie le SQL envoyé (lecture seule, colonnes interdites, niveaux) et le snapshot
-(contrat, honnêteté des chiffres, pseudonymisation, canari). Aucun réseau."""
+"""Snowflake scan collection against a fake account: checks the SQL sent (read-only, forbidden columns, levels) and the snapshot
+(contract, honest figures, pseudonymization, canary). No network."""
 import json
 import re
 from datetime import datetime, timezone
@@ -14,7 +14,10 @@ NOW = datetime(2026, 10, 17, 10, 0, tzinfo=timezone.utc)
 D = datetime(2026, 10, 10, 8, 0, tzinfo=timezone.utc)
 SALT = b"0123456789abcdef"
 FORBIDDEN_SQL = ("BIND_VALUES", "ERROR_MESSAGE", "EMAIL", "LOGIN_NAME", "CLIENT_IP", "CLIENT_ENVIRONMENT", "LAST_DDL_BY")
-FORBIDDEN_WORDS = ("économie", "gaspillage", "inutile", "inutilisé", "critique", "urgent", "facile", "garanti", "conforme", "certifié",
+FORBIDDEN_WORDS = ("savings", "waste", "wasted", "useless", "unused", "critical", "urgent", "easy", "guaranteed", "compliant", "certified",
+                   "row by row",
+                   # French words kept so the check stays vigilant on both languages
+                   "économie", "gaspillage", "inutile", "inutilisé", "critique", "facile", "garanti", "conforme", "certifié",
                    "ligne par ligne")
 
 
@@ -188,7 +191,7 @@ DATA = {
 
 
 def _rt_mirror() -> dict:
-    """Vues temps réel du banc : les mêmes objets vivants qu'ACCOUNT_USAGE (cas « présent des deux côtés »)."""
+    """Real-time views of the bench: the same live objects as ACCOUNT_USAGE (the "present on both sides" case)."""
     live = [r for r in DATA["TABLES"] if not r["DELETED"]]
     names = {r["TABLE_ID"]: (r["TABLE_SCHEMA"], r["TABLE_NAME"]) for r in live}
     return {
@@ -207,13 +210,13 @@ def _rt_mirror() -> dict:
 
 DATA.update(_rt_mirror())
 RT_KEYS = ["IS.TABLES", "IS.COLUMNS", "IS.VIEWS", "IS.FUNCTIONS", "IS.PROCEDURES", "IS.STAGES", "IS.PIPES", "SHOW TASKS"]
-NEW = datetime(2026, 10, 17, 9, 30, tzinfo=timezone.utc)  # 30 min avant le scan : invisible dans ACCOUNT_USAGE
+NEW = datetime(2026, 10, 17, 9, 30, tzinfo=timezone.utc)  # 30 min before the scan: invisible in ACCOUNT_USAGE
 
 DENIED = "SQL access control error: Insufficient privileges to operate on schema 'ACCOUNT_USAGE'"
 
 
 class FakeSnowflake:
-    """Répond selon la vue lue (premier FROM) ou la commande SHOW ; enregistre chaque SQL reçu."""
+    """Answers according to the view read (first FROM) or the SHOW command; records every SQL statement received."""
 
     def __init__(self, fail=None, ah_fail_at=None, data=None):
         self.sql, self.fail, self.ah_fail_at, self.ah_calls = [], fail or {}, ah_fail_at, 0
@@ -273,7 +276,7 @@ KINDS = {"vue", "vue_materialisee", "fonction", "procedure", "tache", "flux", "p
          "modele_ml", "politique_masquage", "politique_lignes", "requete_planifiee", "connexion", "integration", "reservation", "etiquette"}
 
 
-# --- contrat et lecture seule -------------------------------------------------------------------------------
+# --- contract and read-only ---------------------------------------------------------------------------------
 
 def test_snapshot_follows_contract():
     _, snap, _ = scan()
@@ -281,13 +284,13 @@ def test_snapshot_follows_contract():
     for k in ("schema", "plateforme", "as_of", "perimetre", "edition", "niveau_droits", "mode_sql", "versions", "lectures", "tables",
               "objets", "familles", "metering", "rejouabilite"):
         assert k in snap
-    assert snap["schema"] == "canot.scan/1" and snap["plateforme"] == "snowflake" and snap["mode_sql"] == "lecture seule"
+    assert snap["schema"] == "canot.scan/1" and snap["plateforme"] == "snowflake" and snap["mode_sql"] == "read-only"
     assert snap["as_of"] == "2026-10-17T10:00:00Z" and snap["niveau_droits"] == 3 and snap["familles"] == []
     ids = [x["id"] for x in snap["lectures"]]
     assert len(ids) == len(set(ids)) and all(re.fullmatch(r"S\d{2}", i) for i in ids)
     for x in snap["lectures"]:
         assert set(x) == {"id", "vue", "statut", "raison", "lignes", "fenetre", "latence_max_h"}
-        assert x["statut"] in ("lu", "non_lu") and (x["statut"] == "lu" or x["raison"])
+        assert x["statut"] in ("read", "not_read") and (x["statut"] == "read" or x["raison"])
     for t in snap["tables"]:
         assert TABLE_KEYS <= set(t) and t["type"] in ("TABLE", "EXTERNE", "ICEBERG", "TRANSITOIRE", "CLONE", "SNAPSHOT", "TEMPORAIRE")
     for o in snap["objets"]:
@@ -335,29 +338,29 @@ def test_level_1_sends_no_level_2_or_3_read():
     for vue in (AU + "QUERY_HISTORY", AU + "ACCESS_HISTORY", AU + "POLICY_REFERENCES", AU + "TAG_REFERENCES", "SHOW WAREHOUSES",
                 "SHOW DYNAMIC TABLES", "SHOW ICEBERG TABLES", AU + "GRANTS_TO_USERS", AU + "USERS", AU + "SESSIONS", AU + "SHARES"):
         x = lecture(snap, vue)
-        assert x["statut"] == "non_lu" and "non demandé" in x["raison"]
+        assert x["statut"] == "not_read" and "not requested" in x["raison"]
     assert raw == [] and snap["requetes"] is None and snap["droits"] is None
     assert all(t["n_lectures"] is None for t in snap["tables"])
-    assert snap["edition"].startswith("non déterminée")
-    assert lecture(snap, AU + "TABLE_QUERY_PRUNING_HISTORY")["statut"] == "lu"
+    assert snap["edition"].startswith("not determined")
+    assert lecture(snap, AU + "TABLE_QUERY_PRUNING_HISTORY")["statut"] == "read"
 
 
 def test_level_2_skips_level_3():
     fake, snap, raw = scan(level=2)
     assert not any("GRANTS_TO_" in s or AU + "SESSIONS" in s for s in fake.sql)
-    assert lecture(snap, AU + "USERS")["raison"] == "non demandé (niveau 2)"
+    assert lecture(snap, AU + "USERS")["raison"] == "not requested (level 2)"
     assert snap["droits"] is None and raw and all(f["outil"] is None and f["utilisateur_type"] is None for f in raw)
 
 
-# --- échecs : non lu, jamais 0, le reste continue ---------------------------------------------------------
+# --- failures: not read, never 0, the rest goes on -------------------------------------------------------
 
-def test_denied_read_becomes_non_lu_and_values_stay_none():
+def test_denied_read_becomes_not_read_and_values_stay_none():
     _, snap, _ = scan(fail={"TABLE_STORAGE_METRICS": DENIED})
     x = lecture(snap, AU + "TABLE_STORAGE_METRICS")
-    assert x["statut"] == "non_lu" and x["raison"] == "droit absent" and x["lignes"] is None
+    assert x["statut"] == "not_read" and x["raison"] == "missing privilege" and x["lignes"] is None
     assert all(t["octets_actifs"] is None and t["octets_historique"] is None for t in snap["tables"])
     assert by_id(snap["tables"], "CANOT_LAB.RAW.CUSTOMERS")["lignes"] == 100
-    assert sum(1 for x in snap["lectures"] if x["statut"] == "non_lu") == 1
+    assert sum(1 for x in snap["lectures"] if x["statut"] == "not_read") == 1
 
 
 def test_metering_refused_gives_none_not_empty():
@@ -378,7 +381,7 @@ def test_everything_denied_still_returns_a_snapshot():
             *RT_KEYS]
     _, snap, raw = scan(fail={k: "Object does not exist or not authorized." for k in keys})
     json.dumps(snap)
-    assert all(x["statut"] == "non_lu" and x["raison"] for x in snap["lectures"])
+    assert all(x["statut"] == "not_read" and x["raison"] for x in snap["lectures"])
     assert snap["tables"] == [] and snap["objets"] == [] and raw == []
     assert snap["requetes"] is None and snap["metering"]["par_service"] is None
     assert snap["droits"] == {"roles": None, "privileges_perimetre": None, "utilisateurs": None, "outils": None}
@@ -386,11 +389,11 @@ def test_everything_denied_still_returns_a_snapshot():
 
 def test_streams_view_refused_falls_back_to_show_streams():
     fake, snap, _ = scan(fail={"STREAMS": "Object 'SNOWFLAKE.ACCOUNT_USAGE.STREAMS' does not exist or not authorized."})
-    assert lecture(snap, AU + "STREAMS")["raison"] == "droit absent"
-    assert lecture(snap, "SHOW STREAMS")["statut"] == "lu"
+    assert lecture(snap, AU + "STREAMS")["raison"] == "missing privilege"
+    assert lecture(snap, "SHOW STREAMS")["statut"] == "read"
     o = by_id(snap["objets"], "CANOT_LAB.OPS.ORDERS_STREAM")
-    assert o["reference"] == ["CANOT_LAB.RAW.ORDERS"] and o["detail"]["inventaire"] == "show" and "recent" not in o["detail"]  # repli
-    fake, snap, _ = scan()  # vue lue : SHOW STREAMS sert de recoupement temps réel, sans doublon
+    assert o["reference"] == ["CANOT_LAB.RAW.ORDERS"] and o["detail"]["inventaire"] == "show" and "recent" not in o["detail"]  # fallback
+    fake, snap, _ = scan()  # view read: SHOW STREAMS serves as the real-time cross-check, no duplicate
     assert sum(s.startswith("SHOW STREAMS") for s in fake.sql) == 1
     assert [x["id"] for x in snap["objets"] if x["kind"] == "flux"] == ["CANOT_LAB.OPS.ORDERS_STREAM"]
     assert "inventaire" not in by_id(snap["objets"], "CANOT_LAB.OPS.ORDERS_STREAM")["detail"]
@@ -400,14 +403,14 @@ def test_code_views_marked_as_filtered_by_rights():
     _, snap, _ = scan()
     for v in ("VIEWS", "FUNCTIONS", "PROCEDURES"):
         x = lecture(snap, AU + v)
-        assert x["statut"] == "lu" and "filtrées par les droits" in x["raison"]
+        assert x["statut"] == "read" and "filtered by the role's privileges" in x["raison"]
 
 
-# --- ACCESS_HISTORY : édition, fenêtres d'une semaine, « jamais lu » honnête ----------------------------------
+# --- ACCESS_HISTORY: edition, one-week windows, honest "never read" ----------------------------------------
 
 def test_access_history_read_gives_measured_reads_and_never_read():
     fake, snap, _ = scan()
-    assert snap["edition"] == "Enterprise ou supérieure"
+    assert snap["edition"] == "Enterprise or higher"
     ah = [s for s in fake.sql if "ACCESS_HISTORY" in s]
     assert len(ah) == 2 and all("STARTSWITH" in s and "QUERY_TAG = 'canot'" in s for s in ah)
     cust, arch, orders = (by_id(snap["tables"], f"CANOT_LAB.RAW.{n}") for n in ("CUSTOMERS", "ARCHIVE_1", "ORDERS"))
@@ -427,7 +430,7 @@ def test_access_history_uses_one_week_windows_over_365_days():
 
 def test_access_history_refused_edition_undetermined_and_pruning_fallback():
     _, snap, _ = scan(fail={"ACCESS_HISTORY": DENIED})
-    assert snap["edition"] == "non déterminée (Standard ou droit absent)"
+    assert snap["edition"] == "not determined (Standard or missing privilege)"
     for t in snap["tables"]:
         assert t["n_lectures"] is None and t["n_ecritures"] is None and t["detail"]["jamais_lu"] is None
     assert by_id(snap["tables"], "CANOT_LAB.RAW.ARCHIVE_1")["detail"]["jamais_lu_pruning"] is True
@@ -437,16 +440,16 @@ def test_access_history_refused_edition_undetermined_and_pruning_fallback():
 def test_access_history_partial_read_reports_real_window():
     _, snap, _ = scan(ah_fail_at=2)
     x = lecture(snap, AU + "ACCESS_HISTORY")
-    assert x["statut"] == "lu" and x["raison"].startswith("partielle : 1/2 semaines") and "délai dépassé" in x["raison"]
+    assert x["statut"] == "read" and x["raison"].startswith("partial: 1/2 weeks") and "timed out" in x["raison"]
     assert x["fenetre"]["du"] == "2026-10-10T10:00:00Z"
 
 
 def test_empty_access_history_contradicted_by_pruning_is_not_trusted():
     _, snap, _ = scan(data={"ACCESS_HISTORY": []})
-    assert snap["edition"].startswith("non déterminée (ACCESS_HISTORY vide")
+    assert snap["edition"].startswith("not determined (ACCESS_HISTORY empty")
     assert all(t["n_lectures"] is None for t in snap["tables"])
     _, snap, _ = scan(data={"ACCESS_HISTORY": [], "TABLE_QUERY_PRUNING_HISTORY": []})
-    assert snap["edition"] == "non déterminée (ACCESS_HISTORY lisible, sans ligne)"
+    assert snap["edition"] == "not determined (ACCESS_HISTORY readable, no rows)"
     assert by_id(snap["tables"], "CANOT_LAB.RAW.CUSTOMERS")["n_lectures"] == 0
 
 
@@ -456,7 +459,7 @@ def test_pruning_excludes_canot_own_reads():
     assert "NUM_QUERIES" in sql and "INTERVAL_START_TIME" in sql and "QUERY_TAG = 'canot'" in sql
 
 
-# --- tables : volumes, historique, clones, suppressions, propriétaires ---------------------------------------
+# --- tables: volumes, history, clones, drops, owners --------------------------------------------------------
 
 def test_tables_storage_clone_dropped_recreated():
     _, snap, _ = scan()
@@ -475,7 +478,7 @@ def test_tables_storage_clone_dropped_recreated():
     assert "recreee" in t["CANOT_LAB.RAW.EVENTS"]["flags"] and "CANOT_LAB.RAW.EVENTS#80" in t
     assert t["CANOT_LAB.EXT.US_STATES"]["type"] == "EXTERNE" and t["CANOT_LAB.EXT.US_STATES"]["lignes"] is None
     assert t["CANOT_LAB.SANDBOX.OLD_EXPORT_2023"]["proprietaire"] == "LAB_ORPHAN"
-    assert t["CANOT_LAB.EXT.US_STATES"]["octets_actifs"] is None  # absente des métriques : non lu, pas 0
+    assert t["CANOT_LAB.EXT.US_STATES"]["octets_actifs"] is None  # missing from the metrics: not read, not 0
 
 
 def test_columns_types_policies_tags():
@@ -494,12 +497,12 @@ def test_owner_roles_and_holders_for_f04():
     roles = {r["nom"]: r for r in snap["droits"]["roles"]}
     assert roles["LAB_ORPHAN"]["titulaire"] is False and roles["LAB_ORPHAN"]["proprietaire_d_objets"]
     assert roles["LAB_ENGINEER"]["titulaire"] is True and roles["LAB_ENGINEER"]["parents"] == ["SYSADMIN"]
-    assert snap["droits"]["utilisateurs"] == {"n": 3, "par_type": {"PERSON": 1, "SERVICE": 1, "non renseigné": 1}}
+    assert snap["droits"]["utilisateurs"] == {"n": 3, "par_type": {"PERSON": 1, "SERVICE": 1, "unspecified": 1}}
     _, snap, _ = scan(fail={"GRANTS_TO_ROLES_TREE": DENIED})
     assert all(r["titulaire"] is None for r in snap["droits"]["roles"])
 
 
-# --- objets ------------------------------------------------------------------------------------------------
+# --- objects -----------------------------------------------------------------------------------------------
 
 def test_views_functions_procedures():
     _, snap, _ = scan()
@@ -523,7 +526,7 @@ def test_tasks_pipes_streams_dynamic_tables():
     daily, refresh, sless = o["CANOT_LAB.OPS.T_DAILY"], o["CANOT_LAB.OPS.T_REFRESH"], o["CANOT_LAB.OPS.T_SERVERLESS"]
     assert (daily["executions_n"], daily["echecs_n"], daily["reference"]) == (10, 2, ["CANOT_LAB.RAW.ORDERS"])
     assert (refresh["executions_n"], refresh["echecs_n"]) == (0, 0)
-    assert refresh["planification"] == "après CANOT_LAB.OPS.T_DAILY" and refresh["reference"] == ["CANOT_LAB.OPS.EVENTS_LOG"]
+    assert refresh["planification"] == "after CANOT_LAB.OPS.T_DAILY" and refresh["reference"] == ["CANOT_LAB.OPS.EVENTS_LOG"]
     assert sless["detail"]["serverless"] and sless["detail"]["credits_serverless"] == 0.5
     assert sless["detail"]["appelle"] == "CANOT_LAB.MART.SP_DYNAMIC_JS" and sless["detail"]["condition"] is True
     pipe = o["CANOT_LAB.OPS.P_LOAD"]
@@ -558,7 +561,7 @@ def test_metering_and_warehouses():
     assert m["par_famille"] == [{"hash_plateforme": "h1", "credits": 1.2, "n_exec": 40}]
 
 
-# --- familles brutes : texte brut seulement dans le second retour, identités pseudonymisées ---------------------
+# --- raw families: raw text only in the second return value, identities pseudonymized -------------------------
 
 def test_raw_families_and_server_side_aggregation():
     fake, snap, raw = scan()
@@ -598,14 +601,14 @@ def test_no_forbidden_words_in_snapshot():
             assert w not in out, w
 
 
-# --- périmètre ---------------------------------------------------------------------------------------------
+# --- scope ------------------------------------------------------------------------------------------------
 
 def test_scope_filters_and_escaping():
     fake, snap, _ = scan(base="canot_lab", schemas=["raw", "mart"])
     tables_sql = next(s for s in fake.sql if "FROM SNOWFLAKE.ACCOUNT_USAGE.TABLES " in s)
     assert "TABLE_CATALOG = 'CANOT_LAB'" in tables_sql and "TABLE_SCHEMA IN ('RAW', 'MART')" in tables_sql
     assert 'SHOW DYNAMIC TABLES IN DATABASE "CANOT_LAB"' in fake.sql
-    assert "schémas RAW, MART" in snap["perimetre"]
+    assert "schemas RAW, MART" in snap["perimetre"]
     fake, _, _ = scan(base="x' OR 1=1 --")
     for s in fake.sql:
         check_readonly(s, "snowflake")
@@ -615,10 +618,10 @@ def test_scope_filters_and_escaping():
 def test_whole_account_scope():
     fake, snap, _ = scan(base="*")
     assert not any("TABLE_CATALOG =" in s for s in fake.sql)
-    assert "SHOW DYNAMIC TABLES IN ACCOUNT" in fake.sql and snap["perimetre"].startswith("tout le compte")
+    assert "SHOW DYNAMIC TABLES IN ACCOUNT" in fake.sql and snap["perimetre"].startswith("whole account")
 
 
-# --- analyses locales ------------------------------------------------------------------------------------
+# --- local analysis --------------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("lang, body, expected", [
     ("SQL", "begin execute immediate :q; end;", True),
@@ -655,7 +658,7 @@ def test_location_reduced_to_bucket():
     assert sf._code_refs("SQL", f"select '{CANARI}', $1 from @stg/p", "DB", "S") == (["DB.S.STG"], [])
 
 
-# --- source : run_readonly et script d'accès --------------------------------------------------------------
+# --- source: run_readonly and access script ---------------------------------------------------------------
 
 class _Cursor:
     def __init__(self, log): self.log, self.description = log, None
@@ -690,13 +693,13 @@ def test_setup_sql_uses_database_roles_never_imported_privileges():
     assert not any("IMPORTED PRIVILEGES" in g or "MANAGE GRANTS" in g or "IMPORT SHARE" in g for g in grants)
     for role in ("OBJECT_VIEWER", "USAGE_VIEWER", "GOVERNANCE_VIEWER", "SECURITY_VIEWER"):
         assert f"GRANT DATABASE ROLE SNOWFLAKE.{role} TO ROLE CANOT_READER;" in SETUP_SQL
-    assert "TYPE = SERVICE" in SETUP_SQL and "<clé publique, sans les lignes BEGIN/END>" in SETUP_SQL
+    assert "TYPE = SERVICE" in SETUP_SQL and "<public key, without the BEGIN/END lines>" in SETUP_SQL
 
 
-# --- recoupement en temps réel (INFORMATION_SCHEMA, SHOW) : objets plus récents que la latence d'ACCOUNT_USAGE ------------------
+# --- real-time cross-check (INFORMATION_SCHEMA, SHOW): objects more recent than the ACCOUNT_USAGE latency ----------------------
 
 def _recent_data(**extra):
-    """Banc + objets créés 30 min avant le scan : visibles en temps réel, absents d'ACCOUNT_USAGE."""
+    """Bench + objects created 30 min before the scan: visible in real time, missing from ACCOUNT_USAGE."""
     new_t = {"TABLE_CATALOG": "CANOT_LAB", "TABLE_SCHEMA": "LAB", "TABLE_NAME": "NEW_T", "TABLE_OWNER": "LAB_ENGINEER", "TABLE_TYPE": "BASE TABLE",
              "IS_TRANSIENT": "NO", "CLUSTERING_KEY": "LINEAR(D)", "AUTO_CLUSTERING_ON": "YES", "ROW_COUNT": 1500, "BYTES": 4096,
              "RETENTION_TIME": 7, "CREATED": NEW, "LAST_ALTERED": NEW, "LAST_DDL": NEW, "IS_ICEBERG": "NO", "IS_DYNAMIC": "NO"}
@@ -708,7 +711,7 @@ def _recent_data(**extra):
              "NUMERIC_PRECISION": None, "NUMERIC_SCALE": None, "ORDINAL_POSITION": 2}]
     view = {"TABLE_CATALOG": "CANOT_LAB", "TABLE_SCHEMA": "LAB", "TABLE_NAME": "V_NEW", "TABLE_OWNER": "LAB_ENGINEER", "IS_SECURE": "NO",
             "LAST_ALTERED": NEW, "VIEW_DEFINITION": f"create view V_NEW as select * from LAB.NEW_T where x <> '{CANARI}'"}
-    mv_view = {**view, "TABLE_NAME": "NEW_MV"}  # une vue matérialisée peut aussi figurer dans VIEWS : pas de doublon
+    mv_view = {**view, "TABLE_NAME": "NEW_MV"}  # a materialized view may also appear in VIEWS: no duplicate
     fn = {**DATA["FUNCTIONS"][0], "FUNCTION_SCHEMA": "LAB", "FUNCTION_NAME": "FN_NEW", "LAST_ALTERED": NEW}
     proc = {**DATA["PROCEDURES"][2], "PROCEDURE_SCHEMA": "LAB", "PROCEDURE_NAME": "SP_NEW", "LAST_ALTERED": NEW}
     stage = {**DATA["STAGES"][1], "STAGE_SCHEMA": "LAB", "STAGE_NAME": "STG_NEW", "URL3": "new-bucket"}
@@ -733,7 +736,7 @@ def test_realtime_reads_are_logged_with_zero_latency():
     fake, snap, _ = scan()
     for leaf in ("TABLES", "COLUMNS", "VIEWS", "FUNCTIONS", "PROCEDURES", "STAGES", "PIPES"):
         x = lecture(snap, f"CANOT_LAB.INFORMATION_SCHEMA.{leaf}")
-        assert x["statut"] == "lu" and x["latence_max_h"] == 0 and "temps réel" in x["raison"] and x["fenetre"] is None
+        assert x["statut"] == "read" and x["latence_max_h"] == 0 and "real time" in x["raison"] and x["fenetre"] is None
     for vue in ("SHOW TASKS", "SHOW STREAMS"):
         assert lecture(snap, vue)["latence_max_h"] == 0
     assert any(s.startswith('SELECT TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME, TABLE_OWNER') and '"CANOT_LAB".INFORMATION_SCHEMA.TABLES' in s
@@ -749,22 +752,22 @@ def test_table_only_in_realtime_is_added_as_recent_with_unknown_history():
     assert t["detail"]["creee_le"] == "2026-10-17T09:30:00Z" and t["detail"]["modifiee_le"] == "2026-10-17T09:30:00Z"
     assert t["derniere_ddl"] == "2026-10-17T09:30:00Z"
     assert [c["type"] for c in t["colonnes"]] == ["NUMBER(38,0)", "VARIANT"]
-    # ce qui dépend d'ACCOUNT_USAGE reste inconnu : None, jamais 0
+    # what depends on ACCOUNT_USAGE stays unknown: None, never 0
     for k in ("octets_historique", "n_lectures", "n_ecritures", "derniere_lecture", "derniere_ecriture", "clone_de"):
         assert t[k] is None, k
     d = t["detail"]
-    assert d["historique_non_lu"] == "table trop récente pour ACCOUNT_USAGE"
+    assert d["historique_non_lu"] == "table too recent for ACCOUNT_USAGE"
     assert d["requetes_pruning_n"] is None and d["jamais_lu_pruning"] is None and d["jamais_lu"] is None
     assert d.get("fichiers_charges_n") is None and d.get("octets_retenus_clone") is None and d["table_id"] is None
     dt = by_id(snap["tables"], "CANOT_LAB.LAB.NEW_DT")
-    assert {"recente", "dynamique"} <= set(dt["flags"]) and dt["octets_actifs"] == 0  # 0 lu en temps réel reste un 0 mesuré
+    assert {"recente", "dynamique"} <= set(dt["flags"]) and dt["octets_actifs"] == 0  # a 0 read in real time stays a measured 0
     assert "CANOT_LAB.LAB.NEW_MV" not in {x["id"] for x in snap["tables"]}
 
 
 def test_objects_only_in_realtime_are_added_and_marked():
     _, snap, _ = scan(data=_recent_data())
     o = {(x["kind"], x["id"]): x for x in snap["objets"]}
-    assert len(o) == len(snap["objets"])  # aucun doublon
+    assert len(o) == len(snap["objets"])  # no duplicate
     expected = {("vue", "CANOT_LAB.LAB.V_NEW"): "information_schema", ("vue_materialisee", "CANOT_LAB.LAB.NEW_MV"): "information_schema",
                 ("fonction", "CANOT_LAB.LAB.FN_NEW"): "information_schema", ("procedure", "CANOT_LAB.LAB.SP_NEW"): "information_schema",
                 ("stage", "CANOT_LAB.LAB.STG_NEW"): "information_schema", ("pipe", "CANOT_LAB.LAB.P_NEW"): "information_schema",
@@ -773,11 +776,11 @@ def test_objects_only_in_realtime_are_added_and_marked():
     for k, src in expected.items():
         assert o[k]["detail"]["inventaire"] == src and o[k]["detail"]["recent"] is True, k
     assert ("vue", "CANOT_LAB.LAB.NEW_MV") not in o
-    assert o[("vue", "CANOT_LAB.LAB.V_NEW")]["reference"] == ["CANOT_LAB.LAB.NEW_T"]  # OBJECT_DEPENDENCIES ne la connaît pas encore
+    assert o[("vue", "CANOT_LAB.LAB.V_NEW")]["reference"] == ["CANOT_LAB.LAB.NEW_T"]  # OBJECT_DEPENDENCIES does not know it yet
     assert o[("stage", "CANOT_LAB.LAB.STG_NEW")]["dependances_externes"] == ["s3://new-bucket"]
     task, pipe, dt = o[("tache", "CANOT_LAB.LAB.T_NEW")], o[("pipe", "CANOT_LAB.LAB.P_NEW")], o[("table_dynamique", "CANOT_LAB.LAB.NEW_DT")]
     assert task["reference"] == ["CANOT_LAB.LAB.NEW_T"] and task["detail"]["serverless"] is True
-    for x in (task, pipe, dt):  # historique pas encore disponible : inconnu, pas 0
+    for x in (task, pipe, dt):  # history not available yet: unknown, not 0
         assert x["executions_n"] is None and x["echecs_n"] is None
     assert task["detail"]["credits_serverless"] is None
     assert dt["planification"] == "1 minute"
@@ -795,19 +798,19 @@ def test_present_in_both_no_recent_flag_no_duplicate():
     assert cust["n_lectures"] == 5 and by_id(snap["tables"], "CANOT_LAB.RAW.ARCHIVE_1")["detail"]["jamais_lu"] is True
     f = snap["fraicheur"]
     assert f["recents_seulement_temps_reel"] == {"tables": 0, "objets": 0} and f["latence_max_h"] == 48
-    assert f["texte"] == "Recoupement en temps réel (INFORMATION_SCHEMA, SHOW) : aucun objet absent d'ACCOUNT_USAGE."
+    assert f["texte"] == "Real-time cross-check (INFORMATION_SCHEMA, SHOW): no object missing from ACCOUNT_USAGE."
 
 
 def test_columns_and_type_differences_are_reported_and_present_state_kept():
     cols = [dict(c) for c in DATA["IS.COLUMNS"]]
-    cols[1]["DATA_TYPE"] = "VARIANT"                       # EMAIL_ADDR : type changé
-    cols = cols[:3] + [{**cols[0], "COLUMN_NAME": "NOUVELLE", "ORDINAL_POSITION": 5}]  # GEO retirée, NOUVELLE ajoutée
+    cols[1]["DATA_TYPE"] = "VARIANT"                       # EMAIL_ADDR: type changed
+    cols = cols[:3] + [{**cols[0], "COLUMN_NAME": "NOUVELLE", "ORDINAL_POSITION": 5}]  # GEO removed, NOUVELLE added
     tabs = [dict(r, TABLE_TYPE="EVENT TABLE") if r["TABLE_NAME"] == "ARCHIVE_1" else r for r in DATA["IS.TABLES"]]
     _, snap, _ = scan(data={"IS.COLUMNS": cols, "IS.TABLES": tabs})
     cust = by_id(snap["tables"], "CANOT_LAB.RAW.CUSTOMERS")
-    assert cust["detail"]["ecart_colonnes"] == "colonnes en temps réel : 1 ajoutée(s), 1 retirée(s), 1 de type changé"
+    assert cust["detail"]["ecart_colonnes"] == "columns in real time: 1 added, 1 removed, 1 with changed type"
     assert [c["nom"] for c in cust["colonnes"]] == ["CUSTOMER_ID", "EMAIL_ADDR", "PROFILE", "NOUVELLE"]
-    assert by_id(snap["tables"], "CANOT_LAB.RAW.ARCHIVE_1")["detail"]["ecart_type"] == "BASE TABLE dans ACCOUNT_USAGE, EVENT TABLE en temps réel"
+    assert by_id(snap["tables"], "CANOT_LAB.RAW.ARCHIVE_1")["detail"]["ecart_type"] == "BASE TABLE in ACCOUNT_USAGE, EVENT TABLE in real time"
 
 
 def test_table_dropped_and_recreated_within_latency():
@@ -818,16 +821,16 @@ def test_table_dropped_and_recreated_within_latency():
     assert old["supprimee_le"] == "2026-10-10T08:00:00Z" and old["octets_historique"] == 1000
 
 
-def test_realtime_denied_is_non_lu_with_reason_and_inventory_kept():
+def test_realtime_denied_is_not_read_with_reason_and_inventory_kept():
     fail = {k: "SQL access control error: Insufficient privileges to operate on schema 'INFORMATION_SCHEMA'" for k in RT_KEYS}
     _, snap, _ = scan(fail=fail, data=_recent_data())
     for leaf in ("TABLES", "COLUMNS", "VIEWS", "FUNCTIONS", "PROCEDURES", "STAGES", "PIPES"):
         x = lecture(snap, f"CANOT_LAB.INFORMATION_SCHEMA.{leaf}")
-        assert x["statut"] == "non_lu" and x["raison"] == "droit absent" and x["lignes"] is None
-    assert lecture(snap, "SHOW TASKS")["raison"] == "droit absent"
+        assert x["statut"] == "not_read" and x["raison"] == "missing privilege" and x["lignes"] is None
+    assert lecture(snap, "SHOW TASKS")["raison"] == "missing privilege"
     assert "CANOT_LAB.LAB.NEW_T" not in {t["id"] for t in snap["tables"]} and by_id(snap["tables"], "CANOT_LAB.RAW.CUSTOMERS")
-    assert snap["fraicheur"]["texte"].startswith("Recoupement en temps réel non lu (droit absent)")
-    # SHOW STREAMS restait lisible : le flux récent est vu
+    assert snap["fraicheur"]["texte"].startswith("Real-time cross-check not read (missing privilege)")
+    # SHOW STREAMS was still readable: the recent stream is seen
     assert by_id(snap["objets"], "CANOT_LAB.LAB.S_NEW")["detail"]["recent"] is True
 
 
@@ -835,8 +838,8 @@ def test_account_usage_tables_refused_realtime_is_a_fallback_not_recent():
     _, snap, _ = scan(fail={"TABLES": DENIED}, data=_recent_data())
     t = by_id(snap["tables"], "CANOT_LAB.LAB.NEW_T")
     assert "recente" not in t["flags"] and t["detail"]["source"] == "information_schema"
-    assert t["detail"]["historique_non_lu"] == "ACCOUNT_USAGE.TABLES non lue"
-    cust = by_id(snap["tables"], "CANOT_LAB.RAW.CUSTOMERS")  # connue des métriques de stockage : complétée, pas « récente »
+    assert t["detail"]["historique_non_lu"] == "ACCOUNT_USAGE.TABLES not read"
+    cust = by_id(snap["tables"], "CANOT_LAB.RAW.CUSTOMERS")  # known to the storage metrics: completed, not "recent"
     assert cust["detail"]["inventaire"] == "information_schema" and "type_non_lu" not in cust["detail"] and "recente" not in cust["flags"]
     assert cust["proprietaire"] == "LAB_ENGINEER" and cust["octets_actifs"] == 1000 and cust["n_lectures"] == 5
     assert len({t["id"] for t in snap["tables"]}) == len(snap["tables"])
@@ -846,13 +849,13 @@ def test_fraicheur_counts_and_text():
     _, snap, _ = scan(data=_recent_data())
     f = snap["fraicheur"]
     assert f["recents_seulement_temps_reel"] == {"tables": 2, "objets": 9} and f["latence_max_h"] == 48
-    assert f["texte"] == ("2 tables et 9 objets vus seulement en temps réel : absents d'ACCOUNT_USAGE, dont la latence va jusqu'à 48 h "
-                          "selon les vues ; leur historique (volumes facturés, lectures) n'est pas encore disponible.")
+    assert f["texte"] == ("2 tables and 9 objects seen only in real time: missing from ACCOUNT_USAGE, whose latency reaches 48 h "
+                          "depending on the view; their history (billed volumes, reads) is not available yet.")
     _, snap, _ = scan(base="*")
-    assert snap["fraicheur"]["texte"].startswith("Recoupement en temps réel non fait")
+    assert snap["fraicheur"]["texte"].startswith("Real-time cross-check not done")
     assert not any("INFORMATION_SCHEMA" in x["vue"] for x in snap["lectures"])
     _, snap, _ = scan(level=1)
-    assert snap["fraicheur"]["latence_max_h"] == 48 and lecture(snap, "CANOT_LAB.INFORMATION_SCHEMA.TABLES")["statut"] == "lu"
+    assert snap["fraicheur"]["latence_max_h"] == 48 and lecture(snap, "CANOT_LAB.INFORMATION_SCHEMA.TABLES")["statut"] == "read"
 
 
 def test_realtime_never_reads_table_data_and_stays_readonly():
@@ -866,7 +869,7 @@ def test_realtime_never_reads_table_data_and_stays_readonly():
         assert check_readonly(s, "snowflake") == s
         if s.startswith(("SHOW", "ALTER")):
             continue
-        for t in sqlglot.parse_one(s, read="snowflake").find_all(exp.Table):  # métadonnées seulement : jamais une table du client
+        for t in sqlglot.parse_one(s, read="snowflake").find_all(exp.Table):  # metadata only: never a customer table
             assert (t.catalog, t.db) == ("SNOWFLAKE", "ACCOUNT_USAGE") or t.db == "INFORMATION_SCHEMA", s[:100]
     assert all("TABLE_SCHEMA IN ('RAW', 'LAB')" in s or "_SCHEMA IN ('RAW', 'LAB')" in s for s in rt)
     assert all("STAGE_URL" not in s or "SPLIT_PART(STAGE_URL" in s for s in rt)
@@ -896,6 +899,6 @@ def test_storage_metrics_not_yet_computed_is_said():
     assert cust["octets_actifs"] == 0 and cust["detail"]["octets_temps_reel"] == 2048 and cust["detail"]["volume_en_retard"] is True
     f = snap["fraicheur"]
     assert f["volumes_en_retard"] == 1 and f["texte"].endswith(
-        "1 table à 0 octet dans TABLE_STORAGE_METRICS mais non vide en temps réel : métriques de stockage pas encore à jour, volume sous-estimé.")
+        "1 table at 0 bytes in TABLE_STORAGE_METRICS but not empty in real time: storage metrics not up to date yet, volume underestimated.")
     _, snap, _ = scan()
     assert snap["fraicheur"]["volumes_en_retard"] == 0 and "volume_en_retard" not in by_id(snap["tables"], "CANOT_LAB.RAW.CUSTOMERS")["detail"]

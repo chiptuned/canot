@@ -1,6 +1,6 @@
-"""Rendu du scan : scan.json -> scan.html (autonome, imprimable en A4, sans script ni ressource externe) et CSV.
+"""Scan rendering: scan.json -> scan.html (self-contained, printable on A4, no script and no external resource) and CSV.
 
-render_html est pure. Chaque liste affiche au plus 20 lignes ; le reste est dans les CSV (ou dans scan.json).
+render_html is pure. Each list shows at most 20 rows; the rest is in the CSV files (or in scan.json).
 """
 from __future__ import annotations
 
@@ -12,21 +12,34 @@ import io
 from pathlib import Path
 
 from .. import connectors
-from .analyze import (CODES_HORS_ENTREPOT, ETIQUETTE, KIND_LABELS, LIBELLES, MENTION_REJOUABILITE, cap, fr_bytes, fr_date, fr_num, parse_dt,
-                      pl, short_vue)
+from .analyze import (CODES_HORS_ENTREPOT, ETIQUETTE, KIND_LABELS, LIBELLES, MENTION_REJOUABILITE, cap, fmt_bytes, fmt_date, fmt_num,
+                      parse_dt, pl, short_vue)
+from .model import COMPUTED, ESTIMATED, MEASURED, NOT_ESTIMATED, NOT_READ, READ
 
 MAX_ROWS = 20
 CANOT_URL = "https://canot.io"
-NATURES = {"mesuré": "mesuré", "calculé": "calculé", "estimé": "estimé", "non_lu": "non lu", "non_estimé": "non estimé"}
-CATEGORIES = {"C0": "traduit et accepté par DuckDB", "C1": "non analysable", "C2": "commande, non analysée", "C3": "traduction impossible",
-              "C4": "erreur d'analyse DuckDB", "C5": "erreur de liaison (objet ou fonction propre)", "C6": "variable",
-              "C7": "DDL, COPY, MERGE, requêtes de métadonnées : comptés à part"}
-NIVEAUX = {1: "inventaire, volumes, consommation", 2: "+ requêtes (formes normalisées), lectures par table, politiques",
-           3: "+ droits et outils (pseudonymisés)"}
-# libellé, droits demandés et droits jamais demandés : fiche du connecteur (connectors.py), plus de table ici
-PORTABILITES = {"portable_tel_quel": "portable tel quel", "traduisible": "traduisible (texte ouvert, rejeu possible)",
-                "exporte_proprietaire": "exporté au format de l'éditeur", "a_reconstruire": "à reconstruire",
-                "non_determine": "non déterminé (non lu)"}
+NATURES = {MEASURED: "measured", COMPUTED: "computed", ESTIMATED: "estimated", NOT_READ: "not read", NOT_ESTIMATED: "not estimated"}
+CATEGORIES = {"C0": "translated and accepted by DuckDB", "C1": "not parseable", "C2": "command, not analyzed", "C3": "translation impossible",
+              "C4": "DuckDB parse error", "C5": "binding error (platform-specific object or function)", "C6": "variable",
+              "C7": "DDL, COPY, MERGE, metadata queries: counted separately"}
+NIVEAUX = {1: "inventory, volumes, consumption", 2: "+ queries (normalized forms), reads per table, policies",
+           3: "+ privileges and tools (pseudonymized)"}
+# label, privileges requested and never requested: connector profile (connectors.py), no table here anymore
+PORTABILITES = {"portable_tel_quel": "portable as is", "traduisible": "translatable (open text, replay possible)",
+                "exporte_proprietaire": "exported in the vendor's format", "a_reconstruire": "to rebuild",
+                "non_determine": "not determined (not read)"}
+FAMILLES_OBJET = {"donnees": "data", "traitement": "processing", "modele": "model", "rapport": "report", "planification": "scheduling",
+                  "connexion": "connection", "securite": "security", "code": "code", "extension": "extension", "non_precisee": "unspecified"}
+# inventory depth declared by a connector (connectors.Capabilities.inventaire, French data values)
+INVENTAIRES = {"complet": "full", "léger": "light", "partiel": "partial", "aucun": "none"}
+# flag target types and table types (French data values in scan.json) -> displayed label
+CIBLES = {"objet": "object", "famille": "family", "lecture": "read", "role": "role", "table": "table"}
+TABLE_TYPES = {"EXTERNE": "EXTERNAL", "TRANSITOIRE": "TRANSIENT", "TEMPORAIRE": "TEMPORARY"}
+# summary boxes: scan.json keys (unchanged) -> reader
+AUDIENCES = {"DSI": "CIO", "DAF": "CFO", "RSSI": "CISO"}
+# in-page anchors, in order
+SECTION_IDS = ("header", "scope", "capabilities", "costs", "movements", "stays-behind", "exit-map", "dependencies", "replayability", "ranges",
+               "findings", "not-estimated", "method", "next")
 
 CSS = """:root{--bg:#ffffff;--fg:#14212b;--mut:#4d6173;--line:#dfe6eb;--soft:#eef3f6;--acc:#1f3a5f;--tag:#8a4b0f;--tagbg:#fbf1e6}
 @media (prefers-color-scheme:dark){:root{--bg:#10171d;--fg:#e3eaf0;--mut:#9aaebe;--line:#2a3742;--soft:#18232c;--acc:#9cc3e6;--tag:#f0b77a;--tagbg:#2e2318}}
@@ -59,39 +72,39 @@ def _e(x) -> str:
 
 
 def _val(v, unite: str | None) -> str:
-    if unite == "octets":
-        return fr_bytes(v)
+    if unite == "bytes":
+        return fmt_bytes(v)
     if unite == "USD":
-        return f"{fr_num(v, 2)} $"
-    if unite == "crédits":
-        return f"{fr_num(v, 2)} crédits"
-    if unite == "heures":
+        return f"${fmt_num(v, 2)}"
+    if unite == "credits":
+        return f"{fmt_num(v, 2)} credits"
+    if unite == "hours":
         if abs(v) < 1 / 60:
-            return "moins d'une minute"
+            return "less than a minute"
         if abs(v) < 1:
-            return f"{fr_num(round(v * 60))} min"
-        return f"{fr_num(v, 2 if abs(v) < 10 else 1)} h"
-    if unite == "jours":
-        return f"{fr_num(v, 1)} j"
-    if unite == "secondes":
-        return f"{fr_num(v)} s"
+            return f"{fmt_num(round(v * 60))} min"
+        return f"{fmt_num(v, 2 if abs(v) < 10 else 1)} h"
+    if unite == "days":
+        return f"{fmt_num(v, 1)} d"
+    if unite == "seconds":
+        return f"{fmt_num(v)} s"
     if unite == "%":
-        return f"{fr_num(v, 1)} %"
-    if unite == "slot-heures":
-        return f"{fr_num(v, 1)} slot-heures"
-    if unite == "requêtes":
-        return pl(v, "requête")
-    return fr_num(v) + (f" {unite}" if unite else "")
+        return f"{fmt_num(v, 1)}%"
+    if unite == "slot-hours":
+        return f"{fmt_num(v, 1)} slot-hours"
+    if unite == "queries":
+        return pl(v, "query", "queries")
+    return fmt_num(v) + (f" {unite}" if unite else "")
 
 
 def fig_text(f: dict) -> str:
-    if f["nature"] == "non_lu":
-        return f"Non lu : {f['raison']}."
-    if f["nature"] == "non_estimé":
-        return f"Non estimé : {f['raison']}."
-    if f["nature"] == "estimé":
+    if f["nature"] == NOT_READ:
+        return f"Not read: {f['raison']}."
+    if f["nature"] == NOT_ESTIMATED:
+        return f"Not estimated: {f['raison']}."
+    if f["nature"] == ESTIMATED:
         lo, hi = _val(f["bas"], f["unite"]), _val(f["haut"], f["unite"])
-        return lo if lo == hi else f"{lo} à {hi}"
+        return lo if lo == hi else f"{lo} to {hi}"
     return _val(f["valeur"], f["unite"])
 
 
@@ -101,39 +114,39 @@ def _base(ids: list[str]) -> str:
 
 def _fig_cells(f: dict) -> str:
     hyp = "".join(f"<li>{_e(h)}</li>" for h in f.get("hypotheses") or [])
-    nat = NATURES[f["nature"]] + (f", confiance {f['confiance']}" if f.get("confiance") else "") + (f" · {_base(f['base'])}" if f.get("base") else "")
+    nat = NATURES[f["nature"]] + (f", {f['confiance']} confidence" if f.get("confiance") else "") + (f" · {_base(f['base'])}" if f.get("base") else "")
     return (f"<td>{_e(fig_text(f))}" + (f"<ul class=hyp>{hyp}</ul>" if hyp else "") + "</td>"
             f"<td class=nat>{_e(nat)}" + (f"<br>{_e(f['formule'])}" if f.get("formule") else "") + "</td>")
 
 
 def _fig_table(rows: list[tuple[str, dict]]) -> str:
     body = "".join(f"<tr><th scope=row>{_e(label)}</th>{_fig_cells(f)}</tr>" for label, f in rows)
-    return f"<table><tr><th>Poste</th><th>Valeur</th><th>Nature et base</th></tr>{body}</table>"
+    return f"<table><tr><th>Item</th><th>Value</th><th>Nature and basis</th></tr>{body}</table>"
 
 
 def _list_table(header: list[str], rows: list[list[str]], more_in: str, numeric: tuple[int, ...] = ()) -> str:
-    """rows : cellules déjà échappées. Au plus MAX_ROWS lignes ; le reste est renvoyé vers `more_in`."""
+    """rows: cells already escaped. At most MAX_ROWS rows; the rest is referred to `more_in`."""
     if not rows:
-        return "<p class=mut>Aucun.</p>"
+        return "<p class=mut>None.</p>"
     head = "".join(f"<th>{_e(h)}</th>" for h in header)
     body = "".join("<tr>" + "".join(f"<td class=n>{c}</td>" if i in numeric else f"<td>{c}</td>" for i, c in enumerate(r)) + "</tr>"
                    for r in rows[:MAX_ROWS])
-    more = f"<p class=more>… et {fr_num(len(rows) - MAX_ROWS)} autres dans {_e(more_in)}.</p>" if len(rows) > MAX_ROWS else ""
+    more = f"<p class=more>… and {fmt_num(len(rows) - MAX_ROWS)} more in {_e(more_in)}.</p>" if len(rows) > MAX_ROWS else ""
     return f"<table><tr>{head}</tr>{body}</table>{more}"
 
 
 def _num(v) -> str:
-    return "non lu" if v is None else fr_num(v)
+    return "not read" if v is None else fmt_num(v)
 
 
 def _trim(s: str) -> str:
-    return s[:-2] if s.endswith(",0") else s
+    return s[:-2] if s.endswith(".0") else s
 
 
 def _poids(v, plateforme: str) -> str:
     if v is None:
-        return "non lu"
-    return fr_bytes(v) if plateforme == "bigquery" else f"{fr_num(v, 2)} crédits"
+        return "not read"
+    return fmt_bytes(v) if plateforme == "bigquery" else f"{fmt_num(v, 2)} credits"
 
 
 def _plateforme(r: dict) -> str:
@@ -148,7 +161,7 @@ def _section(sid: str, title: str, body: str) -> str:
 
 
 def _recentes(r: dict) -> int:
-    """Tables vues seulement en temps réel (absentes d'ACCOUNT_USAGE) : leur historique n'est pas encore disponible."""
+    """Tables seen only in real time (missing from ACCOUNT_USAGE): their history is not available yet."""
     return sum(1 for t in r["tables"] if not t["supprimee_le"] and "recente" in t["flags"])
 
 
@@ -157,16 +170,16 @@ def _recentes(r: dict) -> int:
 
 def _entete(r: dict) -> str:
     as_of = parse_dt(r["as_of"])
-    meta = [f"Constat du {as_of.strftime('%d/%m/%Y à %H:%M')} UTC"]
+    meta = [f"Findings as of {as_of.strftime('%Y-%m-%d %H:%M')} UTC"]
     if r.get("latence_max_h") is not None:
-        meta.append(f"données en retard de {_trim(fr_num(r['latence_max_h'], 1))} h au plus selon les vues")
-    meta += [f"édition : {r['edition']}", f"Canot {(r.get('versions') or {}).get('canot', 'version inconnue')}"]
-    alerte = ("<p class=alerte><b>Texte SQL brut exporté.</b> Ce scan a été lancé avec --include-sql-text : le fichier "
-              "scan-sql-brut.json, à côté de ce rapport, contient le texte brut de vos requêtes, littéraux compris (droits 0600). "
-              "Il n'est pas destiné à la diffusion.</p>") if r.get("avec_sql_brut") else ""
-    boxes = "".join(f"<div class=box><h3>{k}</h3><p>{_e(' '.join(r['resume'][k]))}</p></div>" for k in ("DSI", "DAF", "RSSI"))
-    return (f'<header id="entete"><p class=diffusion>Diffusion interne</p>'
-            f"<h1>Scan de sortie : {_e(_plateforme(r))}</h1>"
+        meta.append(f"data up to {_trim(fmt_num(r['latence_max_h'], 1))} h behind depending on the view")
+    meta += [f"edition: {r['edition']}", f"Canot {(r.get('versions') or {}).get('canot', 'unknown version')}"]
+    alerte = ("<p class=alerte><b>Raw SQL text exported.</b> This scan was run with --include-sql-text: the file "
+              "scan-sql-raw.json, next to this report, contains the raw text of your queries, literals included (permissions 0600). "
+              "It is not meant for distribution.</p>") if r.get("avec_sql_brut") else ""
+    boxes = "".join(f"<div class=box><h3>{AUDIENCES[k]}</h3><p>{_e(' '.join(r['resume'][k]))}</p></div>" for k in ("DSI", "DAF", "RSSI"))
+    return (f'<header id="header"><p class=diffusion>Internal distribution</p>'
+            f"<h1>Exit scan: {_e(_plateforme(r))}</h1>"
             f"<p class=meta>{_e(' · '.join(meta))}</p>{alerte}<div class=trio>{boxes}</div></header>")
 
 
@@ -174,295 +187,296 @@ def _perimetre(r: dict) -> str:
     lec = r["cout_du_scan"]["lectures"]
     kinds = r["ne_part_pas"]["objets_par_type"]
     items = [
-        f"Plateforme : {_plateforme(r)}",
-        f"Périmètre : {r['perimetre'] or 'non précisé'}",
-        f"Niveau de droits : {r['niveau_droits']} ({NIVEAUX.get(r['niveau_droits'], 'non précisé')})",
-        f"Mode SQL : {r['mode_sql']}",
-        f"Lectures : {fr_num(lec['lu'])} lues sur {fr_num(lec['total'])}",
-        f"Contenu lu : {pl(len([t for t in r['tables'] if not t['supprimee_le']]), 'table')}, "
-        f"{pl(sum(kinds.values()), 'objet')}, {pl(len(r['familles']), 'famille')} de requêtes",
+        f"Platform: {_plateforme(r)}",
+        f"Scope: {r['perimetre'] or 'not specified'}",
+        f"Privilege level: {r['niveau_droits']} ({NIVEAUX.get(r['niveau_droits'], 'not specified')})",
+        f"SQL mode: {r['mode_sql']}",
+        f"Reads: {fmt_num(lec['lu'])} done out of {fmt_num(lec['total'])}",
+        f"Content read: {pl(len([t for t in r['tables'] if not t['supprimee_le']]), 'table')}, "
+        f"{pl(sum(kinds.values()), 'object')}, {pl(len(r['familles']), 'query family', 'query families')}",
     ]
     if r.get("schemas_caches"):
-        items.append(f"Schémas ou datasets cachés lus : {', '.join(r['schemas_caches'])}")
+        items.append(f"Hidden schemas or datasets read: {', '.join(r['schemas_caches'])}")
     if (r.get("fraicheur") or {}).get("texte"):
-        items.append(f"Fraîcheur : {r['fraicheur']['texte']}")
+        items.append(f"Freshness: {r['fraicheur']['texte']}")
     credits = (r["couts"].get("credits") or {}).get("valeur") or 0
     if not any(not t["supprimee_le"] for t in r["tables"]) and (r["familles"] or credits > 0):
-        items.append("Inventaire vide alors que des requêtes ou des crédits ont été lus : vérifier la base scannée et les droits du rôle "
-                     "sur ses objets")
+        items.append("Empty inventory although queries or credits were read: check the scanned database and the role's privileges "
+                     "on its objects")
     v = r.get("versions") or {}
-    items.append("Versions : " + ", ".join(f"{k} {v[k]}" for k in sorted(v)))
-    return _section("perimetre", "Périmètre", "<ul>" + "".join(f"<li>{_e(i)}</li>" for i in items) + "</ul>")
+    items.append("Versions: " + ", ".join(f"{k} {v[k]}" for k in sorted(v)))
+    return _section("scope", "Scope", "<ul>" + "".join(f"<li>{_e(i)}</li>" for i in items) + "</ul>")
 
 
 def _capacites(r: dict) -> str:
-    """Ce que Canot sait faire sur cette plateforme (déclaré par le connecteur), et ce que ce rapport a fait : un inventaire."""
+    """What Canot can do on this platform (declared by the connector), and what this report did: an inventory."""
     c = r.get("capacites")
     if not c:
         return ""
     lab = _plateforme(r)
     niv = c.get("niveaux") or []
-    inv = c.get("inventaire") or "non déclaré"
+    inv = INVENTAIRES.get(c.get("inventaire"), c.get("inventaire")) or "not declared"
     if niv:
-        inv += f", niveaux {niv[0]} à {niv[-1]}" if len(niv) > 1 else f", niveau {niv[0]}"
+        inv += f", levels {niv[0]} to {niv[-1]}" if len(niv) > 1 else f", level {niv[0]}"
     export, preuve = c.get("export") or [], [p for p in c.get("preuve") or [] if isinstance(p, dict)]
     fiche = connectors.profile(r["plateforme"])
     commande = fiche.get("commande_preuve", "canot drill")
-    rows = [[_e("Inventaire"), _e(f"fait par ce scan (niveau {r['niveau_droits']})" if r.get("niveau_droits") else "fait par ce scan"), _e(inv)],
-            [_e("Export"), _e("non fait par ce scan"), _e(f"{', '.join(export)}, avec canot drill" if export else "aucun format déclaré")],
-            [_e("Preuve"), _e("non faite par ce scan"),
-             _e(" ; ".join(f"{p.get('forme')} {p.get('libelle')}" for p in preuve) + f", avec {commande}" if preuve else "aucune forme déclarée")]]
-    statut = f"Connecteur {lab} : {c.get('statut') or 'statut non déclaré'}"
-    statut += f" ; test consigné : {c['teste_sur']}." if c.get("teste_sur") else " ; aucune date de test consignée dans le dépôt."
+    rows = [[_e("Inventory"), _e(f"done by this scan (level {r['niveau_droits']})" if r.get("niveau_droits") else "done by this scan"), _e(inv)],
+            [_e("Export"), _e("not done by this scan"), _e(f"{', '.join(export)}, with canot drill" if export else "no format declared")],
+            [_e("Evidence"), _e("not done by this scan"),
+             _e("; ".join(f"{p.get('forme')} {p.get('libelle')}" for p in preuve) + f", with {commande}" if preuve else "no form declared")]]
+    statut = f"{lab} connector: {c.get('statut') or 'status not declared'}"
+    statut += f"; recorded test: {c['teste_sur']}." if c.get("teste_sur") else "; no test date recorded in the repository."
     if preuve and fiche.get("limite_preuve"):
-        limite = f"Ce que Canot ne peut pas prouver ici : {fiche['limite_preuve']}"
+        limite = f"What Canot cannot prove here: {fiche['limite_preuve']}"
     elif preuve:
-        limite = (f"Ce que Canot ne peut pas prouver ici : les formes déclarées ({', '.join(str(p.get('forme')) for p in preuve)}) portent sur "
-                  "les tables et les requêtes ; les objets à reconstruire hors tables sont comptés, pas prouvés.")
+        limite = (f"What Canot cannot prove here: the declared forms ({', '.join(str(p.get('forme')) for p in preuve)}) cover "
+                  "tables and queries; objects to rebuild besides tables are counted, not proven.")
     else:
-        limite = f"Aucune forme de preuve n'est déclarée pour {lab} : les objets sont comptés, pas prouvés."
-    body = (f"<p>Ce rapport est un inventaire : inventorié, ni exporté ni rejoué.</p>"
-            + _list_table(["Niveau", "Ce rapport", f"Canot sur {lab}"], rows, "scan.json")
+        limite = f"No form of evidence is declared for {lab}: objects are counted, not proven."
+    body = (f"<p>This report is an inventory: inventoried, neither exported nor replayed.</p>"
+            + _list_table(["Level", "This report", f"Canot on {lab}"], rows, "scan.json")
             + f"<p class=mut>{_e(statut)}</p><p>{_e(limite)}</p>")
-    return _section("capacites", "Capacités", body)
+    return _section("capabilities", "Capabilities", body)
 
 
 def _carte_sortie(r: dict) -> str:
-    """Objets par portabilité et famille d'objet : seulement si la collecte a lu la portabilité (canot.scan/2)."""
+    """Objects per portability and object family: only when collection read the portability (canot.scan/2)."""
     carte = r.get("carte_sortie") or {}
     if not carte:
         return ""
-    rows = [[_e(PORTABILITES.get(p, p)), _e(f.replace("_", " ")), _e(fr_num(n))] for p, fams in carte.items() for f, n in fams.items()]
-    body = ("<p class=mut>Portabilité déclarée par la collecte pour chaque objet lu. « Exporté » n'est pas « portable » : "
-            "une archive au format de l'éditeur ne s'exploite qu'avec lui.</p>"
-            + _list_table(["Portabilité", "Famille d'objet", "Objets"], rows, "scan.json", (2,)))
-    return _section("carte-sortie", "Carte de sortie", body)
+    rows = [[_e(PORTABILITES.get(p, p)), _e(FAMILLES_OBJET.get(f, f.replace("_", " "))), _e(fmt_num(n))]
+            for p, fams in carte.items() for f, n in fams.items()]
+    body = ("<p class=mut>Portability declared by collection for each object read. \"Exported\" is not \"portable\": "
+            "an archive in the vendor's format can only be used with that vendor.</p>"
+            + _list_table(["Portability", "Object family", "Objects"], rows, "scan.json", (2,)))
+    return _section("exit-map", "Exit map", body)
 
 
 def _couts(r: dict) -> str:
     c = r["couts"]
     if r.get("famille") == "fichiers":
-        return _section("couts", "Coûts observés", f"<p>Non lus : {_e(c['credits']['raison'])}.</p>")
-    jours = f"Fenêtre : {c['fenetre_jours']} jours. " if c.get("fenetre_jours") else ""
+        return _section("costs", "Observed costs", f"<p>Not read: {_e(c['credits']['raison'])}.</p>")
+    jours = f"Window: {c['fenetre_jours']} days. " if c.get("fenetre_jours") else ""
     if r["plateforme"] == "bigquery":
         od, rs = c["a_la_demande"], c["reserve"]
-        body = (f"<h3>À la demande</h3>{_fig_table([('Octets facturés', od['octets_factures']), ('Requêtes', od['requetes']), ('En dollars', od['monnaie'])])}"
-                f"<h3>Réservé</h3>{_fig_table([('Slot-heures', rs['slot_heures']), ('Requêtes', rs['requetes']), ('En dollars', rs['monnaie'])])}"
-                f"<p><b>À la demande et réservé ne s'additionnent pas</b> : deux modes de facturation, deux bases.</p>")
+        body = (f"<h3>On demand</h3>{_fig_table([('Billed bytes', od['octets_factures']), ('Queries', od['requetes']), ('In dollars', od['monnaie'])])}"
+                f"<h3>Reserved</h3>{_fig_table([('Slot-hours', rs['slot_heures']), ('Queries', rs['requetes']), ('In dollars', rs['monnaie'])])}"
+                f"<p><b>On demand and reserved do not add up</b>: two billing models, two bases.</p>")
     else:
-        body = _fig_table([("Crédits consommés", c["credits"]), ("En dollars", c["monnaie"])])
+        body = _fig_table([("Credits consumed", c["credits"]), ("In dollars", c["monnaie"])])
         if c.get("credits_par_service"):
-            body += "<h3>Par service</h3>" + _list_table(["Service", "Crédits"], [[_e(s["service"]), _e(fig_text(s["credits"]))]
+            body += "<h3>Per service</h3>" + _list_table(["Service", "Credits"], [[_e(s["service"]), _e(fig_text(s["credits"]))]
                                                                               for s in c["credits_par_service"]], "scan.json", (1,))
         if c.get("credits_par_entrepot"):
-            body += "<h3>Par entrepôt</h3>" + _list_table(["Entrepôt", "Crédits"], [[_e(w["entrepot"]), _e(fig_text(w["credits"]))]
-                                                                                for w in c["credits_par_entrepot"]], "scan.json", (1,))
-    body += "<h3>Stockage</h3>" + _fig_table([("Stockage moyen facturé", c["stockage_octets_moyens"]), ("Stockage en dollars", c["stockage_monnaie"])])
+            body += "<h3>Per warehouse</h3>" + _list_table(["Warehouse", "Credits"], [[_e(w["entrepot"]), _e(fig_text(w["credits"]))]
+                                                                                   for w in c["credits_par_entrepot"]], "scan.json", (1,))
+    body += "<h3>Storage</h3>" + _fig_table([("Average billed storage", c["stockage_octets_moyens"]), ("Storage in dollars", c["stockage_monnaie"])])
     if c.get("transferts"):
-        body += "<h3>Transferts sortants</h3>" + _list_table(["Cible", "Volume"], [[_e(t["cible"]), _e(fig_text(t["octets"]))] for t in c["transferts"]],
-                                                             "scan.json", (1,))
+        body += "<h3>Outbound transfers</h3>" + _list_table(["Target", "Volume"], [[_e(t["cible"]), _e(fig_text(t["octets"]))] for t in c["transferts"]],
+                                                            "scan.json", (1,))
     n = _recentes(r)
     if n:
-        body += (f"<p class=mut>{_e(pl(n, 'table récente', 'tables récentes'))} sans historique dans ACCOUNT_USAGE : "
-                 "leur stockage et leur consommation ne figurent pas encore dans ces chiffres.</p>")
-    return _section("couts", "Coûts observés", f"<p class=mut>{_e(jours + c.get('note', ''))}</p>{body}")
+        body += (f"<p class=mut>{_e(pl(n, 'recent table'))} with no history in ACCOUNT_USAGE: "
+                 "their storage and consumption are not in these figures yet.</p>")
+    return _section("costs", "Observed costs", f"<p class=mut>{_e(jours + c.get('note', ''))}</p>{body}")
 
 
 def _mouvements(r: dict) -> str:
     m = r["mouvements"]
     present = sorted((t for t in r["tables"] if not t["supprimee_le"]), key=lambda t: (-(t["octets_actifs"] or -1), t["id"]))
-    rows = [[_e(t["id"]), _e(t["type"]), _e(fr_bytes(t["octets_actifs"])), _e(t["mouvement"] or "non déterminé"), _e(t["mouvement_preuve"])]
+    rows = [[_e(t["id"]), _e(TABLE_TYPES.get(t["type"], t["type"])), _e(fmt_bytes(t["octets_actifs"])), _e(t["mouvement"] or "not determined"), _e(t["mouvement_preuve"])]
             for t in present]
-    body = (f"<p>{fr_num(m['figée'])} figée(s), {fr_num(m['vivante'])} vivante(s), {fr_num(m['recréée'])} recréée(s), "
-            f"{fr_num(m['non_determine'])} non déterminée(s).</p><p class=mut>{_e(m['regle'])}. Base : {_e(_base(m['base']) or 'aucune lecture')}.</p>"
-            + _list_table(["Table", "Type", "Volume", "Mouvement", "Preuve"], rows, "tables.csv", (2,)))
+    body = (f"<p>{fmt_num(m['figée'])} frozen, {fmt_num(m['vivante'])} live, {fmt_num(m['recréée'])} recreated, "
+            f"{fmt_num(m['non_determine'])} not determined.</p><p class=mut>{_e(m['regle'])}. Based on: {_e(_base(m['base']) or 'no read')}.</p>"
+            + _list_table(["Table", "Type", "Volume", "Movement", "Evidence"], rows, "tables.csv", (2,)))
     n = _recentes(r)
     if n:
-        body += (f"<p class=mut>{_e(pl(n, 'table vue', 'tables vues'))} seulement en temps réel : écritures et lectures pas encore "
-                 "disponibles dans ACCOUNT_USAGE ; volume lu dans INFORMATION_SCHEMA.</p>")
-    return _section("mouvements", "Mouvements", body)
+        body += (f"<p class=mut>{_e(pl(n, 'table'))} seen only in real time: writes and reads not yet "
+                 "available in ACCOUNT_USAGE; volume read from INFORMATION_SCHEMA.</p>")
+    return _section("movements", "Movements", body)
 
 
 def _ne_part_pas(r: dict) -> str:
     n = r["ne_part_pas"]
-    rows = [[_e(KIND_LABELS.get(k, k)), _e(fr_num(v)), _e(", ".join(n["exemples"].get(k, [])) + (" …" if v > 5 else ""))]
+    rows = [[_e(KIND_LABELS.get(k, k)), _e(fmt_num(v)), _e(", ".join(n["exemples"].get(k, [])) + (" …" if v > 5 else ""))]
             for k, v in n["objets_par_type"].items()]
-    body = "<h3>Objets à reconstruire ou à décrire</h3>" + _list_table(["Type", "Nombre", "Exemples"], rows, "scan.json", (1,))
+    body = "<h3>Objects to rebuild or describe</h3>" + _list_table(["Type", "Count", "Examples"], rows, "scan.json", (1,))
     if n["routines_par_langage"]:
-        body += "<p>Routines par langage : " + _e(", ".join(f"{k} {fr_num(v)}" for k, v in n["routines_par_langage"].items())) + ".</p>"
+        body += "<p>Routines per language: " + _e(", ".join(f"{k} {fmt_num(v)}" for k, v in n["routines_par_langage"].items())) + ".</p>"
     cols = [[_e(t["id"]), _e(c["nom"]), _e(c["type"])] for t in r["tables"] if not t["supprimee_le"] for c in t["colonnes_non_portables"]]
-    body += f"<h3>Colonnes à type propre à la plateforme ({fr_num(n['colonnes_non_portables'])})</h3>"
-    body += _list_table(["Table", "Colonne", "Type"], cols, "tables.csv")
+    body += f"<h3>Columns with a platform-specific type ({fmt_num(n['colonnes_non_portables'])})</h3>"
+    body += _list_table(["Table", "Column", "Type"], cols, "tables.csv")
     if r.get("famille") != "fichiers":
-        body += "<h3>Historique facturé</h3>" + _fig_table([(f"Time Travel et Fail-safe ({pl(n['historique']['tables'], 'table')})", n["historique"]["octets"])])
-    return _section("ne-part-pas", "Ce qui ne part pas avec la copie", body)
+        body += "<h3>Billed history</h3>" + _fig_table([(f"Time Travel and Fail-safe ({pl(n['historique']['tables'], 'table')})", n["historique"]["octets"])])
+    return _section("stays-behind", "What does not leave with the copy", body)
 
 
 def _dependances(r: dict) -> str:
     d = r["dependances"]
     body = ""
     if d["externes"]:
-        body += "<h3>Dépendances externes (F01)</h3>" + _list_table(
-            ["Objet", "Type", "Emplacement"], [[_e(x["id"]), _e(KIND_LABELS.get(x["type"], x["type"])), _e(", ".join(x["emplacements"]) or "non lu")]
-                                               for x in d["externes"]], "drapeaux.csv")
+        body += "<h3>External dependencies (F01)</h3>" + _list_table(
+            ["Object", "Type", "Location"], [[_e(x["id"]), _e(KIND_LABELS.get(x["type"], x["type"])), _e(", ".join(x["emplacements"]) or "not read")]
+                                             for x in d["externes"]], "flags.csv")
     if d["cachees"]:
-        body += "<h3>Dépendances externes cachées (F02)</h3>" + _list_table(
-            ["Objet", "Chemin", "Emplacement"], [[_e(x["id"]), _e(" → ".join(x["chemin"])), _e(", ".join(x["emplacements"]) or "non lu")]
-                                                 for x in d["cachees"]], "drapeaux.csv")
+        body += "<h3>Hidden external dependencies (F02)</h3>" + _list_table(
+            ["Object", "Path", "Location"], [[_e(x["id"]), _e(" → ".join(x["chemin"])), _e(", ".join(x["emplacements"]) or "not read")]
+                                             for x in d["cachees"]], "flags.csv")
     if d["ecritures_externes"]:
-        body += "<h3>Écritures hors de la plateforme (F03)</h3>" + _list_table(
-            ["Source", "Mode", "Destination"], [[_e(f"{x['cible_type']} {x['cible']}"), _e(x["mode"]), _e(", ".join(x["emplacements"]) or "non lue")]
-                                                for x in d["ecritures_externes"]], "drapeaux.csv")
+        body += "<h3>Writes outside the platform (F03)</h3>" + _list_table(
+            ["Source", "Mode", "Destination"], [[_e(f"{CIBLES.get(x['cible_type'], x['cible_type'])} {x['cible']}"), _e(x["mode"]), _e(", ".join(x["emplacements"]) or "not read")]
+                                                for x in d["ecritures_externes"]], "flags.csv")
     if d["consommateurs"]:
-        body += "<h3>Consommateurs externes (F09)</h3>" + _list_table(
-            ["Partage", "Comptes"], [[_e(x["id"]), _e(_num(x["comptes"]))] for x in d["consommateurs"]], "drapeaux.csv", (1,))
+        body += "<h3>External consumers (F09)</h3>" + _list_table(
+            ["Share", "Accounts"], [[_e(x["id"]), _e(_num(x["comptes"]))] for x in d["consommateurs"]], "flags.csv", (1,))
     if d["outils"]:
-        body += "<h3>Outils vus dans les requêtes</h3>" + _list_table(
-            ["Outil", "Familles", "Exécutions"], [[_e(x["outil"]), _e(fr_num(x["familles"])), _e(fr_num(x["executions"]))] for x in d["outils"]],
-            "familles.csv", (1, 2))
+        body += "<h3>Tools seen in queries</h3>" + _list_table(
+            ["Tool", "Families", "Executions"], [[_e(x["outil"]), _e(fmt_num(x["familles"])), _e(fmt_num(x["executions"]))] for x in d["outils"]],
+            "families.csv", (1, 2))
     if d.get("clients"):
-        body += "<h3>Clients connectés (sessions)</h3>" + _list_table(
+        body += "<h3>Connected clients (sessions)</h3>" + _list_table(
             ["Client", "Sessions"], [[_e(x["outil"]), _e(_num(x["sessions"]))] for x in d["clients"]], "scan.json", (1,))
     if not body:
-        body = "<p class=mut>Aucune dépendance externe observée dans les lectures faites.</p>"
-    return _section("dependances", "Dépendances", body)
+        body = "<p class=mut>No external dependency observed in the reads done.</p>"
+    return _section("dependencies", "Dependencies", body)
 
 
 def _rejouabilite(r: dict) -> str:
     rj = r["rejouabilite"]
-    if rj["statut"] != "lu":
-        return _section("rejouabilite", "Rejouabilité des requêtes", f"<p>Non lu : {_e(rj['raison'])}.</p>")
+    if rj["statut"] != READ:
+        return _section("replayability", "Query replayability", f"<p>Not read: {_e(rj['raison'])}.</p>")
     rows = [[_e(k), _e(CATEGORIES.get(k, "")), _e(_num(v["familles"])), _e(_num(v["executions"])),
              _e(_poids(v["poids"], r["plateforme"]))] for k, v in rj["categories"].items()]
-    body = _list_table(["Catégorie", "Signification", "Familles", "Exécutions", "Poids"], rows, "scan.json", (2, 3, 4))
+    body = _list_table(["Category", "Meaning", "Families", "Executions", "Weight"], rows, "scan.json", (2, 3, 4))
     t = {k: {**f, "hypotheses": [h for h in f.get("hypotheses") or [] if h != MENTION_REJOUABILITE]} for k, f in rj["taux"].items()}
-    labels = {"familles": "Taux C0, par familles", "executions": "Taux C0, par exécutions", "poids": "Taux C0, pondéré"}
+    labels = {"familles": "C0 rate, by families", "executions": "C0 rate, by executions", "poids": "C0 rate, weighted"}
     body += _fig_table([(labels[k], t[k]) for k in ("familles", "executions", "poids") if k in t])
-    body += f"<p class=mut>Base : {_e(rj['base'] or 'non transmise')}.</p>"
-    body += f"<p><b>{_e(MENTION_REJOUABILITE)}.</b> Traduit vers DuckDB, non comparé.</p>"
+    body += f"<p class=mut>Based on: {_e(rj['base'] or 'not provided')}.</p>"
+    body += f"<p><b>{_e(MENTION_REJOUABILITE)}.</b> Translated to DuckDB, not compared.</p>"
     extra = []
     if (rj.get("non_testees") or {}).get("familles"):
-        extra.append(f"{pl(rj['non_testees']['familles'], 'famille')} non testée(s)")
+        extra.append(f"{pl(rj['non_testees']['familles'], 'family', 'families')} not tested")
     se = rj.get("secrets_ecartes")
     se = se.get("familles") if isinstance(se, dict) else se
     if isinstance(se, int) and se > 0:
-        extra.append(f"{pl(se, 'famille')} contenant un secret, comptée(s) puis écartée(s)")
+        extra.append(f"{pl(se, 'family', 'families')} containing a secret, counted then set aside")
     if extra:
-        body += f"<p class=mut>{_e(cap(' ; '.join(extra)))}.</p>"
+        body += f"<p class=mut>{_e(cap('; '.join(extra)))}.</p>"
     if rj.get("fonctions"):
         fn = sorted(rj["fonctions"].items(), key=lambda kv: (-kv[1], kv[0]))
-        body += "<h3>Fonctions propres à la plateforme</h3>" + _list_table(["Fonction", "Familles"], [[_e(k), _e(fr_num(v))] for k, v in fn],
-                                                                            "scan.json", (1,))
+        body += "<h3>Platform-specific functions</h3>" + _list_table(["Function", "Families"], [[_e(k), _e(fmt_num(v))] for k, v in fn],
+                                                                     "scan.json", (1,))
     fams = [[_e(f["categorie"]), _e(_num(f["n_exec"])), _e(f["outil"] or f["app"] or ""),
              f"<code>{_e((f['sql_normalise'] or '')[:160])}{'…' if len(f['sql_normalise'] or '') > 160 else ''}</code>"]
             for f in r["familles"]]
-    body += "<h3>Familles les plus exécutées (formes normalisées)</h3>" + _list_table(["Catégorie", "Exécutions", "Outil", "Forme normalisée"],
-                                                                                    fams, "familles.csv", (1,))
-    return _section("rejouabilite", "Rejouabilité des requêtes", body)
+    body += "<h3>Most executed families (normalized forms)</h3>" + _list_table(["Category", "Executions", "Tool", "Normalized form"],
+                                                                               fams, "families.csv", (1,))
+    return _section("replayability", "Query replayability", body)
 
 
 def _fourchettes(r: dict) -> str:
     f = r["fourchettes"]
-    rows = [("Volume à copier", f["volume"]), ("Durée de lecture de la copie", f["duree_lecture"])]
+    rows = [("Volume to copy", f["volume"]), ("Copy read time", f["duree_lecture"])]
     if "credits_lecture" in f:
-        rows.append(("Crédits de lecture de la copie", f["credits_lecture"]))
-    rows += [("Coût de lecture de la copie", f["cout_lecture"]), ("Travail de reprise", f["reprise"])]
-    return _section("fourchettes", "Fourchettes", "<p class=mut>Estimations de planification : chaque fourchette porte ses hypothèses. "
-                    "Un canot drill remplace le débit supposé par la mesure.</p>" + _fig_table(rows))
+        rows.append(("Copy read credits", f["credits_lecture"]))
+    rows += [("Copy read cost", f["cout_lecture"]), ("Rework", f["reprise"])]
+    return _section("ranges", "Ranges", "<p class=mut>Planning estimates: each range carries its assumptions. "
+                    "A canot drill replaces the assumed throughput with a measurement.</p>" + _fig_table(rows))
 
 
 def _constats(r: dict) -> str:
     by = {}
     for d in r["drapeaux"]:
         by.setdefault(d["code"], []).append(d)
-    body = (f"<p class=mut>Chaque constat est étiqueté « {ETIQUETTE} », sans niveau de gravité. "
-            "Il dit ce qui est observé et ce qui ne l'est pas.</p>")
+    body = (f"<p class=mut>Each finding is labeled \"{ETIQUETTE}\", with no severity level. "
+            "It states what is observed and what is not.</p>")
     for code, label in LIBELLES.items():
         items = by.get(code)
         if not items:
             continue
-        rows = [[_e(f"{d['cible_type']} {d['cible']}"), _e(d["texte"])] for d in items]
-        body += (f"<h3>{code} · {_e(label)}<span class=tag>{_e(ETIQUETTE)}</span></h3><p class=mut>{pl(len(items), 'constat')}</p>"
-                 + _list_table(["Cible", "Observé"], rows, "drapeaux.csv"))
-    hors_entrepot = r.get("famille") not in (None, "entrepot")  # F13-F16 ne concernent pas les entrepôts
+        rows = [[_e(f"{CIBLES.get(d['cible_type'], d['cible_type'])} {d['cible']}"), _e(d["texte"])] for d in items]
+        body += (f"<h3>{code} · {_e(label)}<span class=tag>{_e(ETIQUETTE)}</span></h3><p class=mut>{pl(len(items), 'finding')}</p>"
+                 + _list_table(["Target", "Observed"], rows, "flags.csv"))
+    hors_entrepot = r.get("famille") not in (None, "entrepot")  # F13-F16 do not apply to warehouses
     empty = [c for c in LIBELLES if c not in by and (hors_entrepot or c not in CODES_HORS_ENTREPOT)]
     if empty:
-        body += (f"<p class=mut>Aucun constat pour : {', '.join(empty)}. "
-                 "Une absence de constat ne vaut que pour les lectures faites (voir F12 et la méthode).</p>")
-    return _section("constats", "Constats", body)
+        body += (f"<p class=mut>No finding for: {', '.join(empty)}. "
+                 "An absence of findings only holds for the reads done (see F12 and the method).</p>")
+    return _section("findings", "Findings", body)
 
 
 def _non_estime(r: dict) -> str:
     items = r["non_estime"]
-    lis = "".join(f"<li>{_e(i['sujet'])} : {_e(i['raison'])}.</li>" for i in items[:MAX_ROWS])
-    more = f"<p class=more>… et {fr_num(len(items) - MAX_ROWS)} autres dans scan.json.</p>" if len(items) > MAX_ROWS else ""
-    return _section("non-estime", "Ce que ce rapport ne chiffre pas", f"<ul>{lis}</ul>{more}")
+    lis = "".join(f"<li>{_e(i['sujet'])}: {_e(i['raison'])}.</li>" for i in items[:MAX_ROWS])
+    more = f"<p class=more>… and {fmt_num(len(items) - MAX_ROWS)} more in scan.json.</p>" if len(items) > MAX_ROWS else ""
+    return _section("not-estimated", "What this report does not quantify", f"<ul>{lis}</ul>{more}")
 
 
 def _methode(r: dict) -> str:
-    lecs = sorted(r["lectures"], key=lambda x: (x["statut"] == "lu", x["id"]))
+    lecs = sorted(r["lectures"], key=lambda x: (x["statut"] == READ, x["id"]))
     rows = []
     for x in lecs:
         fen = x["fenetre"] or {}
-        fenetre = f"du {fr_date(fen.get('du'))} au {fr_date(fen.get('au'))}" if fen.get("du") or fen.get("au") else ""
+        fenetre = f"from {fmt_date(fen.get('du'))} to {fmt_date(fen.get('au'))}" if fen.get("du") or fen.get("au") else ""
         raison = x["raison"] or ""
         if x.get("limite"):
-            raison += f" ; limite : {x['limite']}"
-        rows.append([_e(x["id"]), _e(short_vue(x["vue"])), _e("lu" if x["statut"] == "lu" else "non lu"), _e(raison), _e(_num(x["lignes"])),
-                     _e(fenetre), _e("" if x["latence_max_h"] is None else f"{_trim(fr_num(x['latence_max_h'], 1))} h")])
+            raison += f"; limits: {x['limite']}"
+        rows.append([_e(x["id"]), _e(short_vue(x["vue"])), _e("read" if x["statut"] == READ else "not read"), _e(raison), _e(_num(x["lignes"])),
+                     _e(fenetre), _e("" if x["latence_max_h"] is None else f"{_trim(fmt_num(x['latence_max_h'], 1))} h")])
     plat, niv = r["plateforme"], r["niveau_droits"] or 0
     fiche = connectors.profile(plat)
     droits = [d for lvl, ds in sorted((fiche.get("droits") or {}).items()) if lvl <= niv for d in ds]
     cs = r["cout_du_scan"]
-    cost = [("Requêtes émises", cs["requetes"]), ("Durée de lecture", cs["duree"])]
+    cost = [("Queries sent", cs["requetes"]), ("Read time", cs["duree"])]
     if "octets_factures" in cs:
-        cost.append(("Octets facturés par le scan", cs["octets_factures"]))
+        cost.append(("Bytes billed for the scan", cs["octets_factures"]))
     if "credits" in cs:
-        cost.append(("Crédits consommés par le scan", cs["credits"]))
+        cost.append(("Credits consumed by the scan", cs["credits"]))
     rg = r["regles"]
-    body = (f"<p>{fr_num(cs['lectures']['lu'])} lectures lues sur {fr_num(cs['lectures']['total'])}. Chaque lecture est consignée avec son statut "
-            "et sa raison ; une valeur non lue reste vide, jamais 0.</p>"
-            + _list_table(["Id", "Vue", "Statut", "Raison", "Lignes", "Fenêtre", "Latence"], rows, "lectures.csv", (4,))
-            + f"<h3>Droits utilisés</h3><p>Niveau {_e(niv)} : {_e(', '.join(droits) or 'non précisés')}. "
-            f"Jamais demandés : {_e(fiche.get('droits_jamais', 'droits d’écriture'))}.</p>"
-            + "<h3>Coût du scan</h3>" + _fig_table(cost)
-            + "<h3>Garde-fous</h3><ul>"
-            + ("<li>Aucune connexion : Canot lit les fichiers JSON du projet, sans réseau ni commande ; aucune requête n'est envoyée.</li>"
+    body = (f"<p>{fmt_num(cs['lectures']['lu'])} reads done out of {fmt_num(cs['lectures']['total'])}. Each read is recorded with its status "
+            "and its reason; a value that was not read stays empty, never 0.</p>"
+            + _list_table(["Id", "View", "Status", "Reason", "Rows", "Window", "Latency"], rows, "reads.csv", (4,))
+            + f"<h3>Privileges used</h3><p>Level {_e(niv)}: {_e(', '.join(droits) or 'not specified')}. "
+            f"Never requested: {_e(fiche.get('droits_jamais', 'write privileges'))}.</p>"
+            + "<h3>Cost of the scan</h3>" + _fig_table(cost)
+            + "<h3>Safeguards</h3><ul>"
+            + ("<li>No connection: Canot reads the project's JSON files, with no network and no command; no query is sent.</li>"
                if r.get("famille") == "fichiers" else
-               "<li>Tout SQL envoyé passe par une garde lecture seule : seules les instructions SELECT, SHOW, DESCRIBE et ALTER SESSION SET partent. "
-               "Aucune écriture, aucune activation d'API, aucune modification de paramètre.</li>")
-            + "<li>Utilisateurs et rôles des requêtes pseudonymisés par HMAC, avec un sel tiré pour ce scan et jamais écrit ; "
-            "valeurs d'étiquettes hachées ; emplacements réduits au compartiment.</li>"
-            "<li>Le texte SQL brut n'est jamais écrit : seules les formes normalisées, littéraux masqués, sortent de la collecte"
-            + (" (sauf scan-sql-brut.json, demandé par --include-sql-text)" if r.get("avec_sql_brut") else "") + ".</li></ul>"
-            + f"<h3>Règles</h3><ul><li>Mouvement : {_e(r['mouvements']['regle'])}.</li>"
-            f"<li>Stockage sans lecture : fenêtre réelle de la vue lue, comparée à {rg['horizon_lectures_jours']} jours ; "
-            "les angles morts de chaque vue sont cités dans le constat.</li>"
-            f"<li>Durée de copie : débit supposé de {fr_num(rg['debit_mo_s'][0])} à {fr_num(rg['debit_mo_s'][1])} Mo/s.</li>"
-            "<li>Les prix catalogue sont datés et sourcés ; ils ne remplacent pas le prix de votre contrat.</li></ul>")
-    return _section("methode", "Méthode", body)
+               "<li>Every SQL statement sent goes through a read-only guard: only SELECT, SHOW, DESCRIBE and ALTER SESSION SET statements go out. "
+               "No write, no API activation, no parameter change.</li>")
+            + "<li>Query users and roles pseudonymized with HMAC, using a salt drawn for this scan and never written; "
+            "tag values hashed; locations reduced to the bucket.</li>"
+            "<li>Raw SQL text is never written: only normalized forms, with literals masked, leave collection"
+            + (" (except scan-sql-raw.json, requested with --include-sql-text)" if r.get("avec_sql_brut") else "") + ".</li></ul>"
+            + f"<h3>Rules</h3><ul><li>Movement: {_e(r['mouvements']['regle'])}.</li>"
+            f"<li>Storage with no read: actual window of the view read, compared with {rg['horizon_lectures_jours']} days; "
+            "the blind spots of each view are listed in the finding.</li>"
+            f"<li>Copy time: assumed throughput of {fmt_num(rg['debit_mo_s'][0])} to {fmt_num(rg['debit_mo_s'][1])} MB/s.</li>"
+            "<li>List prices are dated and sourced; they do not replace your contract price.</li></ul>")
+    return _section("method", "Method", body)
 
 
 def _suite() -> str:
-    return ('<section id="suite" class=suite><h2>Suite</h2>'
-            "<p><b>Ce rapport décrit votre plateforme ; il ne recommande ni de partir ni de rester.</b></p>"
-            "<p>Pour mesurer une sortie sur un périmètre choisi : <code>canot drill</code> copie vers Apache Iceberg, "
-            "compare source et copie, et signe un dossier de preuve.</p>"
-            "<p>Pour aller plus loin, le diagnostic q4o, dès 22 000 € HT : tarif de votre contrat, exécution réelle, scénarios, marche à suivre. "
+    return ('<section id="next" class=suite><h2>Next steps</h2>'
+            "<p><b>This report describes your platform; it recommends neither leaving nor staying.</b></p>"
+            "<p>To measure an exit on a chosen scope: <code>canot drill</code> copies to Apache Iceberg, "
+            "compares source and copy, and signs an evidence report.</p>"
+            "<p>To go further, the q4o assessment, from €22,000 excl. VAT: your contract rate, actual execution, scenarios, the steps to follow. "
             f'<a href="{CANOT_URL}">canot.io</a></p></section>')
 
 
 def render_html(result: dict) -> str:
-    """scan.json -> page HTML autonome. Aucun script, aucune ressource externe (CSP stricte : seule la feuille de style inline, par empreinte)."""
+    """scan.json -> self-contained HTML page. No script, no external resource (strict CSP: only the inline stylesheet, by hash)."""
     css_hash = base64.b64encode(hashlib.sha256(CSS.encode()).digest()).decode()
     csp = f"default-src 'none'; style-src 'sha256-{css_hash}'; img-src 'none'; base-uri 'none'; form-action 'none'"
     body = "".join([_entete(result), "<main>", _perimetre(result), _capacites(result), _couts(result), _mouvements(result),
-                    _ne_part_pas(result), _carte_sortie(result), _dependances(result), _rejouabilite(result), _fourchettes(result), _constats(result), _non_estime(result),
-                    _methode(result), _suite(), "</main>"])
-    return (f'<!doctype html><html lang="fr"><head><meta charset="utf-8">'
+                    _ne_part_pas(result), _carte_sortie(result), _dependances(result), _rejouabilite(result), _fourchettes(result), _constats(result),
+                    _non_estime(result), _methode(result), _suite(), "</main>"])
+    return (f'<!doctype html><html lang="en"><head><meta charset="utf-8">'
             f'<meta http-equiv="Content-Security-Policy" content="{csp}">'
             f'<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">'
-            f"<title>Scan de sortie Canot</title><style>{CSS}</style></head><body>{body}</body></html>\n")
+            f"<title>Canot exit scan</title><style>{CSS}</style></head><body>{body}</body></html>\n")
 
 
 # --- CSV -------------------------------------------------------------------------------------------------
@@ -472,7 +486,7 @@ def _cell(v) -> str:
     if v is None:
         return ""
     if isinstance(v, bool):
-        return "oui" if v else "non"
+        return "yes" if v else "no"
     if isinstance(v, (list, tuple)):
         return " ; ".join(_cell(x) for x in v)
     return str(v)
@@ -487,8 +501,11 @@ def _csv(path: Path, header: list[str], rows: list[list]) -> Path:
     return path
 
 
+CSV_FILES = ("tables.csv", "flags.csv", "families.csv", "reads.csv")
+
+
 def write_csv(result: dict, outdir: Path) -> list[Path]:
-    """tables.csv, drapeaux.csv, familles.csv (formes normalisées seulement), lectures.csv. UTF-8, ordre stable."""
+    """tables.csv, flags.csv, families.csv (normalized forms only), reads.csv. UTF-8, stable order."""
     outdir = Path(outdir)
     outdir.mkdir(parents=True, exist_ok=True)
     tables = [[t["id"], t["base"], t["schema"], t["nom"], t["type"], t["lignes"], t["octets_actifs"], t["octets_historique"], t["retention_jours"],
@@ -503,12 +520,12 @@ def write_csv(result: dict, outdir: Path) -> list[Path]:
     lectures = [[x["id"], x["vue"], x["statut"], x["raison"], x.get("limite"), x["lignes"], (x["fenetre"] or {}).get("du"),
                  (x["fenetre"] or {}).get("au"), x["latence_max_h"]] for x in result["lectures"]]
     return [
-        _csv(outdir / "tables.csv", ["id", "base", "schema", "nom", "type", "lignes", "octets_actifs", "octets_historique", "retention_jours",
-                                     "clone_de", "supprimee_le", "emplacement", "proprietaire", "mouvement", "mouvement_preuve", "n_lectures",
-                                     "derniere_lecture", "n_ecritures", "derniere_ecriture", "derniere_ddl", "colonnes_non_portables",
-                                     "politiques", "etiquettes_n", "drapeaux"], tables),
-        _csv(outdir / "drapeaux.csv", ["code", "libelle", "etiquette", "cible_type", "cible", "texte", "confiance", "base"], drapeaux),
-        _csv(outdir / "familles.csv", ["empreinte", "hash_plateforme", "categorie", "n_exec", "temps_ms", "credits", "octets", "app", "outil",
-                                       "entrepot", "tables", "fonctions", "ecriture_externe", "sql_normalise"], familles),
-        _csv(outdir / "lectures.csv", ["id", "vue", "statut", "raison", "limite", "lignes", "fenetre_du", "fenetre_au", "latence_max_h"], lectures),
+        _csv(outdir / "tables.csv", ["id", "database", "schema", "name", "type", "rows", "active_bytes", "history_bytes", "retention_days",
+                                     "clone_of", "dropped_on", "location", "owner", "movement", "movement_evidence", "reads_n",
+                                     "last_read", "writes_n", "last_write", "last_ddl", "non_portable_columns",
+                                     "policies", "tags_n", "flags"], tables),
+        _csv(outdir / "flags.csv", ["code", "title", "label", "target_type", "target", "observed", "confidence", "based_on"], drapeaux),
+        _csv(outdir / "families.csv", ["fingerprint", "platform_hash", "category", "executions", "time_ms", "credits", "bytes", "app", "tool",
+                                       "warehouse", "tables", "functions", "external_write", "normalized_sql"], familles),
+        _csv(outdir / "reads.csv", ["id", "view", "status", "reason", "limits", "rows", "window_from", "window_to", "max_latency_h"], lectures),
     ]

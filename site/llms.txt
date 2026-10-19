@@ -1,15 +1,16 @@
 # Canot
 
-> Outil libre (Apache-2.0) qui répète le départ d'une plateforme de données (BigQuery, Snowflake, Databricks) vers Apache Iceberg, dans vos propres comptes : scan en lecture seule, copie, comparaison, rejeu de requêtes, dossier de preuve signé. Sans télémétrie. Commande : `uvx canot drill SOURCE DESTINATION`. Les prestations payantes sont assurées par Q4O.
+> Free, open-source tool (Apache-2.0) that rehearses leaving a data platform (BigQuery, Snowflake, Databricks) for Apache Iceberg, in your own accounts: read-only scan, copy, comparison, query replay, signed evidence pack. No telemetry. Command: `uvx canot drill SOURCE DESTINATION`. Paid services are provided by Q4O.
 
 ## Documentation
-- [Documentation complète](https://canot.io/llms-full.txt): commandes, sortie locale ou on-prem, scan, hébergeurs, MCP
-- [Les commandes](https://canot.io/docs.html#commandes): drill, scan, demo, verify-evidence, teardown, snowflake-setup, bigquery-setup, mcp
-- [Sortie en local ou on-prem](https://canot.io/docs.html#sortie-en-local-ou-on-prem)
-- [Le scan en lecture seule](https://canot.io/docs.html#scan): ce qui est lu, avec quels droits
-- [Avec un agent (MCP)](https://canot.io/docs.html#avec-un-agent-mcp): `claude mcp add canot -- uvx canot mcp`
+- [Full documentation](https://canot.io/llms-full.txt): commands, local or on-prem exit, scan, hosts, MCP
+- [Commands](https://canot.io/docs.html#commands): drill, scan, demo, verify-evidence, teardown, snowflake-setup, bigquery-setup, mcp
+- [Local or on-prem exit](https://canot.io/docs.html#local-or-on-prem-exit)
+- [Read-only scan](https://canot.io/docs.html#scan): what is read, with which rights
+- [With an agent (MCP)](https://canot.io/docs.html#using-it-with-an-agent-mcp): `claude mcp add canot -- uvx canot mcp`
 
-## Autres
-- [Catalogue des écarts](https://canot.io/ecarts.html): ce que deux moteurs rendent différemment, mesuré
-- [Code source](https://github.com/chiptuned/canot)
-- [Offres](https://canot.io/offres.html)
+## Other
+- [Discrepancy catalogue](https://canot.io/discrepancies.html): what two engines return differently, measured
+- [Source code](https://github.com/chiptuned/canot)
+- [Offers](https://canot.io/en/offers.html)
+- [Site in French](https://canot.io/)

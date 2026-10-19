@@ -1,5 +1,5 @@
-"""Génère les macarons du site : un timbre dentelé, double filet, texte courbe.
-Usage : python3 tools/make_seals.py  (affiche le HTML des quatre macarons)"""
+"""Site seals: a scalloped stamp, double rule, curved text, in French or English.
+Usage: python3 tools/make_seals.py  (prints the HTML of the four seals)"""
 import math
 
 CX = CY = 100
@@ -24,18 +24,26 @@ def centre(label, size):
     return "".join(f'<text x="100" y="{y0 + i * gap:.1f}" text-anchor="middle" font-size="{size}" font-weight="800" letter-spacing="-.5" fill="#1F3A5F">{ln}</text>' for i, ln in enumerate(lines))
 
 
-def seal(key, label, size):
+SEAL_TEXT = {
+    "fr": {"top": "ÉLÉMENT DE PREUVE", "bottom": "CANOT · DOSSIER SIGNÉ", "aria": "élément de preuve, pas une certification", "labels": {}},
+    "en": {"top": "PIECE OF EVIDENCE", "bottom": "CANOT · SIGNED RECORD", "aria": "piece of evidence, not a certification", "labels": {"rgpd": "GDPR"}},
+}
+
+
+def seal(key, label, size, lang="fr"):
+    tx = SEAL_TEXT[lang]
+    label = tx["labels"].get(key, label)
     name = "".join(label) if isinstance(label, tuple) else label
     top = f"M{CX-66},{CY} A66,66 0 0 1 {CX+66},{CY}"
     bot = f"M{CX-76},{CY} A76,76 0 0 0 {CX+76},{CY}"
-    return f'''<svg class="stamp reveal-stamp" viewBox="0 0 200 200" role="img" aria-label="{name} : élément de preuve, pas une certification" width="150" height="150">
+    return f'''<svg class="stamp reveal-stamp" viewBox="0 0 200 200" role="img" aria-label="{name}{' : ' if lang == 'fr' else ': '}{tx['aria']}" width="150" height="150">
   <defs><path id="t-{key}" d="{top}"/><path id="b-{key}" d="{bot}"/></defs>
   <g transform="rotate(-4 100 100)">
     <path d="{scalloped()}" fill="#fff" stroke="#1F3A5F" stroke-width="2.2" stroke-linejoin="round"/>
     <circle cx="100" cy="100" r="82" fill="none" stroke="#1F3A5F" stroke-width="1.6"/>
     <circle cx="100" cy="100" r="60" fill="none" stroke="#C9D4DE" stroke-width="1.2"/>
-    <text font-size="11.5" font-weight="700" letter-spacing="2.4" fill="#1F3A5F"><textPath href="#t-{key}" startOffset="50%" text-anchor="middle">ÉLÉMENT DE PREUVE</textPath></text>
-    <text font-size="11.5" font-weight="700" letter-spacing="2.4" fill="#1F3A5F"><textPath href="#b-{key}" startOffset="50%" text-anchor="middle">CANOT · DOSSIER SIGNÉ</textPath></text>
+    <text font-size="11.5" font-weight="700" letter-spacing="2.4" fill="#1F3A5F"><textPath href="#t-{key}" startOffset="50%" text-anchor="middle">{tx['top']}</textPath></text>
+    <text font-size="11.5" font-weight="700" letter-spacing="2.4" fill="#1F3A5F"><textPath href="#b-{key}" startOffset="50%" text-anchor="middle">{tx['bottom']}</textPath></text>
     <circle cx="19" cy="100" r="3.4" fill="#E8834F"/><circle cx="181" cy="100" r="3.4" fill="#E8834F"/>
     {centre(label, size)}
   </g>

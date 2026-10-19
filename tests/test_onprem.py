@@ -1,4 +1,4 @@
-"""Arrivée sur site : un dossier monté (comme un NAS) et un stockage compatible S3 local (moto), sans cloud."""
+"""On-prem arrival: a mounted folder (like a NAS) and a local S3-compatible store (moto), no cloud."""
 import os
 import socket
 from pathlib import Path
@@ -76,6 +76,6 @@ def test_s3_compatible_on_prem_object_store(demo, tmp_path, monkeypatch):
         assert objs["KeyCount"] > 5
         assert verify_dir(out)[0]
         msg = parse_target(spec, None, tmp_path / "w3").teardown()
-        assert "vidé" in msg
+        assert "emptied" in msg
     finally:
         server.stop()

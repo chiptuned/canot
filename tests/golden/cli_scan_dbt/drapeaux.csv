@@ -1,3 +1,0 @@
-code,libelle,etiquette,cible_type,cible,texte,confiance,base
-F11,Chaîne planifiée et ses échecs,À examiner,objet,dbt:canot_lab,"DAG, planification non lue (orchestrateur hors des fichiers dbt), état dernière invocation : build ; 1 exécution, 0 échec, dernière le 17/10/2026.",,B01 ; B02
-F12,Lecture incomplète,À examiner,lecture,B03,"target/catalog.json non lue (absent ou non exposé) ; limite : colonnes, types et volumes des relations ; rejouabilité non testée par EXPLAIN DuckDB.",,

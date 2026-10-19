@@ -9,32 +9,34 @@ import pyarrow as pa
 from ..model import ColumnInfo, TableInfo, q
 from .base import Source
 
+PUBLIC_KEY_PLACEHOLDER = "<public key, without the BEGIN/END lines>"
+
 SETUP_SQL = """\
--- Canot : accès en lecture seule. À relire puis à lancer par un administrateur (rôle ACCOUNTADMIN ou SECURITYADMIN).
--- Remplacez les valeurs entre <> avant de lancer.
+-- Canot: read-only access. Review it, then have an administrator run it (ACCOUNTADMIN or SECURITYADMIN role).
+-- Replace the values between <> before running.
 CREATE ROLE IF NOT EXISTS CANOT_READER;
 CREATE WAREHOUSE IF NOT EXISTS CANOT_WH WITH WAREHOUSE_SIZE = 'XSMALL' AUTO_SUSPEND = 60 AUTO_RESUME = TRUE INITIALLY_SUSPENDED = TRUE;
 GRANT USAGE ON WAREHOUSE CANOT_WH TO ROLE CANOT_READER;
--- Plafond de crédits pour l'exercice (ajustez si besoin)
+-- Credit cap for the exercise (adjust if needed)
 CREATE RESOURCE MONITOR IF NOT EXISTS CANOT_MONITOR WITH CREDIT_QUOTA = 25
   TRIGGERS ON 100 PERCENT DO SUSPEND;
 ALTER WAREHOUSE CANOT_WH SET RESOURCE_MONITOR = CANOT_MONITOR;
--- Lecture seule sur la base à copier
-GRANT USAGE ON DATABASE <BASE> TO ROLE CANOT_READER;
-GRANT USAGE ON ALL SCHEMAS IN DATABASE <BASE> TO ROLE CANOT_READER;
-GRANT SELECT ON ALL TABLES IN DATABASE <BASE> TO ROLE CANOT_READER;
-GRANT SELECT ON FUTURE TABLES IN DATABASE <BASE> TO ROLE CANOT_READER;
--- `canot scan` : métadonnées du compte (SNOWFLAKE.ACCOUNT_USAGE) par les rôles de base en lecture seule.
--- Gardez les lignes du niveau voulu et celles des niveaux inférieurs.
-GRANT DATABASE ROLE SNOWFLAKE.OBJECT_VIEWER TO ROLE CANOT_READER;     -- niveau 1 : inventaire, code, dépendances
-GRANT DATABASE ROLE SNOWFLAKE.USAGE_VIEWER TO ROLE CANOT_READER;      -- niveau 1 : volumes, consommation
-GRANT DATABASE ROLE SNOWFLAKE.GOVERNANCE_VIEWER TO ROLE CANOT_READER; -- niveau 2 : requêtes (formes normalisées), lectures par table, politiques
-GRANT DATABASE ROLE SNOWFLAKE.SECURITY_VIEWER TO ROLE CANOT_READER;   -- niveau 3 : droits et outils (pseudonymisés)
--- Optionnel : paramètres de tous les entrepôts dans SHOW WAREHOUSES
--- GRANT MONITOR ON WAREHOUSE <ENTREPOT> TO ROLE CANOT_READER;
--- Utilisateur technique de service, connexion par paire de clés (pas de mot de passe)
+-- Read-only access to the database to copy
+GRANT USAGE ON DATABASE <DATABASE> TO ROLE CANOT_READER;
+GRANT USAGE ON ALL SCHEMAS IN DATABASE <DATABASE> TO ROLE CANOT_READER;
+GRANT SELECT ON ALL TABLES IN DATABASE <DATABASE> TO ROLE CANOT_READER;
+GRANT SELECT ON FUTURE TABLES IN DATABASE <DATABASE> TO ROLE CANOT_READER;
+-- `canot scan`: account metadata (SNOWFLAKE.ACCOUNT_USAGE) through the read-only database roles.
+-- Keep the lines for the level you want and those of the lower levels.
+GRANT DATABASE ROLE SNOWFLAKE.OBJECT_VIEWER TO ROLE CANOT_READER;     -- level 1: inventory, code, dependencies
+GRANT DATABASE ROLE SNOWFLAKE.USAGE_VIEWER TO ROLE CANOT_READER;      -- level 1: volumes, consumption
+GRANT DATABASE ROLE SNOWFLAKE.GOVERNANCE_VIEWER TO ROLE CANOT_READER; -- level 2: queries (normalized forms), reads per table, policies
+GRANT DATABASE ROLE SNOWFLAKE.SECURITY_VIEWER TO ROLE CANOT_READER;   -- level 3: grants and tools (pseudonymized)
+-- Optional: parameters of every warehouse in SHOW WAREHOUSES
+-- GRANT MONITOR ON WAREHOUSE <WAREHOUSE> TO ROLE CANOT_READER;
+-- Technical service user, key-pair authentication (no password)
 CREATE USER IF NOT EXISTS CANOT_USER TYPE = SERVICE DEFAULT_ROLE = CANOT_READER DEFAULT_WAREHOUSE = CANOT_WH
-  RSA_PUBLIC_KEY = '<clé publique, sans les lignes BEGIN/END>';
+  RSA_PUBLIC_KEY = '<public key, without the BEGIN/END lines>';
 GRANT ROLE CANOT_READER TO USER CANOT_USER;
 """
 
@@ -52,7 +54,7 @@ class SnowflakeSource(Source):
         self.schemas = [x.upper() for x in qs.get("schemas", "").split(",") if x]
         self.database = u.path.strip("/") or qs.get("database", "")
         if not self.database:
-            raise ValueError("URL Snowflake attendue : snowflake://COMPTE/BASE?user=...&warehouse=...&role=...")
+            raise ValueError("Expected Snowflake URL: snowflake://ACCOUNT/DATABASE?user=...&warehouse=...&role=...")
         args: dict = dict(
             account=self.account,
             user=qs.get("user") or os.environ.get("SNOWFLAKE_USER"),
@@ -76,7 +78,7 @@ class SnowflakeSource(Source):
         elif os.environ.get("SNOWFLAKE_PASSWORD"):
             args["password"] = os.environ["SNOWFLAKE_PASSWORD"]
         else:
-            raise ValueError("Définissez SNOWFLAKE_PRIVATE_KEY_PATH (recommandé) ou SNOWFLAKE_PASSWORD.")
+            raise ValueError("Set SNOWFLAKE_PRIVATE_KEY_PATH (recommended) or SNOWFLAKE_PASSWORD.")
         self.con = snowflake.connector.connect(**args)
 
     def describe(self) -> str:
@@ -89,7 +91,7 @@ class SnowflakeSource(Source):
         return (" and table_schema in (" + ",".join("'" + x.replace("'", "''") + "'" for x in self.schemas) + ")") if self.schemas else ""
 
     def run_readonly(self, sql: str) -> list[dict]:
-        """Exécute une lecture du scan (garde lecture seule d'abord) ; lignes en dict, noms de colonnes en MAJUSCULES."""
+        """Run a scan read (read-only guard first); rows as dicts, column names in UPPERCASE."""
         from ..scanner.guard import check_readonly
 
         sql = check_readonly(sql, "snowflake")

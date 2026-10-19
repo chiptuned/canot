@@ -1,7 +1,7 @@
-"""Analyse pure du scan : snapshot (contrat de model.py) -> scan.json (spec §2).
+"""Pure scan analysis: snapshot (contract in model.py) -> scan.json (spec §2).
 
-Aucune E/S, aucune horloge : la date de référence est snapshot["as_of"]. Chaque chiffre dérivé passe par `fig` ;
-une valeur non lue reste None. Les drapeaux disent ce qui est observé et ce qui ne l'est pas, jamais quoi faire.
+No I/O, no clock: the reference date is snapshot["as_of"]. Every derived figure goes through `fig`;
+a value that was not read stays None. Flags say what is observed and what is not, never what to do.
 """
 from __future__ import annotations
 
@@ -12,70 +12,75 @@ from datetime import datetime, timedelta, timezone
 from .. import prices
 from ..connectors import FAMILLES, capacites, get as connecteur, profile
 from ..scan import NON_PORTABLE, THROUGHPUT_MBPS
-from .model import NATURES, bucket_only, fig
+from .model import (COMPUTED, ESTIMATED, LABEL_TO_REVIEW, MEASURED, NATURES, NOT_ESTIMATED, NOT_READ, PARTIAL, READ, READ_ONLY,
+                    bucket_only, fig, legacy)
 
 SCHEMA = "canot.scan/2"
-ETIQUETTE = "À examiner"
+ETIQUETTE = LABEL_TO_REVIEW
 LIBELLES = {
-    "F01": "Dépendance externe",
-    "F02": "Dépendance externe cachée",
-    "F03": "Écriture hors de la plateforme",
-    "F04": "Rôle propriétaire sans titulaire",
-    "F05": "Stockage sans lecture observée",
-    "F06": "Historique payé non transférable",
-    "F07": "Table supprimée encore facturée",
-    "F08": "SQL dynamique",
-    "F09": "Consommateurs externes",
-    "F10": "Sécurité à reconstruire",
-    "F11": "Chaîne planifiée et ses échecs",
-    "F12": "Lecture incomplète",
-    # hors entrepôt : ne se déclenchent que sur des objets que la collecte a lus avec les champs /2 qu'ils exigent
-    "F13": "Traitement sans équivalent exécutable hors plateforme",
-    "F14": "Extension propriétaire",
-    "F15": "Modèle sans export ouvert lisible",
-    "F16": "Logique métier dans la couche de présentation",
+    "F01": "External dependency",
+    "F02": "Hidden external dependency",
+    "F03": "Write outside the platform",
+    "F04": "Owner role with no holder",
+    "F05": "Storage with no observed read",
+    "F06": "Billed history that does not transfer",
+    "F07": "Dropped table still billed",
+    "F08": "Dynamic SQL",
+    "F09": "External consumers",
+    "F10": "Security to rebuild",
+    "F11": "Scheduled chain and its failures",
+    "F12": "Incomplete read",
+    # outside warehouses: raised only on objects that collection read with the /2 fields they require
+    "F13": "Processing with no executable equivalent off the platform",
+    "F14": "Proprietary extension",
+    "F15": "Model with no readable open export",
+    "F16": "Business logic in the presentation layer",
 }
 CODES_HORS_ENTREPOT = ("F13", "F14", "F15", "F16")
 KIND_LABELS = {
-    "vue": "vue", "vue_materialisee": "vue matérialisée", "fonction": "fonction", "procedure": "procédure", "tache": "tâche",
-    "flux": "flux", "pipe": "pipe", "stage": "stage", "base_importee": "base importée", "partage": "partage",
-    "table_dynamique": "table dynamique", "modele_ml": "modèle ML", "politique_masquage": "politique de masquage",
-    "politique_lignes": "politique de lignes", "requete_planifiee": "requête planifiée", "connexion": "connexion",
-    "integration": "intégration", "reservation": "réservation", "etiquette": "étiquette",
-    # canot.scan/2, plateformes hors entrepôt
-    "recette_sql": "recette SQL", "recette_python": "recette Python", "recette_visuelle": "recette visuelle",
-    "recette_plugin": "recette de plugin", "scenario": "scénario", "modele_entraine": "modèle entraîné", "notebook": "notebook",
-    "dossier_gere": "dossier géré", "service_api": "service d'API", "env_code": "environnement de code", "plugin": "plugin",
-    "mesure": "mesure", "calcul_rapport": "calcul de rapport", "rapport": "rapport", "flux_etl": "flux ETL", "dag": "DAG",
-    "programme_sas": "programme SAS",
-    # projet dbt (famille « fichiers ») : artefacts lus hors ligne
-    "modele_dbt": "modèle dbt", "test_dbt": "test dbt", "source_dbt": "source dbt", "seed_dbt": "seed dbt", "snapshot_dbt": "snapshot dbt",
-    "macro_dbt": "macro dbt du projet", "paquet_dbt": "paquet dbt", "exposition_dbt": "exposition dbt", "metrique_dbt": "métrique dbt",
-    "modele_semantique_dbt": "modèle sémantique dbt", "requete_sauvegardee_dbt": "requête sauvegardée dbt",
-    "test_unitaire_dbt": "test unitaire dbt", "fonction_dbt": "fonction dbt",
+    "vue": "view", "vue_materialisee": "materialized view", "fonction": "function", "procedure": "procedure", "tache": "task",
+    "flux": "stream", "pipe": "pipe", "stage": "stage", "base_importee": "imported database", "partage": "share",
+    "table_dynamique": "dynamic table", "modele_ml": "ML model", "politique_masquage": "masking policy",
+    "politique_lignes": "row access policy", "requete_planifiee": "scheduled query", "connexion": "connection",
+    "integration": "integration", "reservation": "reservation", "etiquette": "tag",
+    # canot.scan/2, non-warehouse platforms
+    "recette_sql": "SQL recipe", "recette_python": "Python recipe", "recette_visuelle": "visual recipe",
+    "recette_plugin": "plugin recipe", "scenario": "scenario", "modele_entraine": "trained model", "notebook": "notebook",
+    "dossier_gere": "managed folder", "service_api": "API service", "env_code": "code environment", "plugin": "plugin",
+    "mesure": "measure", "calcul_rapport": "report calculation", "rapport": "report", "flux_etl": "ETL flow", "dag": "DAG",
+    "programme_sas": "SAS program",
+    # dbt project ("fichiers" family): artifacts read offline
+    "modele_dbt": "dbt model", "test_dbt": "dbt test", "source_dbt": "dbt source", "seed_dbt": "dbt seed", "snapshot_dbt": "dbt snapshot",
+    "macro_dbt": "project dbt macro", "paquet_dbt": "dbt package", "exposition_dbt": "dbt exposure", "metrique_dbt": "dbt metric",
+    "modele_semantique_dbt": "dbt semantic model", "requete_sauvegardee_dbt": "dbt saved query",
+    "test_unitaire_dbt": "dbt unit test", "fonction_dbt": "dbt function",
 }
+# plural labels, when the plural is not the label + "s"
+KIND_PLURALS = {"macro_dbt": "project dbt macros", "programme_sas": "SAS programs", "flux": "streams", "politique_lignes": "row access policies",
+                "requete_sauvegardee_dbt": "dbt saved queries", "modele_ml": "ML models"}
 DBT_KINDS = ("modele_dbt", "test_dbt", "source_dbt", "seed_dbt", "snapshot_dbt", "macro_dbt", "paquet_dbt", "exposition_dbt", "metrique_dbt",
              "modele_semantique_dbt", "requete_sauvegardee_dbt", "test_unitaire_dbt", "fonction_dbt")
-# objets à reconstruire sur la destination (comptés dans le travail de reprise)
+# objects to rebuild on the destination (counted in the rework)
 REBUILD_KINDS = ("vue", "vue_materialisee", "fonction", "procedure", "tache", "flux", "pipe", "stage", "table_dynamique",
                  "modele_ml", "politique_masquage", "politique_lignes", "requete_planifiee", "connexion", "integration")
 SCHEDULED_KINDS = ("tache", "requete_planifiee", "pipe", "table_dynamique", "flux", "scenario", "dag")
 POLICY_KINDS = ("politique_masquage", "politique_lignes", "etiquette")
-# F13 : traitements dont le moteur reste sur la plateforme (type d'objet lu, jamais supposé)
+# F13: processing whose engine stays on the platform (object type read, never assumed)
 SANS_MOTEUR_KINDS = ("recette_visuelle", "recette_plugin")
 EXTENSION_KINDS = ("plugin",)
 MODELE_KINDS = ("modele_entraine",)
 PRESENTATION_KINDS = ("mesure", "calcul_rapport")
 FORMATS_OUVERTS = ("mlflow", "onnx", "pmml", "python")
-F16_LIGNES = 5  # sans critère déclaré par le connecteur, une mesure de 5 lignes ou plus compte comme non triviale
+F16_LIGNES = 5  # without a criterion declared by the connector, a measure of 5 lines or more counts as non-trivial
 
-VIVANTE_JOURS = 30   # écriture observée dans les 30 derniers jours
-RECREEE_JOURS = 7    # DDL dans les 7 derniers jours, sans écriture postérieure
-CREDITS_PAR_HEURE = 1.0  # entrepôt XS
+VIVANTE_JOURS = 30   # write observed in the last 30 days
+RECREEE_JOURS = 7    # DDL in the last 7 days, with no later write
+CREDITS_PAR_HEURE = 1.0  # XS warehouse
 TIB = 2 ** 40
 PRICE_SOURCES = (prices.SNOWFLAKE_SOURCE, prices.BIGQUERY_SOURCE)
-CONTRAT_NON_LU = "prix de votre contrat non lu"
-MENTION_REJOUABILITE = "accepté ≠ résultat identique"
+CONTRAT_NON_LU = "your contract price not read"
+MENTION_REJOUABILITE = "accepted ≠ identical result"
+FROZEN, LIVE, RECREATED = "frozen", "live", "recreated"
 
 KIND_SOURCES = {
     "vue": ("VIEWS", "OBJECT_DEPENDENCIES"), "vue_materialisee": ("VIEWS", "MATERIALIZED_VIEWS"),
@@ -95,73 +100,73 @@ GRANT_SOURCES = ("GRANTS_TO_USERS", "GRANTS_TO_ROLES")
 POLICY_SOURCES = ("POLICY_REFERENCES", "TAG_REFERENCES", "rowAccessPolicies.list", "COLUMN_FIELD_PATHS")
 WRITE_SOURCES = ("TABLES", "TABLE_DML_HISTORY", "ACCESS_HISTORY", "tables.get", "JOBS")
 CODE_SOURCES = ("COLUMNS", "VIEWS", "FUNCTIONS", "PROCEDURES", "ROUTINES", "TASKS", "PIPES", "transferConfigs.list")
-# ce que limite une lecture non lue (F12)
+# what a read that was not done limits (F12)
 IMPACTS = {
-    "ACCESS_HISTORY": "lectures et écritures par objet (F05)",
-    "TABLE_QUERY_PRUNING_HISTORY": "repli des lectures par table (F05)",
-    "TABLES": "inventaire des tables", "COLUMNS": "types de colonnes non portables",
-    "TABLE_STORAGE_METRICS": "octets actifs et historique (F05, F06, F07, fourchettes)",
-    "TABLE_STORAGE": "volumes par table (F05, F06, fourchettes)", "tables.get": "volumes par table (F05, F06, fourchettes)",
-    "STORAGE_USAGE": "stockage moyen facturé", "METERING_DAILY_HISTORY": "crédits par service",
-    "WAREHOUSE_METERING_HISTORY": "crédits par entrepôt", "QUERY_ATTRIBUTION_HISTORY": "crédits par famille de requêtes",
-    "TABLE_DML_HISTORY": "dernières écritures (mouvement)", "OBJECT_DEPENDENCIES": "dépendances entre objets (F02)",
-    "VIEWS": "dépendances des vues (F02)", "FUNCTIONS": "fonctions externes et SQL dynamique (F01, F08)",
-    "PROCEDURES": "SQL dynamique (F08)", "ROUTINES": "SQL dynamique (F08)", "TASKS": "chaînes planifiées (F11)",
-    "TASK_HISTORY": "exécutions et échecs des tâches (F11)", "SERVERLESS_TASK_HISTORY": "exécutions des tâches serverless (F11)",
-    "TASK_VERSIONS": "versions des tâches (F11)", "STREAMS": "flux (F11)", "PIPES": "ingestion continue (F11)",
-    "COPY_HISTORY": "chargements observés", "STAGES": "stages externes (F01)", "DATABASES": "bases importées (F01)",
-    "DATA_TRANSFER_HISTORY": "transferts sortants",
-    "DYNAMIC_TABLE_REFRESH_HISTORY": "rafraîchissements des tables dynamiques (F11)",
-    "AUTOMATIC_CLUSTERING_HISTORY": "crédits du clustering automatique",
-    "MATERIALIZED_VIEW_REFRESH_HISTORY": "crédits des vues matérialisées",
-    "SEARCH_OPTIMIZATION_HISTORY": "crédits de la search optimization",
-    "QUERY_ACCELERATION_HISTORY": "crédits de la query acceleration",
-    "QUERY_HISTORY": "familles de requêtes, rejouabilité, écritures observées (F03)",
-    "POLICY_REFERENCES": "politiques appliquées (F10)", "TAG_REFERENCES": "étiquettes (F10)",
-    "GRANTS_TO_ROLES": "rôles propriétaires sans titulaire (F04)", "GRANTS_TO_USERS": "rôles propriétaires sans titulaire (F04)",
-    "USERS": "types d'utilisateurs (personne ou service)", "SESSIONS": "outils clients", "SHARES": "consommateurs externes (F09)",
-    "JOBS": "lectures par table (F05), familles de requêtes, coûts à la demande et réservé",
-    "JOBS_BY_ORGANIZATION": "requêtes lancées depuis d'autres projets", "JOBS_TIMELINE": "profil de charge",
-    "TABLE_OPTIONS": "emplacements des tables externes (F01)", "COLUMN_FIELD_PATHS": "policy tags (F10)",
-    "SCHEMATA_OPTIONS": "options des datasets", "SCHEMATA_LINKS": "datasets liés, Analytics Hub (F09)",
-    "SHARED_DATASET_USAGE": "consommateurs Analytics Hub (F09)", "PARTITIONS": "partitions",
-    "MATERIALIZED_VIEWS": "vues matérialisées", "RESERVATIONS": "capacité réservée",
-    "CAPACITY_COMMITMENTS": "engagements de capacité", "RESERVATIONS_TIMELINE": "utilisation des réservations",
-    "datasets.list": "inventaire des datasets", "datasets.get": "datasets liés et externes, droits des datasets (F01, F09)",
-    "transferConfigs.list": "requêtes planifiées (F11)", "rowAccessPolicies.list": "politiques de lignes (F10)",
-    "connections.list": "connexions externes (F01)", "models.list": "modèles ML",
-    "SHOW WAREHOUSES": "taille et suspension des entrepôts", "SHOW DYNAMIC TABLES": "tables dynamiques (F11)",
-    "SHOW ICEBERG TABLES": "tables Iceberg (F01)", "SHOW EXTERNAL TABLES": "emplacements des tables externes (F01)",
-    "SHOW STREAMS": "flux (F11)", "QUERY_HISTORY × SESSIONS": "outil par famille de requêtes",
-    "transferConfigs.runs.list": "exécutions et échecs des requêtes planifiées (F11)", "tables.list": "inventaire des tables",
-    # artefacts dbt
-    "manifest.json": "tout l'inventaire du projet dbt", "run_results.json": "dernières exécutions et échecs (F11, mouvement)",
-    "catalog.json": "colonnes, types et volumes des relations ; rejouabilité non testée par EXPLAIN DuckDB",
+    "ACCESS_HISTORY": "reads and writes per object (F05)",
+    "TABLE_QUERY_PRUNING_HISTORY": "fallback for reads per table (F05)",
+    "TABLES": "table inventory", "COLUMNS": "non-portable column types",
+    "TABLE_STORAGE_METRICS": "active bytes and history (F05, F06, F07, ranges)",
+    "TABLE_STORAGE": "volumes per table (F05, F06, ranges)", "tables.get": "volumes per table (F05, F06, ranges)",
+    "STORAGE_USAGE": "average billed storage", "METERING_DAILY_HISTORY": "credits per service",
+    "WAREHOUSE_METERING_HISTORY": "credits per warehouse", "QUERY_ATTRIBUTION_HISTORY": "credits per query family",
+    "TABLE_DML_HISTORY": "latest writes (movement)", "OBJECT_DEPENDENCIES": "dependencies between objects (F02)",
+    "VIEWS": "view dependencies (F02)", "FUNCTIONS": "external functions and dynamic SQL (F01, F08)",
+    "PROCEDURES": "dynamic SQL (F08)", "ROUTINES": "dynamic SQL (F08)", "TASKS": "scheduled chains (F11)",
+    "TASK_HISTORY": "task runs and failures (F11)", "SERVERLESS_TASK_HISTORY": "serverless task runs (F11)",
+    "TASK_VERSIONS": "task versions (F11)", "STREAMS": "streams (F11)", "PIPES": "continuous ingestion (F11)",
+    "COPY_HISTORY": "observed loads", "STAGES": "external stages (F01)", "DATABASES": "imported databases (F01)",
+    "DATA_TRANSFER_HISTORY": "outbound transfers",
+    "DYNAMIC_TABLE_REFRESH_HISTORY": "dynamic table refreshes (F11)",
+    "AUTOMATIC_CLUSTERING_HISTORY": "automatic clustering credits",
+    "MATERIALIZED_VIEW_REFRESH_HISTORY": "materialized view credits",
+    "SEARCH_OPTIMIZATION_HISTORY": "search optimization credits",
+    "QUERY_ACCELERATION_HISTORY": "query acceleration credits",
+    "QUERY_HISTORY": "query families, replayability, observed writes (F03)",
+    "POLICY_REFERENCES": "applied policies (F10)", "TAG_REFERENCES": "tags (F10)",
+    "GRANTS_TO_ROLES": "owner roles with no holder (F04)", "GRANTS_TO_USERS": "owner roles with no holder (F04)",
+    "USERS": "user types (person or service)", "SESSIONS": "client tools", "SHARES": "external consumers (F09)",
+    "JOBS": "reads per table (F05), query families, on-demand and reserved costs",
+    "JOBS_BY_ORGANIZATION": "queries run from other projects", "JOBS_TIMELINE": "load profile",
+    "TABLE_OPTIONS": "external table locations (F01)", "COLUMN_FIELD_PATHS": "policy tags (F10)",
+    "SCHEMATA_OPTIONS": "dataset options", "SCHEMATA_LINKS": "linked datasets, Analytics Hub (F09)",
+    "SHARED_DATASET_USAGE": "Analytics Hub consumers (F09)", "PARTITIONS": "partitions",
+    "MATERIALIZED_VIEWS": "materialized views", "RESERVATIONS": "reserved capacity",
+    "CAPACITY_COMMITMENTS": "capacity commitments", "RESERVATIONS_TIMELINE": "reservation usage",
+    "datasets.list": "dataset inventory", "datasets.get": "linked and external datasets, dataset permissions (F01, F09)",
+    "transferConfigs.list": "scheduled queries (F11)", "rowAccessPolicies.list": "row access policies (F10)",
+    "connections.list": "external connections (F01)", "models.list": "ML models",
+    "SHOW WAREHOUSES": "warehouse size and suspension", "SHOW DYNAMIC TABLES": "dynamic tables (F11)",
+    "SHOW ICEBERG TABLES": "Iceberg tables (F01)", "SHOW EXTERNAL TABLES": "external table locations (F01)",
+    "SHOW STREAMS": "streams (F11)", "QUERY_HISTORY × SESSIONS": "tool per query family",
+    "transferConfigs.runs.list": "scheduled query runs and failures (F11)", "tables.list": "table inventory",
+    # dbt artifacts
+    "manifest.json": "the whole dbt project inventory", "run_results.json": "latest runs and failures (F11, movement)",
+    "catalog.json": "columns, types and volumes of relations; replayability not tested by DuckDB EXPLAIN",
 }
-# une lecture non lue ne limite rien si sa remplaçante a été lue
+# a read that was not done limits nothing if its replacement was read
 FALLBACKS = {"TABLE_QUERY_PRUNING_HISTORY": ("ACCESS_HISTORY",), "TABLE_STORAGE": ("tables.get",), "tables.get": ("TABLE_STORAGE",),
-             # vues régionales refusées : l'API tables.list/get donne inventaire, types, options, définitions et policy tags
+             # regional views refused: the tables.list/get API gives inventory, types, options, definitions and policy tags
              **{v: ("tables.get",) for v in ("TABLES", "TABLE_OPTIONS", "COLUMNS", "COLUMN_FIELD_PATHS", "VIEWS", "MATERIALIZED_VIEWS")}}
 
-# --- formats (partagés avec render.py) ------------------------------------------------------------------
+# --- formats (shared with render.py) --------------------------------------------------------------------
 
 
-def fr_num(x, dec: int = 0) -> str:
-    return f"{x:,.{dec}f}".replace(",", " ").replace(".", ",")
+def fmt_num(x, dec: int = 0) -> str:
+    return f"{x:,.{dec}f}"
 
 
 def _short_num(v: float) -> str:
-    s = fr_num(v, 0 if abs(v) >= 100 else 1)
-    return s[:-2] if s.endswith(",0") else s
+    s = fmt_num(v, 0 if abs(v) >= 100 else 1)
+    return s[:-2] if s.endswith(".0") else s
 
 
-def fr_bytes(n) -> str:
+def fmt_bytes(n) -> str:
     if n is None:
-        return "non lu"
-    for unit, f in (("To", 1e12), ("Go", 1e9), ("Mo", 1e6), ("ko", 1e3)):
+        return "not read"
+    for unit, f in (("TB", 1e12), ("GB", 1e9), ("MB", 1e6), ("kB", 1e3)):
         if abs(n) >= f:
             return f"{_short_num(n / f)} {unit}"
-    return f"{int(n)} o"
+    return f"{int(n)} B"
 
 
 def parse_dt(v) -> datetime | None:
@@ -174,20 +179,20 @@ def parse_dt(v) -> datetime | None:
     return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
 
 
-def fr_date(v) -> str:
+def fmt_date(v) -> str:
     d = parse_dt(v)
-    return d.strftime("%d/%m/%Y") if d else "date inconnue"
+    return d.strftime("%Y-%m-%d") if d else "unknown date"
 
 
 def pl(n, singular: str, plural: str | None = None) -> str:
-    return f"{fr_num(n)} {singular if abs(n) < 2 else (plural or singular + 's')}"
+    return f"{fmt_num(n)} {singular if n == 1 else (plural or singular + 's')}"
 
 
 def cap(s: str) -> str:
     return s[:1].upper() + s[1:]
 
 
-# --- hygiène : rien de sensible ne traverse l'analyse ------------------------------------------------------
+# --- hygiene: nothing sensitive goes through the analysis ---------------------------------------------------
 
 _EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 _URI = re.compile(r"\b[a-z][a-z0-9+.-]*://[^\s'\"<>)]+", re.I)
@@ -196,17 +201,17 @@ _DENY_KEYS = {"sql", "texte", "text", "definition", "body", "corps", "query", "e
 
 
 def _bucket(uri: str) -> str:
-    """Compartiment seul ; pour http(s), l'hôte sans schéma : un emplacement cité n'est pas un lien."""
+    """Bucket only; for http(s), the host without the scheme: a quoted location is not a link."""
     b = bucket_only(uri) or ""
     return re.sub(r"(?i)^https?://", "", b)
 
 
 def scrub(v):
-    """URI réduites au compartiment, adresses e-mail masquées."""
+    """URIs reduced to the bucket, e-mail addresses masked."""
     if not isinstance(v, str):
         return v
     v = _URI.sub(lambda m: _bucket(m.group(0)), v)
-    return _EMAIL.sub("[masqué]", v)
+    return _EMAIL.sub("[masked]", v)
 
 
 def _reduce_uri(u) -> str | None:
@@ -228,24 +233,24 @@ def _safe_detail(d) -> dict:
     return out
 
 
-# --- lectures --------------------------------------------------------------------------------------------
+# --- reads --------------------------------------------------------------------------------------------------
 
 _WORD = re.compile(r"[A-Za-z0-9_]+")
 
 
 def _tokens(vue: str) -> set[str]:
-    vue = re.sub(r"\([^)]*\)", " ", vue)  # « GRANTS_TO_ROLES (hiérarchie des rôles) » : le libellé ne compte pas
+    vue = re.sub(r"\([^)]*\)", " ", vue)  # "GRANTS_TO_ROLES (role hierarchy)": the label does not count
     out = set()
     for m in _WORD.finditer(vue):
         w, nxt = m.group(0), vue[m.end():m.end() + 2]
         if not w.isupper() and nxt[:1] == "." and nxt[1:2].islower():
-            continue  # « tables.get » : appel d'API, pas la vue TABLES
+            continue  # "tables.get": API call, not the TABLES view
         out.add(w.upper())
     return out
 
 
 def _match(vue: str, name: str) -> bool:
-    """Un nom avec point ou espace se cherche tel quel ; sinon comme identifiant de vue (ni SHOW, ni jointure « × »)."""
+    """A name with a dot or a space is searched as is; otherwise as a view identifier (neither SHOW nor a "×" join)."""
     if "." in name or " " in name:
         return name.lower() in vue.lower()
     if vue.lstrip().upper().startswith(("SHOW ", "DESCRIBE ")) or "×" in vue:
@@ -268,36 +273,36 @@ class _Reads:
         found = self.find(*names)
         if not found:
             return None
-        n = sum(lec["statut"] == "lu" for lec in found)
-        return "lu" if n == len(found) else ("partiel" if n else "non_lu")
+        n = sum(lec["statut"] == READ for lec in found)
+        return READ if n == len(found) else (PARTIAL if n else NOT_READ)
 
     def ok(self, *names) -> bool:
-        return self.status(*names) in ("lu", "partiel")
+        return self.status(*names) in (READ, PARTIAL)
 
     def ids(self, *names) -> list[str]:
-        return sorted(lec["id"] for lec in self.find(*names) if lec["statut"] == "lu")
+        return sorted(lec["id"] for lec in self.find(*names) if lec["statut"] == READ)
 
     def why(self, *names) -> str:
-        failed = [lec for lec in self.find(*names) if lec["statut"] != "lu"]
+        failed = [lec for lec in self.find(*names) if lec["statut"] != READ]
         if not failed:
-            return f"{names[0]} : lecture non tentée"
+            return f"{names[0]}: read not attempted"
         lec = failed[0]
-        return f"{short_vue(lec['vue'])} non lue : {lec['raison'] or 'raison non transmise'}"
+        return f"{short_vue(lec['vue'])} not read: {lec['raison'] or 'reason not provided'}"
 
     def partial(self, *names) -> bool:
-        """Une lecture lue peut n'être que partielle (fenêtres ou appels en échec) : la collecte le dit dans sa raison."""
-        return self.status(*names) == "partiel" or any((lec["raison"] or "").startswith("partiel")
-                                                       for lec in self.find(*names) if lec["statut"] == "lu")
+        """A read can be only partial (failed windows or calls): collection says so in its reason."""
+        return self.status(*names) == PARTIAL or any((lec["raison"] or "").startswith("partial")
+                                                     for lec in self.find(*names) if lec["statut"] == READ)
 
     def window(self, *names) -> tuple[datetime | None, datetime | None]:
-        du = [parse_dt((lec["fenetre"] or {}).get("du")) for lec in self.find(*names) if lec["statut"] == "lu"]
-        au = [parse_dt((lec["fenetre"] or {}).get("au")) for lec in self.find(*names) if lec["statut"] == "lu"]
+        du = [parse_dt((lec["fenetre"] or {}).get("du")) for lec in self.find(*names) if lec["statut"] == READ]
+        au = [parse_dt((lec["fenetre"] or {}).get("au")) for lec in self.find(*names) if lec["statut"] == READ]
         du, au = [d for d in du if d], [d for d in au if d]
         return (min(du) if du else None, max(au) if au else None)
 
 
 def _lecture(lec: dict) -> dict:
-    statut = "lu" if lec.get("statut") == "lu" else "non_lu"
+    statut = READ if legacy("statut", lec.get("statut")) == READ else NOT_READ
     fen = lec.get("fenetre") or None
     return {"id": str(lec.get("id")), "vue": scrub(str(lec.get("vue") or "")), "statut": statut,
             "raison": scrub(lec.get("raison")),
@@ -309,7 +314,7 @@ def _impact_key(vue: str) -> str | None:
     return next((k for k in IMPACTS if _match(vue, k)), None)
 
 
-# --- tables, objets, familles ------------------------------------------------------------------------------
+# --- tables, objects, families ------------------------------------------------------------------------------
 
 
 def _non_portables(cols) -> list[dict]:
@@ -319,18 +324,18 @@ def _non_portables(cols) -> list[dict]:
 
 def _mouvement(t: dict, as_of: datetime) -> tuple[str | None, str]:
     if t.get("supprimee_le"):
-        return None, f"supprimée le {fr_date(t['supprimee_le'])}"
+        return None, f"dropped on {fmt_date(t['supprimee_le'])}"
     ddl, w, nw = parse_dt(t.get("derniere_ddl")), parse_dt(t.get("derniere_ecriture")), t.get("n_ecritures")
     if ddl and (as_of - ddl).days < RECREEE_JOURS and (w is None or (w - ddl).total_seconds() <= 3600):
         unknown = w is None and nw is None
-        return "recréée", f"dernière DDL le {fr_date(ddl)}, " + ("écritures non lues" if unknown else "sans écriture postérieure")
+        return RECREATED, f"last DDL on {fmt_date(ddl)}, " + ("writes not read" if unknown else "no later write")
     if w and (as_of - w).days < VIVANTE_JOURS:
-        return "vivante", f"dernière écriture le {fr_date(w)}"
+        return LIVE, f"last write on {fmt_date(w)}"
     if w:
-        return "figée", f"dernière écriture le {fr_date(w)}"
+        return FROZEN, f"last write on {fmt_date(w)}"
     if nw == 0 and ddl and (as_of - ddl).days >= VIVANTE_JOURS:
-        return "figée", f"aucune écriture observée, dernière DDL le {fr_date(ddl)}"
-    return None, "écritures non lues"
+        return FROZEN, f"no write observed, last DDL on {fmt_date(ddl)}"
+    return None, "writes not read"
 
 
 def _table(t: dict, as_of: datetime) -> dict:
@@ -347,7 +352,7 @@ def _table(t: dict, as_of: datetime) -> dict:
         "colonnes_n": len(cols), "colonnes_non_portables": _non_portables(cols),
         "politiques": sorted(scrub(p) for p in t.get("politiques") or []), "etiquettes_n": len(t.get("etiquettes") or []),
         "derniere_ddl": t.get("derniere_ddl"),
-        # n_pruning : repli Snowflake sans ACCESS_HISTORY ; partage : lectures des abonnés (BigQuery SHARED_DATASET_USAGE)
+        # n_pruning: Snowflake fallback without ACCESS_HISTORY; partage: subscriber reads (BigQuery SHARED_DATASET_USAGE)
         "lectures": {"n": t.get("n_lectures"), "derniere": t.get("derniere_lecture"),
                      "n_pruning": detail.get("requetes_pruning_n"), "partage": detail.get("lectures_partage_n")},
         "ecritures": {"n": t.get("n_ecritures"), "derniere": t.get("derniere_ecriture")},
@@ -363,7 +368,7 @@ def _stockage(s) -> dict | None:
 
 
 def _objet_v2(o: dict) -> dict:
-    """Champs optionnels de canot.scan/2 : recopiés seulement s'ils sont présents, jamais de code brut (empreinte et compte de lignes)."""
+    """Optional canot.scan/2 fields: copied only when present, never raw code (fingerprint and line count)."""
     out = {}
     for k in ("famille_objet", "portabilite", "moteur"):
         if k in o:
@@ -405,12 +410,12 @@ def _famille(f: dict) -> dict:
     out["tables"] = sorted(scrub(str(x)) for x in f.get("tables") or [])
     out["fonctions"] = sorted(scrub(str(x)) for x in f.get("fonctions") or [])
     out["sql_normalise"] = scrub(f.get("sql_normalise"))
-    uris = f.get("compartiments") or f.get("uris_export") or (f.get("detail") or {}).get("export") or []  # replay : detail.export
+    uris = f.get("compartiments") or f.get("uris_export") or (f.get("detail") or {}).get("export") or []  # replay: detail.export
     out["compartiments"] = sorted({d for d in (_reduce_uri(u) for u in uris) if d})
     return out
 
 
-# --- drapeaux --------------------------------------------------------------------------------------------
+# --- flags --------------------------------------------------------------------------------------------------
 
 
 def _flag(code, cible_type, cible, texte, base, preuve=None, confiance=None) -> dict:
@@ -431,14 +436,14 @@ class _Ctx:
 
 
 def _external(ctx: _Ctx) -> dict[str, tuple[str, str, list[str]]]:
-    """id -> (cible_type, description, emplacements) pour tout ce qui dépend directement de l'extérieur (F01)."""
+    """id -> (target type, description, locations) for everything that depends directly on the outside (F01)."""
     out = {}
     for t in ctx.tables:
         if t["supprimee_le"]:
             continue
         if t["type"] in ("EXTERNE", "ICEBERG") or t["externe_uri"]:
             loc = [t["externe_uri"]] if t["externe_uri"] else []
-            what = "Table Iceberg : données sur un volume externe" if t["type"] == "ICEBERG" else "Table externe : données hors de la plateforme"
+            what = "Iceberg table: data on an external volume" if t["type"] == "ICEBERG" else "External table: data outside the platform"
             out[t["id"]] = ("table", what, loc)
     for o in ctx.objets:
         k, deps = o["kind"], o["dependances_externes"]
@@ -446,11 +451,11 @@ def _external(ctx: _Ctx) -> dict[str, tuple[str, str, list[str]]]:
             continue
         exports = bool(o["detail"].get("ecriture_externe") or o["detail"].get("exporte"))
         if k == "base_importee":
-            out[o["id"]] = ("objet", "Base importée d'un partage entrant", deps)
-        elif k in ("connexion", "integration") or o["externe"] or (deps and not exports):  # une destination d'export relève de F03
-            what = {"stage": "Stage externe", "fonction": "Fonction externe : appelle un service hors de la plateforme",
-                    "connexion": "Connexion vers un service externe", "integration": "Intégration avec un service externe"}
-            out[o["id"]] = ("objet", what.get(k, f"{cap(KIND_LABELS.get(k, k))} : dépendance externe déclarée"), deps)
+            out[o["id"]] = ("objet", "Database imported from an inbound share", deps)
+        elif k in ("connexion", "integration") or o["externe"] or (deps and not exports):  # an export destination belongs to F03
+            what = {"stage": "External stage", "fonction": "External function: calls a service outside the platform",
+                    "connexion": "Connection to an external service", "integration": "Integration with an external service"}
+            out[o["id"]] = ("objet", what.get(k, f"{cap(KIND_LABELS.get(k, k))}: declared external dependency"), deps)
     return out
 
 
@@ -459,7 +464,7 @@ def _f01_f02(ctx: _Ctx, ext: dict) -> list[dict]:
     for i, (ctype, what, loc) in sorted(ext.items()):
         kind = next((o["kind"] for o in ctx.objets if o["id"] == i), None)
         base = ctx.reads.ids(*TABLE_SOURCES) if ctype == "table" else ctx.kind_ids(kind)
-        where = f" ({', '.join(loc)})" if loc else ("" if kind == "base_importee" else " (emplacement non lu)")
+        where = f" ({', '.join(loc)})" if loc else ("" if kind == "base_importee" else " (location not read)")
         texte = f"{what}{where}."
         flags.append(_flag("F01", ctype, i, texte, base, {"emplacements": loc, "type": kind or "table"}))
     graph = {o["id"]: o["reference"] for o in ctx.objets}
@@ -471,8 +476,8 @@ def _f01_f02(ctx: _Ctx, ext: dict) -> list[dict]:
             continue
         loc = ext[path[-1]][2]
         chemin = " → ".join(path)
-        texte = (f"Dépend de {path[-1]}, hors de la plateforme, par {pl(len(path) - 1, 'niveau', 'niveaux')} : {chemin}"
-                 f" ({', '.join(loc) if loc else 'emplacement non lu'}).")
+        texte = (f"Depends on {path[-1]}, outside the platform, through {pl(len(path) - 1, 'level')}: {chemin}"
+                 f" ({', '.join(loc) if loc else 'location not read'}).")
         base = ctx.kind_ids(o["kind"]) + ctx.reads.ids("OBJECT_DEPENDENCIES")
         flags.append(_flag("F02", "objet", o["id"], texte, base, {"chemin": path, "emplacements": loc}))
     return flags
@@ -499,32 +504,32 @@ def _f03(ctx: _Ctx) -> list[dict]:
     for o in ctx.objets:
         if o["kind"] in SCHEDULED_KINDS + ("procedure",) and (o["detail"].get("ecriture_externe") or o["detail"].get("exporte")):
             loc = o["dependances_externes"]
-            texte = (f"{cap(KIND_LABELS.get(o['kind'], o['kind']))} qui écrit hors de la plateforme (déclaré dans sa définition) ; "
-                     f"destination : {', '.join(loc) if loc else 'non lue'}.")
-            flags.append(_flag("F03", "objet", o["id"], texte, ctx.kind_ids(o["kind"]), {"mode": "déclaré", "emplacements": loc}))
+            texte = (f"{cap(KIND_LABELS.get(o['kind'], o['kind']))} that writes outside the platform (declared in its definition); "
+                     f"destination: {', '.join(loc) if loc else 'not read'}.")
+            flags.append(_flag("F03", "objet", o["id"], texte, ctx.kind_ids(o["kind"]), {"mode": "declared", "emplacements": loc}))
     stage_locs = {o["id"].upper(): o["dependances_externes"] for o in ctx.objets if o["kind"] == "stage"}
     for f in ctx.familles:
         if not f["ecriture_externe"]:
             continue
-        # replay peut nommer le stage plutôt que le compartiment : on remonte à l'emplacement du stage s'il est connu
+        # replay may name the stage rather than the bucket: go back to the stage location when it is known
         loc = sorted({x for c in f["compartiments"] for x in (stage_locs.get(c.lstrip("@").upper()) or [c])})
         qui = f["outil"] or f["app"]
-        texte = (f"Écriture hors de la plateforme observée : {pl(f['n_exec'] or 0, 'exécution')}"
-                 + (f" ({qui})" if qui else "") + f" ; destination : {', '.join(loc) if loc else 'non lue'}.")
+        texte = (f"Write outside the platform observed: {pl(f['n_exec'] or 0, 'execution')}"
+                 + (f" ({qui})" if qui else "") + f"; destination: {', '.join(loc) if loc else 'not read'}.")
         flags.append(_flag("F03", "famille", (f["empreinte"] or "")[:12], texte, ctx.reads.ids("QUERY_HISTORY", "JOBS"),
-                           {"mode": "observé", "emplacements": loc, "n_exec": f["n_exec"], "tables": f["tables"][:5]}))
-    for o in ctx.objets:  # déchargements vers un stage externe vus dans ACCESS_HISTORY
+                           {"mode": "observed", "emplacements": loc, "n_exec": f["n_exec"], "tables": f["tables"][:5]}))
+    for o in ctx.objets:  # unloads to an external stage seen in ACCESS_HISTORY
         n = o["detail"].get("ecritures_observees_n")
         if o["kind"] == "stage" and o["externe"] and isinstance(n, int) and n > 0:
             loc = o["dependances_externes"]
-            texte = f"Écriture hors de la plateforme observée : {pl(n, 'écriture')} vers ce stage externe ({', '.join(loc) if loc else 'emplacement non lu'})."
+            texte = f"Write outside the platform observed: {pl(n, 'write')} to this external stage ({', '.join(loc) if loc else 'location not read'})."
             flags.append(_flag("F03", "objet", o["id"], texte, ctx.kind_ids("stage") + ctx.reads.ids("ACCESS_HISTORY"),
-                               {"mode": "observé", "emplacements": loc, "n_exec": n}))
+                               {"mode": "observed", "emplacements": loc, "n_exec": n}))
     return flags
 
 
 def _has_holder(roles: dict):
-    """Titulaire = rôle accordé à un utilisateur, directement ou par un rôle parent. None = non déterminé."""
+    """Holder = role granted to a user, directly or through a parent role. None = not determined."""
     memo: dict[str, bool | None] = {}
 
     def has(name: str, seen: frozenset = frozenset()) -> bool | None:
@@ -562,9 +567,9 @@ def _owners(ctx: _Ctx) -> dict[str, list[tuple[str, dict]]]:
 
 
 def _f04(ctx: _Ctx) -> tuple[list[dict], list[str]]:
-    """(drapeaux, rôles non résolus). Ne devine pas : sans GRANTS_TO_USERS et GRANTS_TO_ROLES lus, rien n'est conclu."""
+    """(flags, unresolved roles). Does not guess: without GRANTS_TO_USERS and GRANTS_TO_ROLES read, nothing is concluded."""
     roles_list = (ctx.snap.get("droits") or {}).get("roles")
-    if not (roles_list is not None and all(ctx.reads.status(n) == "lu" for n in GRANT_SOURCES)):
+    if not (roles_list is not None and all(ctx.reads.status(n) == READ for n in GRANT_SOURCES)):
         return [], []
     roles = {r.get("nom"): r for r in roles_list if r.get("nom")}
     has = _has_holder(roles)
@@ -579,25 +584,25 @@ def _f04(ctx: _Ctx) -> tuple[list[dict], list[str]]:
         ids = sorted(i for i, _ in owned)
         for _, x in owned:
             x["drapeaux"].append("F04")
-        texte = (f"Le rôle {role} possède {pl(len(ids), 'objet')} et n'est accordé à aucun utilisateur, "
-                 f"ni directement ni par un autre rôle.")
+        texte = (f"Role {role} owns {pl(len(ids), 'object')} and is granted to no user, "
+                 f"neither directly nor through another role.")
         flags.append(_flag("F04", "role", role, texte, ctx.reads.ids(*GRANT_SOURCES), {"objets_n": len(ids), "exemples": ids[:5]}))
     return flags, unresolved
 
 
 def _read_sources(ctx: _Ctx) -> list[dict]:
-    """Sources des lectures par table (fiche du connecteur), de la plus sûre à la moins sûre ; seules celles qui ont été lues."""
+    """Sources of reads per table (connector profile), from the most to the least reliable; only those that were read."""
     r = ctx.reads
     fiche = profile(ctx.plat)
     out = []
     for name, label, conf, keys in fiche.get("sources_lectures", ()):
         if not r.ok(name):
             continue
-        non_vus = [nv for nv in fiche["non_vus"][name] if r.status(fiche.get("non_vus_couverts", {}).get(nv, "")) != "lu"]
+        non_vus = [nv for nv in fiche["non_vus"][name] if r.status(fiche.get("non_vus_couverts", {}).get(nv, "")) != READ]
         du, au = r.window(name)
         partiel = r.partial(name)
-        lat = [lec["latence_max_h"] for lec in r.find(name) if lec["statut"] == "lu" and lec["latence_max_h"] is not None]
-        out.append({"vue": name, "label": label, "confiance": "basse" if partiel or not du else conf, "non_vus": non_vus,
+        lat = [lec["latence_max_h"] for lec in r.find(name) if lec["statut"] == READ and lec["latence_max_h"] is not None]
+        out.append({"vue": name, "label": label, "confiance": "low" if partiel or not du else legacy("confiance", conf), "non_vus": non_vus,
                     "ids": r.ids(name), "du": du, "au": au, "partiel": partiel, "keys": keys, "latence_h": max(lat, default=None)})
     return out
 
@@ -611,8 +616,8 @@ def _source_for(t: dict, sources: list[dict]) -> tuple[dict | None, int | None]:
 
 
 def _too_recent(t: dict, src: dict, as_of: datetime) -> bool:
-    """Table vue seulement en temps réel, ou créée depuis moins que la latence de la source des lectures : son absence de
-    lecture n'est pas encore observable."""
+    """Table seen only in real time, or created more recently than the latency of the read source: its absence of
+    reads is not observable yet."""
     if "recente" in t["flags"]:
         return True
     created = parse_dt(t["detail"].get("creee_le"))
@@ -621,7 +626,7 @@ def _too_recent(t: dict, src: dict, as_of: datetime) -> bool:
 
 
 def _f05(ctx: _Ctx, sources: list[dict], shared: dict[str, int]) -> list[dict]:
-    """Aucune source lue, ou valeur inconnue pour la table : F05 se tait (F12 le dit). Table trop récente : F05 se tait aussi."""
+    """No source read, or unknown value for the table: F05 stays silent (F12 says so). Table too recent: F05 stays silent too."""
     horizon = profile(ctx.plat).get("horizon_jours", 365)
     flags = []
     for t in ctx.present:
@@ -633,21 +638,21 @@ def _f05(ctx: _Ctx, sources: list[dict], shared: dict[str, int]) -> list[dict]:
             continue
         if src["du"] and src["au"]:
             jours = (src["au"] - src["du"]).days
-            fen = f"du {fr_date(src['du'])} au {fr_date(src['au'])}"
+            fen = f"from {fmt_date(src['du'])} to {fmt_date(src['au'])}"
         else:
-            jours, fen = None, "(fenêtre non transmise)"
-        propre = f"{fr_bytes(octets)} stockés" if not t.get("clone_de") else f"Clone ou snapshot de {t['clone_de']} (seuls ses octets propres sont facturés)"
-        texte = (f"{propre}. Aucune lecture observée dans {src['label']} {fen} ; "
-                 f"non vus : {', '.join(src['non_vus'])}.")
+            jours, fen = None, "(window not provided)"
+        propre = f"{fmt_bytes(octets)} stored" if not t.get("clone_de") else f"Clone or snapshot of {t['clone_de']} (only its own bytes are billed)"
+        texte = (f"{propre}. No read observed in {src['label']} {fen}; "
+                 f"blind spots: {', '.join(src['non_vus'])}.")
         if jours is not None and jours < horizon - 1:
-            texte += f" Fenêtre de {jours} jours, plus courte que {horizon} : un traitement trimestriel ou annuel peut ne pas y figurer."
+            texte += f" {jours}-day window, shorter than {horizon}: a quarterly or yearly job may not appear in it."
         if src["partiel"]:
-            texte += " Certaines fenêtres de lecture n'ont pas été lues."
+            texte += " Some read windows were not read."
         ddl = parse_dt(t["derniere_ddl"])
         if ddl and src["du"] and ddl > src["du"]:
-            texte += f" Dernière DDL le {fr_date(ddl)}."
+            texte += f" Last DDL on {fmt_date(ddl)}."
         if shared.get(t["id"]):
-            texte += f" Partagée avec {pl(shared[t['id']], 'consommateur externe', 'consommateurs externes')} : leurs lectures ne sont pas vues."
+            texte += f" Shared with {pl(shared[t['id']], 'external consumer')}: their reads are not seen."
         preuve = {"octets_actifs": octets, "source": src["label"], "du": src["du"].strftime("%Y-%m-%d") if src["du"] else None,
                   "au": src["au"].strftime("%Y-%m-%d") if src["au"] else None, "jours": jours, "non_vus": src["non_vus"]}
         flags.append(_flag("F05", "table", t["id"], texte, src["ids"] + ctx.reads.ids(*STORAGE_SOURCES), preuve, src["confiance"]))
@@ -659,41 +664,41 @@ def _f06_f07(ctx: _Ctx) -> list[dict]:
     flags = []
     for t in ctx.tables:
         h, a = t["octets_historique"], t["octets_actifs"]
-        if "recente" in t["flags"]:  # historique facturé pas encore dans ACCOUNT_USAGE : aucune conclusion
+        if "recente" in t["flags"]:  # billed history not yet in ACCOUNT_USAGE: no conclusion
             continue
         if t["supprimee_le"]:
             if h is None and a is None:
                 continue
             total = (h or 0) + (a or 0)
             if total > 0:
-                texte = f"Supprimée le {fr_date(t['supprimee_le'])} ; {fr_bytes(total)} encore facturés (Time Travel et Fail-safe)."
+                texte = f"Dropped on {fmt_date(t['supprimee_le'])}; {fmt_bytes(total)} still billed (Time Travel and Fail-safe)."
                 flags.append(_flag("F07", "table", t["id"], texte, base + ctx.reads.ids("TABLES"),
                                    {"supprimee_le": t["supprimee_le"], "octets": total}))
         elif h and h > 0:
-            texte = (f"{fr_bytes(h)} d'historique facturé (Time Travel et Fail-safe)"
-                     + (f", rétention {fr_num(t['retention_jours'])} jours" if t["retention_jours"] is not None else "")
-                     + (f", pour {fr_bytes(a)} actifs" if a is not None else "") + " ; cet historique ne part pas avec la copie.")
+            texte = (f"{fmt_bytes(h)} of billed history (Time Travel and Fail-safe)"
+                     + (f", retention {fmt_num(t['retention_jours'])} days" if t["retention_jours"] is not None else "")
+                     + (f", for {fmt_bytes(a)} active" if a is not None else "") + "; this history does not leave with the copy.")
             flags.append(_flag("F06", "table", t["id"], texte, base,
                                {"octets_historique": h, "octets_actifs": a, "retention_jours": t["retention_jours"]}))
     return flags
 
 
-F08_DBT = (" : SQL produit par Jinja et des macros à la compilation ; le SQL rejoué dépend de la cible et des variables, "
-           "seul le SQL compilé lu est analysé.")
+F08_DBT = (": SQL produced by Jinja and macros at compile time; the replayed SQL depends on the target and the variables, "
+           "only the compiled SQL that was read is analyzed.")
 
 
 def _f08(ctx: _Ctx) -> list[dict]:
     return [_flag("F08", "objet", o["id"],
                   f"{cap(KIND_LABELS.get(o['kind'], o['kind']))}"
-                  + (F08_DBT if o["kind"] in DBT_KINDS else (f" en {o['langage']}" if o["langage"] else "")
-                     + " : construit du SQL à l'exécution ; les objets touchés ne se lisent pas dans le code."),
+                  + (F08_DBT if o["kind"] in DBT_KINDS else (f" ({o['langage']})" if o["langage"] else "")
+                     + ": builds SQL at run time; the objects it touches cannot be read from the code."),
                   ctx.kind_ids(o["kind"]), {"langage": o["langage"]})
             for o in ctx.objets if o["sql_dynamique"] is True]
 
 
-CONSUMER_KEYS = (("comptes_cibles", "compte cible", "comptes cibles"), ("comptes_cibles_n", "compte cible", "comptes cibles"),
-                 ("projets_consommateurs_n", "projet consommateur", "projets consommateurs"), ("abonnes", "abonné", "abonnés"),
-                 ("consommateurs", "consommateur", "consommateurs"))
+CONSUMER_KEYS = (("comptes_cibles", "target account", "target accounts"), ("comptes_cibles_n", "target account", "target accounts"),
+                 ("projets_consommateurs_n", "consumer project", "consumer projects"), ("abonnes", "subscriber", "subscribers"),
+                 ("consommateurs", "consumer", "consumers"))
 
 
 def _consumers(o: dict) -> tuple[int | None, str]:
@@ -701,7 +706,7 @@ def _consumers(o: dict) -> tuple[int | None, str]:
     for k, one, many in CONSUMER_KEYS:
         if isinstance(d.get(k), (int, float)) and not isinstance(d.get(k), bool):
             return int(d[k]), pl(int(d[k]), one, many)
-    return None, "consommateurs externes (nombre non lu)"
+    return None, "external consumers (number not read)"
 
 
 def _f09(ctx: _Ctx) -> tuple[list[dict], dict[str, int]]:
@@ -714,9 +719,9 @@ def _f09(ctx: _Ctx) -> tuple[list[dict], dict[str, int]]:
             continue
         for r in o["reference"]:
             shared[r] = max(shared.get(r, 0), n or 1)
-        quoi = (pl(len(o["reference"]), "objet partagé", "objets partagés") if o["reference"]
-                else f"base {o['detail']['base']}" if o["detail"].get("base") else "objets partagés non lus")
-        texte = f"Partage vers {qui} ; {quoi}. Les lectures des consommateurs ne sont pas vues par ce scan."
+        quoi = (pl(len(o["reference"]), "shared object") if o["reference"]
+                else f"database {o['detail']['base']}" if o["detail"].get("base") else "shared objects not read")
+        texte = f"Share to {qui}; {quoi}. Consumer reads are not seen by this scan."
         flags.append(_flag("F09", "objet", o["id"], texte, ctx.kind_ids("partage"), {"consommateurs": n, "objets": o["reference"][:10]}))
     return flags, shared
 
@@ -729,18 +734,18 @@ def _f10(ctx: _Ctx) -> list[dict]:
             continue
         parts = []
         if t["politiques"]:
-            parts.append(f"politiques : {', '.join(t['politiques'])}")
+            parts.append(f"policies: {', '.join(t['politiques'])}")
         if t["etiquettes_n"]:
-            parts.append(pl(t["etiquettes_n"], "étiquette"))
-        texte = (f"{cap(' ; '.join(parts))}. Elles ne partent pas avec la copie ; "
-                 f"la copie demande un principal non filtré par ces politiques.")
+            parts.append(pl(t["etiquettes_n"], "tag"))
+        texte = (f"{cap('; '.join(parts))}. They do not leave with the copy; "
+                 f"the copy requires a principal not filtered by these policies.")
         flags.append(_flag("F10", "table", t["id"], texte, base, {"politiques": t["politiques"], "etiquettes_n": t["etiquettes_n"]}))
     for o in ctx.objets:
         if o["kind"] not in POLICY_KINDS:
             continue
         what = cap(KIND_LABELS[o["kind"]])
-        texte = f"{what} appliquée à {pl(len(o['reference']), 'objet')} ; elle ne part pas avec la copie"
-        texte += "." if o["kind"] == "etiquette" else " ; la copie demande un principal non filtré."
+        texte = f"{what} applied to {pl(len(o['reference']), 'object')}; it does not leave with the copy"
+        texte += "." if o["kind"] == "etiquette" else "; the copy requires an unfiltered principal."
         flags.append(_flag("F10", "objet", o["id"], texte, ctx.kind_ids(o["kind"]), {"objets": o["reference"][:10]}))
     return flags
 
@@ -771,19 +776,19 @@ def _f11(ctx: _Ctx) -> list[dict]:
     for i, o in sorted(sched.items()):
         head = [cap(KIND_LABELS.get(o["kind"], o["kind"]))]
         if o["planification"]:
-            head.append(f"planification {o['planification']}")
+            head.append(f"schedule {o['planification']}")
         if o["etat"]:
-            head.append(f"état {o['etat']}")
+            head.append(f"state {o['etat']}")
         if o["kind"] == "flux" and o["executions_n"] is None:
-            runs = f"sur {', '.join(o['reference'])}" if o["reference"] else "objet suivi non lu"
+            runs = f"on {', '.join(o['reference'])}" if o["reference"] else "tracked object not read"
         elif o["executions_n"] is None:
-            runs = "exécutions non lues"
+            runs = "runs not read"
         else:
-            runs = pl(o["executions_n"], "exécution") + ", " + (pl(o["echecs_n"], "échec") if o["echecs_n"] is not None else "échecs non lus")
+            runs = pl(o["executions_n"], "run") + ", " + (pl(o["echecs_n"], "failure") if o["echecs_n"] is not None else "failures not read")
         if o["derniere_execution"]:
-            runs += f", dernière le {fr_date(o['derniere_execution'])}"
+            runs += f", last on {fmt_date(o['derniere_execution'])}"
         ch = chain(o)
-        texte = ", ".join(head) + f" ; {runs}" + (f" ; chaîne : {' → '.join(ch)}" if len(ch) > 1 else "") + "."
+        texte = ", ".join(head) + f"; {runs}" + (f"; chain: {' → '.join(ch)}" if len(ch) > 1 else "") + "."
         flags.append(_flag("F11", "objet", i, texte, ctx.kind_ids(o["kind"]),
                            {"chaine": ch, "executions_n": o["executions_n"], "echecs_n": o["echecs_n"], "etat": o["etat"]}))
     return flags
@@ -794,7 +799,7 @@ def _label(o: dict) -> str:
 
 
 def _f13(ctx: _Ctx) -> list[dict]:
-    """Traitement dont le moteur ne sort pas de la plateforme : recette visuelle ou de plugin lue, ou traitement déclaré à reconstruire."""
+    """Processing whose engine does not leave the platform: visual or plugin recipe read, or processing declared as to rebuild."""
     flags = []
     for o in ctx.objets:
         port = o.get("portabilite", "absente")
@@ -803,14 +808,14 @@ def _f13(ctx: _Ctx) -> list[dict]:
             continue
         io = []
         if "entrees" in o:
-            io.append(pl(len(o["entrees"]), "entrée"))
+            io.append(pl(len(o["entrees"]), "input"))
         if "sorties" in o:
-            io.append(pl(len(o["sorties"]), "sortie"))
+            io.append(pl(len(o["sorties"]), "output"))
         raison = o["detail"].get("raison_portabilite")
-        texte = (f"{_label(o)} sans équivalent exécutable hors plateforme (type lu : {o['kind']}"
-                 + (f", moteur {o['moteur']}" if o.get("moteur") else "") + ")"
-                 + (f" ; {raison}" if raison else "")
-                 + (f" ; {', '.join(io)}" if io else "") + " ; à reconstruire : compté, non rejoué.")
+        texte = (f"{_label(o)} with no executable equivalent off the platform (type read: {o['kind']}"
+                 + (f", engine {o['moteur']}" if o.get("moteur") else "") + ")"
+                 + (f"; {raison}" if raison else "")
+                 + (f"; {', '.join(io)}" if io else "") + "; to rebuild: counted, not replayed.")
         flags.append(_flag("F13", "objet", o["id"], texte, ctx.kind_ids(o["kind"]),
                            {"kind": o["kind"], "portabilite": o.get("portabilite"), "moteur": o.get("moteur"),
                             "entrees": o.get("entrees", [])[:10], "sorties": o.get("sorties", [])[:10]}))
@@ -818,7 +823,7 @@ def _f13(ctx: _Ctx) -> list[dict]:
 
 
 def _f14(ctx: _Ctx) -> list[dict]:
-    """Extension propriétaire : plugin inventorié dont le code n'est pas lu ou est sous licence ; recette de plugin sans plugin inventorié."""
+    """Proprietary extension: inventoried plugin whose code is not read or is licensed; plugin recipe with no inventoried plugin."""
     plugins = {o["id"]: o for o in ctx.objets if o["kind"] in EXTENSION_KINDS or o.get("famille_objet") == "extension"}
     usage_lu = any("extensions" in o for o in ctx.objets)
     flags = []
@@ -832,25 +837,25 @@ def _f14(ctx: _Ctx) -> list[dict]:
         if o["detail"].get("version"):
             etat.append(f"version {o['detail']['version']}")
         if code_non_lu:
-            etat.append("code non lu")
+            etat.append("code not read")
         if licence:
-            etat.append(f"licence {licence}")
-        usage = ((f"utilisé par {pl(len(users), 'objet')} : {', '.join(users[:5])}" + (" …" if len(users) > 5 else "")) if users
-                 else "aucun usage observé dans les objets lus") if usage_lu else "usage par objet non lu"
+            etat.append(f"license {licence}")
+        usage = ((f"used by {pl(len(users), 'object')}: {', '.join(users[:5])}" + (" …" if len(users) > 5 else "")) if users
+                 else "no use observed in the objects read") if usage_lu else "use per object not read"
         texte = f"{_label(o)} ({', '.join(etat)}) ; {usage}."
         flags.append(_flag("F14", "objet", i, texte, ctx.kind_ids(o["kind"]),
                            {"version": o["detail"].get("version"), "code_lu": not code_non_lu, "licence": licence, "utilise_par": users[:10]}))
     for o in ctx.objets:
         if o["kind"] == "recette_plugin" and not any(e in plugins for e in o.get("extensions", [])):
             ext = o.get("extensions", [])
-            texte = (f"{_label(o)} : extension utilisée non inventoriée"
-                     + (f" ({', '.join(ext[:5])})" if ext else " (plugin non nommé par la collecte)") + " ; code de l'extension non lu.")
+            texte = (f"{_label(o)}: extension used but not inventoried"
+                     + (f" ({', '.join(ext[:5])})" if ext else " (plugin not named by collection)") + "; extension code not read.")
             flags.append(_flag("F14", "objet", o["id"], texte, ctx.kind_ids(o["kind"]), {"extensions": ext[:10], "code_lu": False}))
     return flags
 
 
 def _f15(ctx: _Ctx) -> list[dict]:
-    """Modèle entraîné sans format ouvert déclaré ; formats non lus (licence, droits) = « non déterminé », jamais « non exportable »."""
+    """Trained model with no declared open format; formats not read (license, privileges) = "not determined", never "not exportable"."""
     flags = []
     for o in ctx.objets:
         if not (o["kind"] in MODELE_KINDS or o.get("famille_objet") == "modele"):
@@ -859,32 +864,32 @@ def _f15(ctx: _Ctx) -> list[dict]:
         algo = o["detail"].get("algorithme")
         head = _label(o) + (f" ({algo})" if algo else "")
         if fx is None:
-            texte = f"{head} : formats d'export non lus (licence ou droits) ; export ouvert non déterminé."
+            texte = f"{head}: export formats not read (license or privileges); open export not determined."
         elif any(f in FORMATS_OUVERTS for f in fx):
             continue
         else:
-            texte = (f"{head} : aucun format ouvert déclaré parmi MLflow, ONNX, PMML, Python"
-                     + (f" (formats lus : {', '.join(fx)})" if fx else " (aucun format lu)") + ".")
+            texte = (f"{head}: no open format declared among MLflow, ONNX, PMML, Python"
+                     + (f" (formats read: {', '.join(fx)})" if fx else " (no format read)") + ".")
         flags.append(_flag("F15", "objet", o["id"], texte, ctx.kind_ids(o["kind"]),
                            {"formats_export": fx, "determine": fx is not None}))
     return flags
 
 
 def _f16(ctx: _Ctx) -> list[dict]:
-    """Mesure ou calcul de la couche de présentation non trivial : critère déclaré par le connecteur, sinon nombre de lignes."""
+    """Non-trivial measure or calculation in the presentation layer: criterion declared by the connector, otherwise line count."""
     flags = []
     for o in ctx.objets:
         if not (o["kind"] in PRESENTATION_KINDS or o.get("famille_objet") == "rapport"):
             continue
         nt, lignes = o.get("non_triviale"), o.get("lignes_code")
         if nt is True:
-            pourquoi = "non triviale selon le connecteur"
+            pourquoi = "non-trivial according to the connector"
         elif nt is None and isinstance(lignes, int) and lignes >= F16_LIGNES:
-            pourquoi = f"{pl(lignes, 'ligne')} de calcul"
+            pourquoi = f"{pl(lignes, 'line')} of calculation"
         else:
             continue
-        texte = (f"{_label(o)} de la couche de présentation, {pourquoi}" + (f" ; langage {o['langage']}" if o.get("langage") else "")
-                 + " ; recalcul hors outil non comparé.")
+        texte = (f"{_label(o)} in the presentation layer, {pourquoi}" + (f"; language {o['langage']}" if o.get("langage") else "")
+                 + "; recalculation outside the tool not compared.")
         flags.append(_flag("F16", "objet", o["id"], texte, ctx.kind_ids(o["kind"]),
                            {"non_triviale": nt, "lignes_code": lignes, "langage": o.get("langage")}))
     return flags
@@ -894,52 +899,52 @@ def _f12(ctx: _Ctx, edition_missing: bool, unresolved_owners: list[str], sources
     r, flags = ctx.reads, []
     for lec in r.all:
         key = _impact_key(lec["vue"])
-        if lec["statut"] == "lu":
-            if (lec["raison"] or "").startswith("partiel"):
-                impact = IMPACTS.get(key, "les conclusions qui en dépendent")
+        if lec["statut"] == READ:
+            if (lec["raison"] or "").startswith("partial"):
+                impact = IMPACTS.get(key, "the conclusions that depend on it")
                 lec["limite"] = impact
-                flags.append(_flag("F12", "lecture", lec["id"], f"{short_vue(lec['vue'])} lue en partie ({lec['raison']}) ; limite : {impact}.",
+                flags.append(_flag("F12", "lecture", lec["id"], f"{short_vue(lec['vue'])} partly read ({lec['raison']}); limits: {impact}.",
                                    [lec["id"]], {"vue": lec["vue"], "raison": lec["raison"]}))
             continue
         if key in FALLBACKS and r.ok(*FALLBACKS[key]):
-            lec["limite"] = f"aucune : {FALLBACKS[key][0]} lue à la place"
+            lec["limite"] = f"none: {FALLBACKS[key][0]} read instead"
             continue
         if key == "ACCESS_HISTORY":
-            impact = ("lectures par objet : F05 calculé avec TABLE_QUERY_PRUNING_HISTORY, confiance moyenne"
-                      if r.ok("TABLE_QUERY_PRUNING_HISTORY") else "lectures par objet : F05 non calculé")
+            impact = ("reads per object: F05 computed with TABLE_QUERY_PRUNING_HISTORY, medium confidence"
+                      if r.ok("TABLE_QUERY_PRUNING_HISTORY") else "reads per object: F05 not computed")
             if edition_missing:
-                impact += " ; édition non déterminée (Standard ou droit absent)"
+                impact += "; edition not determined (Standard or missing privilege)"
         else:
-            impact = IMPACTS.get(key, "les conclusions qui en dépendent")
+            impact = IMPACTS.get(key, "the conclusions that depend on it")
         lec["limite"] = impact
-        texte = f"{short_vue(lec['vue'])} non lue ({lec['raison'] or 'raison non transmise'}) ; limite : {impact}."
+        texte = f"{short_vue(lec['vue'])} not read ({lec['raison'] or 'reason not provided'}); limits: {impact}."
         flags.append(_flag("F12", "lecture", lec["id"], texte, [], {"vue": lec["vue"], "raison": lec["raison"]}))
     if ctx.plat == "snowflake" and not r.find(*GRANT_SOURCES):
         flags.append(_flag("F12", "lecture", "droits",
-                           f"Droits non lus (niveau {ctx.snap.get('niveau_droits')}) ; limite : rôles propriétaires sans titulaire (F04).", []))
-    elif r.find(*GRANT_SOURCES) and all(r.status(n) == "lu" for n in GRANT_SOURCES) and (ctx.snap.get("droits") or {}).get("roles") is None:
-        flags.append(_flag("F12", "lecture", "droits", "Droits lus mais non transmis à l'analyse ; limite : rôles propriétaires sans titulaire (F04).", []))
+                           f"Privileges not read (level {ctx.snap.get('niveau_droits')}); limits: owner roles with no holder (F04).", []))
+    elif r.find(*GRANT_SOURCES) and all(r.status(n) == READ for n in GRANT_SOURCES) and (ctx.snap.get("droits") or {}).get("roles") is None:
+        flags.append(_flag("F12", "lecture", "droits", "Privileges read but not passed to the analysis; limits: owner roles with no holder (F04).", []))
     if unresolved_owners:
         flags.append(_flag("F12", "lecture", "roles",
-                           f"{pl(len(unresolved_owners), 'rôle propriétaire', 'rôles propriétaires')} sans octroi lu ; "
-                           f"limite : rôles propriétaires sans titulaire (F04).", r.ids(*GRANT_SOURCES), {"roles": unresolved_owners[:10]}))
+                           f"{pl(len(unresolved_owners), 'owner role')} with no grant read; "
+                           f"limits: owner roles with no holder (F04).", r.ids(*GRANT_SOURCES), {"roles": unresolved_owners[:10]}))
     if sources:
         unknown = [t["id"] for t in ctx.present if _source_for(t, sources)[0] is None and t["type"] not in ("EXTERNE", "TEMPORAIRE")]
         if unknown:
             flags.append(_flag("F12", "lecture", "lectures_par_table",
-                               f"Lectures non déterminées pour {pl(len(unknown), 'table')} ; limite : stockage sans lecture observée (F05).",
+                               f"Reads not determined for {pl(len(unknown), 'table')}; limits: storage with no observed read (F05).",
                                [i for s in sources for i in s["ids"]], {"tables": unknown[:10]}))
-    # une fonction externe n'a pas de corps SQL : son sql_dynamique vide n'est pas un code non lu
+    # an external function has no SQL body: its empty sql_dynamique is not unread code
     hidden = [o["id"] for o in ctx.objets if o["kind"] in ("procedure", "fonction") and o["sql_dynamique"] is None
               and not (o["kind"] == "fonction" and o["externe"])]
     if hidden:
         flags.append(_flag("F12", "lecture", "code_des_routines",
-                           f"Code non lu pour {pl(len(hidden), 'routine')} (filtré par droits ou non transmis) ; limite : SQL dynamique (F08).",
+                           f"Code not read for {pl(len(hidden), 'routine')} (filtered by privileges or not provided); limits: dynamic SQL (F08).",
                            ctx.reads.ids("PROCEDURES", "FUNCTIONS", "ROUTINES"), {"routines": hidden[:10]}))
     return flags
 
 
-# --- chiffres --------------------------------------------------------------------------------------------
+# --- figures ------------------------------------------------------------------------------------------------
 
 
 class _NonEstime:
@@ -952,59 +957,59 @@ class _NonEstime:
             self.items.append(item)
 
     def track(self, sujet: str, f: dict) -> dict:
-        if f["nature"] in ("non_lu", "non_estimé"):
+        if f["nature"] in (NOT_READ, NOT_ESTIMATED):
             self.add(sujet, f["raison"])
         return f
 
 
 def _measured(value, reads: _Reads, names: tuple, unite: str, conf=None) -> dict:
     if value is None or not reads.ok(*names):
-        return fig(nature="non_lu", unite=unite, raison=reads.why(*names) if not reads.ok(*names) else "non transmis par la collecte")
-    return fig(value, nature="mesuré", unite=unite, base=reads.ids(*names),
-               confiance=conf or ("moyenne" if reads.status(*names) == "partiel" else None))
+        return fig(nature=NOT_READ, unite=unite, raison=reads.why(*names) if not reads.ok(*names) else "not provided by collection")
+    return fig(value, nature=MEASURED, unite=unite, base=reads.ids(*names),
+               confiance=conf or ("medium" if reads.status(*names) == PARTIAL else None))
 
 
 def _usd_from_credits(credits: dict, credit_price: float | None, base: list[str]) -> dict:
-    c = credits["valeur"] if credits["nature"] != "estimé" else None
-    lo, hi = (credits["bas"], credits["haut"]) if credits["nature"] == "estimé" else (c, c)
+    c = credits["valeur"] if credits["nature"] != ESTIMATED else None
+    lo, hi = (credits["bas"], credits["haut"]) if credits["nature"] == ESTIMATED else (c, c)
     if lo is None:
-        return fig(nature="non_estimé", unite="USD", raison="crédits non lus")
+        return fig(nature=NOT_ESTIMATED, unite="USD", raison="credits not read")
     if credit_price:
-        if credits["nature"] == "estimé":
-            return fig(nature="estimé", unite="USD", bas=round(lo * credit_price, 2), haut=round(hi * credit_price, 2), base=base,
-                       formule="crédits × prix du crédit fourni", hypotheses=[f"prix du crédit fourni : {credit_price} $"])
-        return fig(round(c * credit_price, 2), nature="calculé", unite="USD", base=base, formule="crédits × prix du crédit fourni",
-                   hypotheses=[f"prix du crédit fourni : {credit_price} $"])
+        if credits["nature"] == ESTIMATED:
+            return fig(nature=ESTIMATED, unite="USD", bas=round(lo * credit_price, 2), haut=round(hi * credit_price, 2), base=base,
+                       formule="credits × credit price provided", hypotheses=[f"credit price provided: ${credit_price}"])
+        return fig(round(c * credit_price, 2), nature=COMPUTED, unite="USD", base=base, formule="credits × credit price provided",
+                   hypotheses=[f"credit price provided: ${credit_price}"])
     pmin, pmax = min(prices.SNOWFLAKE_CREDIT_USD.values()), max(prices.SNOWFLAKE_CREDIT_USD.values())
-    return fig(nature="estimé", unite="USD", bas=round(lo * pmin, 2), haut=round(hi * pmax, 2), base=base, confiance="basse",
-               formule="crédits × prix catalogue du crédit, du plus bas au plus haut",
-               hypotheses=[f"prix catalogue Snowflake du {prices.AS_OF}, AWS Paris/Francfort : {fr_num(pmin, 2)} $ (Standard) à {fr_num(pmax, 2)} $ "
-                           f"(Business Critical), {prices.SNOWFLAKE_SOURCE}", f"{CONTRAT_NON_LU} ; votre région peut différer"])
+    return fig(nature=ESTIMATED, unite="USD", bas=round(lo * pmin, 2), haut=round(hi * pmax, 2), base=base, confiance="low",
+               formule="credits × list price of the credit, from lowest to highest",
+               hypotheses=[f"Snowflake list price as of {prices.AS_OF}, AWS Paris/Frankfurt: ${fmt_num(pmin, 2)} (Standard edition) to ${fmt_num(pmax, 2)} "
+                           f"(highest edition), {prices.SNOWFLAKE_SOURCE}", f"{CONTRAT_NON_LU}; your region may differ"])
 
 
 def _months_touched(du: datetime, au: datetime) -> int:
     return (au.year - du.year) * 12 + au.month - du.month + 1
 
 
-COUTS_FICHIERS = "fichiers de projet : ni crédits ni octets facturés ; le scan de la plateforme cible les mesure"
+COUTS_FICHIERS = "project files: no credits and no billed bytes; the scan of the target platform measures them"
 
 
 def _couts(ctx: _Ctx, credit_price: float | None, ne: _NonEstime, row_policies: bool) -> dict:
     r, m = ctx.reads, ctx.snap.get("metering") or {}
     if ctx.famille == "fichiers":
-        ne.add("Consommation de la plateforme", f"non lue : {COUTS_FICHIERS}")
-        return {"fenetre_jours": None, "credits": fig(nature="non_lu", unite="crédits", raison=COUTS_FICHIERS),
+        ne.add("Platform consumption", f"not read: {COUTS_FICHIERS}")
+        return {"fenetre_jours": None, "credits": fig(nature=NOT_READ, unite="credits", raison=COUTS_FICHIERS),
                 "credits_par_service": [], "credits_par_entrepot": [], "transferts": [],
-                "monnaie": fig(nature="non_estimé", unite="USD", raison="consommation non lue"),
-                "stockage_octets_moyens": fig(nature="non_lu", unite="octets", raison=COUTS_FICHIERS),
-                "stockage_monnaie": fig(nature="non_estimé", unite="USD", raison=CONTRAT_NON_LU),
-                "note": "Aucune consommation dans des fichiers de projet."}
+                "monnaie": fig(nature=NOT_ESTIMATED, unite="USD", raison="consumption not read"),
+                "stockage_octets_moyens": fig(nature=NOT_READ, unite="bytes", raison=COUTS_FICHIERS),
+                "stockage_monnaie": fig(nature=NOT_ESTIMATED, unite="USD", raison=CONTRAT_NON_LU),
+                "note": "No consumption in project files."}
     out: dict = {"fenetre_jours": m.get("fenetre_jours")}
-    stock = _measured(m.get("stockage_octets_moyens"), r, ("STORAGE_USAGE", "TABLE_STORAGE", "tables.get"), "octets")
-    out["stockage_octets_moyens"] = ne.track("Stockage moyen facturé", stock)
-    out["stockage_monnaie"] = ne.track("Coût du stockage", fig(nature="non_estimé", unite="USD", raison=CONTRAT_NON_LU))
+    stock = _measured(m.get("stockage_octets_moyens"), r, ("STORAGE_USAGE", "TABLE_STORAGE", "tables.get"), "bytes")
+    out["stockage_octets_moyens"] = ne.track("Average billed storage", stock)
+    out["stockage_monnaie"] = ne.track("Storage cost", fig(nature=NOT_ESTIMATED, unite="USD", raison=CONTRAT_NON_LU))
     tr_names = ("DATA_TRANSFER_HISTORY",)
-    out["transferts"] = [{"cible": scrub(x.get("cible")), "octets": _measured(x.get("octets"), r, tr_names, "octets")}
+    out["transferts"] = [{"cible": scrub(x.get("cible")), "octets": _measured(x.get("octets"), r, tr_names, "bytes")}
                          for x in sorted(m.get("transferts") or [], key=lambda x: str(x.get("cible")))] if r.ok(*tr_names) else []
     if ctx.plat == "bigquery":
         out.update(_couts_bigquery(ctx, m, ne, row_policies))
@@ -1012,23 +1017,23 @@ def _couts(ctx: _Ctx, credit_price: float | None, ne: _NonEstime, row_policies: 
     names = ("METERING_DAILY_HISTORY",)
     services = m.get("par_service")
     if r.ok(*names) and services is not None:
-        par = [{"service": scrub(s.get("service")), "credits": _measured(s.get("credits"), r, names, "crédits")}
+        par = [{"service": scrub(s.get("service")), "credits": _measured(s.get("credits"), r, names, "credits")}
                for s in sorted(services, key=lambda s: (-(s.get("credits") or 0), str(s.get("service"))))]
         known = [p["credits"]["valeur"] for p in par if p["credits"]["valeur"] is not None]
-        total = fig(round(sum(known), 4), nature="calculé", unite="crédits", base=r.ids(*names),
-                    formule=f"somme des crédits par service sur {m.get('fenetre_jours') or '?'} jours",
-                    confiance="moyenne" if r.status(*names) == "partiel" or len(known) < len(par) else None)
+        total = fig(round(sum(known), 4), nature=COMPUTED, unite="credits", base=r.ids(*names),
+                    formule=f"sum of credits per service over {m.get('fenetre_jours') or '?'} days",
+                    confiance="medium" if r.status(*names) == PARTIAL or len(known) < len(par) else None)
     else:
         par = []
-        total = fig(nature="non_lu", unite="crédits", raison=r.why(*names) if not r.ok(*names) else "non transmis par la collecte")
-    out["credits"] = ne.track("Crédits consommés", total)
+        total = fig(nature=NOT_READ, unite="credits", raison=r.why(*names) if not r.ok(*names) else "not provided by collection")
+    out["credits"] = ne.track("Credits consumed", total)
     out["credits_par_service"] = par
     wnames = ("WAREHOUSE_METERING_HISTORY",)
-    out["credits_par_entrepot"] = [{"entrepot": scrub(w.get("entrepot")), "credits": _measured(w.get("credits"), r, wnames, "crédits")}
+    out["credits_par_entrepot"] = [{"entrepot": scrub(w.get("entrepot")), "credits": _measured(w.get("credits"), r, wnames, "credits")}
                                    for w in sorted(m.get("par_entrepot") or [], key=lambda w: (-(w.get("credits") or 0), str(w.get("entrepot"))))
                                    ] if r.ok(*wnames) else []
-    out["monnaie"] = ne.track("Crédits en dollars", _usd_from_credits(total, credit_price, r.ids(*names)))
-    out["note"] = "Crédits mesurés ; en dollars, seulement avec le prix fourni ou une fourchette catalogue datée."
+    out["monnaie"] = ne.track("Credits in dollars", _usd_from_credits(total, credit_price, r.ids(*names)))
+    out["note"] = "Credits measured; in dollars, only with the price provided or a dated list-price range."
     return out
 
 
@@ -1036,7 +1041,7 @@ def _couts_bigquery(ctx: _Ctx, m: dict, ne: _NonEstime, row_policies: bool) -> d
     r, names = ctx.reads, ("JOBS",)
     od, rs = m.get("a_la_demande"), m.get("reserve")
     base = r.ids(*names)
-    octets = _measured((od or {}).get("octets_factures"), r, names, "octets")
+    octets = _measured((od or {}).get("octets_factures"), r, names, "bytes")
     if octets["valeur"] is not None:
         du, au = r.window(*names)
         jours = m.get("fenetre_jours")
@@ -1045,26 +1050,26 @@ def _couts_bigquery(ctx: _Ctx, m: dict, ne: _NonEstime, row_policies: bool) -> d
             du = datetime.fromtimestamp(au.timestamp() - jours * 86400, tz=timezone.utc)
         months = _months_touched(du, au) if du and au else None
         tib, price = octets["valeur"] / TIB, prices.BIGQUERY_ON_DEMAND_USD_PER_TIB
-        hyp = [f"prix catalogue à la demande du {prices.AS_OF} : {fr_num(price, 2)} $ par Tio (tarif US ; région à confirmer), {prices.BIGQUERY_SOURCE}",
-               "haut : aucun palier gratuit déduit ; bas : 1 Tio gratuit par mois touché par la fenêtre ; "
-               "le palier gratuit est partagé par le compte de facturation, il n'est pas imputable par projet", CONTRAT_NON_LU]
+        hyp = [f"on-demand list price as of {prices.AS_OF}: ${fmt_num(price, 2)} per TiB (US rate; region to confirm), {prices.BIGQUERY_SOURCE}",
+               "high: no free tier deducted; low: 1 free TiB per month touched by the window; "
+               "the free tier is shared by the billing account, it cannot be attributed per project", CONTRAT_NON_LU]
         if row_policies:
-            hyp.append("octets facturés NULL pour les requêtes sur tables à politique de lignes : non comptés")
+            hyp.append("billed bytes NULL for queries on tables with a row access policy: not counted")
         hi = round(tib * price, 2)
         lo = round(max(0.0, tib - months) * price, 2) if months else hi
-        usd_od = fig(nature="estimé", unite="USD", bas=lo, haut=hi, base=base, confiance="basse",
-                     formule="Tio facturés × prix catalogue, palier gratuit déduit ou non", hypotheses=hyp)
+        usd_od = fig(nature=ESTIMATED, unite="USD", bas=lo, haut=hi, base=base, confiance="low",
+                     formule="billed TiB × list price, free tier deducted or not", hypotheses=hyp)
     else:
-        usd_od = fig(nature="non_estimé", unite="USD", raison="octets facturés non lus")
-    slots = _measured((rs or {}).get("slot_heures"), r, names, "slot-heures")
+        usd_od = fig(nature=NOT_ESTIMATED, unite="USD", raison="billed bytes not read")
+    slots = _measured((rs or {}).get("slot_heures"), r, names, "slot-hours")
     return {
-        "a_la_demande": {"octets_factures": ne.track("Octets facturés à la demande", octets),
-                         "requetes": _measured((od or {}).get("requetes"), r, names, "requêtes"),
-                         "monnaie": ne.track("À la demande, en dollars", usd_od)},
-        "reserve": {"slot_heures": ne.track("Slot-heures en réservé", slots),
-                    "requetes": _measured((rs or {}).get("requetes"), r, names, "requêtes"),
-                    "monnaie": ne.track("Réservé, en dollars", fig(nature="non_estimé", unite="USD", raison=CONTRAT_NON_LU))},
-        "note": "À la demande et réservé : deux modes de facturation, jamais additionnés.",
+        "a_la_demande": {"octets_factures": ne.track("On-demand billed bytes", octets),
+                         "requetes": _measured((od or {}).get("requetes"), r, names, "queries"),
+                         "monnaie": ne.track("On-demand, in dollars", usd_od)},
+        "reserve": {"slot_heures": ne.track("Reserved slot-hours", slots),
+                    "requetes": _measured((rs or {}).get("requetes"), r, names, "queries"),
+                    "monnaie": ne.track("Reserved, in dollars", fig(nature=NOT_ESTIMATED, unite="USD", raison=CONTRAT_NON_LU))},
+        "note": "On-demand and reserved: two billing models, never added together.",
     }
 
 
@@ -1076,56 +1081,56 @@ def _fourchettes(ctx: _Ctx, credit_price: float | None, ne: _NonEstime) -> dict:
     missing = len(movable) - len(known)
     if movable and not known:
         if ctx.famille == "fichiers":
-            raison = "volumes absents de catalog.json" if r.ok("catalog.json") else "catalog.json non lu"
+            raison = "volumes missing from catalog.json" if r.ok("catalog.json") else "catalog.json not read"
         else:
-            raison = r.why(*STORAGE_SOURCES) if not r.ok(*STORAGE_SOURCES) else "volumes non transmis"
-        volume = fig(nature="non_lu", unite="octets", raison=raison)
+            raison = r.why(*STORAGE_SOURCES) if not r.ok(*STORAGE_SOURCES) else "volumes not provided"
+        volume = fig(nature=NOT_READ, unite="bytes", raison=raison)
     else:
-        hyp = ["octets actifs des tables présentes, hors tables externes et temporaires"]
+        hyp = ["active bytes of present tables, excluding external and temporary tables"]
         if ctx.plat == "snowflake":
-            hyp.append("volume compressé stocké ; le volume lu par la copie peut être plus élevé")
+            hyp.append("compressed stored volume; the volume read by the copy may be higher")
         if any(t["type"] == "CLONE" for t in movable):
-            hyp.append("clones : seuls leurs octets propres sont comptés")
+            hyp.append("clones: only their own bytes are counted")
         if missing:
-            hyp.append(f"{pl(missing, 'table')} sans volume lu, non comptée(s) : valeur minimale")
-        volume = fig(sum(known), nature="calculé", unite="octets", base=base, formule="somme des octets actifs", hypotheses=hyp,
-                     confiance="moyenne" if missing else None)
-    out = {"volume": ne.track("Volume à copier", volume)}
+            hyp.append(f"{pl(missing, 'table')} with no volume read, not counted: minimum value")
+        volume = fig(sum(known), nature=COMPUTED, unite="bytes", base=base, formule="sum of active bytes", hypotheses=hyp,
+                     confiance="medium" if missing else None)
+    out = {"volume": ne.track("Volume to copy", volume)}
     v = volume["valeur"]
-    debit = f"débit supposé de {fr_num(THROUGHPUT_MBPS[0])} à {fr_num(THROUGHPUT_MBPS[1])} Mo/s, remplacé par la mesure d'un canot drill"
+    debit = f"assumed throughput of {fmt_num(THROUGHPUT_MBPS[0])} to {fmt_num(THROUGHPUT_MBPS[1])} MB/s, replaced by the measurement of a canot drill"
     if v is None:
-        out["duree_lecture"] = ne.track("Durée de lecture de la copie", fig(nature="non_estimé", unite="heures", raison="volume non lu"))
+        out["duree_lecture"] = ne.track("Copy read time", fig(nature=NOT_ESTIMATED, unite="hours", raison="volume not read"))
         hours = None
     else:
         hours = (v / 1e6 / THROUGHPUT_MBPS[1] / 3600, v / 1e6 / THROUGHPUT_MBPS[0] / 3600)
-        out["duree_lecture"] = fig(nature="estimé", unite="heures", bas=round(hours[0], 2), haut=round(hours[1], 2), base=base,
-                                   formule="volume ÷ débit supposé", hypotheses=[debit], confiance="basse")
+        out["duree_lecture"] = fig(nature=ESTIMATED, unite="hours", bas=round(hours[0], 2), haut=round(hours[1], 2), base=base,
+                                   formule="volume ÷ assumed throughput", hypotheses=[debit], confiance="low")
     if ctx.plat == "snowflake":
         if hours is None:
-            cr = fig(nature="non_estimé", unite="crédits", raison="volume non lu")
+            cr = fig(nature=NOT_ESTIMATED, unite="credits", raison="volume not read")
         else:
-            cr = fig(nature="estimé", unite="crédits", bas=round(hours[0] * CREDITS_PAR_HEURE, 2), haut=round(hours[1] * CREDITS_PAR_HEURE, 2),
-                     base=base, formule="durée × crédits par heure", hypotheses=[debit, "entrepôt XS, 1 crédit par heure"], confiance="basse")
-        out["credits_lecture"] = ne.track("Crédits de lecture de la copie", cr)
-        out["cout_lecture"] = ne.track("Coût de lecture de la copie", _usd_from_credits(cr, credit_price, base))
+            cr = fig(nature=ESTIMATED, unite="credits", bas=round(hours[0] * CREDITS_PAR_HEURE, 2), haut=round(hours[1] * CREDITS_PAR_HEURE, 2),
+                     base=base, formule="time × credits per hour", hypotheses=[debit, "XS warehouse, 1 credit per hour"], confiance="low")
+        out["credits_lecture"] = ne.track("Copy read credits", cr)
+        out["cout_lecture"] = ne.track("Copy read cost", _usd_from_credits(cr, credit_price, base))
     elif ctx.plat != "bigquery":
-        out["cout_lecture"] = ne.track("Coût de lecture de la copie", fig(nature="non_estimé", unite="USD",
-                                                                        raison="dépend de la plateforme qui héberge les tables, non lue ici"))
+        out["cout_lecture"] = ne.track("Copy read cost", fig(nature=NOT_ESTIMATED, unite="USD",
+                                                           raison="depends on the platform that hosts the tables, not read here"))
     else:
-        out["cout_lecture"] = ne.track("Coût de lecture de la copie (API Storage Read, sortie réseau)",
-                                       fig(nature="non_estimé", unite="USD", raison=CONTRAT_NON_LU,
-                                           hypotheses=["lecture par l'API Storage Read, facturée par Tio lu, et sortie réseau hors de Google Cloud"]))
+        out["cout_lecture"] = ne.track("Copy read cost (Storage Read API, network egress)",
+                                       fig(nature=NOT_ESTIMATED, unite="USD", raison=CONTRAT_NON_LU,
+                                           hypotheses=["read through the Storage Read API, billed per TiB read, and network egress out of Google Cloud"]))
     n_obj = sum(o["kind"] in REBUILD_KINDS or o.get("portabilite") == "a_reconstruire" for o in ctx.objets)
     n_cols = sum(len(t["colonnes_non_portables"]) for t in ctx.present)
     lo, hi = prices.rework_days(n_obj, n_cols)
-    hyp = [f"{pl(n_obj, 'objet')} à reconstruire et {pl(n_cols, 'colonne')} à type propre à la plateforme",
-           f"hypothèses de q4o : {fr_num(prices.REWORK_DAYS_PER_OBJECT[0], 2)} à {fr_num(prices.REWORK_DAYS_PER_OBJECT[1], 1)} jour par objet, "
-           f"{fr_num(prices.REWORK_DAYS_PER_NONPORTABLE_COLUMN[0], 1)} à {fr_num(prices.REWORK_DAYS_PER_NONPORTABLE_COLUMN[1], 1)} par colonne, à discuter"]
-    unread = [short_vue(lec["vue"]) for lec in r.find(*CODE_SOURCES) if lec["statut"] != "lu"]
+    hyp = [f"{pl(n_obj, 'object')} to rebuild and {pl(n_cols, 'column')} with a platform-specific type",
+           f"q4o assumptions: {fmt_num(prices.REWORK_DAYS_PER_OBJECT[0], 2)} to {fmt_num(prices.REWORK_DAYS_PER_OBJECT[1], 1)} day per object, "
+           f"{fmt_num(prices.REWORK_DAYS_PER_NONPORTABLE_COLUMN[0], 1)} to {fmt_num(prices.REWORK_DAYS_PER_NONPORTABLE_COLUMN[1], 1)} per column, open to discussion"]
+    unread = [short_vue(lec["vue"]) for lec in r.find(*CODE_SOURCES) if lec["statut"] != READ]
     if unread:
-        hyp.append(f"objets des lectures non lues non comptés : {', '.join(sorted(set(unread)))}")
-    out["reprise"] = fig(nature="estimé", unite="jours", bas=lo, haut=hi, base=r.ids(*CODE_SOURCES), formule="objets × jours par objet + colonnes × jours par colonne",
-                         hypotheses=hyp, confiance="basse")
+        hyp.append(f"objects from reads not done not counted: {', '.join(sorted(set(unread)))}")
+    out["reprise"] = fig(nature=ESTIMATED, unite="days", bas=lo, haut=hi, base=r.ids(*CODE_SOURCES), formule="objects × days per object + columns × days per column",
+                         hypotheses=hyp, confiance="low")
     return out
 
 
@@ -1133,27 +1138,28 @@ def _rejouabilite(ctx: _Ctx, ne: _NonEstime) -> dict:
     names = ("QUERY_HISTORY", "JOBS")
     rj = ctx.snap.get("rejouabilite")
     if not rj:
-        raison = ctx.reads.why(*names) if not ctx.reads.ok(*names) else "non transmise par la collecte"
-        ne.add("Rejouabilité des requêtes", raison)
-        return {"statut": "non_lu", "raison": raison, "categories": {}, "base": None, "mention": MENTION_REJOUABILITE, "taux": {}}
+        raison = ctx.reads.why(*names) if not ctx.reads.ok(*names) else "not provided by collection"
+        ne.add("Query replayability", raison)
+        return {"statut": NOT_READ, "raison": raison, "categories": {}, "base": None, "mention": MENTION_REJOUABILITE, "taux": {}}
     cats = {k: {"familles": v.get("familles"), "executions": v.get("executions"), "poids": v.get("poids")}
             for k, v in sorted((rj.get("categories") or {}).items())}
     given = rj.get("taux") or {}
+    given = {k: ({**v, "nature": legacy("nature", v.get("nature"))} if isinstance(v, dict) else v) for k, v in given.items()}
     if given and all(isinstance(v, dict) and v.get("nature") in NATURES for v in given.values()):
-        taux = {k: dict(v) for k, v in sorted(given.items())}  # calculés par replay sur ses propres bases : repris tels quels
+        taux = {k: dict(v) for k, v in sorted(given.items())}  # computed by replay on its own bases: taken as is
     else:
         tested = [k for k in cats if k != "C7"]
         taux = {}
-        for key, unite in (("familles", "familles"), ("executions", "exécutions"), ("poids", "crédits" if ctx.plat == "snowflake" else "octets")):
+        for key, unite in (("familles", "families"), ("executions", "executions"), ("poids", "credits" if ctx.plat == "snowflake" else "bytes")):
             vals = [cats[k][key] for k in tested]
             den = sum(v for v in vals if v is not None)
             num = (cats.get("C0") or {}).get(key)
             if None in vals or num is None or not den:
-                taux[key] = fig(nature="non_lu", unite="%", raison=f"{unite} non transmises par catégorie")
+                taux[key] = fig(nature=NOT_READ, unite="%", raison=f"{unite} not provided per category")
             else:
-                taux[key] = fig(round(100 * num / den, 1), nature="calculé", unite="%", base=ctx.reads.ids(*names),
-                                formule=f"C0 ÷ C0 à C6, en {unite} ; C7 compté à part")
-    return {"statut": "lu", "raison": None, "categories": cats, "base": scrub(rj.get("base")), "mention": MENTION_REJOUABILITE,
+                taux[key] = fig(round(100 * num / den, 1), nature=COMPUTED, unite="%", base=ctx.reads.ids(*names),
+                                formule=f"C0 ÷ C0 to C6, in {unite}; C7 counted separately")
+    return {"statut": READ, "raison": None, "categories": cats, "base": scrub(rj.get("base")), "mention": MENTION_REJOUABILITE,
             "taux": taux, "bases": {k: scrub(v) for k, v in sorted((rj.get("bases") or {}).items())},
             "non_testees": rj.get("non_testees"), "secrets_ecartes": rj.get("secrets_ecartes"),
             "fonctions": {scrub(str(k)): v for k, v in sorted((rj.get("fonctions") or {}).items())}}
@@ -1162,44 +1168,45 @@ def _rejouabilite(ctx: _Ctx, ne: _NonEstime) -> dict:
 def _cout_du_scan(ctx: _Ctx) -> dict:
     c = ctx.snap.get("cout_du_scan") or {}
     lecs = ctx.reads.all
-    tried = [lec for lec in lecs if lec["statut"] == "lu" or _attempted(lec["raison"])]
+    tried = [lec for lec in lecs if lec["statut"] == READ or _attempted(lec["raison"])]
     if c.get("requetes") is not None:
-        req = fig(c["requetes"], nature="mesuré", unite="requêtes")
+        req = fig(c["requetes"], nature=MEASURED, unite="queries")
     else:
-        req = fig(len(tried), nature="calculé", unite="requêtes", base=sorted(lec["id"] for lec in tried),
-                  formule="lectures tentées, lues ou refusées par la plateforme", hypotheses=["une lecture = une requête"])
-    duree = (fig(c["duree_s"], nature="mesuré", unite="secondes") if c.get("duree_s") is not None
-             else fig(nature="non_lu", unite="secondes", raison="durée non transmise par la collecte"))
+        req = fig(len(tried), nature=COMPUTED, unite="queries", base=sorted(lec["id"] for lec in tried),
+                  formule="reads attempted, read or refused by the platform", hypotheses=["one read = one query"])
+    duree = (fig(c["duree_s"], nature=MEASURED, unite="seconds") if c.get("duree_s") is not None
+             else fig(nature=NOT_READ, unite="seconds", raison="duration not provided by collection"))
     out = {"requetes": req, "duree": duree,
-           "lectures": {"total": len(lecs), "lu": sum(lec["statut"] == "lu" for lec in lecs), "non_lu": sum(lec["statut"] != "lu" for lec in lecs)}}
+           "lectures": {"total": len(lecs), "lu": sum(lec["statut"] == READ for lec in lecs), "non_lu": sum(lec["statut"] != READ for lec in lecs)}}
     if c.get("appels_api") is not None:
-        out["appels_api"] = fig(c["appels_api"], nature="mesuré", unite="appels")
+        out["appels_api"] = fig(c["appels_api"], nature=MEASURED, unite="calls")
     if c.get("octets_factures") is not None:
-        out["octets_factures"] = fig(c["octets_factures"], nature="mesuré", unite="octets")
+        out["octets_factures"] = fig(c["octets_factures"], nature=MEASURED, unite="bytes")
     if c.get("credits") is not None:
-        out["credits"] = fig(c["credits"], nature="mesuré", unite="crédits")
+        out["credits"] = fig(c["credits"], nature=MEASURED, unite="credits")
     return out
 
 
-_TRIED = ("droit absent", "édition requise", "absent ou non exposé", "service désactivé", "délai dépassé", "échec (", "volume estimé")
+# reasons of a read the platform refused (model.classify_failure, bigquery guard): the query was sent
+_TRIED = ("missing privilege", "edition required", "absent or not exposed", "service disabled", "timed out", "failed (", "estimated volume")
 
 
 def _attempted(raison: str | None) -> bool:
     return bool(raison) and raison.startswith(_TRIED)
 
 
-# --- synthèse --------------------------------------------------------------------------------------------
+# --- summary ------------------------------------------------------------------------------------------------
 
 
 def _fraicheur(ctx: _Ctx) -> dict | None:
-    """Recoupement temps réel de la collecte (Snowflake) : objets plus récents que la latence d'ACCOUNT_USAGE. None si non transmis."""
+    """Real-time cross-check by collection (Snowflake): objects more recent than the ACCOUNT_USAGE latency. None if not provided."""
     f = ctx.snap.get("fraicheur")
     if not isinstance(f, dict):
         return None
     rec = f.get("recents_seulement_temps_reel") or {}
     n_t = sum("recente" in t["flags"] for t in ctx.present)
     lat = [lec["latence_max_h"] for lec in ctx.reads.find("TABLES", *STORAGE_SOURCES, "ACCESS_HISTORY")
-           if lec["statut"] == "lu" and lec["latence_max_h"]]
+           if lec["statut"] == READ and lec["latence_max_h"]]
     return {"recents_seulement_temps_reel": {"tables": rec.get("tables") if isinstance(rec.get("tables"), int) else n_t,
                                              "objets": rec.get("objets") if isinstance(rec.get("objets"), int) else None},
             "volumes_en_retard": f.get("volumes_en_retard") if isinstance(f.get("volumes_en_retard"), int) else None,
@@ -1208,50 +1215,50 @@ def _fraicheur(ctx: _Ctx) -> dict | None:
 
 
 def _fraicheur_phrase(fr: dict | None) -> str | None:
-    """Phrases du résumé DSI : tables vues seulement en temps réel, volumes pas encore calculés par TABLE_STORAGE_METRICS."""
+    """Sentences of the CIO summary: tables seen only in real time, volumes not yet computed by TABLE_STORAGE_METRICS."""
     if not fr:
         return None
     out = []
     n, h, v = fr["tables_sans_historique"], fr["latence_historique_h"], fr.get("volumes_en_retard") or 0
-    lat = f", dont la latence peut atteindre {fr_num(h, 1).removesuffix(',0')} h" if h else ""
+    lat = f", whose latency can reach {fmt_num(h, 1).removesuffix('.0')} h" if h else ""
     if n == 1:
-        out.append(f"1 table vue seulement en temps réel : absente d'ACCOUNT_USAGE{lat} ; "
-                   "son historique (volumes facturés, lectures) n'est pas encore disponible.")
+        out.append(f"1 table seen only in real time: missing from ACCOUNT_USAGE{lat}; "
+                   "its history (billed volumes, reads) is not available yet.")
     elif n > 1:
-        out.append(f"{fr_num(n)} tables vues seulement en temps réel : absentes d'ACCOUNT_USAGE{lat} ; "
-                   "leur historique (volumes facturés, lectures) n'est pas encore disponible.")
+        out.append(f"{fmt_num(n)} tables seen only in real time: missing from ACCOUNT_USAGE{lat}; "
+                   "their history (billed volumes, reads) is not available yet.")
     if v:
-        out.append(f"Volume sous-estimé : métriques de stockage pas encore à jour pour {pl(v, 'table')}.")
+        out.append(f"Volume underestimated: storage metrics not up to date yet for {pl(v, 'table')}.")
     return " ".join(out) or None
 
 
 def _resume_fichiers(ctx: _Ctx, res: dict, by_code: Counter) -> dict:
-    """Résumé d'un projet lu en fichiers (dbt) : traitements, portabilité, ce qui n'est pas lu ici."""
+    """Summary of a project read as files (dbt): processing, portability, what is not read here."""
     kinds = Counter(o["kind"] for o in ctx.objets if o.get("famille_objet") in ("traitement", "donnees"))
     def lab(k: str) -> tuple[str, str]:
         x = KIND_LABELS.get(k, k)
-        return x, (x[:-4] + "s dbt" if x.endswith(" dbt") else x + "s")
+        return x, KIND_PLURALS.get(k, x + "s")
 
     quoi = ", ".join(pl(n, *lab(k)) for k, n in sorted(kinds.items(), key=lambda kv: (-kv[1], kv[0])))
     port = Counter(o["portabilite"] or "non_determine" for o in ctx.objets if "portabilite" in o)
     mats = Counter(o["detail"].get("materialisation") for o in ctx.objets if o["kind"] == "modele_dbt")
-    dsi = [f"{quoi or 'aucun objet'} ; {pl(len(ctx.present), 'relation stockée', 'relations stockées')} ; {pl(len(res['liens']), 'lien')} de dépendance."
-           + (f" Matérialisations : {', '.join(f'{fr_num(n)} {m}' for m, n in sorted(mats.items(), key=lambda kv: str(kv[0])))}." if mats else ""),
-           f"Portabilité : {fr_num(port['traduisible'])} traduisible(s), {fr_num(port['a_reconstruire'])} à reconstruire (F13), "
-           f"{fr_num(port['non_determine'])} non déterminée(s), {fr_num(port['portable_tel_quel'])} portable(s) tel quel."]
+    dsi = [f"{quoi or 'no object'}; {pl(len(ctx.present), 'stored relation')}; {pl(len(res['liens']), 'dependency link')}."
+           + (f" Materializations: {', '.join(f'{fmt_num(n)} {m}' for m, n in sorted(mats.items(), key=lambda kv: str(kv[0])))}." if mats else ""),
+           f"Portability: {fmt_num(port['traduisible'])} translatable, {fmt_num(port['a_reconstruire'])} to rebuild (F13), "
+           f"{fmt_num(port['non_determine'])} not determined, {fmt_num(port['portable_tel_quel'])} portable as is."]
     rj = res["rejouabilite"]
     cats = rj.get("categories") or {}
     tested = sum((v["familles"] or 0) for k, v in cats.items() if k not in ("C7",))
-    if rj["statut"] == "lu" and tested:
-        dsi.append(f"Rejouabilité : {fr_num((cats.get('C0') or {}).get('familles') or 0)}/{fr_num(tested)} modèles acceptés par DuckDB ; "
+    if rj["statut"] == READ and tested:
+        dsi.append(f"Replayability: {fmt_num((cats.get('C0') or {}).get('familles') or 0)}/{fmt_num(tested)} models accepted by DuckDB; "
                    f"{MENTION_REJOUABILITE}.")
-    elif rj["statut"] == "lu":
+    elif rj["statut"] == READ:
         nt = (rj.get("non_testees") or {}).get("familles") or 0
-        dsi.append(f"Rejouabilité : {pl(nt, 'modèle')} traduit(s), non testé(s) par EXPLAIN DuckDB ({rj['taux']['familles'].get('raison')}).")
-    daf = [f"Consommation non lue : {COUTS_FICHIERS}."]
-    rssi = ["Aucune connexion à une plateforme : fichiers lus localement ; le code est réduit à des empreintes et des comptes.",
-            f"{pl(by_code['F01'], 'dépendance externe déclarée', 'dépendances externes déclarées')} (F01) ; écritures hors plateforme, "
-            "droits et politiques non lus ici."]
+        dsi.append(f"Replayability: {pl(nt, 'model')} translated, not tested by DuckDB EXPLAIN ({rj['taux']['familles'].get('raison')}).")
+    daf = [f"Consumption not read: {COUTS_FICHIERS}."]
+    rssi = ["No connection to a platform: files read locally; code is reduced to fingerprints and counts.",
+            f"{pl(by_code['F01'], 'declared external dependency', 'declared external dependencies')} (F01); writes outside the platform, "
+            "privileges and policies not read here."]
     return {"DSI": dsi, "DAF": daf, "RSSI": rssi}
 
 
@@ -1262,67 +1269,67 @@ def _resume(ctx: _Ctx, res: dict, by_code: Counter) -> dict:
     vol = fr["volume"]["valeur"]
     n_obj = sum(o["kind"] in REBUILD_KINDS or o.get("portabilite") == "a_reconstruire" for o in ctx.objets)
     mv = res["mouvements"]
-    fraiche = _fraicheur_phrase(res.get("fraicheur"))  # dans la première phrase : l'encadré garde trois entrées
-    dsi = [f"{pl(len(ctx.present), 'table présente', 'tables présentes')} ({fr_bytes(vol) if vol is not None else 'volume non lu'}) "
-           f"et {pl(n_obj, 'objet')} à reconstruire hors tables." + (f" {fraiche}" if fraiche else ""),
-           f"Mouvement : {fr_num(mv['figée'])} figée(s), {fr_num(mv['vivante'])} vivante(s), {fr_num(mv['recréée'])} recréée(s), "
-           f"{fr_num(mv['non_determine'])} non déterminée(s)."]
+    fraiche = _fraicheur_phrase(res.get("fraicheur"))  # in the first sentence: the box keeps three entries
+    dsi = [f"{pl(len(ctx.present), 'present table')} ({fmt_bytes(vol) if vol is not None else 'volume not read'}) "
+           f"and {pl(n_obj, 'object')} to rebuild besides tables." + (f" {fraiche}" if fraiche else ""),
+           f"Movement: {fmt_num(mv['figée'])} frozen, {fmt_num(mv['vivante'])} live, {fmt_num(mv['recréée'])} recreated, "
+           f"{fmt_num(mv['non_determine'])} not determined."]
     rj = res["rejouabilite"]
-    if rj["statut"] == "lu" and rj["categories"]:
+    if rj["statut"] == READ and rj["categories"]:
         tested = sum((v["familles"] or 0) for k, v in rj["categories"].items() if k != "C7")
-        dsi.append(f"Rejouabilité : {fr_num((rj['categories'].get('C0') or {}).get('familles') or 0)}/{fr_num(tested)} familles "
-                   f"acceptées par DuckDB ; {MENTION_REJOUABILITE}.")
+        dsi.append(f"Replayability: {fmt_num((rj['categories'].get('C0') or {}).get('familles') or 0)}/{fmt_num(tested)} families "
+                   f"accepted by DuckDB; {MENTION_REJOUABILITE}.")
     else:
-        dsi.append(f"Rejouabilité non lue : {rj['raison']}.")
+        dsi.append(f"Replayability not read: {rj['raison']}.")
 
     daf = []
     jours = couts.get("fenetre_jours")
-    sur = f"sur {jours} jours" if jours else "sur la fenêtre lue"
+    sur = f"over {jours} days" if jours else "over the window read"
     if ctx.plat == "bigquery":
         od, rs = couts["a_la_demande"], couts["reserve"]
-        a = fr_bytes(od["octets_factures"]["valeur"]) + " facturés à la demande" if od["octets_factures"]["valeur"] is not None else "à la demande non lu"
-        b = f"{fr_num(rs['slot_heures']['valeur'], 1)} slot-heures en réservé" if rs["slot_heures"]["valeur"] is not None else "réservé non lu"
-        daf.append(f"Mesuré {sur} : {a}, {b} ; les deux ne s'additionnent pas.")
+        a = fmt_bytes(od["octets_factures"]["valeur"]) + " billed on demand" if od["octets_factures"]["valeur"] is not None else "on-demand not read"
+        b = f"{fmt_num(rs['slot_heures']['valeur'], 1)} reserved slot-hours" if rs["slot_heures"]["valeur"] is not None else "reserved not read"
+        daf.append(f"Measured {sur}: {a}, {b}; the two do not add up.")
         m = od["monnaie"]
-        daf.append((f"À la demande, fourchette catalogue : {fr_num(m['bas'], 2)} à {fr_num(m['haut'], 2)} $" if m["nature"] == "estimé"
-                    else f"À la demande, non estimé : {m['raison']}") + f" ; réservé, non estimé : {CONTRAT_NON_LU}.")
+        daf.append((f"On-demand, list-price range: ${fmt_num(m['bas'], 2)} to ${fmt_num(m['haut'], 2)}" if m["nature"] == ESTIMATED
+                    else f"On-demand, not estimated: {m['raison']}") + f"; reserved, not estimated: {CONTRAT_NON_LU}.")
     else:
         c = couts["credits"]
-        daf.append(f"Consommation mesurée {sur} : {fr_num(c['valeur'], 1)} crédits." if c["valeur"] is not None
-                   else f"Consommation non lue : {c['raison']}.")
+        daf.append(f"Consumption measured {sur}: {fmt_num(c['valeur'], 1)} credits." if c["valeur"] is not None
+                   else f"Consumption not read: {c['raison']}.")
         m = couts["monnaie"]
-        if m["nature"] == "calculé":
-            daf.append(f"Au prix du crédit fourni : {fr_num(m['valeur'], 2)} $.")
-        elif m["nature"] == "estimé":
-            daf.append(f"En dollars, fourchette catalogue du {prices.AS_OF} : {fr_num(m['bas'], 2)} à {fr_num(m['haut'], 2)} $ ; {CONTRAT_NON_LU}.")
+        if m["nature"] == COMPUTED:
+            daf.append(f"At the credit price provided: ${fmt_num(m['valeur'], 2)}.")
+        elif m["nature"] == ESTIMATED:
+            daf.append(f"In dollars, list-price range as of {prices.AS_OF}: ${fmt_num(m['bas'], 2)} to ${fmt_num(m['haut'], 2)}; {CONTRAT_NON_LU}.")
         else:
-            daf.append(f"En dollars, non estimé : {m['raison']}.")
+            daf.append(f"In dollars, not estimated: {m['raison']}.")
     h = res["ne_part_pas"]["historique"]
     if h["octets"]["valeur"] is not None:
-        daf.append(f"Historique facturé qui ne part pas avec la copie : {fr_bytes(h['octets']['valeur'])} sur {pl(h['tables'], 'table')} (F06, F07).")
+        daf.append(f"Billed history that does not leave with the copy: {fmt_bytes(h['octets']['valeur'])} across {pl(h['tables'], 'table')} (F06, F07).")
     else:
-        daf.append(f"Historique facturé non lu : {h['octets']['raison']}.")
+        daf.append(f"Billed history not read: {h['octets']['raison']}.")
 
     rssi = []
     if r.ok("POLICY_REFERENCES", "TAG_REFERENCES", "rowAccessPolicies.list", "COLUMN_FIELD_PATHS") or by_code["F10"]:
-        rssi.append(f"{pl(by_code['F10'], 'table ou politique', 'tables ou politiques')} à reconstruire côté sécurité (F10) ; "
-                    "la copie demande un principal non filtré.")
+        rssi.append(f"{pl(by_code['F10'], 'table or policy', 'tables or policies')} to rebuild on the security side (F10); "
+                    "the copy requires an unfiltered principal.")
     else:
-        rssi.append(f"Politiques non lues : {r.why(*POLICY_SOURCES)}.")
-    rssi.append(f"{pl(by_code['F01'] + by_code['F02'], 'dépendance externe', 'dépendances externes')} (F01, F02), "
-                f"{pl(by_code['F03'], 'écriture', 'écritures')} hors de la plateforme (F03), "
-                f"{pl(by_code['F09'], 'partage', 'partages')} avec consommateurs externes (F09).")
+        rssi.append(f"Policies not read: {r.why(*POLICY_SOURCES)}.")
+    rssi.append(f"{pl(by_code['F01'] + by_code['F02'], 'external dependency', 'external dependencies')} (F01, F02), "
+                f"{pl(by_code['F03'], 'write')} outside the platform (F03), "
+                f"{pl(by_code['F09'], 'share')} with external consumers (F09).")
     if res["f04_lu"]:
-        rssi.append(f"{pl(by_code['F04'], 'rôle propriétaire', 'rôles propriétaires')} sans titulaire (F04).")
+        rssi.append(f"{pl(by_code['F04'], 'owner role')} with no holder (F04).")
     elif ctx.plat == "bigquery":
-        rssi.append("Rôles propriétaires (F04) : sans objet sur BigQuery, où les droits sont portés par les datasets et les tables.")
+        rssi.append("Owner roles (F04): not applicable on BigQuery, where privileges are carried by datasets and tables.")
     else:
-        rssi.append("Rôles propriétaires sans titulaire non déterminés : droits non lus.")
+        rssi.append("Owner roles with no holder not determined: privileges not read.")
     return {"DSI": dsi, "DAF": daf, "RSSI": rssi}
 
 
 def _capacites_snapshot(c) -> dict | None:
-    """Capacités déclarées par un connecteur hors registre : recopiées (clés connues seulement), sans rien deviner."""
+    """Capabilities declared by a connector outside the registry: copied (known keys only), guessing nothing."""
     if not isinstance(c, dict):
         return None
     keys = ("plateforme", "libelle", "famille", "inventaire", "niveaux", "export", "preuve", "statut", "teste_sur")
@@ -1336,7 +1343,7 @@ def _liens(liens) -> list[dict]:
 
 
 def _carte_sortie(objets: list[dict]) -> dict:
-    """Objets par portabilité × famille d'objet ; vide tant qu'aucun objet ne porte de portabilité (snapshot /1)."""
+    """Objects per portability × object family; empty as long as no object carries a portability (snapshot /1)."""
     carte: dict = {}
     for o in objets:
         if "portabilite" not in o:
@@ -1347,14 +1354,14 @@ def _carte_sortie(objets: list[dict]) -> dict:
     return {p: dict(sorted(v.items())) for p, v in sorted(carte.items())}
 
 
-# --- point d'entrée --------------------------------------------------------------------------------------
+# --- entry point --------------------------------------------------------------------------------------------
 
 
 def analyze(snapshot: dict, *, credit_price: float | None = None) -> dict:
-    """snapshot /1 ou /2 (model.py) -> scan.json (schema canot.scan/2 : /1 + champs ajoutés). Fonction pure."""
+    """/1 or /2 snapshot (model.py) -> scan.json (schema canot.scan/2: /1 + added fields). Pure function."""
     as_of = parse_dt(snapshot.get("as_of"))
     if as_of is None:
-        raise ValueError("snapshot sans as_of : l'analyse n'a pas d'horloge")
+        raise ValueError("snapshot without as_of: the analysis has no clock")
     reads = _Reads(sorted((_lecture(lec) for lec in snapshot.get("lectures") or []), key=lambda lec: lec["id"]))
     tables = sorted((_table(t, as_of) for t in snapshot.get("tables") or []), key=lambda t: t["id"])
     objets = sorted((_objet(o) for o in snapshot.get("objets") or []), key=lambda o: (str(o["kind"]), o["id"]))
@@ -1363,9 +1370,9 @@ def analyze(snapshot: dict, *, credit_price: float | None = None) -> dict:
     plat = ctx.plat
 
     edition = snapshot.get("edition")
-    edition_missing = not edition and plat == "snowflake" and reads.status("ACCESS_HISTORY") == "non_lu"
+    edition_missing = not edition and plat == "snowflake" and reads.status("ACCESS_HISTORY") == NOT_READ
     if not edition:
-        edition = "non déterminée (Standard ou droit absent)" if edition_missing else "non déterminée"
+        edition = "not determined (Standard or missing privilege)" if edition_missing else "not determined"
 
     ext = _external(ctx)
     sources = _read_sources(ctx)
@@ -1391,27 +1398,28 @@ def analyze(snapshot: dict, *, credit_price: float | None = None) -> dict:
     rejouabilite = _rejouabilite(ctx, ne)
 
     mv = Counter(t["mouvement"] for t in ctx.present)
-    mouvements = {"figée": mv["figée"], "vivante": mv["vivante"], "recréée": mv["recréée"], "non_determine": mv[None],
+    # the keys stay French (scan.json contract); the values counted are the English movements
+    mouvements = {"figée": mv[FROZEN], "vivante": mv[LIVE], "recréée": mv[RECREATED], "non_determine": mv[None],
                   "base": reads.ids(*WRITE_SOURCES) + (reads.ids("run_results.json") if ctx.famille == "fichiers" else []),
-                  "regle": (f"recréée : DDL de moins de {RECREEE_JOURS} jours sans écriture postérieure ; vivante : écriture de moins de "
-                            f"{VIVANTE_JOURS} jours ; figée : dernière écriture plus ancienne ; non déterminée : écritures non lues")}
+                  "regle": (f"recreated: DDL less than {RECREEE_JOURS} days old with no later write; live: write less than "
+                            f"{VIVANTE_JOURS} days old; frozen: older last write; not determined: writes not read")}
 
     hist_tables = [t for t in tables if t["octets_historique"] and t["octets_historique"] > 0
                    or (t["supprimee_le"] and (t["octets_actifs"] or 0) > 0)]
     hist_total = sum((t["octets_historique"] or 0) + ((t["octets_actifs"] or 0) if t["supprimee_le"] else 0) for t in hist_tables)
     if reads.ok(*STORAGE_SOURCES) and any(t["octets_historique"] is not None for t in tables):
-        hist = fig(hist_total, nature="calculé", unite="octets", base=reads.ids(*STORAGE_SOURCES),
-                   formule="Time Travel + Fail-safe des tables présentes, + octets encore facturés des tables supprimées")
+        hist = fig(hist_total, nature=COMPUTED, unite="bytes", base=reads.ids(*STORAGE_SOURCES),
+                   formule="Time Travel + Fail-safe of present tables, + bytes still billed for dropped tables")
     elif ctx.famille == "fichiers":
-        hist = fig(nature="non_lu", unite="octets", raison=COUTS_FICHIERS)
+        hist = fig(nature=NOT_READ, unite="bytes", raison=COUTS_FICHIERS)
     else:
-        hist = fig(nature="non_lu", unite="octets", raison=reads.why(*STORAGE_SOURCES) if not reads.ok(*STORAGE_SOURCES) else "historique non transmis")
-    ne.track("Historique facturé", hist)
+        hist = fig(nature=NOT_READ, unite="bytes", raison=reads.why(*STORAGE_SOURCES) if not reads.ok(*STORAGE_SOURCES) else "history not provided")
+    ne.track("Billed history", hist)
     kinds = Counter(o["kind"] for o in objets)
     ne_part_pas = {
         "objets_par_type": dict(sorted(kinds.items())),
         "exemples": {k: [o["id"] for o in objets if o["kind"] == k][:5] for k in sorted(kinds)},
-        "routines_par_langage": dict(sorted(Counter((o["langage"] or "non lu").upper() for o in objets
+        "routines_par_langage": dict(sorted(Counter((o["langage"] or "not read").upper() for o in objets
                                                     if o["kind"] in ("procedure", "fonction")).items())),
         "colonnes_non_portables": sum(len(t["colonnes_non_portables"]) for t in ctx.present),
         "historique": {"octets": hist, "tables": len(hist_tables)},
@@ -1419,7 +1427,7 @@ def analyze(snapshot: dict, *, credit_price: float | None = None) -> dict:
 
     outils = defaultdict(lambda: [0, 0])
     for f in familles:
-        k = f["outil"] or f["app"] or "non identifié"
+        k = f["outil"] or f["app"] or "unidentified"
         outils[k][0] += 1
         outils[k][1] += f["n_exec"] or 0
     flagged = defaultdict(list)
@@ -1438,15 +1446,16 @@ def analyze(snapshot: dict, *, credit_price: float | None = None) -> dict:
         "base": reads.ids("OBJECT_DEPENDENCIES", "VIEWS", "QUERY_HISTORY", "JOBS"),
     }
 
-    ne.add("Tarif de votre contrat", CONTRAT_NON_LU if not (credit_price and plat == "snowflake") else "prix du crédit fourni, autres postes non lus")
-    ne.add("Stockage d'arrivée, double exploitation, fonctionnement après la sortie", "dépendent de votre contrat et de votre architecture")
-    ne.add("Résultat identique des requêtes traduites", f"{MENTION_REJOUABILITE} : traduit vers DuckDB, non comparé ; un canot drill compare les résultats")
-    ne.add("Projections de coût fournies par la plateforme", "non reprises : elles ne se vérifient pas depuis le scan")
+    ne.add("Your contract rate", CONTRAT_NON_LU if not (credit_price and plat == "snowflake") else "credit price provided, other items not read")
+    ne.add("Destination storage, running both platforms in parallel, operations after the exit",
+           "depend on your contract and your architecture")
+    ne.add("Identical results of translated queries", f"{MENTION_REJOUABILITE}: translated to DuckDB, not compared; a canot drill compares the results")
+    ne.add("Cost projections provided by the platform", "not used: they cannot be verified from the scan")
     if plat == "bigquery":
-        ne.add("Palier gratuit BigQuery", "partagé par le compte de facturation, non imputable par projet")
-        ne.add("Lectures par l'API Storage Read", "absentes de INFORMATION_SCHEMA.JOBS")
+        ne.add("BigQuery free tier", "shared by the billing account, cannot be attributed per project")
+        ne.add("Reads through the Storage Read API", "missing from INFORMATION_SCHEMA.JOBS")
         if row_policies:
-            ne.add("Octets facturés des requêtes sous politique de lignes", "valeur NULL dans INFORMATION_SCHEMA.JOBS")
+            ne.add("Billed bytes of queries under a row access policy", "NULL value in INFORMATION_SCHEMA.JOBS")
 
     lectures = reads.all
     for lec in lectures:
@@ -1456,17 +1465,17 @@ def analyze(snapshot: dict, *, credit_price: float | None = None) -> dict:
         "plateforme": plat, "perimetre": scrub(snapshot.get("perimetre")), "edition": edition,
         "schemas_caches": sorted({str(t["schema"]) for t in tables if str(t["schema"] or "").startswith("_")}
                                  | {str(d.get("nom")) for d in snapshot.get("datasets") or [] if d.get("cache") and d.get("nom")}),
-        "niveau_droits": snapshot.get("niveau_droits"), "mode_sql": snapshot.get("mode_sql") or "lecture seule",
+        "niveau_droits": snapshot.get("niveau_droits"), "mode_sql": legacy("mode_sql", snapshot.get("mode_sql")) or READ_ONLY,
         "lectures": lectures, "tables": tables, "objets": objets, "familles": familles, "drapeaux": drapeaux,
         "couts": couts, "fourchettes": fourchettes, "dependances": dependances, "rejouabilite": rejouabilite,
         "mouvements": mouvements, "ne_part_pas": ne_part_pas, "non_estime": ne.items, "cout_du_scan": _cout_du_scan(ctx),
-        "latence_max_h": max((lec["latence_max_h"] for lec in lectures if lec["statut"] == "lu" and lec["latence_max_h"] is not None), default=None),
+        "latence_max_h": max((lec["latence_max_h"] for lec in lectures if lec["statut"] == READ and lec["latence_max_h"] is not None), default=None),
         "fraicheur": _fraicheur(ctx),
-        "f04_lu": bool(f04) or (all(reads.status(n) == "lu" for n in GRANT_SOURCES) and (snapshot.get("droits") or {}).get("roles") is not None),
+        "f04_lu": bool(f04) or (all(reads.status(n) == READ for n in GRANT_SOURCES) and (snapshot.get("droits") or {}).get("roles") is not None),
         "regles": {"vivante_jours": VIVANTE_JOURS, "recreee_jours": RECREEE_JOURS, "horizon_lectures_jours": profile(plat).get("horizon_jours", 365),
                    "debit_mo_s": list(THROUGHPUT_MBPS)},
         "sources_prix": [profile(plat)["source_prix"]] if "source_prix" in profile(plat) else [],
-        # canot.scan/2 : déclarations du connecteur (registre d'abord, sinon celles du snapshot), lignage et carte de sortie
+        # canot.scan/2: connector declarations (registry first, otherwise the snapshot's), lineage and exit map
         "famille": ctx.famille,
         "capacites": capacites(plat) or _capacites_snapshot(snapshot.get("capacites")),
         "liens": _liens(snapshot.get("liens")),

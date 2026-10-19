@@ -1,14 +1,14 @@
-Canot scan en lecture seule (niveau 1 : inventaire, volumes, consommation)
-Source : projet dbt canot_lab : adaptateur snowflake, dbt 1.12.6, manifest du 17/10/2026
-  DSI : 8 modèles dbt, 8 tests dbt, 4 sources dbt ; 8 relations stockées ; 19 liens de dépendance. Matérialisations : 4 table, 4 view.
-  DSI : Portabilité : 17 traduisible(s), 0 à reconstruire (F13), 0 non déterminée(s), 4 portable(s) tel quel.
-  DSI : Rejouabilité : 8 modèles traduit(s), non testé(s) par EXPLAIN DuckDB (catalog.json non lu : EXPLAIN DuckDB non exécuté).
-  DAF : Consommation non lue : fichiers de projet : ni crédits ni octets facturés ; le scan de la plateforme cible les mesure.
-  RSSI : Aucune connexion à une plateforme : fichiers lus localement ; le code est réduit à des empreintes et des comptes.
-  RSSI : 0 dépendance externe déclarée (F01) ; écritures hors plateforme, droits et politiques non lus ici.
-À examiner : F11 ×1, F12 ×1
-Lectures : 2 faites, 1 non lues (détail et raisons dans le rapport)
-Rapport à transmettre : <TMP>/out/scan.html
-Données : <TMP>/out/scan.json et les CSV du même dossier
-Pour nous le transmettre : <TMP>/out/scan-partage.json (des comptes seulement : ni nom de table, ni SQL, ni identité) sur https://canot.io/offres.html#demarrer
-Besoin d'aide pour lire ce rapport ou préparer la suite ? https://canot.io/#contact
+Canot read-only scan (level 1: inventory, volumes, consumption)
+Source: dbt project canot_lab: adapter snowflake, dbt 1.12.6, manifest of 2026-10-17
+  DSI: 8 dbt models, 8 dbt tests, 4 dbt sources; 8 stored relations; 19 dependency links. Materializations: 4 table, 4 view.
+  DSI: Portability: 17 translatable, 0 to rebuild (F13), 0 not determined, 4 portable as is.
+  DSI: Replayability: 8 models translated, not tested by DuckDB EXPLAIN (catalog.json not read: DuckDB EXPLAIN not run).
+  DAF: Consumption not read: project files: no credits and no billed bytes; the scan of the target platform measures them.
+  RSSI: No connection to a platform: files read locally; code is reduced to fingerprints and counts.
+  RSSI: 0 declared external dependencies (F01); writes outside the platform, privileges and policies not read here.
+To review: F11 ×1, F12 ×1
+Reads: 2 done, 1 not read (details and reasons in the report)
+Report to share: <TMP>/out/scan.html
+Data: <TMP>/out/scan.json and the CSV files in the same folder
+To send it to us: <TMP>/out/scan-share.json (counts only: no table name, no SQL, no identity) at https://canot.io/offres.html#demarrer
+Need help reading this report or planning the next step? https://canot.io/#contact

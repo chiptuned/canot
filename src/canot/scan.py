@@ -5,9 +5,9 @@ from .convert import target_schema
 from .sources.base import Source
 
 EGRESS_NOTES = {
-    "snowflake": "Lecture par le connecteur : pas de frais de sortie Snowflake, seulement les crédits de l'entrepôt qui lit.",
-    "bigquery": "BigQuery : la lecture facture l'API Storage Read (par Tio lu) et la sortie réseau vers l'extérieur de Google Cloud ; "
-                "le programme de sortie de Google peut les créditer sous conditions (à confirmer sur cloud.google.com/exit-cloud). Tarifs à renseigner.",
+    "snowflake": "Read through the connector: no Snowflake egress fees, only the credits of the warehouse that reads.",
+    "bigquery": "BigQuery: the read is billed through the Storage Read API (per TiB read) plus network egress out of Google Cloud; "
+                "Google's exit program may credit them under conditions (to confirm at cloud.google.com/exit-cloud). Rates to fill in.",
 }
 NON_PORTABLE = ("JSON", "RANGE", "INTERVAL", "VARIANT", "OBJECT", "ARRAY", "GEOGRAPHY", "GEOMETRY", "VECTOR", "MAP", "STRUCT")
 # assumed copy throughput range in MB/s: a planning assumption (est.), replaced by the measured value after a drill
@@ -31,7 +31,7 @@ def scan(src: Source, credit_price: float | None = 3.90) -> dict:
         "duration_hours": [round(hours[0], 2), round(hours[1], 2)],
         "credits": [round(hours[0] * src.credits_per_hour, 2), round(hours[1] * src.credits_per_hour, 2)],
         "assumed_throughput_mb_s": list(THROUGHPUT_MBPS),
-        "note": "estimation de planification ; remplacée par la mesure après un `canot drill`",
+        "note": "planning estimate; replaced by the measurement after a `canot drill`",
     }
     if src.dialect == "snowflake":
         lo, basis = prices.snowflake_cost(est["credits"][0], credit_price)
@@ -41,10 +41,10 @@ def scan(src: Source, credit_price: float | None = 3.90) -> dict:
     n_objects = sum(len(v) for v in objs.values())
     exit_cost = {
         "reading_usd": est.get("cost_usd"),
-        "reading_basis": est.get("cost_basis") or ("BigQuery : la lecture facture l'API Storage Read (par Tio lu) : tarif à renseigner, non inclus ici." if src.dialect == "bigquery" else None),
+        "reading_basis": est.get("cost_basis") or ("BigQuery: the read is billed through the Storage Read API (per TiB read): rate to fill in, not included here." if src.dialect == "bigquery" else None),
         "rework_days": prices.rework_days(n_objects, len(risky)),
-        "rework_basis": f"{n_objects} objet(s) à reconstruire et {len(risky)} colonne(s) à type propre à la plateforme ; hypothèses de q4o ({prices.REWORK_DAYS_PER_OBJECT[0]} à {prices.REWORK_DAYS_PER_OBJECT[1]} jour par objet, {prices.REWORK_DAYS_PER_NONPORTABLE_COLUMN[0]} à {prices.REWORK_DAYS_PER_NONPORTABLE_COLUMN[1]} par colonne), à discuter.",
-        "not_included": "Tarif de votre contrat, stockage d'arrivée, double exploitation, coût de fonctionnement après la sortie : ils dépendent de votre contrat et de votre architecture, et ne sont pas estimés ici.",
+        "rework_basis": f"{n_objects} object(s) to rebuild and {len(risky)} column(s) with a platform-specific type; q4o assumptions ({prices.REWORK_DAYS_PER_OBJECT[0]} to {prices.REWORK_DAYS_PER_OBJECT[1]} day per object, {prices.REWORK_DAYS_PER_NONPORTABLE_COLUMN[0]} to {prices.REWORK_DAYS_PER_NONPORTABLE_COLUMN[1]} per column), open to discussion.",
+        "not_included": "Your contract rates, target storage, running both platforms in parallel, operating cost after the exit: they depend on your contract and your architecture, and are not estimated here.",
     }
     return {
         "source": src.describe(),

@@ -1,4 +1,4 @@
-"""Collecte BigQuery du scan contre un faux client : SQL envoyé, API appelées, contrat du snapshot. Aucun réseau."""
+"""BigQuery scan collection against a fake client: SQL sent, APIs called, snapshot contract. No network."""
 import json
 import re
 from types import SimpleNamespace
@@ -13,7 +13,9 @@ CANARI = "canari-7f3a@exemple.test"
 SALT = b"sel-de-test-0123"
 P = "proj-test"
 ANON = "_" + "a" * 40
-INTERDITS = ("économie", "gaspillage", "inutile", "inutilisé", "critique", "urgent", "facile", "garanti")
+INTERDITS = ("savings", "waste", "wasted", "useless", "unused", "critical", "urgent", "easy", "guaranteed", "compliant", "certified",
+             "row by row",
+             "économie", "gaspillage", "inutile", "inutilisé", "critique", "facile", "garanti")
 
 
 class Denied(Exception):
@@ -42,7 +44,7 @@ class Resp:
 
 DATASETS = {"raw": "EU", "mart": "EU", "ext": "EU", "_tmp": "EU", "west": "europe-west1", ANON: "US"}
 
-TABLES = {  # (dataset, nom) -> type INFORMATION_SCHEMA
+TABLES = {  # (dataset, name) -> INFORMATION_SCHEMA type
     ("raw", "customers"): "BASE TABLE", ("raw", "orders"): "BASE TABLE", ("raw", "archive_2023"): "BASE TABLE",
     ("mart", "fct_orders"): "BASE TABLE", ("mart", "fct_orders_dev"): "CLONE", ("mart", "fct_orders_snap"): "SNAPSHOT",
     ("mart", "mv_daily"): "MATERIALIZED VIEW", ("mart", "v_kpi"): "VIEW", ("ext", "us_states"): "EXTERNAL",
@@ -53,7 +55,7 @@ API_TYPES = {"BASE TABLE": "TABLE", "CLONE": "TABLE", "SNAPSHOT": "SNAPSHOT", "M
 
 
 class FakeBQ:
-    """Imite google.cloud.bigquery.Client : query() (dry-run puis exécution), _connection.api_request (GET), _http.get."""
+    """Mimics google.cloud.bigquery.Client: query() (dry-run then execution), _connection.api_request (GET), _http.get."""
 
     def __init__(self, *, storage=True, region_views=True, dts="disabled", rls_api=True, est=MIN_BILLED, families_null=True):
         self.storage, self.region_views, self.dts, self.rls_api, self.est = storage, region_views, dts, rls_api, est
@@ -130,7 +132,7 @@ class FakeBQ:
                      "routine_definition": "CAST(x * 100 AS INT64)", "last_altered": _dt(6)}] if eu else []
         if view == "JOBS":
             if "demande_octets_null_n" in sql:
-                if not eu:  # agrégat sans job : une ligne de zéros et de NULL
+                if not eu:  # aggregate without jobs: one row of zeros and NULLs
                     return [{"demande_n": 0, "demande_octets": None, "demande_octets_null_n": 0, "reserve_n": 0, "reserve_slot_ms": None,
                              "load_n": 0, "extract_n": 0, "copy_n": 0, "export_data_n": 0, "echecs_n": 0, "du": None, "au": None}]
                 return [{"demande_n": 12, "demande_octets": None, "demande_octets_null_n": 12, "reserve_n": 0, "reserve_slot_ms": None,
@@ -161,9 +163,9 @@ class FakeBQ:
             return []
         if view == "JOBS_BY_ORGANIZATION":
             raise Denied("403 Access Denied: User does not have the required permissions ('bigquery.jobs.listAll' at the organization level)")
-        raise AssertionError(f"vue inattendue : {view}")
+        raise AssertionError(f"unexpected view: {view}")
 
-    # API BigQuery v2 ----------------------------------------------------------------------------------------------------
+    # BigQuery v2 API ----------------------------------------------------------------------------------------------------
     def _api(self, method, path, query_params=None):
         self.api.append((method, path, dict(query_params or {})))
         parts = path.strip("/").split("/")  # projects/P/datasets/D/tables/T/rowAccessPolicies
@@ -181,7 +183,7 @@ class FakeBQ:
                 return {"tables": [{"tableReference": {"tableId": "scratch"}, "type": "TABLE"}]}
             return {"tables": [{"tableReference": {"tableId": n}, "type": API_TYPES[t]} for (d, n), t in TABLES.items() if d == ds]}
         name = parts[5]
-        if len(parts) == 7:  # rowAccessPolicies : paginé par pageSize (maxResults y est refusé, 400)
+        if len(parts) == 7:  # rowAccessPolicies: paginated by pageSize (maxResults is refused there, 400)
             if "maxResults" in (query_params or {}):
                 raise Denied("400 Bad Request: unknown parameter maxResults")
             if not self.rls_api:
@@ -213,7 +215,7 @@ class FakeBQ:
             props["clustering"] = {"fields": ["customer_id", "status"]}
         return props
 
-    # autres API (transferts, connexions) ---------------------------------------------------------------------------------
+    # other APIs (transfers, connections) -------------------------------------------------------------------------------
     def _get(self, url, params=None):
         self.rest.append(url)
         if "bigquerydatatransfer" in url:
@@ -252,7 +254,7 @@ def run(level=3, **kw):
 
 def lecture(snap, vue):
     found = [x for x in snap["lectures"] if x["vue"] == vue]
-    assert found, f"lecture absente : {vue} ; vues : {[x['vue'] for x in snap['lectures']]}"
+    assert found, f"missing read: {vue}; views: {[x['vue'] for x in snap['lectures']]}"
     return found[0]
 
 
@@ -273,15 +275,15 @@ OBJET_KEYS = {"kind", "id", "schema", "langage", "proprietaire", "externe", "dep
 
 def test_snapshot_conforme():
     _, snap, raw = run()
-    json.dumps(snap)  # sérialisable
+    json.dumps(snap)  # serializable
     for k in ("schema", "plateforme", "as_of", "perimetre", "edition", "niveau_droits", "mode_sql", "versions", "lectures", "tables",
               "objets", "familles", "metering", "rejouabilite"):
         assert k in snap
     assert snap["schema"] == "canot.scan/1" and snap["plateforme"] == "bigquery" and snap["niveau_droits"] == 3
     for lec in snap["lectures"]:
         assert set(lec) == {"id", "vue", "statut", "raison", "lignes", "fenetre", "latence_max_h"}
-        assert lec["id"].startswith("B") and lec["statut"] in ("lu", "non_lu")
-        assert lec["statut"] == "lu" or (lec["raison"] and lec["lignes"] is None)
+        assert lec["id"].startswith("B") and lec["statut"] in ("read", "not_read")
+        assert lec["statut"] == "read" or (lec["raison"] and lec["lignes"] is None)
     assert len({x["id"] for x in snap["lectures"]}) == len(snap["lectures"])
     for t in snap["tables"]:
         assert TABLE_KEYS <= set(t) and t["type"] in ("TABLE", "EXTERNE", "ICEBERG", "TRANSITOIRE", "CLONE", "SNAPSHOT", "TEMPORAIRE")
@@ -319,7 +321,7 @@ def test_sql_lecture_seule_etiquete_dry_run_et_plafond():
             assert prev_cfg.dry_run and prev_sql == sql and prev_loc == loc
             assert cfg.maximum_bytes_billed >= MIN_BILLED
     assert {m for m, _, _ in fake.api} == {"GET"}
-    assert {s for s, _, cfg in fake.jobs if not cfg.dry_run}  # au moins une requête exécutée
+    assert {s for s, _, cfg in fake.jobs if not cfg.dry_run}  # at least one query executed
 
 
 def test_une_requete_par_region_pas_par_dataset():
@@ -328,9 +330,9 @@ def test_une_requete_par_region_pas_par_dataset():
     for view in ("TABLES", "COLUMNS", "TABLE_STORAGE", "VIEWS", "ROUTINES", "TABLE_OPTIONS"):
         sent = [s for s in real if re.search(rf"INFORMATION_SCHEMA\.{view}\b", s)]
         assert sorted(re.search(r"`region-([a-z0-9-]+)`", s)[1] for s in sent) == ["eu", "europe-west1"], view
-    # trois datasets visibles en EU, une seule passe ; aucune requête par dataset hors PARTITIONS (qualificatif de dataset imposé)
+    # three visible datasets in EU, a single pass; no per-dataset query except PARTITIONS (dataset qualifier required)
     assert not [s for s in real if re.search(r"`(raw|mart|ext)`\.INFORMATION_SCHEMA\.(?!PARTITIONS)", s)]
-    # région US : seulement un jeu anonyme, donc jobs seuls
+    # US region: only an anonymous dataset, so jobs only
     us = [re.search(r"INFORMATION_SCHEMA\.(\w+)", s)[1] for s in real if "`region-us`" in s]
     assert set(us) <= {"JOBS", "JOBS_TIMELINE", "RESERVATIONS", "CAPACITY_COMMITMENTS", "RESERVATIONS_TIMELINE", "JOBS_BY_ORGANIZATION"}
 
@@ -338,8 +340,8 @@ def test_une_requete_par_region_pas_par_dataset():
 def test_repli_tables_get_sans_alter_quand_table_storage_echoue():
     fake, snap, _ = run(storage=False)
     lec = lecture(snap, "region-eu.INFORMATION_SCHEMA.TABLE_STORAGE")
-    assert lec["statut"] == "non_lu" and "enable_info_schema_storage" in lec["raison"] and "repli sur tables.get" in lec["raison"]
-    assert lecture(snap, "API tables.get (region-eu)")["statut"] == "lu"
+    assert lec["statut"] == "not_read" and "enable_info_schema_storage" in lec["raison"] and "fallback to tables.get" in lec["raison"]
+    assert lecture(snap, "API tables.get (region-eu)")["statut"] == "read"
     t = table(snap, f"{P}.raw.orders")
     assert (t["lignes"], t["octets_actifs"], t["octets_historique"]) == (100, 2000, 200)
     assert t["detail"]["source_volumes"] == "tables.get" and t["detail"]["octets_fail_safe"] is None
@@ -350,8 +352,8 @@ def test_repli_tables_get_sans_alter_quand_table_storage_echoue():
 def test_api_desactivee_non_lu_service_desactive():
     _, snap, _ = run(dts="disabled")
     lec = lecture(snap, "API transferConfigs.list (eu)")
-    assert (lec["statut"], lec["raison"]) == ("non_lu", "service désactivé")
-    assert lecture(snap, "API connections.list (eu)")["statut"] == "lu"
+    assert (lec["statut"], lec["raison"]) == ("not_read", "service disabled")
+    assert lecture(snap, "API connections.list (eu)")["statut"] == "read"
 
 
 def test_octets_factures_null_restent_none():
@@ -359,7 +361,7 @@ def test_octets_factures_null_restent_none():
     m = snap["metering"]
     assert m["a_la_demande"] == {"octets_factures": None, "requetes": 12}
     assert m["detail"]["octets_factures_null_n"] == 12
-    assert m["reserve"] == {"slot_heures": 0, "requetes": 0}  # zéro mesuré : aucune requête sur réservation
+    assert m["reserve"] == {"slot_heures": 0, "requetes": 0}  # measured zero: no query on a reservation
     assert raw[0]["octets"] is None and raw[0]["detail"]["octets_null_n"] == 9
     assert raw[1]["octets"] == 30
 
@@ -368,10 +370,10 @@ def test_canari_absent_des_sorties(caplog):
     caplog.set_level("DEBUG")
     _, snap, raw = run(dts="ok")
     assert CANARI not in json.dumps(snap, ensure_ascii=False)
-    assert CANARI not in caplog.text  # sqlglot journalise le texte qu'il ne sait pas analyser
+    assert CANARI not in caplog.text  # sqlglot logs the text it cannot parse
     for f in raw:
         assert CANARI not in json.dumps({k: v for k, v in f.items() if k != "_sql"}, ensure_ascii=False)
-    assert CANARI in raw[0]["_sql"]  # le texte brut ne sort que par le second retour
+    assert CANARI in raw[0]["_sql"]  # raw text leaves only through the second return value
     assert raw[0]["utilisateur"].startswith("u-") and raw[1]["app"].startswith("app-")
     assert table(snap, f"{P}.ext.us_states")["externe_uri"] == "gs://bucket-canot"
     assert all(e.startswith(("pii=v-", "owner=v-")) for e in table(snap, f"{P}.raw.customers")["etiquettes"])
@@ -385,9 +387,9 @@ def test_niveau_1_ne_lit_ni_niveau_2_ni_niveau_3():
         assert marker not in sent, marker
     assert not fake.rest and not any("rowAccessPolicies" in p for _, p, _ in fake.api)
     assert raw == []
-    skipped = {x["raison"] for x in snap["lectures"] if x["statut"] == "non_lu" and x["raison"].startswith("niveau")}
-    assert skipped == {"niveau 2 non demandé", "niveau 3 non demandé"}
-    assert all(t["n_lectures"] is None for t in snap["tables"])  # non lu, jamais 0
+    skipped = {x["raison"] for x in snap["lectures"] if x["statut"] == "not_read" and x["raison"].startswith("level")}
+    assert skipped == {"level 2 not requested", "level 3 not requested"}
+    assert all(t["n_lectures"] is None for t in snap["tables"])  # not read, never 0
     assert snap["metering"]["a_la_demande"]["requetes"] == 12
 
 
@@ -403,7 +405,7 @@ def test_politique_de_lignes_detectee():
     fct = table(snap, f"{P}.mart.fct_orders")
     assert "lignes:only_owner" in fct["politiques"]
     assert fct["detail"]["politique_lignes_n"] == 1
-    assert fct["detail"]["politique_lignes_indices"] == "octets facturés NULL, lignes visibles = 0"
+    assert fct["detail"]["politique_lignes_indices"] == "billed bytes NULL, visible rows = 0"
     pol = objet(snap, f"{P}.mart.fct_orders.only_owner")
     assert pol["kind"] == "politique_lignes" and pol["reference"] == [fct["id"]]
     assert pol["detail"]["lignes_visibles_zero"] is True and pol["detail"]["octets_factures_null_n"] == 9
@@ -411,7 +413,7 @@ def test_politique_de_lignes_detectee():
 
 def test_politique_de_lignes_probable_sans_droit_api():
     _, snap, _ = run(rls_api=False)
-    assert lecture(snap, "API rowAccessPolicies.list (region-eu)")["raison"] == "droit absent"
+    assert lecture(snap, "API rowAccessPolicies.list (region-eu)")["raison"] == "missing privilege"
     fct = table(snap, f"{P}.mart.fct_orders")
     assert fct["politiques"] == ["lignes:probable"] and fct["detail"]["politique_lignes_n"] is None
     assert "lignes:probable" not in table(snap, f"{P}.raw.customers")["politiques"]
@@ -422,8 +424,8 @@ def test_lectures_par_table_et_zero_mesure():
     assert table(snap, f"{P}.mart.fct_orders")["n_lectures"] == 9
     assert table(snap, f"{P}.mart.fct_orders")["n_ecritures"] == 2
     arch = table(snap, f"{P}.raw.archive_2023")
-    assert arch["n_lectures"] == 0 and arch["derniere_lecture"] is None  # lu, aucune lecture sur 180 j
-    assert lecture(snap, "region-eu.INFORMATION_SCHEMA.JOBS (lectures par table)")["fenetre"] is not None
+    assert arch["n_lectures"] == 0 and arch["derniere_lecture"] is None  # read, no read over 180 d
+    assert lecture(snap, "region-eu.INFORMATION_SCHEMA.JOBS (reads per table)")["fenetre"] is not None
 
 
 def test_datasets_caches_signales_pas_ignores():
@@ -439,13 +441,13 @@ def test_datasets_caches_signales_pas_ignores():
 
 def test_vues_de_region_refusees_repli_api():
     fake, snap, _ = run(region_views=False)
-    assert lecture(snap, "region-eu.INFORMATION_SCHEMA.TABLES")["statut"] == "non_lu"
-    assert lecture(snap, "API tables.list (region-eu)")["statut"] == "lu"
+    assert lecture(snap, "region-eu.INFORMATION_SCHEMA.TABLES")["statut"] == "not_read"
+    assert lecture(snap, "API tables.list (region-eu)")["statut"] == "read"
     dev = table(snap, f"{P}.mart.fct_orders_dev")
     assert dev["type"] == "CLONE" and dev["clone_de"] == f"{P}.mart.fct_orders"
     assert table(snap, f"{P}.ext.us_states")["externe_uri"] == "gs://bucket-canot"
     v = objet(snap, f"{P}.mart.v_kpi")
-    assert v["langage"] == "SQL hérité" and v["reference"] == [f"{P}.ext.us_states"]
+    assert v["langage"] == "legacy SQL" and v["reference"] == [f"{P}.ext.us_states"]
     orders = table(snap, f"{P}.raw.orders")
     assert orders["colonnes"][1] == {"nom": "actor", "type": "STRUCT<device STRING>"}
     assert orders["colonnes"][2]["type"] == "ARRAY<STRING>" and "policy_tag:tags" in orders["politiques"]
@@ -456,7 +458,7 @@ def test_plafond_d_octets_refuse_avant_execution():
     fake, snap, _ = run(est=MIN_BILLED * 50)
     assert not fake.real_sql()
     lec = lecture(snap, "region-eu.INFORMATION_SCHEMA.TABLES")
-    assert lec["statut"] == "non_lu" and lec["raison"].startswith("volume estimé au-delà du plafond")
+    assert lec["statut"] == "not_read" and lec["raison"].startswith("estimated volume above the cap")
 
 
 def test_garde_refuse_avant_envoi():
@@ -479,7 +481,7 @@ def test_routines_langage_et_sql_dynamique():
 def test_requetes_planifiees_lues():
     _, snap, _ = run(dts="ok")
     q = objet(snap, "eu/abc")
-    assert (q["kind"], q["etat"], q["echecs_n"], q["executions_n"]) == ("requete_planifiee", "désactivée", 1, 2)
+    assert (q["kind"], q["etat"], q["echecs_n"], q["executions_n"]) == ("requete_planifiee", "disabled", 1, 2)
     assert q["reference"] == [f"{P}.raw.orders"] and q["detail"]["nom"] == "nightly"
     g = objet(snap, "eu/gcs")
     assert g["externe"] and g["dependances_externes"] == ["gs://ingest-bucket"]
@@ -489,7 +491,7 @@ def test_requetes_planifiees_lues():
 
 def test_outil_et_app_vocabulaire_ferme():
     assert bq.outil({"dbt_invocation_id": "x"}, None) == "dbt"
-    assert bq.outil({}, "scheduled_query_123") == "requête planifiée"
+    assert bq.outil({}, "scheduled_query_123") == "scheduled query"
     assert bq.outil({"team": "finance"}, "job_1") is None
     assert bq.app({"app": "Looker"}, SALT) == "looker"
     assert bq.app({"app": "tableau-de-bord-rh"}, SALT).startswith("app-")
@@ -499,7 +501,7 @@ def test_references_sql():
     assert bq.refs(f"SELECT * FROM `{P}.a.t` JOIN b.u USING (id)", P) == [f"{P}.a.t", f"{P}.b.u"]
     assert bq.refs("SELECT * FROM [other:ds.t]", P, legacy=True) == ["other.ds.t"]
     assert bq.refs(f"BEGIN INSERT INTO `{P}`.a.t SELECT 1; END", P) == [f"{P}.a.t"]
-    # procédure non analysée : ni une adresse dans un littéral, ni un champ de STRUCT ne deviennent des objets
+    # unparsed procedure: neither an address in a literal nor a STRUCT field becomes an object
     body = f"BEGIN SELECT orders.actor.device FROM `{P}`.a.t WHERE m = 'jean.dupont@corp.example.com'; END"
     assert bq.refs(body, P) == [f"{P}.a.t"]
     assert bq.refs("SELECT * FROM [ds.t] WHERE x = '[a.b.c]'", P, legacy=True) == [f"{P}.ds.t"]

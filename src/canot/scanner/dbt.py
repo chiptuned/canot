@@ -1,8 +1,8 @@
-"""Inventaire d'un projet dbt par ses artefacts : target/manifest.json, run_results.json, catalog.json.
+"""Inventory of a dbt project from its artifacts: target/manifest.json, run_results.json, catalog.json.
 
-Aucun accès réseau, aucune commande dbt : on lit des fichiers JSON. Le SQL des modèles est du code du client : il ne
-quitte pas cette collecte. Seuls sortent des empreintes (sha256 de la forme normalisée, littéraux masqués), des comptes
-de lignes, des noms de fonctions et la catégorie de traduction vers DuckDB (scanner/replay.py, mêmes règles que les requêtes).
+No network access, no dbt command: JSON files are read. The models' SQL is customer code: it never leaves this
+collection. Only fingerprints (sha256 of the normalized form, literals masked), line counts, function names and the
+DuckDB translation category come out (scanner/replay.py, same rules as for queries).
 """
 from __future__ import annotations
 
@@ -20,28 +20,28 @@ from . import replay
 from .model import Collector, fig, now_iso, pseudo
 
 SCHEMA = "canot.scan/2"
-# type d'adaptateur dbt -> dialecte sqlglot ; absent = dialecte générique de sqlglot
+# dbt adapter type -> sqlglot dialect; absent = sqlglot generic dialect
 DIALECTES = {"snowflake": "snowflake", "bigquery": "bigquery", "databricks": "databricks", "spark": "spark", "glue": "spark",
              "postgres": "postgres", "redshift": "redshift", "duckdb": "duckdb", "trino": "trino", "starburst": "trino",
              "athena": "athena", "sqlserver": "tsql", "synapse": "tsql", "fabric": "tsql", "oracle": "oracle",
              "clickhouse": "clickhouse", "teradata": "teradata", "materialize": "postgres", "risingwave": "postgres", "doris": "doris"}
-# matérialisations qui stockent des données (une relation « table » à copier)
+# materializations that store data (a "table" relation to copy)
 STOCKEES = ("table", "incremental", "seed", "snapshot", "dynamic_table", "materialized_view")
 ECHECS = ("error", "fail", "runtime error")
 NON_EXECUTE = ("skipped", "no-op")
-R_JINJA = "SQL compilé absent et Jinja non résolu (dbt compile le produit)"
-R_PYTHON = "modèle Python : non analysé (dépend de l'API de l'adaptateur)"
+R_JINJA = "compiled SQL absent and Jinja not resolved (dbt compile produces it)"
+R_PYTHON = "Python model: not analyzed (depends on the adapter API)"
 
 _EXPR = re.compile(r"\{\{(.*?)\}\}", re.S)
 _BLOC = re.compile(r"\{%-?\s*(\w+)", re.S)
 _APPEL = re.compile(r"\s*([A-Za-z_][\w.]*)")
 _REF = re.compile(r"\{\{\s*ref\(\s*(['\"])([^'\"]+)\1(?:\s*,\s*(['\"])([^'\"]+)\3)?\s*\)\s*\}\}")
 _SRC = re.compile(r"\{\{\s*source\(\s*(['\"])([^'\"]+)\1\s*,\s*(['\"])([^'\"]+)\3\s*\)\s*\}\}")
-_SIMPLES = {"ref", "source", "config", "this"}  # gabarit sans logique : la relation est connue à la lecture
+_SIMPLES = {"ref", "source", "config", "this"}  # template without logic: the relation is known at read time
 
 
 class ProjetDbt:
-    """Un dossier d'artefacts dbt. `dbt://CHEMIN` : CHEMIN = le projet, son dossier target/, ou un manifest.json."""
+    """A folder of dbt artifacts. `dbt://PATH`: PATH = the project, its target/ folder, or a manifest.json."""
 
     dialect = "dbt"
     kind = "dbt"
@@ -60,8 +60,8 @@ class ProjetDbt:
         elif (path / "target" / "manifest.json").is_file():
             cible = path / "target"
         else:
-            raise ValueError(f"URL dbt : aucun manifest.json dans {rest!r} ni dans son dossier target/. "
-                             "`dbt parse` le produit en lisant les fichiers du projet, sans se connecter à l'entrepôt.")
+            raise ValueError(f"dbt URL: no manifest.json in {rest!r} nor in its target/ folder. "
+                             "`dbt parse` produces it by reading the project files, without connecting to the warehouse.")
         self.cible = cible.resolve()
 
     def describe(self) -> str:
@@ -74,7 +74,7 @@ class ProjetDbt:
 def _json(p: Path) -> dict:
     d = json.loads(p.read_text(encoding="utf-8"))
     if not isinstance(d, dict):
-        raise ValueError("artefact dbt illisible")
+        raise ValueError("unreadable dbt artifact")
     return d
 
 
@@ -101,7 +101,7 @@ def _lignes(text: str | None) -> int | None:
 
 
 def jinja(raw: str) -> dict:
-    """Usage du gabarit : blocs ({% if %}, {% for %}…), appels de macros autres que ref/source/config. Comptes seulement."""
+    """Template usage: blocks ({% if %}, {% for %}…), macro calls other than ref/source/config. Counts only."""
     blocs = [b for b in _BLOC.findall(raw or "") if not b.startswith("end")]
     appels = []
     for e in _EXPR.findall(raw or ""):
@@ -112,7 +112,7 @@ def jinja(raw: str) -> dict:
 
 
 def _sans_gabarit(raw: str, noms: dict, sources: dict) -> str | None:
-    """SQL brut sans logique de gabarit : ref() et source() remplacés par la relation ; None s'il reste du Jinja."""
+    """Raw SQL without template logic: ref() and source() replaced by the relation; None if Jinja remains."""
     def ref(m):
         return noms.get(m.group(4) or m.group(2)) or m.group(0)
 
@@ -126,11 +126,11 @@ def _sans_gabarit(raw: str, noms: dict, sources: dict) -> str | None:
 
 
 def analyse_sql(n: dict, dialect: str | None, skel, known: frozenset[str], noms: dict, sources: dict) -> dict:
-    """Ce qu'on garde du code d'un nœud : empreinte, lignes, gabarit, fonctions, catégorie de traduction. Jamais le texte."""
+    """What is kept of a node's code: fingerprint, lines, template, functions, translation category. Never the text."""
     raw = n.get("raw_code") if n.get("raw_code") is not None else n.get("raw_sql")
     compiled = n.get("compiled_code") if n.get("compiled_code") is not None else n.get("compiled_sql")
     lang = (n.get("language") or "sql").lower()
-    out = {"langage": lang, "lignes": _lignes(raw), "jinja": jinja(raw or ""), "analyse": "non analysé", "empreinte": None,
+    out = {"langage": lang, "lignes": _lignes(raw), "jinja": jinja(raw or ""), "analyse": "not analyzed", "empreinte": None,
            "categorie": None, "raison": None, "fonctions": [], "absentes": [], "constructions": [], "secret": False}
     if lang != "sql":
         out["raison"] = R_PYTHON
@@ -138,20 +138,20 @@ def analyse_sql(n: dict, dialect: str | None, skel, known: frozenset[str], noms:
         return out
     sql = None
     if compiled and compiled.strip():
-        sql, out["analyse"] = compiled, "compilé"
+        sql, out["analyse"] = compiled, "compiled"
     elif raw and raw.strip():
         sql = _sans_gabarit(raw, noms, sources)
         if sql is None:
             out["raison"] = R_JINJA
             out["empreinte"] = replay._sha("C1\0" + replay._lexical(raw))
             return out
-        out["analyse"] = "brut"
+        out["analyse"] = "raw"
     if sql is None:
-        out["raison"] = "code absent du manifest"
+        out["raison"] = "code absent from the manifest"
         return out
     if replay.is_secret_query(sql):
         out["secret"] = True
-        out["raison"] = "secret détecté : compté puis écarté"
+        out["raison"] = "secret detected: counted then dropped"
         return out
     with replay._quiet():
         tree = replay._parse(sql, dialect)
@@ -169,21 +169,21 @@ def analyse_sql(n: dict, dialect: str | None, skel, known: frozenset[str], noms:
 
 
 def portabilite(a: dict, materialisation: str | None, mat_propre: bool, adaptateur: str) -> tuple[str, str]:
-    """(statut, raison) ; « à reconstruire » seulement sur un fait lu (fonction absente de DuckDB, traduction impossible,
-    matérialisation propre à l'adaptateur), jamais supposé."""
+    """(status, reason); "to rebuild" only on a read fact (function absent from DuckDB, translation impossible,
+    adapter-specific materialization), never assumed."""
     if mat_propre:
-        return "a_reconstruire", f"matérialisation {materialisation} propre à l'adaptateur {adaptateur}"
+        return "a_reconstruire", f"materialization {materialisation} specific to the {adaptateur} adapter"
     if a["langage"] != "sql":
         return "non_determine", a["raison"] or R_PYTHON
     if a["absentes"]:
-        return "a_reconstruire", "fonction absente de DuckDB : " + ", ".join(a["absentes"][:5])
+        return "a_reconstruire", replay.R_FONCTION_ABSENTE + ": " + ", ".join(a["absentes"][:5])
     if a["categorie"] == "C3":
-        return "a_reconstruire", "traduction vers DuckDB impossible (sqlglot)"
-    if a["categorie"] == "C5" and a["raison"] in ("fonction absente de DuckDB", "UDF du client"):
+        return "a_reconstruire", replay.R_C3 + " (sqlglot)"
+    if a["categorie"] == "C5" and a["raison"] in (replay.R_FONCTION_ABSENTE, replay.R_UDF):
         return "a_reconstruire", a["raison"]
     if a["categorie"] == "C0" or (a["categorie"] is None and a["raison"] in (replay.R_NON_TESTE, replay.R_HORS_PERIMETRE)):
-        return "traduisible", "SQL traduit vers DuckDB par sqlglot" + (", accepté par EXPLAIN" if a["categorie"] == "C0" else ", non testé")
-    return "non_determine", a["raison"] or "non analysé"
+        return "traduisible", "SQL translated to DuckDB by sqlglot" + (", accepted by EXPLAIN" if a["categorie"] == "C0" else ", not tested")
+    return "non_determine", a["raison"] or "not analyzed"
 
 
 def _run_results(rr: dict | None) -> dict[str, dict]:
@@ -222,8 +222,8 @@ def _catalogue(cat: dict | None) -> dict[str, dict]:
 
 
 def _materialisations(man: dict) -> tuple[set[str], set[str]]:
-    """(matérialisations de dbt-core, matérialisations définies par le projet ou un paquet tiers)."""
-    core, autres = {"ephemeral"}, set()  # éphémère : sans macro de matérialisation, insérée en CTE par dbt-core
+    """(dbt-core materializations, materializations defined by the project or a third-party package)."""
+    core, autres = {"ephemeral"}, set()  # ephemeral: no materialization macro, inlined as a CTE by dbt-core
     projet = (man.get("metadata") or {}).get("project_name")
     for m in (man.get("macros") or {}).values():
         name = m.get("name") or ""
@@ -257,7 +257,7 @@ def _table(n: dict, cat: dict | None, run: dict | None, adaptateur: str, salt: b
 def _run_fields(run: dict | None, rr_lu: bool) -> dict:
     if run:
         return {"etat": run["etat"], "executions_n": run["executions_n"], "echecs_n": run["echecs_n"], "derniere_execution": run["fin"]}
-    # run_results lu mais nœud absent de la dernière invocation : 0 exécution mesurée ; non lu : None
+    # run_results read but node absent from the last invocation: 0 measured executions; not read: None
     return {"etat": None, "executions_n": 0 if rr_lu else None, "echecs_n": 0 if rr_lu else None, "derniere_execution": None}
 
 
@@ -273,27 +273,27 @@ def _rejouabilite(analyses: list[dict], skel_lu: bool, n_secrets: int) -> dict:
     cats = {c: {"familles": sum(1 for a in analyses if a["categorie"] == c), "executions": None, "poids": None} for c in replay.CATEGORIES}
     test = [a for a in analyses if a["categorie"] in replay.BASE_TAUX]
     non_testees = [a for a in analyses if a["categorie"] is None]
-    suffixe = f"SQL des modèles et snapshots du manifest, sqlglot {sqlglot.__version__}, duckdb {duckdb.__version__}"
+    suffixe = f"SQL of the manifest models and snapshots, sqlglot {sqlglot.__version__}, duckdb {duckdb.__version__}"
     if skel_lu and test:
-        taux_f = fig(round(100 * cats["C0"]["familles"] / len(test), 1), nature="calculé", unite="%",
-                     formule=f"{replay.LIBELLE_C0} (C0) / C0 à C6 ; une famille = un modèle ou un snapshot", hypotheses=[replay.MENTION])
+        taux_f = fig(round(100 * cats["C0"]["familles"] / len(test), 1), nature="computed", unite="%",
+                     formule=f"{replay.LIBELLE_C0} (C0) / C0 to C6; one family = one model or snapshot", hypotheses=[replay.MENTION])
     else:
-        taux_f = fig(nature="non_estimé", raison="catalog.json non lu : EXPLAIN DuckDB non exécuté" if not skel_lu else "aucun modèle testable")
+        taux_f = fig(nature="not_estimated", raison="catalog.json not read: DuckDB EXPLAIN not run" if not skel_lu else "no testable model")
     fonctions = Counter(f for a in analyses for f in a["fonctions"])
     return {
-        "categories": cats, "base": f"{cats['C0']['familles']}/{len(test)} modèles testés, {len(non_testees)} non testé(s), {suffixe}",
+        "categories": cats, "base": f"{cats['C0']['familles']}/{len(test)} models tested, {len(non_testees)} not tested, {suffixe}",
         "mention": replay.MENTION,
         "libelle_c0": replay.LIBELLE_C0, "poids_unite": None,
         "taux": {"familles": taux_f,
-                 "executions": fig(nature="non_estimé", raison="sans objet : des fichiers dbt ne portent pas d'historique par requête"),
-                 "poids": fig(nature="non_lu", raison="crédits et octets non lus (fichiers dbt)")},
+                 "executions": fig(nature="not_estimated", raison="not applicable: dbt files carry no per-query history"),
+                 "poids": fig(nature="not_read", raison="credits and bytes not read (dbt files)")},
         "bases": {"familles": suffixe}, "non_testees": {"familles": len(non_testees), "executions": None},
         "secrets_ecartes": {"familles": n_secrets, "executions": None}, "fonctions": dict(sorted(fonctions.items())),
     }
 
 
 def collect(projet: ProjetDbt, *, salt: bytes) -> tuple[dict, list[dict]]:
-    """(snapshot canot.scan/2, []) : aucune famille brute, le SQL ne sort pas d'ici. Ne lève pas sur un artefact absent."""
+    """(snapshot canot.scan/2, []): no raw family, the SQL never leaves here. Does not raise on a missing artifact."""
     t0 = time.monotonic()
     c = Collector(prefix="B")
     d = projet.cible
@@ -313,7 +313,7 @@ def collect(projet: ProjetDbt, *, salt: bytes) -> tuple[dict, list[dict]]:
     cat = lire("catalog.json", lambda x: len(x.get("nodes") or {}) + len(x.get("sources") or {}))
 
     meta = man.get("metadata") or {}
-    adaptateur = str(meta.get("adapter_type") or "inconnu")
+    adaptateur = str(meta.get("adapter_type") or "unknown")
     projet_nom = meta.get("project_name") or d.parent.name
     dialect = DIALECTES.get(adaptateur)
     nodes, sources = man.get("nodes") or {}, man.get("sources") or {}
@@ -374,11 +374,11 @@ def collect(projet: ProjetDbt, *, salt: bytes) -> tuple[dict, list[dict]]:
                        famille_objet="traitement", portabilite=port, empreinte_code=a["empreinte"], lignes_code=a["lignes"], **common)
             if rt == "test":
                 tm = n.get("test_metadata") or {}
-                detail.update({"type": tm.get("name") or "singulier", "colonne": n.get("column_name"), "attache_a": n.get("attached_node"),
+                detail.update({"type": tm.get("name") or "singular", "colonne": n.get("column_name"), "attache_a": n.get("attached_node"),
                                "severite": conf.get("severity"), "lignes_en_echec": (run or {}).get("lignes_en_echec")})
                 for k in ("materialisation", "relation", "hooks_n"):
                     detail.pop(k, None)
-                if tm:  # test générique : SQL produit par une macro de dbt-core ou d'un paquet, pas du SQL dynamique du projet
+                if tm:  # generic test: SQL produced by a dbt-core or package macro, not dynamic SQL from the project
                     obj["sql_dynamique"] = False
                 objets.append(_objet("test_dbt", uid, detail=detail, **obj))
                 liens += [{"de": uid, "vers": p, "nature": "depend"} for p in parents]
@@ -406,7 +406,7 @@ def collect(projet: ProjetDbt, *, salt: bytes) -> tuple[dict, list[dict]]:
         owner = e.get("owner") or {}
         objets.append(_objet("exposition_dbt", uid, famille_objet="rapport", portabilite="non_determine", entrees=parents,
                              proprietaire=pseudo(owner.get("email") or owner.get("name"), salt, "u"),
-                             detail={"type": e.get("type"), "maturite": e.get("maturity"), "raison_portabilite": "outil aval non lu"}))
+                             detail={"type": e.get("type"), "maturite": e.get("maturity"), "raison_portabilite": "downstream tool not read"}))
         liens += [{"de": uid, "vers": p, "nature": "depend"} for p in parents]
     for sect, kind in (("metrics", "metrique_dbt"), ("semantic_models", "modele_semantique_dbt"), ("saved_queries", "requete_sauvegardee_dbt"),
                        ("unit_tests", "test_unitaire_dbt"), ("functions", "fonction_dbt")):
@@ -414,7 +414,7 @@ def collect(projet: ProjetDbt, *, salt: bytes) -> tuple[dict, list[dict]]:
             parents = sorted((e.get("depends_on") or {}).get("nodes") or [])
             fam = "traitement" if kind in ("test_unitaire_dbt", "fonction_dbt") else "rapport"
             objets.append(_objet(kind, uid, famille_objet=fam, portabilite="non_determine", entrees=parents,
-                                 detail={"raison_portabilite": "non analysé par ce connecteur"}))
+                                 detail={"raison_portabilite": "not analyzed by this connector"}))
             liens += [{"de": uid, "vers": p, "nature": "depend"} for p in parents]
 
     macros = man.get("macros") or {}
@@ -430,30 +430,30 @@ def collect(projet: ProjetDbt, *, salt: bytes) -> tuple[dict, list[dict]]:
                                      "macros_n": len((m.get("depends_on") or {}).get("macros") or [])}))
     paquets = Counter(m.get("package_name") for m in macros.values() if m.get("package_name") != projet_nom)
     for p, nb in sorted(paquets.items(), key=lambda kv: str(kv[0])):
-        role = "dbt-core" if p == "dbt" else "adaptateur" if p == f"dbt_{adaptateur}" else "paquet"
+        role = "dbt-core" if p == "dbt" else "adapter" if p == f"dbt_{adaptateur}" else "package"
         objets.append(_objet("paquet_dbt", f"paquet:{p}", famille_objet="code", detail={"macros_n": nb, "role": role}))
 
     echecs = sum(r["echecs_n"] for r in runs.values())
     rmeta = (rr or {}).get("metadata") or {}
     objets.append(_objet("dag", f"dbt:{projet_nom}", famille_objet="planification", portabilite="traduisible", moteur="dbt",
-                         planification="non lue (orchestrateur hors des fichiers dbt)",
+                         planification="not read (orchestrator outside the dbt files)",
                          executions_n=1 if rr is not None else None, echecs_n=(1 if echecs else 0) if rr is not None else None,
                          derniere_execution=(rmeta.get("generated_at") or "")[:19] + "Z" if rmeta.get("generated_at") else None,
-                         etat=f"dernière invocation : {((rr or {}).get('args') or {}).get('which')}" if rr is not None else None,
+                         etat=f"last invocation: {((rr or {}).get('args') or {}).get('which')}" if rr is not None else None,
                          detail={"noeuds_executes_n": sum(r["executions_n"] for r in runs.values()) if rr is not None else None,
                                  "noeuds_en_echec_n": echecs if rr is not None else None,
                                  "noeuds_avertis_n": sum(1 for r in runs.values() if r["etat"] == "warn") if rr is not None else None,
                                  "duree_s": round(rr["elapsed_time"], 1) if isinstance((rr or {}).get("elapsed_time"), (int, float)) else None,
-                                 "fenetre": "dernière invocation seulement (run_results.json)", "analyses_n": sum(
+                                 "fenetre": "last invocation only (run_results.json)", "analyses_n": sum(
                                      1 for n in nodes.values() if n.get("resource_type") == "analysis")}))
 
     gen = str(meta.get("generated_at") or "")
     snap = {
         "schema": SCHEMA, "plateforme": "dbt", "famille": "fichiers", "as_of": now_iso(),
-        "perimetre": f"projet dbt {projet_nom} : adaptateur {adaptateur}, dbt {meta.get('dbt_version') or 'version non lue'}"
-                     + (f", manifest du {gen[8:10]}/{gen[5:7]}/{gen[0:4]}" if len(gen) >= 10 else ""),
+        "perimetre": f"dbt project {projet_nom}: adapter {adaptateur}, dbt {meta.get('dbt_version') or 'version not read'}"
+                     + (f", manifest of {gen[0:10]}" if len(gen) >= 10 else ""),
         "edition": f"dbt {meta.get('dbt_version')}" if meta.get("dbt_version") else None,
-        "mode_sql": "aucun SQL émis (fichiers lus)", "lectures": c.lectures, "tables": tables, "objets": objets, "familles": [],
+        "mode_sql": "no SQL issued (files read)", "lectures": c.lectures, "tables": tables, "objets": objets, "familles": [],
         "liens": sorted(liens, key=lambda x: (x["de"], x["vers"])), "metering": None,
         "rejouabilite": _rejouabilite(analyses_rejeu, skel is not None, n_secrets),
         "cout_du_scan": {"requetes": 0, "duree_s": _duree(t0)},

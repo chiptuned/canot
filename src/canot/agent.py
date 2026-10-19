@@ -1,38 +1,51 @@
-"""Ce qu'un agent peut demander à Canot : la documentation et l'explication de vos rapports. Aucune connexion à vos plateformes :
-les outils lisent des fichiers que vous désignez. `canot mcp` les expose en MCP (stdio)."""
+"""What an agent can ask Canot: the documentation and explanations of your reports. No connection to your platforms:
+the tools read files you point to. `canot mcp` exposes them over MCP (stdio)."""
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 
-TOPICS = {"commandes": "commandes.md", "scan": "scan.md", "sur-site": "sur-site.md", "cibles": "cibles-ue.md", "ecarts": "ecarts.md"}
+TOPICS = {"commands": "commands.md", "scan": "scan.md", "on-prem": "on-prem.md", "targets": "targets.md", "discrepancies": "discrepancies.md"}
+ALIASES = {"command": "commands", "drill": "commands", "mcp": "commands", "onprem": "on-prem", "target": "targets",
+           "discrepancy": "discrepancies", "mismatches": "discrepancies"}
+COMMANDS_SECTION, NEXT_SECTION = "## The commands", "## The sources"
 MAX_JSON_BYTES = 50_000_000
-SCAN_SCHEMAS = ("canot.scan/1", "canot.scan/2")  # /2 = /1 + famille, capacités, liens, carte de sortie
+SCAN_SCHEMAS = ("canot.scan/1", "canot.scan/2")  # /2 = /1 + family, capabilities, links, exit map
+REPLAY_SCHEMAS = ("canot.replay-dbt/1", "canot.rejeu-dbt/1")  # the second one: files written before the rename
 
 
 def _docs_dir() -> Path:
+    """CANOT_DOCS_DIR if set, then the installed package, then the development repository."""
     here = Path(__file__).parent
-    for p in (here / "docs", here.parents[1] / "docs"):  # paquet installé, puis dépôt de développement
-        if (p / "commandes.md").exists():
+    env = os.environ.get("CANOT_DOCS_DIR")
+    for p in ((Path(env),) if env else ()) + (here / "docs", here.parents[1] / "docs"):
+        if (p / TOPICS["commands"]).exists():
             return p
-    raise FileNotFoundError("documentation introuvable")
+    raise FileNotFoundError("documentation not found")
 
 
-def lire_doc(sujet: str) -> str:
-    """Une page de documentation entière : commandes, scan, sur-site, cibles, ecarts."""
-    key = sujet.strip().lower().removesuffix(".md")
-    key = {"cibles-ue": "cibles", "ecart": "ecarts", "drill": "commandes", "mcp": "commandes"}.get(key, key)
+def read_doc(topic: str) -> str:
+    """A full documentation page: commands, scan, on-prem, targets, discrepancies."""
+    key = topic.strip().lower().removesuffix(".md")
+    key = ALIASES.get(key, key)
     if key not in TOPICS:
-        return f"Sujet inconnu : {sujet!r}. Sujets : {', '.join(TOPICS)}."
-    return (_docs_dir() / TOPICS[key]).read_text(encoding="utf-8")
+        return f"Unknown topic: {topic!r}. Topics: {', '.join(TOPICS)}."
+    path = _docs_dir() / TOPICS[key]
+    if not path.is_file():
+        return f"Page {TOPICS[key]} is missing from the documentation folder."
+    return path.read_text(encoding="utf-8")
 
 
 def _sections() -> list[tuple[str, str, str]]:
     out = []
+    docs = _docs_dir()
     for topic, fname in TOPICS.items():
+        if not (docs / fname).is_file():
+            continue
         title, buf = topic, []
-        for line in (_docs_dir() / fname).read_text(encoding="utf-8").splitlines():
+        for line in (docs / fname).read_text(encoding="utf-8").splitlines():
             if line.startswith("#"):
                 if buf:
                     out.append((topic, title, "\n".join(buf).strip()))
@@ -44,32 +57,37 @@ def _sections() -> list[tuple[str, str, str]]:
     return [s for s in out if s[2]]
 
 
-def chercher_doc(requete: str, limite: int = 5) -> list[dict]:
-    """Passages de la documentation qui répondent à la requête (mots-clés), les plus pertinents d'abord."""
-    words = [w for w in re.findall(r"\w+", requete.lower()) if len(w) > 2]
+def search_docs(query: str, limit: int = 5) -> list[dict]:
+    """Documentation passages that answer the query (keywords), most relevant first."""
+    words = [w for w in re.findall(r"\w+", query.lower()) if len(w) > 2]
     scored = []
     for topic, title, text in _sections():
         hay_t, hay = title.lower(), text.lower()
         score = sum(3 * hay_t.count(w) + hay.count(w) for w in words)
         if score:
-            scored.append((score, {"page": topic, "section": title, "texte": text[:1500]}))
-    return [s for _, s in sorted(scored, key=lambda x: -x[0])[:limite]]
+            scored.append((score, {"page": topic, "section": title, "text": text[:1500]}))
+    return [s for _, s in sorted(scored, key=lambda x: -x[0])[:limit]]
 
 
-def commandes() -> str:
-    """Le tableau des commandes et leurs options."""
-    text = lire_doc("commandes")
-    start = text.index("## Les commandes")
-    end = text.index("## Les sources")
+def commands() -> str:
+    """The table of commands and their options."""
+    text = read_doc("commands")
+    start = text.find(COMMANDS_SECTION)
+    if start < 0:
+        return f"Section {COMMANDS_SECTION!r} not found in {TOPICS['commands']}; full page follows.\n\n{text}"
+    end = text.find(NEXT_SECTION, start)
+    if end < 0:  # otherwise up to the next level-2 heading
+        nxt = re.search(r"^## ", text[start + len(COMMANDS_SECTION):], re.M)
+        end = start + len(COMMANDS_SECTION) + nxt.start() if nxt else len(text)
     return text[start:end].strip()
 
 
 def _load(path: str) -> dict:
     p = Path(path).expanduser()
     if p.suffix != ".json" or not p.is_file():
-        raise ValueError("indiquez le chemin d'un fichier .json produit par Canot (scan.json ou report.json)")
+        raise ValueError("give the path of a .json file produced by Canot (scan.json, report.json or replay-dbt.json)")
     if p.stat().st_size > MAX_JSON_BYTES:
-        raise ValueError("fichier trop gros")
+        raise ValueError("file too large")
     return json.loads(p.read_text(encoding="utf-8"))
 
 
@@ -77,101 +95,101 @@ def _fig(f) -> str:
     if not isinstance(f, dict):
         return str(f)
     n = f.get("nature")
-    if n in ("non_lu", "non_estimé"):
+    if n in ("not_read", "not_estimated"):
         return f"{n} ({f.get('raison')})"
-    if n == "estimé":
-        return f"estimé : {f.get('bas')} à {f.get('haut')} {f.get('unite') or ''}".strip()
-    return f"{n} : {f.get('valeur')} {f.get('unite') or ''}".strip()
+    if n == "estimated":
+        return f"estimated: {f.get('bas')} to {f.get('haut')} {f.get('unite') or ''}".strip()
+    return f"{n}: {f.get('valeur')} {f.get('unite') or ''}".strip()
 
 
-def expliquer_scan(chemin: str, max_constats: int = 40) -> dict:
-    """Résumé d'un scan.json : périmètre, constats « à examiner », lectures non faites, ce qui n'est pas chiffré."""
-    r = _load(chemin)
+def explain_scan(path: str, max_findings: int = 40) -> dict:
+    """Summary of a scan.json: scope, "to review" findings, reads not done, what is not quantified."""
+    r = _load(path)
     if r.get("schema") not in SCAN_SCHEMAS:
-        raise ValueError("ce fichier n'est pas un scan.json de Canot")
-    flags = [{"code": f["code"], "cible": f["cible"], "observe": f["texte"]} for f in r.get("drapeaux", [])[:max_constats]]
-    nl = [{"lecture": f"{l['id']} {l['vue']}", "raison": l.get("raison")} for l in r.get("lectures", []) if l.get("statut") == "non_lu"]
+        raise ValueError("this file is not a Canot scan.json")
+    flags = [{"code": f["code"], "target": f["cible"], "observed": f["texte"]} for f in r.get("drapeaux", [])[:max_findings]]
+    nl = [{"read": f"{l['id']} {l['vue']}", "reason": l.get("raison")} for l in r.get("lectures", []) if l.get("statut") == "not_read"]
     return {
-        "plateforme": r.get("plateforme"), "date": r.get("as_of"), "perimetre": r.get("perimetre"), "niveau_droits": r.get("niveau_droits"),
-        "resume": r.get("resume"), "constats": flags, "constats_total": len(r.get("drapeaux", [])),
-        "lectures_non_faites": nl, "non_estime": r.get("non_estime"), "fraicheur": r.get("fraicheur"),
-        "rejouabilite": (r.get("rejouabilite") or {}).get("base"),
-        # /2 seulement ; None sur un scan.json /1
-        "famille": r.get("famille"), "capacites": r.get("capacites"), "carte_sortie": r.get("carte_sortie") or None,
-        "non_prouvable": _non_prouvable(r),
-        "a_savoir": ["Chaque constat est « À examiner », sans niveau de gravité : il dit ce qui est observé et ce qui ne l'est pas.",
-                     "Une absence de constat ne vaut que pour les lectures faites.",
-                     "Accepté par DuckDB ne veut pas dire résultat identique : seul canot drill compare les résultats.",
-                     "Un scan inventorie : il n'exporte rien et ne prouve rien. Export et preuve sont des capacités de canot drill "
-                     "(canot rejeu-dbt pour la preuve P3 d'un projet dbt)."],
+        "platform": r.get("plateforme"), "date": r.get("as_of"), "scope": r.get("perimetre"), "grant_level": r.get("niveau_droits"),
+        "summary": r.get("resume"), "findings": flags, "findings_total": len(r.get("drapeaux", [])),
+        "reads_not_done": nl, "not_estimated": r.get("non_estime"), "freshness": r.get("fraicheur"),
+        "replayability": (r.get("rejouabilite") or {}).get("base"),
+        # /2 only; None on a /1 scan.json
+        "family": r.get("famille"), "capabilities": r.get("capacites"), "exit_map": r.get("carte_sortie") or None,
+        "not_provable": _not_provable(r),
+        "good_to_know": ["Each finding is \"To review\", with no severity level: it states what is observed and what is not.",
+                         "The absence of a finding only holds for the reads that were done.",
+                         "Accepted by DuckDB does not mean an identical result: only canot drill compares results.",
+                         "A scan takes inventory: it exports nothing and proves nothing. Export and evidence are canot drill "
+                         "capabilities (canot replay-dbt for the P3 evidence of a dbt project)."],
     }
 
 
-def _non_prouvable(r: dict) -> dict | None:
-    """Ce qui est compté sans pouvoir être prouvé hors plateforme : objets « à reconstruire » et constats F13 à F16."""
+def _not_provable(r: dict) -> dict | None:
+    """What is counted but cannot be proven off the platform: objects "to rebuild" and findings F13 to F16."""
     if r.get("schema") != "canot.scan/2":
         return None
-    a_rec = sum((r.get("carte_sortie") or {}).get("a_reconstruire", {}).values())
+    to_rebuild = sum((r.get("carte_sortie") or {}).get("a_reconstruire", {}).values())
     codes = {}
     for f in r.get("drapeaux", []):
         if f["code"] in ("F13", "F14", "F15", "F16"):
             codes[f["code"]] = codes.get(f["code"], 0) + 1
-    preuve = [p.get("forme") for p in (r.get("capacites") or {}).get("preuve") or []]
-    return {"objets_a_reconstruire": a_rec, "constats": codes, "formes_de_preuve_declarees": preuve}
+    evidence = [p.get("forme") for p in (r.get("capacites") or {}).get("preuve") or []]
+    return {"objects_to_rebuild": to_rebuild, "findings": codes, "declared_evidence_forms": evidence}
 
 
-def capacites(plateforme: str | None = None) -> dict:
-    """Ce que Canot sait faire par plateforme (inventaire, export, preuve P1-P5), son statut de validation et la date de test consignée.
-    Lu dans le registre des connecteurs, jamais deviné."""
+def capabilities(platform: str | None = None) -> dict:
+    """What Canot supports per platform (inventory, export, evidence P1-P5), its validation status and the recorded test date.
+    Read from the connector registry, never guessed."""
     from . import connectors
 
-    if plateforme:
-        c = connectors.get(plateforme.strip().lower())
+    if platform:
+        c = connectors.get(platform.strip().lower())
         if c is None:
-            return {"erreur": f"Plateforme inconnue : {plateforme!r}. Plateformes : {', '.join(connectors.CONNECTORS)}."}
+            return {"error": f"Unknown platform: {platform!r}. Platforms: {', '.join(connectors.CONNECTORS)}."}
         items = [c.capacites()]
     else:
         items = [c.capacites() for c in connectors.CONNECTORS.values()]
-    return {"connecteurs": items, "formes_de_preuve": connectors.PREUVES,
-            "a_savoir": ["statut « testé » : vu sur une vraie plateforme ; « écrit, non testé » : code présent, jamais exécuté sur un vrai compte.",
-                         "teste_sur : date et objet du test consignés dans la documentation du dépôt ; vide si aucun test n'y est consigné.",
-                         "Inventaire = canot scan ; export et preuve = canot drill (P3 d'un projet dbt : canot rejeu-dbt). "
-                         "Une forme de preuve absente n'est remplacée par aucun score."]}
+    return {"connectors": items, "evidence_forms": connectors.PREUVES,
+            "good_to_know": [f"status \"{connectors.TESTE}\": seen on a real platform; \"{connectors.NON_TESTE}\": code present, never run on a real account.",
+                             "teste_sur: date and subject of the test recorded in the repository documentation; empty if no test is recorded there.",
+                             "Inventory = canot scan; export and evidence = canot drill (P3 for a dbt project: canot replay-dbt). "
+                             "A missing evidence form is not replaced by any score."]}
 
 
-def expliquer_rapport(chemin: str, max_lignes: int = 30) -> dict:
-    """Résumé d'un report.json d'exercice (parité, tables et requêtes en écart, pistes du catalogue des écarts)
-    ou d'un rejeu-dbt.json (preuve P3 : modèles identiques, différents, non comparés, non rejouables et leurs raisons)."""
-    r = _load(chemin)
-    if r.get("schema") == "canot.rejeu-dbt/1":
+def explain_report(path: str, max_rows: int = 30) -> dict:
+    """Summary of an exercise report.json (parity, tables and queries with a mismatch, leads from the discrepancy catalog)
+    or of a replay-dbt.json (P3 evidence: identical, different, not compared and not replayable models, with their reasons)."""
+    r = _load(path)
+    if r.get("schema") in REPLAY_SCHEMAS:
         mods = r.get("modeles") or []
-        return {"resume": r.get("summary"), "forme": "P3 rejeu de traitements",
-                "differents": [{"modele": m["modele"], "raison": m.get("raison")} for m in mods if m.get("statut") == "different"][:max_lignes],
-                "non_rejouables": [{"modele": m["modele"], "raison": m.get("raison")} for m in mods if m.get("statut") == "non_rejouable"][:max_lignes],
-                "non_compares": [m["modele"] for m in mods if m.get("statut") == "non_compare"][:max_lignes],
-                "regles": r.get("regles"),
-                "a_savoir": ["« identique » : même SQL compilé, entrées copiées, sortie DuckDB comparée à la table d'origine.",
-                             "Un modèle non rejouable ou non comparé n'est pas prouvé : il est compté avec sa raison.",
-                             "La signature du dossier atteste son intégrité, pas l'auteur ni la date."]}
+        return {"summary": r.get("summary"), "form": "P3 pipeline replay",
+                "different": [{"model": m["modele"], "reason": m.get("raison")} for m in mods if m.get("statut") == "different"][:max_rows],
+                "not_replayable": [{"model": m["modele"], "reason": m.get("raison")} for m in mods if m.get("statut") == "non_rejouable"][:max_rows],
+                "not_compared": [m["modele"] for m in mods if m.get("statut") == "non_compare"][:max_rows],
+                "rules": r.get("regles"),
+                "good_to_know": ["\"identique\" (identical): same compiled SQL, copied inputs, DuckDB output compared with the original table.",
+                                 "A model that is not replayable or not compared is not proven: it is counted with its reason.",
+                                 "The evidence signature attests its integrity, not the author nor the date."]}
     if "summary" not in r or "checks" not in r:
-        raise ValueError("ce fichier n'est pas un report.json de Canot")
-    bad_t = [{"table": c["table"], "lignes_source": c.get("rows_source"), "lignes_copie": c.get("rows_target"), "schema_ok": c.get("schema_ok"),
-              "statistiques_ok": c.get("stats_ok"), "empreinte_ok": c.get("fingerprint_ok"), "ecarts_statistiques": c.get("stats_diffs", [])[:5],
-              "precision_seulement": bool(c.get("precision_cols")) and c.get("stats_ok") is not False}
-             for c in r["checks"] if not c.get("ok")][:max_lignes]
-    bad_q = [{"statut": q.get("status"), "detail": str(q.get("detail"))[:300], "requete": str(q.get("sql"))[:200]}
-             for q in r.get("queries", []) if q.get("status") != "match"][:max_lignes]
+        raise ValueError("this file is not a Canot report.json")
+    bad_t = [{"table": c["table"], "source_rows": c.get("rows_source"), "copy_rows": c.get("rows_target"), "schema_ok": c.get("schema_ok"),
+              "stats_ok": c.get("stats_ok"), "fingerprint_ok": c.get("fingerprint_ok"), "stats_diffs": c.get("stats_diffs", [])[:5],
+              "precision_only": bool(c.get("precision_cols")) and c.get("stats_ok") is not False}
+             for c in r["checks"] if not c.get("ok")][:max_rows]
+    bad_q = [{"status": q.get("status"), "detail": str(q.get("detail"))[:300], "query": str(q.get("sql"))[:200]}
+             for q in r.get("queries", []) if q.get("status") != "match"][:max_rows]
     try:
-        ecarts = [l.lstrip("# ").strip() for l in lire_doc("ecarts").splitlines() if l.startswith("## ")]
+        catalog = [l.lstrip("# ").strip() for l in read_doc("discrepancies").splitlines() if l.startswith("## ")]
     except OSError:
-        ecarts = []
-    return {"resume": r["summary"], "tables_en_ecart": bad_t, "requetes_en_ecart": bad_q, "catalogue_des_ecarts": ecarts,
-            "a_savoir": ["Les requêtes citées viennent de votre historique : ne les transmettez pas sans les relire.",
-                         "Un écart de précision seule (nanosecondes avec Iceberg v2) est à traiter, ce n'est pas une corruption.",
-                         "La signature du dossier atteste son intégrité, pas l'auteur ni la date."]}
+        catalog = []
+    return {"summary": r["summary"], "tables_with_mismatch": bad_t, "queries_with_mismatch": bad_q, "discrepancy_catalog": catalog,
+            "good_to_know": ["The quoted queries come from your history: review them before sharing.",
+                             "A precision-only mismatch (nanoseconds with Iceberg v2) needs a decision; it is not corruption.",
+                             "The evidence signature attests its integrity, not the author nor the date."]}
 
 
-TOOLS = (commandes, chercher_doc, lire_doc, capacites, expliquer_scan, expliquer_rapport)
+TOOLS = (commands, search_docs, read_doc, capabilities, explain_scan, explain_report)
 
 
 def serve() -> None:
@@ -181,7 +199,7 @@ def serve() -> None:
         try:
             from mcp.server.fastmcp import FastMCP as Server  # mcp 1.x
         except ImportError as e:
-            raise ModuleNotFoundError("Il manque le connecteur MCP. Réinstallez Canot : pip install -U canot", name="mcp") from e
+            raise ModuleNotFoundError("The MCP connector is missing. Reinstall Canot: pip install -U canot", name="mcp") from e
     server = Server("canot")
     for fn in TOOLS:
         server.tool()(fn)

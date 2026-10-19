@@ -13,22 +13,20 @@ def _p(*a):
     print(*a, flush=True)
 
 
-
-
 def explain(exc: BaseException, argv: list[str]) -> str | None:
-    """Une phrase claire pour les erreurs que tout premier utilisateur rencontre (connecteur absent, identifiants absents)."""
+    """One clear sentence for the errors every first-time user hits (missing connector, missing credentials)."""
     from .connectors import driver_hints
 
     name = type(exc).__name__
     if isinstance(exc, ModuleNotFoundError) and exc.name:
         for prefix, (label, extra) in {"mcp": ("MCP", "mcp"), **driver_hints()}.items():
             if exc.name.startswith(prefix):
-                return (f"Il manque le connecteur {label}. Lancez : uvx --from \"canot[{extra}]\" canot {' '.join(argv)}\n"
-                        f"ou installez-le : pip install 'canot[{extra}]'  (ou 'canot[all]' pour les trois).")
+                return (f"The {label} connector is missing. Run: uvx --from \"canot[{extra}]\" canot {' '.join(argv)}\n"
+                        f"or install it: pip install 'canot[{extra}]'  (or 'canot[all]' for all three).")
     if name == "DefaultCredentialsError":
-        return "Identifiants Google introuvables. Lancez : gcloud auth application-default login"
+        return "Google credentials not found. Run: gcloud auth application-default login"
     if name in ("Forbidden", "PermissionDenied") or "403" in str(exc)[:40]:
-        return "Accès refusé. Vérifiez les rôles en lecture seule demandés (voir la documentation de la source)."
+        return "Access denied. Check the read-only roles the source requires (see the source documentation)."
     if isinstance(exc, ValueError) and ("SNOWFLAKE_" in str(exc) or "DATABRICKS_" in str(exc) or "URL " in str(exc)):
         return str(exc)
     return None
@@ -44,89 +42,91 @@ def main(argv: list[str] | None = None) -> int:
     try:
         return run(argv_list)
     except KeyboardInterrupt:
-        print("Interrompu.", file=sys.stderr)
+        print("Interrupted.", file=sys.stderr)
         return 130
-    except Exception as e:  # noqa: BLE001 : une phrase claire plutôt qu'une trace
+    except Exception as e:  # noqa: BLE001 : one clear sentence rather than a traceback
         if debug:
             raise
-        msg = explain(e, argv_list) or f"{type(e).__name__} : {str(e).splitlines()[0][:300] if str(e) else ''}"
-        print(f"Erreur : {msg}\n(ajoutez --debug pour la trace complète)", file=sys.stderr)
+        msg = explain(e, argv_list) or f"{type(e).__name__}: {str(e).splitlines()[0][:300] if str(e) else ''}"
+        print(f"Error: {msg}\n(add --debug for the full traceback)", file=sys.stderr)
         return 1
 
 
+KEY_HELP = "signing key (default: the CANOT_EVIDENCE_KEY_PATH variable, otherwise ~/.canot/evidence.key)"
+
+
 def parser() -> argparse.ArgumentParser:
-    ap = argparse.ArgumentParser(prog="canot", description="Prouvez que vous pouvez partir.")
+    ap = argparse.ArgumentParser(prog="canot", description="Prove you can leave.")
     ap.add_argument("--version", action="version", version=__version__)
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    s = sub.add_parser("scan", help="radiographie en lecture seule : inventaire, enfermement, coût de sortie estimé")
-    s.add_argument("source", nargs="?", help="la source : bigquery://PROJET/dataset, snowflake://COMPTE/BASE, un fichier .duckdb, dbt://CHEMIN_DU_PROJET")
-    s.add_argument("--from", dest="src", help="équivalent de l'argument source")
+    s = sub.add_parser("scan", help="read-only X-ray: inventory, lock-in, estimated exit cost")
+    s.add_argument("source", nargs="?", help="the source: bigquery://PROJECT/dataset, snowflake://ACCOUNT/DATABASE, a .duckdb file, dbt://PROJECT_PATH")
+    s.add_argument("--from", dest="src", help="same as the source argument")
     s.add_argument("--out", default="canot-out")
-    s.add_argument("--credit-price", type=float, default=None, help="prix du crédit Snowflake de votre contrat, en USD. Sans lui : fourchette du prix catalogue (voir canot/prices.py)")
-    s.add_argument("--level", type=int, choices=(1, 2, 3), default=3, help="jusqu'où lire : 1 inventaire et consommation ; 2 + requêtes (formes normalisées) et lectures par table ; 3 + droits et outils (pseudonymisés). Ce que vos droits ne permettent pas est consigné « non lu »")
-    s.add_argument("--include-sql-text", action="store_true", help="écrit aussi le texte SQL brut dans scan-sql-brut.json (droits 0600). Par défaut il n'est jamais écrit : seules les formes normalisées le sont")
+    s.add_argument("--credit-price", type=float, default=None, help="Snowflake credit price in your contract, in USD. Without it: list-price range (see canot/prices.py)")
+    s.add_argument("--level", type=int, choices=(1, 2, 3), default=3, help="how far to read: 1 inventory and consumption; 2 + queries (normalized forms) and reads per table; 3 + grants and tools (pseudonymized). What your grants do not allow is logged as \"not read\"")
+    s.add_argument("--include-sql-text", action="store_true", help="also write the raw SQL text to scan-sql-raw.json (mode 0600). By default it is never written: only normalized forms are")
 
-    d = sub.add_parser("drill", help="exercice de sortie complet : copie, comparaison, dossier de preuve")
-    d.add_argument("source", nargs="?", help="la source : bigquery://PROJET/dataset, snowflake://COMPTE/BASE, un fichier .duckdb")
-    d.add_argument("dest", nargs="?", help="la destination : un dossier local (./iceberg), s3://..., ou scaleway:fr-par, ovh:gra, outscale:eu-west-2, ionos:de..., avec --bucket")
-    d.add_argument("--from", dest="src", help="équivalent de l'argument source")
-    d.add_argument("--to", dest="dst", help="équivalent de l'argument dest")
+    d = sub.add_parser("drill", help="full exit exercise: copy, comparison, evidence report")
+    d.add_argument("source", nargs="?", help="the source: bigquery://PROJECT/dataset, snowflake://ACCOUNT/DATABASE, a .duckdb file")
+    d.add_argument("dest", nargs="?", help="the destination: a local folder (./iceberg), s3://..., or scaleway:fr-par, ovh:gra, outscale:eu-west-2, ionos:de..., with --bucket")
+    d.add_argument("--from", dest="src", help="same as the source argument")
+    d.add_argument("--to", dest="dst", help="same as the dest argument")
     d.add_argument("--bucket")
-    d.add_argument("--catalog", help="catalogue Iceberg : URI SQLAlchemy (postgresql://… avec canot[postgres]) ou env:NOM_DE_VARIABLE. Défaut : un fichier SQLite dans le dossier de sortie")
+    d.add_argument("--catalog", help="Iceberg catalog: SQLAlchemy URI (postgresql://… with canot[postgres]) or env:VARIABLE_NAME. Default: a SQLite file in the output folder")
     d.add_argument("--out", default="canot-out")
-    d.add_argument("--queries", help="optionnel : fichier SQL à rejouer. Par défaut, les requêtes les plus coûteuses de l'historique de la plateforme.")
+    d.add_argument("--queries", help="optional: SQL file to replay. By default, the most expensive queries in the platform history.")
     d.add_argument("--top", type=int, default=20)
-    d.add_argument("--tolerances", help="fichier TOML (voir `canot init-tolerances`)")
-    d.add_argument("--tables", nargs="*", help="limiter à ces tables (SCHEMA.TABLE)")
-    d.add_argument("--key", default=os.environ.get("CANOT_EVIDENCE_KEY_PATH", str(Path.home() / ".canot" / "evidence.key")), help="clé de signature (défaut : variable CANOT_EVIDENCE_KEY_PATH, sinon ~/.canot/evidence.key)")
-    d.add_argument("--credit-price", type=float, default=None, help="prix du crédit Snowflake de votre contrat, en USD (défaut : fourchette du prix catalogue)")
-    d.add_argument("--replay-max-gb", type=float, default=2.0, help="taille maximale d'une table chargée en mémoire pour rejouer les requêtes")
+    d.add_argument("--tolerances", help="TOML file (see `canot init-tolerances`)")
+    d.add_argument("--tables", nargs="*", help="limit to these tables (SCHEMA.TABLE)")
+    d.add_argument("--key", default=os.environ.get("CANOT_EVIDENCE_KEY_PATH", str(Path.home() / ".canot" / "evidence.key")), help=KEY_HELP)
+    d.add_argument("--credit-price", type=float, default=None, help="Snowflake credit price in your contract, in USD (default: list-price range)")
+    d.add_argument("--replay-max-gb", type=float, default=2.0, help="maximum size of a table loaded in memory to replay queries")
 
-    t = sub.add_parser("teardown", help="supprime les données copiées")
+    t = sub.add_parser("teardown", help="delete the copied data")
     t.add_argument("--to", dest="dst", required=True)
     t.add_argument("--bucket")
-    t.add_argument("--catalog", help="le même catalogue que pour drill")
+    t.add_argument("--catalog", help="the same catalog as for drill")
     t.add_argument("--out", default="canot-out")
 
-    v = sub.add_parser("verify-evidence", help="vérifie la chaîne et la signature d'un dossier")
+    v = sub.add_parser("verify-evidence", help="verify the chain and signature of an evidence folder")
     v.add_argument("dir")
-    v.add_argument("--expect-pub", help="fichier .pub de la clé attendue : refuse un dossier signé par une autre clé")
+    v.add_argument("--expect-pub", help=".pub file of the expected key: rejects a folder signed by another key")
 
-    ss = sub.add_parser("snowflake-setup", help="affiche le script SQL d'accès en lecture seule à relire")
-    ss.add_argument("--generate-key", action="store_true", help="crée la paire de clés ici et met la clé publique dans le script")
-    ss.add_argument("--base", default="<BASE>", help="base Snowflake à copier")
-    sub.add_parser("mcp", help="serveur MCP (stdio) : la documentation et l'explication de vos rapports, pour un agent")
-    bs = sub.add_parser("bigquery-setup", help="affiche le script gcloud d'accès en lecture seule (rôle personnalisé) à relire")
-    bs.add_argument("--project", help="projet à scanner")
-    bs.add_argument("--member", help="user:... ou serviceAccount:... qui recevra le rôle")
-    dm = sub.add_parser("demo", help="démonstration complète en 30 secondes, sans compte : jeu TPC-H, exercice de sortie, dossier de preuve")
-    dm.add_argument("dest", nargs="?", help="où écrire la copie (comme pour drill : ./iceberg, s3://…, scaleway:fr-par, aws:eu-west-3…). Défaut : OUT/iceberg")
-    dm.add_argument("--bucket", help="obligatoire avec un raccourci d'hébergeur (voir canot drill)")
-    dm.add_argument("--catalog", help="catalogue Iceberg (voir canot drill)")
+    ss = sub.add_parser("snowflake-setup", help="print the read-only access SQL script, to review")
+    ss.add_argument("--generate-key", action="store_true", help="create the key pair here and put the public key in the script")
+    ss.add_argument("--base", default="<DATABASE>", help="Snowflake database to copy")
+    sub.add_parser("mcp", help="MCP server (stdio): the documentation and explanations of your reports, for an agent")
+    bs = sub.add_parser("bigquery-setup", help="print the read-only access gcloud script (custom role), to review")
+    bs.add_argument("--project", help="project to scan")
+    bs.add_argument("--member", help="user:... or serviceAccount:... that receives the role")
+    dm = sub.add_parser("demo", help="full 30-second demo, no account needed: TPC-H dataset, exit exercise, evidence report")
+    dm.add_argument("dest", nargs="?", help="where to write the copy (as for drill: ./iceberg, s3://…, scaleway:fr-par, aws:eu-west-3…). Default: OUT/iceberg")
+    dm.add_argument("--bucket", help="required with a provider shortcut (see canot drill)")
+    dm.add_argument("--catalog", help="Iceberg catalog (see canot drill)")
     dm.add_argument("--out", default="canot-demo")
-    dm.add_argument("--sf", type=float, default=0.1, help="taille de TPC-H : 0.1 = 100 Mo (défaut), 1 = environ 1 Go (6 millions de lignes de commande)")
-    dm.add_argument("--rows", type=int, default=50_000, help=argparse.SUPPRESS)  # repli hors ligne : jeu fictif
-    dm.add_argument("--no-open", action="store_true", help="n'ouvre pas le rapport dans le navigateur")
-    it = sub.add_parser("init-tolerances", help="écrit un fichier de tolérances à relire avec le client")
+    dm.add_argument("--sf", type=float, default=0.1, help="TPC-H size: 0.1 = 100 MB (default), 1 = about 1 GB (6 million order lines)")
+    dm.add_argument("--rows", type=int, default=50_000, help=argparse.SUPPRESS)  # offline fallback: fictional dataset
+    dm.add_argument("--no-open", action="store_true", help="do not open the report in the browser")
+    it = sub.add_parser("init-tolerances", help="write a tolerances file, to review with the client")
     it.add_argument("path", nargs="?", default="tolerances.toml")
-    dd = sub.add_parser("demo-data", help="crée une base DuckDB de démonstration")
+    dd = sub.add_parser("demo-data", help="create a demo DuckDB database")
     dd.add_argument("path")
     dd.add_argument("--rows", type=int, default=20_000)
-    dd.add_argument("--retail", action="store_true", help="jeu fictif de distributeur (tickets avec lignes imbriquées)")
-    dd.add_argument("--tpch", action="store_true", help="jeu TPC-H, le benchmark de référence (généré en local)")
-    dd.add_argument("--sf", type=float, default=0.1, help="avec --tpch : taille (0.1 = 100 Mo, 1 = environ 1 Go)")
-    sub.add_parser("connecteurs", help="les plateformes connues : inventaire, export, preuve, statut de validation")
-    rd = sub.add_parser("rejeu-dbt", help="preuve P3 : rejoue les modèles d'un projet dbt dans DuckDB sur la copie et compare aux tables d'origine")
-    rd.add_argument("projet", help="dbt://CHEMIN_DU_PROJET (dossier qui contient target/manifest.json, SQL compilé compris)")
-    rd.add_argument("--base", help="copie en base DuckDB : tables sources et tables d'origine des modèles")
-    rd.add_argument("--iceberg", "--lac", dest="lac", help="ou la copie Iceberg écrite par canot drill (même DESTINATION que pour drill)")
-    rd.add_argument("--drill-out", help="avec --iceberg : le dossier --out du drill, qui contient son catalogue (défaut canot-out)")
-    rd.add_argument("--catalog", help="avec --iceberg : le même catalogue que pour drill")
-    rd.add_argument("--out", default="canot-rejeu-dbt")
-    rd.add_argument("--tolerances", help="fichier TOML (voir `canot init-tolerances`)")
-    rd.add_argument("--key", default=os.environ.get("CANOT_EVIDENCE_KEY_PATH", str(Path.home() / ".canot" / "evidence.key")),
-                    help="clé de signature (défaut : variable CANOT_EVIDENCE_KEY_PATH, sinon ~/.canot/evidence.key)")
+    dd.add_argument("--retail", action="store_true", help="fictional retailer dataset (receipts with nested lines)")
+    dd.add_argument("--tpch", action="store_true", help="TPC-H dataset, the reference benchmark (generated locally)")
+    dd.add_argument("--sf", type=float, default=0.1, help="with --tpch: size (0.1 = 100 MB, 1 = about 1 GB)")
+    sub.add_parser("connectors", help="known platforms: inventory, export, evidence, validation status")
+    rd = sub.add_parser("replay-dbt", help="P3 evidence: replay the models of a dbt project in DuckDB on the copy and compare them with the original tables")
+    rd.add_argument("project", help="dbt://PROJECT_PATH (folder that holds target/manifest.json, compiled SQL included)")
+    rd.add_argument("--base", help="DuckDB database copy: source tables and the models' original tables")
+    rd.add_argument("--iceberg", dest="lac", help="or the Iceberg copy written by canot drill (same DESTINATION as for drill)")
+    rd.add_argument("--drill-out", help="with --iceberg: the drill --out folder, which holds its catalog (default canot-out)")
+    rd.add_argument("--catalog", help="with --iceberg: the same catalog as for drill")
+    rd.add_argument("--out", default="canot-replay-dbt")
+    rd.add_argument("--tolerances", help="TOML file (see `canot init-tolerances`)")
+    rd.add_argument("--key", default=os.environ.get("CANOT_EVIDENCE_KEY_PATH", str(Path.home() / ".canot" / "evidence.key")), help=KEY_HELP)
     return ap
 
 
@@ -136,17 +136,17 @@ def run(argv: list[str] | None = None) -> int:
     if a.cmd in ("scan", "drill"):
         a.src = a.src or a.source
         if not a.src:
-            ap.error("indiquez la source : canot " + a.cmd + (" SOURCE DESTINATION" if a.cmd == "drill" else " SOURCE"))
+            ap.error("specify the source: canot " + a.cmd + (" SOURCE DESTINATION" if a.cmd == "drill" else " SOURCE"))
         if a.cmd == "drill":
             a.dst = a.dst or a.dest
             if not a.dst:
-                ap.error("indiquez la destination : canot drill SOURCE DESTINATION (un dossier local suffit : ./iceberg)")
+                ap.error("specify the destination: canot drill SOURCE DESTINATION (a local folder is enough: ./iceberg)")
     out = Path(getattr(a, "out", "canot-out"))
 
     if a.cmd == "snowflake-setup":
-        from .sources.snowflake_src import SETUP_SQL
+        from .sources.snowflake_src import PUBLIC_KEY_PLACEHOLDER, SETUP_SQL
 
-        sql = SETUP_SQL.replace("<BASE>", a.base)
+        sql = SETUP_SQL.replace("<DATABASE>", a.base)
         if a.generate_key:
             from cryptography.hazmat.primitives import serialization
             from cryptography.hazmat.primitives.asymmetric import rsa
@@ -161,11 +161,11 @@ def run(argv: list[str] | None = None) -> int:
                 os.chmod(kp, 0o600)
             pub = key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode()
             pub = "".join(l for l in pub.splitlines() if not l.startswith("-----"))
-            sql = sql.replace("<clé publique, sans les lignes BEGIN/END>", pub)
-            print(f"-- Clé privée : {kp} (reste sur cette machine). Puis : export SNOWFLAKE_PRIVATE_KEY_PATH={kp}", file=sys.stderr)
+            sql = sql.replace(PUBLIC_KEY_PLACEHOLDER, pub)
+            print(f"-- Private key: {kp} (stays on this machine). Then: export SNOWFLAKE_PRIVATE_KEY_PATH={kp}", file=sys.stderr)
         _p(sql)
         return 0
-    if a.cmd == "connecteurs":
+    if a.cmd == "connectors":
         from .connectors import table
 
         _p(table())
@@ -192,24 +192,24 @@ def run(argv: list[str] | None = None) -> int:
 
         work = Path(a.out)
         work.mkdir(parents=True, exist_ok=True)
-        db, qf, dossier = work / "demo.duckdb", work / "requetes.sql", work / "dossier"
+        db, qf, evidence = work / "demo.duckdb", work / "queries.sql", work / "evidence"
         dest = a.dest or str(work / "iceberg")
         bucket = f" --bucket {a.bucket}" if a.bucket else ""
-        _p("canot demo est un raccourci de deux commandes, que vous pouvez lancer et modifier vous-même :")
+        _p("canot demo is a shortcut for two commands, which you can run and change yourself:")
         _p(f"  canot demo-data {db} --tpch --sf {a.sf:g}")
-        _p(f"  canot drill {db} {dest}{bucket} --queries {qf} --out {dossier}")
-        _p("Changez la destination pour jouer la même démo ailleurs : canot demo aws:eu-west-3 --bucket MON-COFFRE\n")
+        _p(f"  canot drill {db} {dest}{bucket} --queries {qf} --out {evidence}")
+        _p("Change the destination to run the same demo elsewhere: canot demo aws:eu-west-3 --bucket MY-BUCKET\n")
         if db.exists():
             db.unlink()
-        target = parse_target(dest, a.bucket, dossier, a.catalog)  # refuse tout de suite une destination incomplète
+        target = parse_target(dest, a.bucket, evidence, a.catalog)  # reject an incomplete destination right away
         try:
-            taille = f"{a.sf:g} Go" if a.sf >= 1 else f"{round(a.sf * 1000)} Mo"
-            _p(f"TPC-H : le jeu de référence des bancs d'essai de bases de données (8 tables, 22 requêtes dont 4 rejouées ici), généré en local : environ {taille} de données, aucune donnée réelle.")
-            _p("Échelle 1 (environ 1 Go) : canot demo --sf 1\n" if a.sf < 1 else "")
+            size = f"{a.sf:g} GB" if a.sf >= 1 else f"{round(a.sf * 1000)} MB"
+            _p(f"TPC-H: the reference dataset of database benchmarks (8 tables, 22 queries, 4 of them replayed here), generated locally: about {size} of data, no real data.")
+            _p("Scale factor 1 (about 1 GB): canot demo --sf 1\n" if a.sf < 1 else "")
             make_tpch(str(db), a.sf)
             queries = TPCH_QUERIES
-        except Exception as e:  # noqa: BLE001 : l'extension tpch se télécharge au premier usage ; hors ligne, jeu de secours
-            _p(f"TPC-H indisponible ({type(e).__name__}) : jeu fictif de secours, générable hors ligne\n")
+        except Exception as e:  # noqa: BLE001 : the tpch extension downloads on first use; offline, fallback dataset
+            _p(f"TPC-H unavailable ({type(e).__name__}): fallback fictional dataset, generated offline\n")
             if db.exists():
                 db.unlink()
             make_retail(str(db), a.rows)
@@ -217,15 +217,16 @@ def run(argv: list[str] | None = None) -> int:
         qf.write_text(queries)
         src = open_demo(str(db))
         try:
-            res = run_drill(src, target, dossier, Path.home() / ".canot" / "evidence.key", str(qf), Tolerances(), log=_p)
+            res = run_drill(src, target, evidence, Path.home() / ".canot" / "evidence.key", str(qf), Tolerances(), log=_p)
         finally:
             src.close()
-        rep = write_report(res, dossier)
-        _p(f"\n{res['summary']['parity'] == 'complète' and 'Parité complète' or 'Des écarts ont été trouvés'} : {res['summary']['tables_ok']}/{res['summary']['tables_total']} tables, {res['summary']['queries_match']}/{res['summary']['queries_total']} requêtes.")
-        _p(f"Dossier de preuve : {rep}")
-        _p("Vérifier qu'il n'a pas été modifié : canot verify-evidence " + str(dossier))
-        _p("\nEt maintenant, sur vos données (lecture seule) :  canot scan \"snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER\"")
-        _p("Besoin d'aide pour l'exécuter sur votre périmètre ? https://canot.io/#contact")
+        rep = write_report(res, evidence)
+        s = res["summary"]
+        _p(f"\n{'Full parity' if s['parity'] == 'complete' else 'Mismatches found'}: {s['tables_ok']}/{s['tables_total']} tables, {s['queries_match']}/{s['queries_total']} queries.")
+        _p(f"Evidence report: {rep}")
+        _p("Check that it has not been modified: canot verify-evidence " + str(evidence))
+        _p("\nNext, on your data (read-only):  canot scan \"snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER\"")
+        _p("Need help running it on your scope? https://canot.io/#contact")
         if not a.no_open:
             webbrowser.open(rep.resolve().as_uri())
         return 0
@@ -233,7 +234,7 @@ def run(argv: list[str] | None = None) -> int:
         from .tolerances import DEFAULT_TOML
 
         Path(a.path).write_text(DEFAULT_TOML)
-        _p(f"écrit : {a.path}")
+        _p(f"written: {a.path}")
         return 0
     if a.cmd == "demo-data":
         from .demo import DEMO_QUERIES, RETAIL_QUERIES, TPCH_QUERIES, make_demo, make_retail, make_tpch
@@ -246,25 +247,25 @@ def run(argv: list[str] | None = None) -> int:
             make_demo(a.path, a.rows)
         q = Path(a.path).with_suffix(".queries.sql")
         q.write_text(TPCH_QUERIES if a.tpch else RETAIL_QUERIES if a.retail else DEMO_QUERIES)
-        _p(f"écrit : {a.path} et {q}")
+        _p(f"written: {a.path} and {q}")
         return 0
     if a.cmd == "verify-evidence":
         from .evidence import verify_dir
 
         ok, msg = verify_dir(Path(a.dir), Path(a.expect_pub) if a.expect_pub else None)
-        _p(("OK : " if ok else "ÉCHEC : ") + msg)
+        _p(("OK: " if ok else "FAILED: ") + msg)
         return 0 if ok else 2
 
-    if a.cmd == "rejeu-dbt":
-        from .dbt_rejeu import run_rejeu
+    if a.cmd == "replay-dbt":
+        from .dbt_rejeu import REPORT_FILE, run_rejeu
         from .tolerances import Tolerances
 
-        res = run_rejeu(a.projet, out, Path(a.key), base=a.base, lac=a.lac, drill_out=a.drill_out, catalog=a.catalog,
+        res = run_rejeu(a.project, out, Path(a.key), base=a.base, lac=a.lac, drill_out=a.drill_out, catalog=a.catalog,
                         tol=Tolerances.load(a.tolerances), log=_p)
         s = res["summary"]
-        _p(f"\nRejeu dbt (P3) : {s['identique']} identique(s), {s['different']} différent(s), {s['non_compare']} rejoué(s) non comparé(s), "
-           f"{s['non_rejouable']} non rejouable(s), sur {s['modeles']} modèle(s)")
-        _p(f"Dossier : {out / 'rejeu-dbt.json'} ; vérifier : canot verify-evidence {out}")
+        _p(f"\ndbt replay (P3): {s['identique']} identical, {s['different']} different, {s['non_compare']} replayed but not compared, "
+           f"{s['non_rejouable']} not replayable, out of {s['modeles']} model(s)")
+        _p(f"Evidence: {out / REPORT_FILE}; verify: canot verify-evidence {out}")
         return 0 if s["different"] == 0 else 1
     if a.cmd == "teardown":
         from .target import parse_target
@@ -276,8 +277,8 @@ def run(argv: list[str] | None = None) -> int:
 
     conn = for_url(a.src)
     if a.cmd == "drill" and conn is not None and conn.famille == "fichiers":
-        raise ValueError(f"URL {conn.label} : drill indisponible pour des fichiers de projet ; les tables vivent sur la plateforme "
-                         "de l'adaptateur : canot drill sur cette plateforme les copie et les compare (voir canot scan pour la commande).")
+        raise ValueError(f"URL {conn.label}: drill is not available for project files; the tables live on the adapter's "
+                         "platform: canot drill on that platform copies and compares them (see canot scan for the command).")
     src = open_url(a.src)
     try:
         from .connectors import supports_full
@@ -289,25 +290,25 @@ def run(argv: list[str] | None = None) -> int:
 
             level = effective_level(src, a.level)
             if a.include_sql_text and conn is not None and conn.famille == "fichiers":
-                _p("--include-sql-text sans objet ici : le code est déjà dans les fichiers du projet ; rien de plus n'est écrit.")
+                _p("--include-sql-text does not apply here: the code is already in the project files; nothing more is written.")
                 a.include_sql_text = False
-            _p(f"Canot scan en lecture seule (niveau {level} : {LEVELS[level]})")
+            _p(f"Canot read-only scan (level {level}: {LEVELS[level]})")
             res = scan_full(src, out, level=level, credit_price=a.credit_price, include_sql_text=a.include_sql_text, log=_p)
-            _p(f"Source : {res['perimetre']}")
+            _p(f"Source: {res['perimetre']}")
             for role, lines in res["resume"].items():
                 for line in lines:
-                    _p(f"  {role} : {line}")
+                    _p(f"  {role}: {line}")
             codes = Counter(f["code"] for f in res["drapeaux"])
             if codes:
-                _p("À examiner : " + ", ".join(f"{c} ×{n}" for c, n in sorted(codes.items())))
-            nl = [l for l in res["lectures"] if l["statut"] == "non_lu"]
-            _p(f"Lectures : {len(res['lectures']) - len(nl)} faites, {len(nl)} non lues (détail et raisons dans le rapport)")
-            _p(f"Rapport à transmettre : {out / 'scan.html'}")
-            _p(f"Données : {out / 'scan.json'} et les CSV du même dossier")
-            _p(f"Pour nous le transmettre : {out / 'scan-partage.json'} (des comptes seulement : ni nom de table, ni SQL, ni identité) sur https://canot.io/offres.html#demarrer")
+                _p("To review: " + ", ".join(f"{c} ×{n}" for c, n in sorted(codes.items())))
+            nl = [l for l in res["lectures"] if l["statut"] == "not_read"]
+            _p(f"Reads: {len(res['lectures']) - len(nl)} done, {len(nl)} not read (details and reasons in the report)")
+            _p(f"Report to share: {out / 'scan.html'}")
+            _p(f"Data: {out / 'scan.json'} and the CSV files in the same folder")
+            _p(f"To send it to us: {out / 'scan-share.json'} (counts only: no table name, no SQL, no identity) at https://canot.io/offres.html#demarrer")
             if a.include_sql_text:
-                _p(f"ATTENTION : {out / 'scan-sql-brut.json'} contient le texte SQL brut de votre historique. Ne le diffusez pas.")
-            _p("Besoin d'aide pour lire ce rapport ou préparer la suite ? https://canot.io/#contact")
+                _p(f"WARNING: {out / 'scan-sql-raw.json'} holds the raw SQL text of your history. Do not share it.")
+            _p("Need help reading this report or planning the next step? https://canot.io/#contact")
             return 0
         if a.cmd == "scan":
             from .scan import scan
@@ -316,25 +317,25 @@ def run(argv: list[str] | None = None) -> int:
             out.mkdir(parents=True, exist_ok=True)
             (out / "scan.json").write_text(json.dumps(res, indent=2, default=str, ensure_ascii=False))
             tt = res["totals"]
-            _p(f"Source : {res['source']}")
-            _p(f"{tt['tables']} tables, {tt['rows']} lignes, {tt['gb']} Go")
+            _p(f"Source: {res['source']}")
+            _p(f"{tt['tables']} tables, {tt['rows']} rows, {tt['gb']} GB")
             e = res["exit_estimate"]
-            _p(f"Sortie estimée : {e['duration_hours'][0]} à {e['duration_hours'][1]} h de copie ({e['assumed_throughput_mb_s'][0]}-{e['assumed_throughput_mb_s'][1]} Mo/s, est.)")
+            _p(f"Estimated exit: {e['duration_hours'][0]} to {e['duration_hours'][1]} h of copy ({e['assumed_throughput_mb_s'][0]}-{e['assumed_throughput_mb_s'][1]} MB/s, est.)")
             if "cost_usd" in e:
-                _p(f"Coût de lecture estimé : {e['cost_usd'][0]} à {e['cost_usd'][1]} $ ({e['credits'][0]}-{e['credits'][1]} crédits)")
-                _p(f"  base : {e['cost_basis']}")
+                _p(f"Estimated read cost: {e['cost_usd'][0]} to {e['cost_usd'][1]} USD ({e['credits'][0]}-{e['credits'][1]} credits)")
+                _p(f"  basis: {e['cost_basis']}")
             ec = res["exit_cost"]
-            _p(f"Travail de reprise estimé : {ec['rework_days'][0]} à {ec['rework_days'][1]} jours ({ec['rework_basis']})")
-            _p(f"Non inclus : {ec['not_included']}")
+            _p(f"Estimated rework: {ec['rework_days'][0]} to {ec['rework_days'][1]} days ({ec['rework_basis']})")
+            _p(f"Not included: {ec['not_included']}")
             if res["egress_note"]:
                 _p(res["egress_note"])
             if res["usage_90d"]:
-                _p(f"Consommation 90 jours : {res['usage_90d']}")
-            _p(f"Colonnes à type propre à la plateforme : {len(res['non_portable_columns'])}")
+                _p(f"90-day consumption: {res['usage_90d']}")
+            _p(f"Columns with a platform-specific type: {len(res['non_portable_columns'])}")
             for k, n in res["object_counts"].items():
                 if n:
-                    _p(f"  {k} à reconstruire : {n}")
-            _p(f"Détail : {out / 'scan.json'}")
+                    _p(f"  {k} to rebuild: {n}")
+            _p(f"Details: {out / 'scan.json'}")
             return 0
 
         if a.cmd == "drill":
@@ -347,9 +348,9 @@ def run(argv: list[str] | None = None) -> int:
             res = run_drill(src, target, out, Path(a.key), a.queries, Tolerances.load(a.tolerances), a.top, a.tables, a.credit_price, a.replay_max_gb, _p)
             rep = write_report(res, out)
             s = res["summary"]
-            _p(f"\nParité : {s['parity']} — {s['tables_ok']}/{s['tables_total']} tables, {s['queries_match']}/{s['queries_total']} requêtes")
-            _p(f"Dossier : {rep}")
-            return 0 if s["parity"] == "complète" else 1
+            _p(f"\nParity: {s['parity']} — {s['tables_ok']}/{s['tables_total']} tables, {s['queries_match']}/{s['queries_total']} queries")
+            _p(f"Evidence report: {rep}")
+            return 0 if s["parity"] == "complete" else 1
     finally:
         src.close()
     return 0

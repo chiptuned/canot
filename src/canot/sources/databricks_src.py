@@ -26,7 +26,7 @@ class DatabricksSource(Source):
         self.catalog = qs.get("catalog") or os.environ.get("DATABRICKS_CATALOG", "main")
         token = os.environ.get("DATABRICKS_TOKEN")
         if not token:
-            raise ValueError("Définissez DATABRICKS_TOKEN (jeton à droits de lecture).")
+            raise ValueError("Set DATABRICKS_TOKEN (a token with read permissions).")
         self.con = sql.connect(server_hostname=self.host, http_path=u.path, access_token=token, catalog=self.catalog)
 
     def describe(self) -> str:

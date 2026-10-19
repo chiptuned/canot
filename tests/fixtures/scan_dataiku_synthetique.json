@@ -3,10 +3,10 @@
  "plateforme": "dataiku",
  "famille": "science_donnees",
  "as_of": "2026-10-19T10:00:00Z",
- "perimetre": "projet BANC (synthétique)",
+ "perimetre": "project BANC (synthetic)",
  "edition": null,
  "niveau_droits": 2,
- "mode_sql": "lecture seule",
+ "mode_sql": "read-only",
  "capacites": {
   "plateforme": "dataiku",
   "libelle": "Dataiku",
@@ -18,7 +18,7 @@
   ],
   "export": [],
   "preuve": [],
-  "statut": "écrit, non testé",
+  "statut": "written, untested",
   "teste_sur": null
  },
  "versions": {
@@ -28,7 +28,7 @@
   {
    "id": "D01",
    "vue": "GET /public/api/projects/",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 1,
    "fenetre": null,
@@ -37,7 +37,7 @@
   {
    "id": "D02",
    "vue": "GET /public/api/projects/{p}/datasets/",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 3,
    "fenetre": null,
@@ -46,7 +46,7 @@
   {
    "id": "D03",
    "vue": "GET /public/api/projects/{p}/recipes/",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 5,
    "fenetre": null,
@@ -55,7 +55,7 @@
   {
    "id": "D05",
    "vue": "GET /public/api/projects/{p}/savedmodels/",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 3,
    "fenetre": null,
@@ -64,7 +64,7 @@
   {
    "id": "D06",
    "vue": "GET /public/api/projects/{p}/scenarios/",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 1,
    "fenetre": null,
@@ -73,8 +73,8 @@
   {
    "id": "D10",
    "vue": "GET /public/api/plugins/",
-   "statut": "non_lu",
-   "raison": "droit absent",
+   "statut": "not_read",
+   "raison": "missing privilege",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -380,7 +380,7 @@
    "derniere_execution": null,
    "sql_dynamique": null,
    "detail": {
-    "algorithme": "forêt aléatoire"
+    "algorithme": "random forest"
    },
    "famille_objet": "modele",
    "portabilite": "non_determine",
@@ -442,7 +442,7 @@
     "BANC.VENTES_PREP"
    ],
    "etat": null,
-   "planification": "quotidienne",
+   "planification": "daily",
    "executions_n": 2,
    "echecs_n": 1,
    "derniere_execution": "2026-10-18T02:00:00Z",

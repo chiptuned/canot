@@ -1,6 +1,6 @@
 [project]
 name = "canot"
-version = "0.2.1"
+version = "0.3.0"
 description = "Prouvez que vous pouvez partir : exercice de sortie Snowflake/Databricks vers Apache Iceberg, avec dossier de preuve."
 readme = "README.md"
 license = "Apache-2.0"
@@ -56,11 +56,11 @@ build-backend = "hatchling.build"
 packages = ["src/canot"]
 
 [tool.hatch.build.targets.wheel.force-include]
-"docs/commandes.md" = "canot/docs/commandes.md"
+"docs/commands.md" = "canot/docs/commands.md"
 "docs/scan.md" = "canot/docs/scan.md"
-"docs/sur-site.md" = "canot/docs/sur-site.md"
-"docs/cibles-ue.md" = "canot/docs/cibles-ue.md"
-"docs/ecarts.md" = "canot/docs/ecarts.md"
+"docs/on-prem.md" = "canot/docs/on-prem.md"
+"docs/targets.md" = "canot/docs/targets.md"
+"docs/discrepancies.md" = "canot/docs/discrepancies.md"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -2,10 +2,10 @@
  "schema": "canot.scan/1",
  "plateforme": "bigquery",
  "as_of": "2026-10-17T10:00:00Z",
- "perimetre": "projets lab-a (données) ; régions EU, europe-west1, US",
+ "perimetre": "projects lab-a (data); regions EU, europe-west1, US",
  "edition": null,
  "niveau_droits": 2,
- "mode_sql": "lecture seule",
+ "mode_sql": "read-only",
  "versions": {
   "canot": "0.1.0",
   "sqlglot": "30.22.0",
@@ -15,7 +15,7 @@
   {
    "id": "B01",
    "vue": "API datasets.list",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -24,7 +24,7 @@
   {
    "id": "B02",
    "vue": "API datasets.get",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -33,7 +33,7 @@
   {
    "id": "B03",
    "vue": "`region-eu`.INFORMATION_SCHEMA.TABLES",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -42,7 +42,7 @@
   {
    "id": "B04",
    "vue": "`region-europe-west1`.INFORMATION_SCHEMA.TABLES",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -51,7 +51,7 @@
   {
    "id": "B05",
    "vue": "`region-us`.INFORMATION_SCHEMA.TABLES",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -60,8 +60,8 @@
   {
    "id": "B06",
    "vue": "`region-eu`.INFORMATION_SCHEMA.TABLE_STORAGE",
-   "statut": "non_lu",
-   "raison": "absent ou non exposé",
+   "statut": "not_read",
+   "raison": "absent or not exposed",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -69,7 +69,7 @@
   {
    "id": "B07",
    "vue": "API tables.get",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -78,7 +78,7 @@
   {
    "id": "B08",
    "vue": "`region-eu`.INFORMATION_SCHEMA.TABLE_OPTIONS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -87,7 +87,7 @@
   {
    "id": "B09",
    "vue": "`region-eu`.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -96,7 +96,7 @@
   {
    "id": "B10",
    "vue": "`region-eu`.INFORMATION_SCHEMA.JOBS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": {
@@ -108,7 +108,7 @@
   {
    "id": "B11",
    "vue": "`region-europe-west1`.INFORMATION_SCHEMA.JOBS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": {
@@ -120,7 +120,7 @@
   {
    "id": "B12",
    "vue": "`region-us`.INFORMATION_SCHEMA.JOBS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": {
@@ -132,7 +132,7 @@
   {
    "id": "B13",
    "vue": "API transferConfigs.list",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -141,7 +141,7 @@
   {
    "id": "B14",
    "vue": "API rowAccessPolicies.list",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -150,8 +150,8 @@
   {
    "id": "B15",
    "vue": "API connections.list",
-   "statut": "non_lu",
-   "raison": "droit absent",
+   "statut": "not_read",
+   "raison": "missing privilege",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -159,7 +159,7 @@
   {
    "id": "B16",
    "vue": "`region-eu`.INFORMATION_SCHEMA.SCHEMATA_LINKS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -168,7 +168,7 @@
   {
    "id": "B17",
    "vue": "`region-eu`.INFORMATION_SCHEMA.SHARED_DATASET_USAGE",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -177,8 +177,8 @@
   {
    "id": "B18",
    "vue": "`region-eu`.INFORMATION_SCHEMA.RESERVATIONS",
-   "statut": "non_lu",
-   "raison": "niveau de droits non demandé",
+   "statut": "not_read",
+   "raison": "privilege level not requested",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -186,7 +186,7 @@
   {
    "id": "B19",
    "vue": "`region-eu`.INFORMATION_SCHEMA.ROUTINES",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -195,7 +195,7 @@
   {
    "id": "B20",
    "vue": "`region-eu`.INFORMATION_SCHEMA.VIEWS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -204,7 +204,7 @@
   {
    "id": "B21",
    "vue": "API models.list",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -213,8 +213,8 @@
   {
    "id": "B22",
    "vue": "`region-eu`.INFORMATION_SCHEMA.JOBS_BY_ORGANIZATION",
-   "statut": "non_lu",
-   "raison": "niveau de droits non demandé",
+   "statut": "not_read",
+   "raison": "privilege level not requested",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -651,7 +651,7 @@
    "externe": false,
    "dependances_externes": [],
    "reference": [],
-   "etat": "actif",
+   "etat": "active",
    "planification": "every 24 hours",
    "executions_n": 180,
    "echecs_n": 3,
@@ -670,7 +670,7 @@
     "gs://lab-exports/kpi/"
    ],
    "reference": [],
-   "etat": "actif",
+   "etat": "active",
    "planification": "every day 05:00",
    "executions_n": 180,
    "echecs_n": 0,
@@ -689,7 +689,7 @@
    "externe": false,
    "dependances_externes": [],
    "reference": [],
-   "etat": "actif",
+   "etat": "active",
    "planification": "every monday 06:00",
    "executions_n": 26,
    "echecs_n": 0,
@@ -706,7 +706,7 @@
    "externe": false,
    "dependances_externes": [],
    "reference": [],
-   "etat": "désactivée",
+   "etat": "disabled",
    "planification": "every 1 hours",
    "executions_n": 0,
    "echecs_n": 0,
@@ -853,7 +853,7 @@
     "poids": 10000000000.0
    }
   },
-  "base": "3/3 familles, du 20/04/2026 au 17/10/2026, sqlglot 30.22.0, duckdb 1.5.6",
-  "mention": "accepté ≠ résultat identique"
+  "base": "3/3 families, from 2026-04-20 to 2026-10-17, sqlglot 30.22.0, duckdb 1.5.6",
+  "mention": "accepted ≠ identical result"
  }
 }

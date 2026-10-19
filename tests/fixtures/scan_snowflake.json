@@ -2,10 +2,10 @@
  "schema": "canot.scan/1",
  "plateforme": "snowflake",
  "as_of": "2026-10-17T10:00:00Z",
- "perimetre": "compte xy12345, base CANOT_LAB",
+ "perimetre": "account xy12345, database CANOT_LAB",
  "edition": "enterprise",
  "niveau_droits": 3,
- "mode_sql": "lecture seule",
+ "mode_sql": "read-only",
  "versions": {
   "canot": "0.1.0",
   "sqlglot": "30.22.0",
@@ -15,7 +15,7 @@
   {
    "id": "S01",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLES",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -24,7 +24,7 @@
   {
    "id": "S02",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.COLUMNS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -33,7 +33,7 @@
   {
    "id": "S03",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_STORAGE_METRICS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -42,7 +42,7 @@
   {
    "id": "S04",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.STORAGE_USAGE",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": {
@@ -54,7 +54,7 @@
   {
    "id": "S05",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.METERING_DAILY_HISTORY",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": {
@@ -66,7 +66,7 @@
   {
    "id": "S06",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": {
@@ -78,7 +78,7 @@
   {
    "id": "S07",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.QUERY_ATTRIBUTION_HISTORY",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -87,7 +87,7 @@
   {
    "id": "S08",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_DML_HISTORY",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": {
@@ -99,7 +99,7 @@
   {
    "id": "S09",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_QUERY_PRUNING_HISTORY",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": {
@@ -111,7 +111,7 @@
   {
    "id": "S10",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.OBJECT_DEPENDENCIES",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -120,7 +120,7 @@
   {
    "id": "S11",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.VIEWS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -129,7 +129,7 @@
   {
    "id": "S12",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.FUNCTIONS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -138,7 +138,7 @@
   {
    "id": "S13",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.PROCEDURES",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -147,7 +147,7 @@
   {
    "id": "S14",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASKS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -156,7 +156,7 @@
   {
    "id": "S15",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASK_HISTORY",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": {
@@ -168,7 +168,7 @@
   {
    "id": "S16",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.SERVERLESS_TASK_HISTORY",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -177,7 +177,7 @@
   {
    "id": "S17",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.PIPES",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -186,7 +186,7 @@
   {
    "id": "S18",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.COPY_HISTORY",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -195,7 +195,7 @@
   {
    "id": "S19",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.STAGES",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -204,7 +204,7 @@
   {
    "id": "S20",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.DATABASES",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -213,7 +213,7 @@
   {
    "id": "S21",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.DATA_TRANSFER_HISTORY",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": {
@@ -225,7 +225,7 @@
   {
    "id": "S22",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.DYNAMIC_TABLE_REFRESH_HISTORY",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -234,7 +234,7 @@
   {
    "id": "S23",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.AUTOMATIC_CLUSTERING_HISTORY",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -243,7 +243,7 @@
   {
    "id": "S24",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": {
@@ -255,7 +255,7 @@
   {
    "id": "S25",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": {
@@ -267,7 +267,7 @@
   {
    "id": "S26",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.POLICY_REFERENCES",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -276,7 +276,7 @@
   {
    "id": "S27",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.TAG_REFERENCES",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -285,7 +285,7 @@
   {
    "id": "S28",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_ROLES",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -294,7 +294,7 @@
   {
    "id": "S29",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_USERS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -303,7 +303,7 @@
   {
    "id": "S30",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.USERS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -312,7 +312,7 @@
   {
    "id": "S31",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.SESSIONS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -321,7 +321,7 @@
   {
    "id": "S32",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.SHARES",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -330,8 +330,8 @@
   {
    "id": "S33",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.STREAMS",
-   "statut": "non_lu",
-   "raison": "droit absent",
+   "statut": "not_read",
+   "raison": "missing privilege",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null,
@@ -340,8 +340,8 @@
   {
    "id": "S34",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASK_VERSIONS",
-   "statut": "non_lu",
-   "raison": "droit absent",
+   "statut": "not_read",
+   "raison": "missing privilege",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -349,7 +349,7 @@
   {
    "id": "S35",
    "vue": "SHOW WAREHOUSES",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -930,7 +930,7 @@
    "sql_dynamique": null,
    "detail": {
     "ecriture_externe": true,
-    "commentaire": "export vers canari-7f3a@exemple.test",
+    "commentaire": "export to canari-7f3a@exemple.test",
     "definition": "copy into @EXT.S3_PUBLIC from ... canari-7f3a@exemple.test"
    }
   },
@@ -1480,8 +1480,8 @@
     "poids": 4.2
    }
   },
-  "base": "6/6 familles, du 18/10/2025 au 17/10/2026, sqlglot 30.22.0, duckdb 1.5.6",
-  "mention": "accepté ≠ résultat identique"
+  "base": "6/6 families, from 2025-10-18 to 2026-10-17, sqlglot 30.22.0, duckdb 1.5.6",
+  "mention": "accepted ≠ identical result"
  },
  "droits": {
   "roles": [

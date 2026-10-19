@@ -1,7 +1,0 @@
-empreinte,hash_plateforme,categorie,n_exec,temps_ms,credits,octets,app,outil,entrepot,tables,fonctions,ecriture_externe,sql_normalise
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb,,C0,340,40800.0,1.8,,,looker,CANOT_WH,CANOT_LAB.MART.FCT_ORDERS,,non,"SELECT country, SUM(total) FROM MART.FCT_ORDERS WHERE order_date >= ? GROUP BY country"
-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,,C7,72,8640.0,4.2,,dbt,dbt-snowflake,CANOT_WH,CANOT_LAB.RAW.ORDERS,,non,MERGE INTO DBT.FCT USING (SELECT * FROM RAW.ORDERS WHERE x = ?) AS s ON ? WHEN MATCHED THEN UPDATE SET y = ?
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd,,C7,30,3600.0,,,,airflow,CANOT_WH,,,oui,COPY INTO @EXT.S3_PUBLIC FROM (SELECT * FROM OPS.EVENTS_LOG)
-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee,,C7,30,3600.0,,,,airflow,CANOT_WH,,,non,COPY INTO @RAW.INT_STAGE FROM (SELECT * FROM OPS.EVENTS_LOG)
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc,,C4,25,3000.0,,,,notebook,CANOT_WH,,flatten ; lateral,non,"SELECT f.value:k::STRING FROM RAW.EVENTS, LATERAL FLATTEN(input => props) AS f"
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff,,C0,12,1440.0,,,,bi-sim,CANOT_WH,,,non,SELECT * FROM RAW.CUSTOMERS WHERE email = ?

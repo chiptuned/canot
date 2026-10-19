@@ -1,9 +1,10 @@
 (function () {
   "use strict";
   document.documentElement.classList.add("js");
+  var EN = /^en/i.test(document.documentElement.lang);
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // Apparitions au défilement (le texte reste lisible sans ce script ; rien ne bouge si l'on réduit les animations)
+  // Reveal on scroll (the text stays readable without this script; nothing moves with reduced motion)
   var targets = document.querySelectorAll(".seal-grid, .card");
   if (reduce || !("IntersectionObserver" in window)) {
     targets.forEach(function (t) { t.classList.add("in"); });
@@ -14,34 +15,75 @@
     targets.forEach(function (t) { io.observe(t); });
   }
 
-  // Formulaires (contact et demande qualifiée) : même envoi vers /api/contact
+  // Language: French is the default, never an automatic redirect. The choice is remembered only to decide
+  // whether to offer the English version to English-language browsers on the French home page.
+  var KEY = "canot.lang";
+  function store(v) { try { localStorage.setItem(KEY, v); } catch (e) { /* storage unavailable */ } }
+  function stored() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+  document.querySelectorAll(".lang-switch a[hreflang]").forEach(function (a) {
+    a.addEventListener("click", function () { store(a.getAttribute("hreflang")); });
+  });
+  (function banner() {
+    var en = document.querySelector(".lang-switch a[hreflang='en']");
+    var nav = (navigator.languages && navigator.languages[0]) || navigator.language || "";
+    var home = location.pathname === "/" || location.pathname === "/index.html";
+    if (EN || !en || !home || !/^en/i.test(nav) || stored() === "fr") return;
+    var bar = document.createElement("div");
+    bar.className = "lang-banner"; bar.setAttribute("lang", "en"); bar.setAttribute("role", "region"); bar.setAttribute("aria-label", "Language");
+    var link = document.createElement("a");
+    link.href = en.getAttribute("href"); link.hreflang = "en"; link.textContent = "Read this site in English?";
+    link.addEventListener("click", function () { store("en"); });
+    var no = document.createElement("button");
+    no.type = "button"; no.textContent = "No thanks";
+    no.addEventListener("click", function () { store("fr"); bar.remove(); });
+    bar.appendChild(link); bar.appendChild(no);
+    var skip = document.querySelector(".skip");
+    if (skip && skip.nextSibling) skip.parentNode.insertBefore(bar, skip.nextSibling); else document.body.insertBefore(bar, document.body.firstChild);
+  })();
+
+  // Forms (contact and qualified request): same POST to /api/contact
+  var T = EN ? {
+    required: "Required field.", email: "Invalid address.", project: "Tell us about your project in a few words.",
+    big: "File too large: attach scan-share.json, not scan.json.", notShare: "This file is not a Canot scan-share.json.",
+    thanks: function (name, when) { return "Thank you " + name + ". We will get back to you with a slot before your renewal in " + when + "."; },
+    fail: "Sending failed. Nothing was recorded. Write to us directly at vincent@q4o.com.", locale: "en-GB"
+  } : {
+    required: "Champ requis.", email: "Adresse invalide.", project: "Dites-nous en quelques mots votre projet.",
+    big: "Fichier trop gros : joignez scan-share.json, pas scan.json.", notShare: "Ce fichier n'est pas un scan-share.json de Canot.",
+    thanks: function (name, when) { return "Merci " + name + ". Nous revenons vers vous avec un créneau, avant votre renouvellement de " + when + "."; },
+    fail: "L'envoi n'a pas abouti. Rien n'a été enregistré. Écrivez-nous directement à vincent@q4o.com.", locale: "fr-FR"
+  };
+  var SCHEMAS = ["canot.share/1", "canot.partage/1"];
   var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   function setup(form) {
-    var offre = form.getAttribute("data-lead") === "offre";
+    var lead = form.getAttribute("data-lead"), offre = lead === "offre" || lead === "offer";
     var thanks = document.getElementById(offre ? "thanks-offre" : "thanks"), msg = document.getElementById("thanks-msg"),
         fail = document.getElementById(offre ? "fail-offre" : "fail"), send = form.querySelector("button.send"),
         again = document.getElementById("again"), preview = document.getElementById("preview"), body = document.getElementById("preview-body");
+    var req = function (v) { return v.trim() ? "" : T.required; };
     var checks = {
-      name: function (v) { return v.trim() ? "" : "Champ requis."; },
-      company: function (v) { return v.trim() ? "" : "Champ requis."; },
-      email: function (v) { return v ? (EMAIL.test(v) ? "" : "Adresse invalide.") : "Champ requis."; },
-      platform: function (v) { return v ? "" : "Champ requis."; }
+      name: req, company: req,
+      email: function (v) { return v ? (EMAIL.test(v) ? "" : T.email) : T.required; },
+      platform: function (v) { return v ? "" : T.required; }
     };
-    if (offre) checks.message = function (v) { return v.trim() ? "" : "Dites-nous en quelques mots votre projet."; };
-    else checks.renewal = function (v) { return v ? "" : "Champ requis."; };
-    var partage = null;
-    if (offre) form.elements.partage.addEventListener("change", function () {
-      var f = this.files[0], out = form.querySelector('[data-for="partage"]');
-      partage = null; out.textContent = ""; preview.hidden = true;
+    if (offre) checks.message = function (v) { return v.trim() ? "" : T.project; };
+    else checks.renewal = function (v) { return v ? "" : T.required; };
+    var fileInput = offre ? (form.elements.share || form.elements.partage) : null;
+    var fileOut = fileInput ? form.querySelector('[data-for="' + fileInput.name + '"]') : null;
+    var share = null;
+    if (fileInput) fileInput.addEventListener("change", function () {
+      var f = this.files[0];
+      share = null; fileOut.textContent = ""; if (preview) preview.hidden = true;
       if (!f) return;
-      if (f.size > 30000) { out.textContent = "Fichier trop gros : joignez scan-partage.json, pas scan.json."; return; }
+      if (f.size > 30000) { fileOut.textContent = T.big; return; }
       var r = new FileReader();
       r.onload = function () {
         try {
           var o = JSON.parse(r.result);
-          if (o.schema !== "canot.partage/1") throw new Error("schema");
-          partage = r.result; body.textContent = JSON.stringify(o, null, 2); preview.hidden = false;
-        } catch (e) { out.textContent = "Ce fichier n'est pas un scan-partage.json de Canot."; }
+          if (SCHEMAS.indexOf(o.schema) < 0) throw new Error("schema");
+          share = r.result;
+          if (body && preview) { body.textContent = JSON.stringify(o, null, 2); preview.hidden = false; }
+        } catch (e) { fileOut.textContent = T.notShare; }
       };
       r.readAsText(f);
     });
@@ -49,34 +91,32 @@
       var ok = true;
       Object.keys(checks).forEach(function (k) {
         var el = form.elements[k], e = checks[k](el.value), out = form.querySelector('[data-for="' + k + '"]');
-        out.textContent = e; el.setAttribute("aria-invalid", e ? "true" : "false");
+        if (out) out.textContent = e;
+        el.setAttribute("aria-invalid", e ? "true" : "false");
         if (e) ok = false;
       });
-      if (offre && form.querySelector('[data-for="partage"]').textContent) ok = false;
+      if (fileOut && fileOut.textContent) ok = false;
       return ok;
     }
     form.addEventListener("submit", function (ev) {
       ev.preventDefault();
       fail.hidden = true;
       if (!validate()) return;
-      var data = {};
-      ["name", "company", "email", "platform", "renewal", "message"].forEach(function (k) { data[k] = (form.elements[k].value || "").trim(); });
+      var data = { lang: EN ? "en" : "fr" };
+      ["name", "company", "email", "platform", "renewal", "message"].forEach(function (k) { data[k] = ((form.elements[k] && form.elements[k].value) || "").trim(); });
       data.website = form.elements.website.value;
-      if (offre) { data.kind = "offre"; if (partage) data.partage = partage; }
+      if (offre) { data.kind = "offer"; if (share) data.share = share; }
       send.disabled = true;
       fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
         .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r; })
         .then(function () {
-          if (!offre) {
-            var parts = data.renewal.split("-"), when = new Date(+parts[0], +parts[1] - 1, 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
-            msg.textContent = "Merci " + data.name.split(" ")[0] + ". Nous revenons vers vous avec un créneau, avant votre renouvellement de " + when + ".";
+          if (!offre && msg) {
+            var parts = data.renewal.split("-"), when = new Date(+parts[0], +parts[1] - 1, 1).toLocaleDateString(T.locale, { month: "long", year: "numeric" });
+            msg.textContent = T.thanks(data.name.split(" ")[0], when);
           }
           form.hidden = true; thanks.hidden = false;
         })
-        .catch(function () {
-          fail.textContent = "L'envoi n'a pas abouti. Rien n'a été enregistré. Écrivez-nous directement à vincent@q4o.com.";
-          fail.hidden = false;
-        })
+        .catch(function () { fail.textContent = T.fail; fail.hidden = false; })
         .then(function () { send.disabled = false; });
     });
     if (again) again.addEventListener("click", function () { form.reset(); thanks.hidden = true; form.hidden = false; });
@@ -84,19 +124,27 @@
   document.querySelectorAll("form[data-lead], form#form").forEach(setup);
 })();
 
-/* Sélecteurs d'outil, d'action, de source et de destination (tools/selecteur/, étendu) */
+/* Runner, action, source and destination selectors (tools/selecteur/, extended). Bilingual texts; identical commands. */
 (function () {
   'use strict';
+  var EN = /^en/i.test(document.documentElement.lang);
+  function tr(fr, en) { return EN ? en : fr; }
+  var ALIAS = { rejeu: 'replay' }; // former action id, still accepted in markup and URLs
+  function norm(id) { return ALIAS[id] || id; }
 
   var ACTIONS = [
-    { id: 'demo', word: 'demo', label: 'démo', src: false, dst: true, dstIds: null, srcIds: [],
-      text: "Génère TPC-H en local, le copie, compare tout et écrit un dossier de preuve signé. Sans compte ni données." },
+    { id: 'demo', word: 'demo', label: tr('démo', 'demo'), src: false, dst: true, dstIds: null, srcIds: [],
+      text: tr("Génère TPC-H en local, le copie, compare tout et écrit un dossier de preuve signé. Sans compte ni données.",
+               "Generates TPC-H locally, copies it, compares everything and writes a signed evidence pack. No account, no data needed.") },
     { id: 'scan', word: 'scan', label: 'scan', src: true, dst: false, srcIds: ['snowflake', 'bigquery', 'databricks', 'dbt'],
-      text: "Radiographie en lecture seule : inventaire, coûts, ce qui ne part pas tel quel. Rien n'est modifié chez vous." },
+      text: tr("Radiographie en lecture seule : inventaire, coûts, ce qui ne part pas tel quel. Rien n'est modifié chez vous.",
+               "Read-only X-ray: inventory, costs, what will not move as is. Nothing is changed on your side.") },
     { id: 'drill', word: 'drill', label: 'drill', src: true, dst: true, dstIds: null, srcIds: ['snowflake', 'bigquery', 'databricks'],
-      text: "Copie, compare tout, rejoue vos requêtes les plus coûteuses et écrit un dossier de preuve signé." },
-    { id: 'rejeu', word: 'rejeu-dbt', label: 'rejeu dbt', src: true, dst: true, dstIds: ['local', 'onprem'], srcIds: ['dbt'],
-      text: "Rejoue les modèles dbt dans DuckDB sur la copie et compare le résultat aux tables d'origine." }
+      text: tr("Copie, compare tout, rejoue vos requêtes les plus coûteuses et écrit un dossier de preuve signé.",
+               "Copies, compares everything, replays your most expensive queries and writes a signed evidence pack.") },
+    { id: 'replay', word: 'replay-dbt', label: tr('rejeu dbt', 'dbt replay'), src: true, dst: true, dstIds: ['local', 'onprem'], srcIds: ['dbt'],
+      text: tr("Rejoue les modèles dbt dans DuckDB sur la copie et compare le résultat aux tables d'origine.",
+               "Replays the dbt models in DuckDB on the copy and compares the result with the original tables.") }
   ];
   var SOURCES = [
     { id: 'snowflake', label: 'Snowflake', rest: '://MY_ACCOUNT/MY_DATABASE?user=MY_USER' },
@@ -106,16 +154,16 @@
   ];
   var BUCKET = ' --bucket MY_BUCKET';
   var DESTS = [
-    { id: 'local', label: 'Dossier local (DuckDB)', word: './iceberg', rest: '' },
+    { id: 'local', label: tr('Dossier local (DuckDB)', 'Local folder (DuckDB)'), word: './iceberg', rest: '' },
     { id: 'scaleway', label: 'Scaleway', word: 'scaleway:fr-par', rest: BUCKET },
     { id: 'ovh', label: 'OVHcloud', word: 'ovh:gra', rest: BUCKET },
     { id: 'outscale', label: 'Outscale', word: 'outscale:eu-west-2', rest: BUCKET },
     { id: 'ionos', label: 'IONOS', word: 'ionos:eu-central-1', rest: BUCKET },
     { id: 'stackit', label: 'STACKIT', word: 'stackit:eu01', rest: BUCKET },
     { id: 'aws', label: 'AWS (Paris)', word: 'aws:eu-west-3', rest: BUCKET },
-    { id: 'onprem', label: 'S3 sur site', word: '"s3://MY_BUCKET/canot?endpoint=https://s3.internal:9000"', rest: '' }
+    { id: 'onprem', label: tr('S3 sur site', 'On-prem S3'), word: '"s3://MY_BUCKET/canot?endpoint=https://s3.internal:9000"', rest: '' }
   ];
-  // Comment lancer Canot : uv (uvx), pipx ou pip. Les connecteurs sont installés d'office avec Canot.
+  // How to run Canot: uv (uvx), pipx or pip. The connectors are installed with Canot.
   var RUNNERS = [
     { id: 'uvx', label: 'uvx', word: 'uvx canot' },
     { id: 'pipx', label: 'pipx', word: 'pipx run canot' },
@@ -125,16 +173,16 @@
   var INTRO_DELAY = 1400, INTRO_STEP = 650;
 
   function init(root) {
-    var st = { run: 0, act: 2, src: 0, dst: 0 }; // action par défaut : drill
+    var st = { run: 0, act: 2, src: 0, dst: 0 }; // default action: drill
     var touched = false;
     var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var qs = new URLSearchParams(location.search);
     [['outil', 'run'], ['action', 'act'], ['source', 'src'], ['sortie', 'dst']].forEach(function (pair) {
-      var k = LISTS[pair[1]].findIndex(function (p) { return p.id === qs.get(pair[0]); });
+      var k = LISTS[pair[1]].findIndex(function (p) { return p.id === norm(qs.get(pair[0])); });
       if (k >= 0) { st[pair[1]] = k; touched = true; }
     });
 
-    function allowed(kind) {  // indices de la liste utilisables avec l'action courante
+    function allowed(kind) {  // list indices usable with the current action
       var a = ACTIONS[st.act], ids = kind === 'src' ? a.srcIds : kind === 'dst' ? a.dstIds : null;
       return LISTS[kind].map(function (p, j) { return !ids || ids.indexOf(p.id) >= 0 ? j : -1; }).filter(function (j) { return j >= 0; });
     }
@@ -159,7 +207,7 @@
       var r = RUNNERS[st.run], a = ACTIONS[st.act], s = SOURCES[st.src], d = DESTS[st.dst];
       var out = r.word + ' ' + a.word;
       if (a.src) out += ' "' + s.id + s.rest + '"';
-      if (a.dst) out += (a.id === 'rejeu' ? ' --iceberg ' : ' ') + d.word + (a.id === 'rejeu' ? '' : d.rest);
+      if (a.dst) out += (a.id === 'replay' ? ' --iceberg ' : ' ') + d.word + (a.id === 'replay' ? '' : d.rest);
       return out;
     }
     function set(kind, i, byUser) {
@@ -172,15 +220,15 @@
     }
     function render() {
       var a = ACTIONS[st.act];
-      parts.forEach(function (el) { el.hidden = el.getAttribute('data-cs-show').split(' ').indexOf(a.id) < 0; });
+      parts.forEach(function (el) { el.hidden = el.getAttribute('data-cs-show').split(' ').map(norm).indexOf(a.id) < 0; });
       drums.forEach(function (dr) { dr.render(); });
       restEls.forEach(function (el) { el.textContent = SOURCES[st.src].rest; });
-      destRestEls.forEach(function (el) { el.textContent = a.id === 'rejeu' ? '' : DESTS[st.dst].rest; });
-      prefixEls.forEach(function (el) { el.textContent = a.id === 'rejeu' ? ' --iceberg ' : ' '; });
+      destRestEls.forEach(function (el) { el.textContent = a.id === 'replay' ? '' : DESTS[st.dst].rest; });
+      prefixEls.forEach(function (el) { el.textContent = a.id === 'replay' ? ' --iceberg ' : ' '; });
       textEls.forEach(function (el) { el.textContent = a.text; });
       picks.forEach(function (p) {
         p.els.forEach(function (el) {
-          var j = LISTS[p.kind].findIndex(function (x) { return x.id === el.getAttribute(p.attr); });
+          var j = LISTS[p.kind].findIndex(function (x) { return x.id === norm(el.getAttribute(p.attr)); });
           el.setAttribute('aria-current', j === st[p.kind] ? 'true' : 'false');
         });
       });
@@ -209,7 +257,7 @@
       var acc = 0;
       el.addEventListener('wheel', function (e) {
         var v = vis(), pos = v.indexOf(st[kind]), dir = e.deltaY > 0 ? 1 : -1, np = pos + dir;
-        if (np < 0 || np >= v.length) return; // en bout de liste, la page défile
+        if (np < 0 || np >= v.length) return; // at the end of the list, the page scrolls
         e.preventDefault();
         touched = true;
         acc += e.deltaY;
@@ -230,7 +278,7 @@
         el: el,
         render: function () {
           var v = vis(), pos = Math.max(0, v.indexOf(st[kind]));
-          if (!v.length) return; // aucune valeur possible pour cette action : la partie est masquée
+          if (!v.length) return; // no possible value for this action: the part is hidden
           items.forEach(function (it, j) { it.hidden = v.indexOf(j) < 0; });
           var first = items[v[0]], h = first.offsetHeight;
           el.style.height = h + 'px';
@@ -241,8 +289,8 @@
             items[j].setAttribute('data-dist', dd);
             items[j].setAttribute('aria-hidden', dd ? 'true' : 'false');
           });
-          var names = { dst: 'Destination : ', run: 'Outil de lancement : ', act: 'Action : ', src: 'Plateforme : ' };
-          el.setAttribute('aria-label', names[kind] + (list[st[kind]].label || list[st[kind]].word) + '. Flèches haut et bas pour changer.');
+          var names = EN ? { dst: 'Destination: ', run: 'Runner: ', act: 'Action: ', src: 'Platform: ' } : { dst: 'Destination : ', run: 'Outil de lancement : ', act: 'Action : ', src: 'Plateforme : ' };
+          el.setAttribute('aria-label', names[kind] + (list[st[kind]].label || list[st[kind]].word) + tr('. Flèches haut et bas pour changer.', '. Up and down arrows to change.'));
           el.hidden = false;
         }
       };
@@ -252,7 +300,7 @@
       var original = btn.textContent, timer;
       btn.addEventListener('click', function () {
         var text = command();
-        var done = function () { btn.textContent = 'copié'; clearTimeout(timer); timer = setTimeout(function () { btn.textContent = original; }, 1600); };
+        var done = function () { btn.textContent = tr('copié', 'copied'); clearTimeout(timer); timer = setTimeout(function () { btn.textContent = original; }, 1600); };
         if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
         else { fallbackCopy(text); done(); }
       });
@@ -261,7 +309,7 @@
       p.els.forEach(function (el) {
         el.addEventListener('click', function (e) {
           e.preventDefault();
-          var j = LISTS[p.kind].findIndex(function (x) { return x.id === el.getAttribute(p.attr); });
+          var j = LISTS[p.kind].findIndex(function (x) { return x.id === norm(el.getAttribute(p.attr)); });
           if (j >= 0) set(p.kind, j, true);
         });
       });
@@ -271,7 +319,7 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
     window.addEventListener('resize', render);
 
-    // Un seul tour au chargement (sur la source), annulé dès que l'utilisateur touche à un tambour, jamais relancé.
+    // A single spin on load (on the source), cancelled as soon as the user touches a drum, never restarted.
     if (!touched && !reduce && drums.length) {
       setTimeout(function () {
         if (touched) return;
@@ -287,7 +335,7 @@
     var t = document.createElement('textarea');
     t.value = text; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
     document.body.appendChild(t); t.select();
-    try { document.execCommand('copy'); } catch (e) { /* rien */ }
+    try { document.execCommand('copy'); } catch (e) { /* nothing */ }
     document.body.removeChild(t);
   }
 

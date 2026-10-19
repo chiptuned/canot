@@ -5,12 +5,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 DEFAULT_TOML = """\
-# Tolérances de comparaison, à relire avec le client AVANT l'exercice.
+# Comparison tolerances, to review with the client BEFORE the exercise.
 [tolerance]
-float_rel = 1e-9     # écart relatif admis sur les nombres à virgule flottante
-decimal_abs = 0.0    # écart absolu admis sur les montants décimaux (ex. 0.01 pour un centime)
+float_rel = 1e-9     # relative difference allowed on floating-point numbers
+decimal_abs = 0.0    # absolute difference allowed on decimal amounts (e.g. 0.01 for one cent)
 
-[tolerance.columns]  # surcharge par colonne : "SCHEMA.TABLE.COLONNE" = écart absolu
+[tolerance.columns]  # per-column override: "SCHEMA.TABLE.COLUMN" = absolute difference
 # "PUBLIC.ORDERS.TOTAL" = 0.01
 """
 

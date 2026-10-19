@@ -1,0 +1,55 @@
+{
+  "as_of": "2026-10-19T10:00:00Z",
+  "capacites": {
+    "export": [],
+    "inventaire": "complet",
+    "preuve": [
+      "P3"
+    ],
+    "statut": "tested"
+  },
+  "constats": {
+    "F11": 1,
+    "F12": 1
+  },
+  "famille": "fichiers",
+  "lectures": {
+    "faites": 2,
+    "non_lues": 1
+  },
+  "niveau_droits": 1,
+  "objets": {
+    "dag": 1,
+    "modele_dbt": 8,
+    "paquet_dbt": 2,
+    "source_dbt": 4,
+    "test_dbt": 8
+  },
+  "plateforme": "dbt",
+  "portabilite": {
+    "portable_tel_quel": 4,
+    "traduisible": 17
+  },
+  "rejouabilite_familles_pct": null,
+  "resume": {
+    "DAF": [
+      "Consumption not read: project files: no credits and no billed bytes; the scan of the target platform measures them."
+    ],
+    "DSI": [
+      "8 dbt models, 8 dbt tests, 4 dbt sources; 8 stored relations; 19 dependency links. Materializations: 4 table, 4 view.",
+      "Portability: 17 translatable, 0 to rebuild (F13), 0 not determined, 4 portable as is.",
+      "Replayability: 8 models translated, not tested by DuckDB EXPLAIN (catalog.json not read: DuckDB EXPLAIN not run)."
+    ],
+    "RSSI": [
+      "No connection to a platform: files read locally; code is reduced to fingerprints and counts.",
+      "0 declared external dependencies (F01); writes outside the platform, privileges and policies not read here."
+    ]
+  },
+  "schema": "canot.share/1",
+  "tables": 8,
+  "versions": {
+    "canot": "X",
+    "duckdb": "X",
+    "sqlglot": "X"
+  }
+}

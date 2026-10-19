@@ -1,0 +1,13 @@
+<section class="s onprem" id="local-exit">
+  <div class="wrap">
+    <h2>Exit locally, to your own infrastructure.</h2>
+    <p class="lead-p">No cloud needed at the destination: a folder is enough. Canot writes the copy in Apache Iceberg format to your disk, your NAS or an S3 storage you host, with the evidence file next to it.</p>
+    <pre class="term"><code>uvx canot drill "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" /data/iceberg</code></pre>
+    <ul class="cmds">
+      <li><code>/path/to/folder</code><span>Local disk, network share or mounted NAS.</span></li>
+      <li><code>s3://bucket/canot?endpoint=https://s3.internal:9000</code><span>Your S3-compatible storage (MinIO, Ceph, NetApp…), with an internal proxy and certificate authority if needed.</span></li>
+      <li><code>--catalog env:CANOT_CATALOG_URI</code><span>A PostgreSQL catalog of your own; the password stays in an environment variable.</span></li>
+    </ul>
+    <p class="sources">The copy does not depend on Canot: DuckDB, Spark and Trino read it, and the <code>reread.sql</code> file recounts every table without the tool. Details are in the <a href="docs.html#local-or-on-prem-exit">documentation</a>.</p>
+  </div>
+</section>

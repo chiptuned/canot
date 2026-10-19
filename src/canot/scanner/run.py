@@ -1,4 +1,4 @@
-"""Orchestration du scan complet : collect() -> analyze() -> render(). analyze et render sont purs ; seule la collecte parle à la plateforme."""
+"""Full scan orchestration: collect() -> analyze() -> render(). analyze and render are pure; only collection talks to the platform."""
 from __future__ import annotations
 
 import json
@@ -8,9 +8,13 @@ from pathlib import Path
 
 from .. import __version__
 from ..connectors import effective_level, for_source, supports_full  # noqa: F401 : supports_full reste importable d'ici
-from .model import new_salt
+from .model import COMPUTED, NOT_READ, READ, READ_ONLY, new_salt
 
-LEVELS = {1: "inventaire, volumes, consommation", 2: "+ requêtes (formes normalisées), lectures par table, politiques", 3: "+ droits et outils (pseudonymisés)"}
+LEVELS = {1: "inventory, volumes, consumption", 2: "+ queries (normalized forms), reads per table, policies", 3: "+ privileges and tools (pseudonymized)"}
+# output files of a full scan (scan.json, scan.html, the CSV files of render.CSV_FILES, then these)
+SHARE_FILE = "scan-share.json"
+RAW_SQL_FILE = "scan-sql-raw.json"
+SHARE_SCHEMA = "canot.share/1"
 
 
 def _versions() -> dict:
@@ -21,23 +25,23 @@ def _versions() -> dict:
 
 
 def collect(src, *, level: int, days: int | None = None, log: Callable[[str], None] = lambda s: None) -> tuple[dict, list[dict]]:
-    """Lit la plateforme (lecture seule). Renvoie (snapshot, familles brutes) ; le texte SQL brut ne vit que dans le second retour."""
+    """Reads the platform (read-only). Returns (snapshot, raw families); raw SQL text only lives in the second item."""
     if not supports_full(src):
-        raise ValueError(f"scan complet non disponible pour {getattr(src, 'dialect', None)}")
+        raise ValueError(f"full scan not available for {getattr(src, 'dialect', None)}")
     salt = new_salt()
     conn = for_source(src)
     level = effective_level(src, level)
     snap, raw = conn.scan_collect(src, level=level, salt=salt, days=days)
     snap["niveau_droits"] = level
-    snap.setdefault("mode_sql", "lecture seule")
+    snap.setdefault("mode_sql", READ_ONLY)
     snap["versions"] = _versions()
-    if not conn.rejeu_familles:  # rejouabilité déjà calculée par la collecte (artefacts dbt) : pas de familles d'historique
+    if not conn.rejeu_familles:  # replayability already computed by collection (dbt artifacts): no history families
         snap.setdefault("familles", [])
         return snap, raw
-    # rejouabilité : le texte brut est normalisé ici, puis jeté
+    # replayability: the raw text is normalized here, then discarded
     from . import replay
 
-    # squelette typé pour EXPLAIN : tables et vues dont on connaît les colonnes
+    # typed skeleton for EXPLAIN: tables and views whose columns are known
     columns = [t for t in snap.get("tables", []) if t.get("colonnes")]
     for o in snap.get("objets", []):
         if o.get("kind") in ("vue", "vue_materialisee") and o.get("colonnes"):
@@ -47,10 +51,10 @@ def collect(src, *, level: int, days: int | None = None, log: Callable[[str], No
     known = {o["id"].split(".")[-1].upper() for o in snap.get("objets", []) if o.get("kind") in ("fonction", "procedure")}
     ext = [o["id"] for o in snap.get("objets", []) if o.get("kind") == "stage" and o.get("externe")]
     fenetre = snap.get("requetes")
-    if not fenetre:  # fenêtre réelle des lectures d'historique (plusieurs régions : de la plus ancienne à la plus récente)
-        wins = [l["fenetre"] for l in snap.get("lectures", []) if l["statut"] == "lu" and l.get("fenetre") and "familles" in l["vue"].lower()]
+    if not fenetre:  # actual window of the history reads (several regions: from the oldest to the most recent)
+        wins = [l["fenetre"] for l in snap.get("lectures", []) if l["statut"] == READ and l.get("fenetre") and "familles" in l["vue"].lower()]
         fenetre = {"du": min(w["du"] for w in wins), "au": max(w["au"] for w in wins)} if wins else None
-    lids = [l["id"] for l in snap.get("lectures", []) if l["statut"] == "lu" and any(k in l["vue"].upper() for k in ("QUERY_HISTORY", "JOBS"))]
+    lids = [l["id"] for l in snap.get("lectures", []) if l["statut"] == READ and any(k in l["vue"].upper() for k in ("QUERY_HISTORY", "JOBS"))]
     familles, rejo = replay.process_familles(raw, src.dialect, columns=columns or None, known_functions=known, salt=salt,
                                              fenetre={"du": fenetre.get("du"), "au": fenetre.get("au")} if fenetre else None,
                                              lectures=lids, external_stages=ext)
@@ -60,20 +64,20 @@ def collect(src, *, level: int, days: int | None = None, log: Callable[[str], No
 
 
 def partage(result: dict) -> dict:
-    """Synthèse transmissible à q4o ou à un conseil : des comptes et des fourchettes, jamais un nom de table, un SQL ni une identité."""
+    """Summary that can be passed to q4o or an advisor: counts and ranges, never a table name, SQL or an identity."""
     from collections import Counter
 
     rj = (result.get("rejouabilite") or {}).get("taux", {}).get("familles") or {}
     lectures = result.get("lectures", [])
     return {
-        "schema": "canot.partage/1", "as_of": result.get("as_of"), "plateforme": result.get("plateforme"), "niveau_droits": result.get("niveau_droits"),
+        "schema": SHARE_SCHEMA, "as_of": result.get("as_of"), "plateforme": result.get("plateforme"), "niveau_droits": result.get("niveau_droits"),
         "resume": result.get("resume"),
         "tables": len(result.get("tables", [])), "objets": dict(sorted(Counter(o["kind"] for o in result.get("objets", [])).items())),
         "constats": dict(sorted(Counter(f["code"] for f in result.get("drapeaux", [])).items())),
-        "rejouabilite_familles_pct": rj.get("valeur") if rj.get("nature") == "calculé" else None,
-        "lectures": {"faites": sum(1 for l in lectures if l["statut"] == "lu"), "non_lues": sum(1 for l in lectures if l["statut"] == "non_lu")},
+        "rejouabilite_familles_pct": rj.get("valeur") if rj.get("nature") == COMPUTED else None,
+        "lectures": {"faites": sum(1 for l in lectures if l["statut"] == READ), "non_lues": sum(1 for l in lectures if l["statut"] == NOT_READ)},
         "versions": result.get("versions"),
-        # ajouts optionnels (le schéma reste canot.partage/1, seul accepté par le site) : noms de capacités et comptes, rien d'autre
+        # optional additions (the schema stays canot.share/1): capability names and counts, nothing else
         **_partage_v2(result),
     }
 
@@ -101,9 +105,9 @@ def scan_full(src, out: Path, *, level: int = 3, credit_price: float | None = No
     (out / "scan.json").write_text(json.dumps(result, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
     (out / "scan.html").write_text(render_html(result), encoding="utf-8")
     write_csv(result, out)
-    (out / "scan-partage.json").write_text(json.dumps(partage(result), indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+    (out / SHARE_FILE).write_text(json.dumps(partage(result), indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
     if include_sql_text:
-        p = out / "scan-sql-brut.json"
+        p = out / RAW_SQL_FILE
         p.write_text(json.dumps(replay.raw_text_export(raw, src.dialect), indent=2, ensure_ascii=False), encoding="utf-8")
         os.chmod(p, 0o600)
     return result

@@ -11,34 +11,34 @@
     "tables_precision_only": 1,
     "queries_order_differs": 0,
     "lossy_conversions": 1,
-    "throughput_mb_s": 323.26,
+    "throughput_mb_s": 229.9,
     "rto": {
       "seconds": [
-        3.2,
-        6.9
+        4.5,
+        9.7
       ],
-      "basis": "débit mesuré ±, hors validation humaine et reprise des applications"
+      "basis": "measured throughput ±, excluding human validation and application cutover"
     },
     "warehouse_credits_used_est": null,
     "cost_usd_est": null,
     "cost_basis": null,
-    "duration_s": 9.0,
-    "parity": "écarts"
+    "duration_s": 13.4,
+    "parity": "mismatch"
   },
   "copy_location": {
     "target": "local:/private/tmp/canot-sf1/iceberg",
     "warehouse": "file:///private/tmp/canot-sf1/iceberg/warehouse",
     "kind": "local",
-    "catalog": "SQLite (catalog.db dans le dossier de sortie)",
+    "catalog": "SQLite (catalog.db in the output folder)",
     "metadata": {
-      "tpch.customer": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/customer/metadata/00001-62224463-142a-4c59-aa49-37be8280f9de.metadata.json",
-      "tpch.lineitem": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/lineitem/metadata/00013-afea1f76-aee8-4ec6-b715-1a3b7e63d7af.metadata.json",
-      "tpch.nation": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/nation/metadata/00001-c99cd2b1-7212-4fec-adb1-f9730570450c.metadata.json",
-      "tpch.orders": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/orders/metadata/00003-8e0fc456-f7c5-4a5e-b97f-8addde2771df.metadata.json",
-      "tpch.part": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/part/metadata/00001-5a49b6b8-7d26-4526-8c2b-07c583fc65a6.metadata.json",
-      "tpch.partsupp": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/partsupp/metadata/00002-e07e766f-e86d-4011-ad1b-589d8f151b79.metadata.json",
-      "tpch.region": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/region/metadata/00001-96ba3933-1d8e-4f27-b27a-a72e5c3ca7e4.metadata.json",
-      "tpch.supplier": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/supplier/metadata/00001-6e40ec3e-9614-4c34-96cd-9cd8d6abe707.metadata.json"
+      "tpch.customer": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/customer/metadata/00001-78c61c1f-921f-41e2-9bcd-97cdc20a5435.metadata.json",
+      "tpch.lineitem": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/lineitem/metadata/00013-2fe72537-0270-4d38-bb8e-2cef05e0fd33.metadata.json",
+      "tpch.nation": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/nation/metadata/00001-01058f37-43c0-4c0e-97f6-181b7a3f3567.metadata.json",
+      "tpch.orders": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/orders/metadata/00003-030bb020-6e19-47d7-8cbd-4d96f6630047.metadata.json",
+      "tpch.part": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/part/metadata/00001-6f1fffa6-e605-4717-a0bb-341af90ba29a.metadata.json",
+      "tpch.partsupp": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/partsupp/metadata/00002-3d515974-5e4b-4a59-841f-0c4723a881a9.metadata.json",
+      "tpch.region": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/region/metadata/00001-b7fb19d0-63f0-46fb-b1dd-829db70b9cf8.metadata.json",
+      "tpch.supplier": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/supplier/metadata/00001-b50f18ca-0d6f-4152-bd9e-1bf4cbc2f1ef.metadata.json"
     }
   },
   "scan": {
@@ -122,7 +122,7 @@
         20.0,
         80.0
       ],
-      "note": "estimation de planification ; remplacée par la mesure après un `canot drill`"
+      "note": "planning estimate; replaced by the measurement after a `canot drill`"
     },
     "exit_cost": {
       "reading_usd": null,
@@ -131,8 +131,8 @@
         0.0,
         0.0
       ],
-      "rework_basis": "0 objet(s) à reconstruire et 0 colonne(s) à type propre à la plateforme ; hypothèses de q4o (0.25 à 1.5 jour par objet, 0.1 à 0.5 par colonne), à discuter.",
-      "not_included": "Tarif de votre contrat, stockage d'arrivée, double exploitation, coût de fonctionnement après la sortie : ils dépendent de votre contrat et de votre architecture, et ne sont pas estimés ici."
+      "rework_basis": "0 object(s) to rebuild and 0 column(s) with a platform-specific type; q4o assumptions (0.25 to 1.5 day per object, 0.1 to 0.5 per column), open to discussion.",
+      "not_included": "Your contract rates, target storage, running both platforms in parallel, operating cost after the exit: they depend on your contract and your architecture, and are not estimated here."
     },
     "egress_note": ""
   },
@@ -156,8 +156,8 @@
       "schema_ok": true,
       "stats_ok": false,
       "stats_diffs": [
-        "l_loaded_at.min : Timestamp('1992-01-31 00:00:00.287971001') / datetime.datetime(1992, 1, 31, 0, 0, 0, 287971)",
-        "l_loaded_at.max : Timestamp('1998-10-31 00:00:05.354144001') / datetime.datetime(1998, 10, 31, 0, 0, 5, 354144)"
+        "l_loaded_at.min: Timestamp('1992-01-31 00:00:00.287971001') / datetime.datetime(1992, 1, 31, 0, 0, 0, 287971)",
+        "l_loaded_at.max: Timestamp('1998-10-31 00:00:05.354144001') / datetime.datetime(1998, 10, 31, 0, 0, 5, 354144)"
       ],
       "fingerprint_ok": true,
       "bad_buckets": [],
@@ -271,7 +271,7 @@
       "sql": "select * from tpch.lineitem order by l_orderkey, l_linenumber limit 50",
       "translated": "SELECT * FROM tpch.lineitem ORDER BY l_orderkey, l_linenumber LIMIT 50",
       "status": "mismatch",
-      "detail": "ligne triée 0, colonne 16 : Timestamp('1996-02-12 00:00:00.000001001') / datetime.datetime(1996, 2, 12, 0, 0, 0, 1)",
+      "detail": "sorted row 0, column 16: Timestamp('1996-02-12 00:00:00.000001001') / datetime.datetime(1996, 2, 12, 0, 0, 0, 1)",
       "rows_source": 50,
       "rows_target": 50,
       "order_differs": false
@@ -284,19 +284,19 @@
       "source_type": "TIMESTAMP_NS",
       "target_type": "timestamp[us]",
       "lossy": true,
-      "note": "ns -> us (Iceberg v2 ne garde pas les nanosecondes)"
+      "note": "ns -> us (Iceberg v2 does not keep nanoseconds)"
     }
   ],
   "env": {
-    "canot": "0.2.0",
+    "canot": "0.3.0",
     "duckdb": "1.5.6",
     "pyarrow": "26.0.0",
     "pyiceberg": "0.12.0",
     "sqlglot": "30.22.0"
   },
   "seal": {
-    "last_hash": "9cafe72219d813cac7cb580e770a671f7427ee1a97d8befcdafb219ca1d0793b",
-    "signature": "3468e8becf2201ad59715be8a8864686b95ab28f70a94f8343c9f1454f2e2255b5344824b54afccf3ea889d67d5cd152069bcb53f36cc15693e18ed7be04cb09",
+    "last_hash": "3ce3b217c91ce8d27a925c4db4a6c89c15c634cbd1f358fb7c20af5612417f5b",
+    "signature": "ae088347ec74fcb1a27d54d715cc2a9f990e134e54a2506d4baa4b985cf6c53796e39ef720597adb6ddeb457823fd7ea65edd4f245dec4c466713c8aea5d1e02",
     "entries": 23
   },
   "source": "duckdb:/tmp/canot-sf1/demo.duckdb",

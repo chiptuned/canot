@@ -1,5 +1,5 @@
-"""Génère les visuels du README : bannières claire/sombre animées et démo de terminal animée.
-Usage : python3 tools/make_readme_assets.py"""
+"""Generates the README visuals: animated light/dark banners and an animated terminal demo.
+Usage: python3 tools/make_readme_assets.py"""
 import pathlib, re, html
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -26,14 +26,14 @@ def banner(dark: bool) -> str:
     ink, sub, w1, w2, blocks = ("#EAF1F8", "#9FB3C8", "#14304B", "#1B4468", "#7FB0FF") if dark else ("#062E60", "#4B6070", "#E6ECF2", "#D3DEE8", NAVY)
     boat = logo_part("239 361 776 362", blocks).replace('<svg ', '<svg x="0" y="0" width="360" height="167" ', 1)
     word = logo_part("255 722 745 205", ink).replace('<svg ', '<svg x="0" y="0" width="372" height="102" ', 1)
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 300" width="1280" height="300" role="img" aria-label="Canot : prouvez que vous pouvez partir">
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 300" width="1280" height="300" role="img" aria-label="Canot: prove you can leave">
 <style>
-@keyframes houle{{0%,100%{{transform:translateY(0) rotate(-.6deg)}}50%{{transform:translateY(-4px) rotate(.4deg)}}}}
-@keyframes vague{{from{{transform:translateX(0)}}to{{transform:translateX(-1440px)}}}}
-@keyframes entre{{from{{opacity:0;transform:translateY(8px)}}to{{opacity:1;transform:none}}}}
-.boat{{transform-box:fill-box;transform-origin:50% 85%;animation:houle 17s ease-in-out infinite}}
-.w1{{animation:vague 40s linear infinite}}.w2{{animation:vague 26s linear infinite reverse}}
-.t1{{animation:entre .8s .2s both}}
+@keyframes swell{{0%,100%{{transform:translateY(0) rotate(-.6deg)}}50%{{transform:translateY(-4px) rotate(.4deg)}}}}
+@keyframes wave{{from{{transform:translateX(0)}}to{{transform:translateX(-1440px)}}}}
+@keyframes enter{{from{{opacity:0;transform:translateY(8px)}}to{{opacity:1;transform:none}}}}
+.boat{{transform-box:fill-box;transform-origin:50% 85%;animation:swell 17s ease-in-out infinite}}
+.w1{{animation:wave 40s linear infinite}}.w2{{animation:wave 26s linear infinite reverse}}
+.t1{{animation:enter .8s .2s both}}
 text{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}}
 @media (prefers-reduced-motion:reduce){{.boat,.w1,.w2,.t1{{animation:none}}}}
 </style>
@@ -47,24 +47,24 @@ text{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sa
 
 TERM = [
     ("cmd", "$ uvx canot demo"),
-    ("dim", "canot demo est un raccourci de deux commandes :"),
-    ("txt", "  canot demo-data canot-demo/demo.duckdb --tpch --sf 1"),
+    ("dim", "canot demo is a shortcut for two commands, which you can run and change yourself:"),
+    ("txt", "  canot demo-data canot-demo/demo.duckdb --tpch --sf 0.1"),
     ("txt", "  canot drill canot-demo/demo.duckdb canot-demo/iceberg --queries … --out …"),
-    ("dim", "TPC-H : 8 tables, 22 requêtes dont 4 rejouées ici : environ 1 Go de données"),
-    ("dim", "→ copie de 8 table(s) vers local:canot-demo/iceberg"),
-    ("txt", "   tpch.lineitem   6 001 215 lignes   1 097,6 Mo"),
-    ("txt", "   tpch.orders     1 500 000 lignes     195,1 Mo"),
-    ("txt", "   tpch.partsupp     800 000 lignes     134,6 Mo"),
-    ("dim", "→ comparaison des tables"),
+    ("dim", "TPC-H: 8 tables, 22 queries, 4 of them replayed here: about 100 MB of data"),
+    ("dim", "→ copying 8 table(s) to local:canot-demo/iceberg"),
+    ("txt", "   tpch.lineitem: 600572 rows, 109.9 MB"),
+    ("txt", "   tpch.orders: 150000 rows, 19.5 MB"),
+    ("txt", "   tpch.partsupp: 80000 rows, 13.4 MB"),
+    ("dim", "→ comparing tables"),
     ("ok", "   customer OK   nation OK   orders OK   part OK   partsupp OK   region OK   supplier OK"),
-    ("warn", "   lineitem  ÉCART"),
-    ("dim", "→ rejeu de 4 requête(s) des deux côtés"),
+    ("warn", "   lineitem  MISMATCH"),
+    ("dim", "→ replaying 4 query(ies) on both sides"),
     ("ok", "   [match]     select l_returnflag, l_linestatus, sum(l_quantity) …"),
     ("ok", "   [match]     select l_orderkey, sum(l_extendedprice * (1 - l_discount)) …"),
     ("ok", "   [match]     select sum(l_extendedprice * l_discount) as revenue …"),
     ("warn", "   [mismatch]  select * from tpch.lineitem order by l_orderkey …"),
-    ("bold", "Des écarts ont été trouvés : 7/8 tables, 3/4 requêtes."),
-    ("dim", "Dossier de preuve : canot-demo/dossier/report.html   (journal signé, vérifiable)"),
+    ("bold", "Mismatches found: 7/8 tables, 3/4 queries."),
+    ("dim", "Evidence report: canot-demo/evidence/report.html   (signed log, verifiable)"),
 ]
 
 
@@ -80,7 +80,7 @@ def terminal() -> str:
         weight = ' font-weight="700"' if k in ("bold", "cmd") else ""
         txt = html.escape(t).replace("[match]", '<tspan fill="#56D364">[match]</tspan>').replace("[mismatch]", '<tspan fill="#FF9A55">[mismatch]</tspan>')
         rows.append(f'<text class="l{i}" x="{X0}" y="{Y0 + i * LH}" fill="{colors[k]}"{weight} xml:space="preserve">{txt}</text>')
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" aria-label="Démonstration : uvx canot demo copie les 8 tables de TPC-H vers Iceberg, compare tout et signale un écart">
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" aria-label="Demo: uvx canot demo copies the 8 TPC-H tables to Iceberg, compares everything and flags a discrepancy">
 <style>
 text{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:15px}}
 {''.join(css)}
@@ -89,7 +89,7 @@ text{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",m
 <rect x="1" y="1" width="{W - 2}" height="{H - 2}" rx="12" fill="#0D1B2A" stroke="#223A4B" stroke-width="2"/>
 <path d="M1 13a12 12 0 0 1 12-12h{W - 26}a12 12 0 0 1 12 12v32H1z" fill="#13273B"/>
 <circle cx="26" cy="26" r="6.5" fill="#FF5F57"/><circle cx="48" cy="26" r="6.5" fill="#FEBC2E"/><circle cx="70" cy="26" r="6.5" fill="#28C840"/>
-<text x="{W / 2}" y="31" text-anchor="middle" fill="#7D8FA3" style="font-size:13px">canot : exercice de sortie</text>
+<text x="{W / 2}" y="31" text-anchor="middle" fill="#7D8FA3" style="font-size:13px">canot: exit exercise</text>
 {''.join(rows)}
 </svg>
 '''
@@ -99,4 +99,4 @@ if __name__ == "__main__":
     (OUT / "banner-light.svg").write_text(banner(False))
     (OUT / "banner-dark.svg").write_text(banner(True))
     (OUT / "demo.svg").write_text(terminal())
-    print("écrit :", ", ".join(sorted(p.name for p in OUT.glob("*.svg"))))
+    print("wrote:", ", ".join(sorted(p.name for p in OUT.glob("*.svg"))))

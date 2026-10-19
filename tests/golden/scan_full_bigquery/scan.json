@@ -17,15 +17,15 @@
     "preuve": [
       {
         "forme": "P1",
-        "libelle": "parité des données"
+        "libelle": "data parity"
       },
       {
         "forme": "P2",
-        "libelle": "rejeu de requêtes"
+        "libelle": "query replay"
       }
     ],
-    "statut": "testé",
-    "teste_sur": "canot drill, 13/10/2026 : jeu public thelook_ecommerce (docs/ecarts.md)"
+    "statut": "tested",
+    "teste_sur": "canot drill, 2026-10-13: public dataset thelook_ecommerce (docs/ecarts.md)"
   },
   "carte_sortie": {},
   "cout_du_scan": {
@@ -36,9 +36,9 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_lu",
-      "raison": "durée non transmise par la collecte",
-      "unite": "secondes",
+      "nature": "not_read",
+      "raison": "duration not provided by collection",
+      "unite": "seconds",
       "valeur": null
     },
     "lectures": {
@@ -71,14 +71,14 @@
         "B21"
       ],
       "confiance": null,
-      "formule": "lectures tentées, lues ou refusées par la plateforme",
+      "formule": "reads attempted, read or refused by the platform",
       "haut": null,
       "hypotheses": [
-        "une lecture = une requête"
+        "one read = one query"
       ],
-      "nature": "calculé",
+      "nature": "computed",
       "raison": null,
-      "unite": "requêtes",
+      "unite": "queries",
       "valeur": 20
     }
   },
@@ -91,16 +91,16 @@
           "B11",
           "B12"
         ],
-        "confiance": "basse",
-        "formule": "Tio facturés × prix catalogue, palier gratuit déduit ou non",
+        "confiance": "low",
+        "formule": "billed TiB × list price, free tier deducted or not",
         "haut": 21.88,
         "hypotheses": [
-          "prix catalogue à la demande du 17/10/2026 : 6,25 $ par Tio (tarif US ; région à confirmer), https://cloud.google.com/bigquery/pricing",
-          "haut : aucun palier gratuit déduit ; bas : 1 Tio gratuit par mois touché par la fenêtre ; le palier gratuit est partagé par le compte de facturation, il n'est pas imputable par projet",
-          "prix de votre contrat non lu",
-          "octets facturés NULL pour les requêtes sur tables à politique de lignes : non comptés"
+          "on-demand list price as of 17/10/2026: $6.25 per TiB (US rate; region to confirm), https://cloud.google.com/bigquery/pricing",
+          "high: no free tier deducted; low: 1 free TiB per month touched by the window; the free tier is shared by the billing account, it cannot be attributed per project",
+          "your contract price not read",
+          "billed bytes NULL for queries on tables with a row access policy: not counted"
         ],
-        "nature": "estimé",
+        "nature": "estimated",
         "raison": null,
         "unite": "USD",
         "valeur": null
@@ -116,9 +116,9 @@
         "formule": null,
         "haut": null,
         "hypotheses": [],
-        "nature": "mesuré",
+        "nature": "measured",
         "raison": null,
-        "unite": "octets",
+        "unite": "bytes",
         "valeur": 3848290697216
       },
       "requetes": {
@@ -132,14 +132,14 @@
         "formule": null,
         "haut": null,
         "hypotheses": [],
-        "nature": "mesuré",
+        "nature": "measured",
         "raison": null,
-        "unite": "requêtes",
+        "unite": "queries",
         "valeur": 1200
       }
     },
     "fenetre_jours": 180,
-    "note": "À la demande et réservé : deux modes de facturation, jamais additionnés.",
+    "note": "On-demand and reserved: two billing models, never added together.",
     "reserve": {
       "monnaie": {
         "bas": null,
@@ -148,8 +148,8 @@
         "formule": null,
         "haut": null,
         "hypotheses": [],
-        "nature": "non_estimé",
-        "raison": "prix de votre contrat non lu",
+        "nature": "not_estimated",
+        "raison": "your contract price not read",
         "unite": "USD",
         "valeur": null
       },
@@ -164,9 +164,9 @@
         "formule": null,
         "haut": null,
         "hypotheses": [],
-        "nature": "mesuré",
+        "nature": "measured",
         "raison": null,
-        "unite": "requêtes",
+        "unite": "queries",
         "valeur": 300
       },
       "slot_heures": {
@@ -180,9 +180,9 @@
         "formule": null,
         "haut": null,
         "hypotheses": [],
-        "nature": "mesuré",
+        "nature": "measured",
         "raison": null,
-        "unite": "slot-heures",
+        "unite": "slot-hours",
         "valeur": 820.5
       }
     },
@@ -193,8 +193,8 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_estimé",
-      "raison": "prix de votre contrat non lu",
+      "nature": "not_estimated",
+      "raison": "your contract price not read",
       "unite": "USD",
       "valeur": null
     },
@@ -205,9 +205,9 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_lu",
-      "raison": "non transmis par la collecte",
-      "unite": "octets",
+      "nature": "not_read",
+      "raison": "not provided by collection",
+      "unite": "bytes",
       "valeur": null
     },
     "transferts": []
@@ -267,7 +267,7 @@
         "emplacements": [
           "gs://bucket-x"
         ],
-        "mode": "observé"
+        "mode": "observed"
       },
       {
         "cible": "lab-a.sq_export",
@@ -275,7 +275,7 @@
         "emplacements": [
           "gs://lab-exports"
         ],
-        "mode": "déclaré"
+        "mode": "declared"
       }
     ],
     "externes": [
@@ -298,7 +298,7 @@
       {
         "executions": 903,
         "familles": 3,
-        "outil": "non identifié"
+        "outil": "unidentified"
       },
       {
         "executions": 10,
@@ -320,15 +320,15 @@
       "cible_type": "table",
       "code": "F01",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Dépendance externe",
+      "etiquette": "To review",
+      "libelle": "External dependency",
       "preuve": {
         "emplacements": [
           "gs://lab-bucket"
         ],
         "type": "table"
       },
-      "texte": "Table externe : données hors de la plateforme (gs://lab-bucket)."
+      "texte": "External table: data outside the platform (gs://lab-bucket)."
     },
     {
       "base": [
@@ -342,15 +342,15 @@
       "cible_type": "table",
       "code": "F01",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Dépendance externe",
+      "etiquette": "To review",
+      "libelle": "External dependency",
       "preuve": {
         "emplacements": [
           "docs.google.com"
         ],
         "type": "table"
       },
-      "texte": "Table externe : données hors de la plateforme (docs.google.com)."
+      "texte": "External table: data outside the platform (docs.google.com)."
     },
     {
       "base": [
@@ -360,8 +360,8 @@
       "cible_type": "objet",
       "code": "F02",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Dépendance externe cachée",
+      "etiquette": "To review",
+      "libelle": "Hidden external dependency",
       "preuve": {
         "chemin": [
           "lab-a.mart.v_sheet",
@@ -371,7 +371,7 @@
           "docs.google.com"
         ]
       },
-      "texte": "Dépend de lab-a.ext.sheet_targets, hors de la plateforme, par 1 niveau : lab-a.mart.v_sheet → lab-a.ext.sheet_targets (docs.google.com)."
+      "texte": "Depends on lab-a.ext.sheet_targets, outside the platform, through 1 level: lab-a.mart.v_sheet → lab-a.ext.sheet_targets (docs.google.com)."
     },
     {
       "base": [
@@ -383,19 +383,19 @@
       "cible_type": "famille",
       "code": "F03",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Écriture hors de la plateforme",
+      "etiquette": "To review",
+      "libelle": "Write outside the platform",
       "preuve": {
         "emplacements": [
           "gs://bucket-x"
         ],
-        "mode": "observé",
+        "mode": "observed",
         "n_exec": 2,
         "tables": [
           "lab-a.raw.orders"
         ]
       },
-      "texte": "Écriture hors de la plateforme observée : 2 exécutions ; destination : gs://bucket-x."
+      "texte": "Write outside the platform observed: 2 executions; destination: gs://bucket-x."
     },
     {
       "base": [
@@ -405,15 +405,15 @@
       "cible_type": "objet",
       "code": "F03",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Écriture hors de la plateforme",
+      "etiquette": "To review",
+      "libelle": "Write outside the platform",
       "preuve": {
         "emplacements": [
           "gs://lab-exports"
         ],
-        "mode": "déclaré"
+        "mode": "declared"
       },
-      "texte": "Requête planifiée qui écrit hors de la plateforme (déclaré dans sa définition) ; destination : gs://lab-exports."
+      "texte": "Scheduled query that writes outside the platform (declared in its definition); destination: gs://lab-exports."
     },
     {
       "base": [
@@ -425,22 +425,22 @@
       "cible": "lab-a.archive.archive_2023",
       "cible_type": "table",
       "code": "F05",
-      "confiance": "moyenne",
-      "etiquette": "À examiner",
-      "libelle": "Stockage sans lecture observée",
+      "confiance": "medium",
+      "etiquette": "To review",
+      "libelle": "Storage with no observed read",
       "preuve": {
         "au": "2026-10-17",
         "du": "2026-04-20",
         "jours": 180,
         "non_vus": [
-          "lectures par l'API Storage Read",
-          "requêtes lancées depuis d'autres projets",
-          "consommateurs Analytics Hub"
+          "reads through the Storage Read API",
+          "queries run from other projects",
+          "Analytics Hub consumers"
         ],
         "octets_actifs": 3000000000,
         "source": "INFORMATION_SCHEMA.JOBS"
       },
-      "texte": "3 Go stockés. Aucune lecture observée dans INFORMATION_SCHEMA.JOBS du 20/04/2026 au 17/10/2026 ; non vus : lectures par l'API Storage Read, requêtes lancées depuis d'autres projets, consommateurs Analytics Hub."
+      "texte": "3 GB stored. No read observed in INFORMATION_SCHEMA.JOBS from 2026-04-20 to 2026-10-17; blind spots: reads through the Storage Read API, queries run from other projects, Analytics Hub consumers."
     },
     {
       "base": [
@@ -452,22 +452,22 @@
       "cible": "lab-a.raw.read_by_api_only",
       "cible_type": "table",
       "code": "F05",
-      "confiance": "moyenne",
-      "etiquette": "À examiner",
-      "libelle": "Stockage sans lecture observée",
+      "confiance": "medium",
+      "etiquette": "To review",
+      "libelle": "Storage with no observed read",
       "preuve": {
         "au": "2026-10-17",
         "du": "2026-04-20",
         "jours": 180,
         "non_vus": [
-          "lectures par l'API Storage Read",
-          "requêtes lancées depuis d'autres projets",
-          "consommateurs Analytics Hub"
+          "reads through the Storage Read API",
+          "queries run from other projects",
+          "Analytics Hub consumers"
         ],
         "octets_actifs": 700000000,
         "source": "INFORMATION_SCHEMA.JOBS"
       },
-      "texte": "700 Mo stockés. Aucune lecture observée dans INFORMATION_SCHEMA.JOBS du 20/04/2026 au 17/10/2026 ; non vus : lectures par l'API Storage Read, requêtes lancées depuis d'autres projets, consommateurs Analytics Hub."
+      "texte": "700 MB stored. No read observed in INFORMATION_SCHEMA.JOBS from 2026-04-20 to 2026-10-17; blind spots: reads through the Storage Read API, queries run from other projects, Analytics Hub consumers."
     },
     {
       "base": [
@@ -477,14 +477,14 @@
       "cible_type": "table",
       "code": "F06",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Historique payé non transférable",
+      "etiquette": "To review",
+      "libelle": "Billed history that does not transfer",
       "preuve": {
         "octets_actifs": 900000000,
         "octets_historique": 250000000,
         "retention_jours": 7
       },
-      "texte": "250 Mo d'historique facturé (Time Travel et Fail-safe), rétention 7 jours, pour 900 Mo actifs ; cet historique ne part pas avec la copie."
+      "texte": "250 MB of billed history (Time Travel and Fail-safe), retention 7 days, for 900 MB active; this history does not leave with the copy."
     },
     {
       "base": [
@@ -494,12 +494,12 @@
       "cible_type": "objet",
       "code": "F08",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "SQL dynamique",
+      "etiquette": "To review",
+      "libelle": "Dynamic SQL",
       "preuve": {
         "langage": "SQL"
       },
-      "texte": "Procédure en SQL : construit du SQL à l'exécution ; les objets touchés ne se lisent pas dans le code."
+      "texte": "Procedure (SQL): builds SQL at run time; the objects it touches cannot be read from the code."
     },
     {
       "base": [
@@ -510,15 +510,15 @@
       "cible_type": "objet",
       "code": "F09",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Consommateurs externes",
+      "etiquette": "To review",
+      "libelle": "External consumers",
       "preuve": {
         "consommateurs": 1,
         "objets": [
           "lab-a.raw.orders"
         ]
       },
-      "texte": "Partage vers 1 abonné ; 1 objet partagé. Les lectures des consommateurs ne sont pas vues par ce scan."
+      "texte": "Share to 1 subscriber; 1 shared object. Consumer reads are not seen by this scan."
     },
     {
       "base": [
@@ -528,14 +528,14 @@
       "cible_type": "objet",
       "code": "F10",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Sécurité à reconstruire",
+      "etiquette": "To review",
+      "libelle": "Security to rebuild",
       "preuve": {
         "objets": [
           "lab-a.raw.customers"
         ]
       },
-      "texte": "Politique de lignes appliquée à 1 objet ; elle ne part pas avec la copie ; la copie demande un principal non filtré."
+      "texte": "Row access policy applied to 1 object; it does not leave with the copy; the copy requires an unfiltered principal."
     },
     {
       "base": [
@@ -546,8 +546,8 @@
       "cible_type": "table",
       "code": "F10",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Sécurité à reconstruire",
+      "etiquette": "To review",
+      "libelle": "Security to rebuild",
       "preuve": {
         "etiquettes_n": 0,
         "politiques": [
@@ -555,7 +555,7 @@
           "rap_country"
         ]
       },
-      "texte": "Politiques : pt-pii, rap_country. Elles ne partent pas avec la copie ; la copie demande un principal non filtré par ces politiques."
+      "texte": "Policies: pt-pii, rap_country. They do not leave with the copy; the copy requires a principal not filtered by these policies."
     },
     {
       "base": [
@@ -565,17 +565,17 @@
       "cible_type": "objet",
       "code": "F11",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Chaîne planifiée et ses échecs",
+      "etiquette": "To review",
+      "libelle": "Scheduled chain and its failures",
       "preuve": {
         "chaine": [
           "lab-a.sq_daily_kpi"
         ],
         "echecs_n": 3,
-        "etat": "actif",
+        "etat": "active",
         "executions_n": 180
       },
-      "texte": "Requête planifiée, planification every 24 hours, état actif ; 180 exécutions, 3 échecs, dernière le 17/10/2026."
+      "texte": "Scheduled query, schedule every 24 hours, state active; 180 runs, 3 failures, last on 2026-10-17."
     },
     {
       "base": [
@@ -585,17 +585,17 @@
       "cible_type": "objet",
       "code": "F11",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Chaîne planifiée et ses échecs",
+      "etiquette": "To review",
+      "libelle": "Scheduled chain and its failures",
       "preuve": {
         "chaine": [
           "lab-a.sq_export"
         ],
         "echecs_n": 0,
-        "etat": "actif",
+        "etat": "active",
         "executions_n": 180
       },
-      "texte": "Requête planifiée, planification every day 05:00, état actif ; 180 exécutions, 0 échec."
+      "texte": "Scheduled query, schedule every day 05:00, state active; 180 runs, 0 failures."
     },
     {
       "base": [
@@ -605,17 +605,17 @@
       "cible_type": "objet",
       "code": "F11",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Chaîne planifiée et ses échecs",
+      "etiquette": "To review",
+      "libelle": "Scheduled chain and its failures",
       "preuve": {
         "chaine": [
           "lab-a.sq_old"
         ],
         "echecs_n": 0,
-        "etat": "désactivée",
+        "etat": "disabled",
         "executions_n": 0
       },
-      "texte": "Requête planifiée, planification every 1 hours, état désactivée ; 0 exécution, 0 échec."
+      "texte": "Scheduled query, schedule every 1 hours, state disabled; 0 runs, 0 failures."
     },
     {
       "base": [
@@ -625,17 +625,17 @@
       "cible_type": "objet",
       "code": "F11",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Chaîne planifiée et ses échecs",
+      "etiquette": "To review",
+      "libelle": "Scheduled chain and its failures",
       "preuve": {
         "chaine": [
           "lab-a.sq_weekly"
         ],
         "echecs_n": 0,
-        "etat": "actif",
+        "etat": "active",
         "executions_n": 26
       },
-      "texte": "Requête planifiée, planification every monday 06:00, état actif ; 26 exécutions, 0 échec."
+      "texte": "Scheduled query, schedule every monday 06:00, state active; 26 runs, 0 failures."
     },
     {
       "base": [],
@@ -643,13 +643,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "droit absent",
+        "raison": "missing privilege",
         "vue": "API connections.list"
       },
-      "texte": "API connections.list non lue (droit absent) ; limite : connexions externes (F01)."
+      "texte": "API connections.list not read (missing privilege); limits: external connections (F01)."
     },
     {
       "base": [],
@@ -657,13 +657,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "niveau de droits non demandé",
+        "raison": "privilege level not requested",
         "vue": "`region-eu`.INFORMATION_SCHEMA.RESERVATIONS"
       },
-      "texte": "`region-eu`.INFORMATION_SCHEMA.RESERVATIONS non lue (niveau de droits non demandé) ; limite : capacité réservée."
+      "texte": "`region-eu`.INFORMATION_SCHEMA.RESERVATIONS not read (privilege level not requested); limits: reserved capacity."
     },
     {
       "base": [],
@@ -671,16 +671,16 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "niveau de droits non demandé",
+        "raison": "privilege level not requested",
         "vue": "`region-eu`.INFORMATION_SCHEMA.JOBS_BY_ORGANIZATION"
       },
-      "texte": "`region-eu`.INFORMATION_SCHEMA.JOBS_BY_ORGANIZATION non lue (niveau de droits non demandé) ; limite : requêtes lancées depuis d'autres projets."
+      "texte": "`region-eu`.INFORMATION_SCHEMA.JOBS_BY_ORGANIZATION not read (privilege level not requested); limits: queries run from other projects."
     }
   ],
-  "edition": "non déterminée",
+  "edition": "not determined",
   "f04_lu": false,
   "famille": "entrepot",
   "familles": [
@@ -773,10 +773,10 @@
       "formule": null,
       "haut": null,
       "hypotheses": [
-        "lecture par l'API Storage Read, facturée par Tio lu, et sortie réseau hors de Google Cloud"
+        "read through the Storage Read API, billed per TiB read, and network egress out of Google Cloud"
       ],
-      "nature": "non_estimé",
-      "raison": "prix de votre contrat non lu",
+      "nature": "not_estimated",
+      "raison": "your contract price not read",
       "unite": "USD",
       "valeur": null
     },
@@ -785,15 +785,15 @@
       "base": [
         "B07"
       ],
-      "confiance": "basse",
-      "formule": "volume ÷ débit supposé",
+      "confiance": "low",
+      "formule": "volume ÷ assumed throughput",
       "haut": 0.07,
       "hypotheses": [
-        "débit supposé de 20 à 80 Mo/s, remplacé par la mesure d'un canot drill"
+        "assumed throughput of 20 to 80 MB/s, replaced by the measurement of a canot drill"
       ],
-      "nature": "estimé",
+      "nature": "estimated",
       "raison": null,
-      "unite": "heures",
+      "unite": "hours",
       "valeur": null
     },
     "reprise": {
@@ -803,16 +803,16 @@
         "B19",
         "B20"
       ],
-      "confiance": "basse",
-      "formule": "objets × jours par objet + colonnes × jours par colonne",
+      "confiance": "low",
+      "formule": "objects × days per object + columns × days per column",
       "haut": 18.0,
       "hypotheses": [
-        "11 objets à reconstruire et 3 colonnes à type propre à la plateforme",
-        "hypothèses de q4o : 0,25 à 1,5 jour par objet, 0,1 à 0,5 par colonne, à discuter"
+        "11 objects to rebuild and 3 columns with a platform-specific type",
+        "q4o assumptions: 0.25 to 1.5 day per object, 0.1 to 0.5 per column, open to discussion"
       ],
-      "nature": "estimé",
+      "nature": "estimated",
       "raison": null,
-      "unite": "jours",
+      "unite": "days",
       "valeur": null
     },
     "volume": {
@@ -821,14 +821,14 @@
         "B07"
       ],
       "confiance": null,
-      "formule": "somme des octets actifs",
+      "formule": "sum of active bytes",
       "haut": null,
       "hypotheses": [
-        "octets actifs des tables présentes, hors tables externes et temporaires"
+        "active bytes of present tables, excluding external and temporary tables"
       ],
-      "nature": "calculé",
+      "nature": "computed",
       "raison": null,
-      "unite": "octets",
+      "unite": "bytes",
       "valeur": 4980000000
     }
   },
@@ -842,7 +842,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "API datasets.list"
     },
     {
@@ -852,7 +852,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "API datasets.get"
     },
     {
@@ -862,7 +862,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "`region-eu`.INFORMATION_SCHEMA.TABLES"
     },
     {
@@ -872,7 +872,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "`region-europe-west1`.INFORMATION_SCHEMA.TABLES"
     },
     {
@@ -882,7 +882,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "`region-us`.INFORMATION_SCHEMA.TABLES"
     },
     {
@@ -890,9 +890,9 @@
       "id": "B06",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "aucune : tables.get lue à la place",
-      "raison": "absent ou non exposé",
-      "statut": "non_lu",
+      "limite": "none: tables.get read instead",
+      "raison": "absent or not exposed",
+      "statut": "not_read",
       "vue": "`region-eu`.INFORMATION_SCHEMA.TABLE_STORAGE"
     },
     {
@@ -902,7 +902,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "API tables.get"
     },
     {
@@ -912,7 +912,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "`region-eu`.INFORMATION_SCHEMA.TABLE_OPTIONS"
     },
     {
@@ -922,7 +922,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "`region-eu`.INFORMATION_SCHEMA.COLUMN_FIELD_PATHS"
     },
     {
@@ -935,7 +935,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "`region-eu`.INFORMATION_SCHEMA.JOBS"
     },
     {
@@ -948,7 +948,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "`region-europe-west1`.INFORMATION_SCHEMA.JOBS"
     },
     {
@@ -961,7 +961,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "`region-us`.INFORMATION_SCHEMA.JOBS"
     },
     {
@@ -971,7 +971,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "API transferConfigs.list"
     },
     {
@@ -981,7 +981,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "API rowAccessPolicies.list"
     },
     {
@@ -989,9 +989,9 @@
       "id": "B15",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "connexions externes (F01)",
-      "raison": "droit absent",
-      "statut": "non_lu",
+      "limite": "external connections (F01)",
+      "raison": "missing privilege",
+      "statut": "not_read",
       "vue": "API connections.list"
     },
     {
@@ -1001,7 +1001,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "`region-eu`.INFORMATION_SCHEMA.SCHEMATA_LINKS"
     },
     {
@@ -1011,7 +1011,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "`region-eu`.INFORMATION_SCHEMA.SHARED_DATASET_USAGE"
     },
     {
@@ -1019,9 +1019,9 @@
       "id": "B18",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "capacité réservée",
-      "raison": "niveau de droits non demandé",
-      "statut": "non_lu",
+      "limite": "reserved capacity",
+      "raison": "privilege level not requested",
+      "statut": "not_read",
       "vue": "`region-eu`.INFORMATION_SCHEMA.RESERVATIONS"
     },
     {
@@ -1031,7 +1031,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "`region-eu`.INFORMATION_SCHEMA.ROUTINES"
     },
     {
@@ -1041,7 +1041,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "`region-eu`.INFORMATION_SCHEMA.VIEWS"
     },
     {
@@ -1051,7 +1051,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "API models.list"
     },
     {
@@ -1059,14 +1059,14 @@
       "id": "B22",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "requêtes lancées depuis d'autres projets",
-      "raison": "niveau de droits non demandé",
-      "statut": "non_lu",
+      "limite": "queries run from other projects",
+      "raison": "privilege level not requested",
+      "statut": "not_read",
       "vue": "`region-eu`.INFORMATION_SCHEMA.JOBS_BY_ORGANIZATION"
     }
   ],
   "liens": [],
-  "mode_sql": "lecture seule",
+  "mode_sql": "read-only",
   "mouvements": {
     "base": [
       "B03",
@@ -1080,7 +1080,7 @@
     "figée": 2,
     "non_determine": 0,
     "recréée": 0,
-    "regle": "recréée : DDL de moins de 7 jours sans écriture postérieure ; vivante : écriture de moins de 30 jours ; figée : dernière écriture plus ancienne ; non déterminée : écritures non lues",
+    "regle": "recreated: DDL less than 7 days old with no later write; live: write less than 30 days old; frozen: older last write; not determined: writes not read",
     "vivante": 7
   },
   "ne_part_pas": {
@@ -1122,12 +1122,12 @@
           "B07"
         ],
         "confiance": null,
-        "formule": "Time Travel + Fail-safe des tables présentes, + octets encore facturés des tables supprimées",
+        "formule": "Time Travel + Fail-safe of present tables, + bytes still billed for dropped tables",
         "haut": null,
         "hypotheses": [],
-        "nature": "calculé",
+        "nature": "computed",
         "raison": null,
-        "unite": "octets",
+        "unite": "bytes",
         "valeur": 250000000
       },
       "tables": 1
@@ -1150,48 +1150,48 @@
   "niveau_droits": 3,
   "non_estime": [
     {
-      "raison": "non transmis par la collecte",
-      "sujet": "Stockage moyen facturé"
+      "raison": "not provided by collection",
+      "sujet": "Average billed storage"
     },
     {
-      "raison": "prix de votre contrat non lu",
-      "sujet": "Coût du stockage"
+      "raison": "your contract price not read",
+      "sujet": "Storage cost"
     },
     {
-      "raison": "prix de votre contrat non lu",
-      "sujet": "Réservé, en dollars"
+      "raison": "your contract price not read",
+      "sujet": "Reserved, in dollars"
     },
     {
-      "raison": "prix de votre contrat non lu",
-      "sujet": "Coût de lecture de la copie (API Storage Read, sortie réseau)"
+      "raison": "your contract price not read",
+      "sujet": "Copy read cost (Storage Read API, network egress)"
     },
     {
-      "raison": "prix de votre contrat non lu",
-      "sujet": "Tarif de votre contrat"
+      "raison": "your contract price not read",
+      "sujet": "Your contract rate"
     },
     {
-      "raison": "dépendent de votre contrat et de votre architecture",
-      "sujet": "Stockage d'arrivée, double exploitation, fonctionnement après la sortie"
+      "raison": "depend on your contract and your architecture",
+      "sujet": "Destination storage, running both platforms in parallel, operations after the exit"
     },
     {
-      "raison": "accepté ≠ résultat identique : traduit vers DuckDB, non comparé ; un canot drill compare les résultats",
-      "sujet": "Résultat identique des requêtes traduites"
+      "raison": "accepted ≠ identical result: translated to DuckDB, not compared; a canot drill compares the results",
+      "sujet": "Identical results of translated queries"
     },
     {
-      "raison": "non reprises : elles ne se vérifient pas depuis le scan",
-      "sujet": "Projections de coût fournies par la plateforme"
+      "raison": "not used: they cannot be verified from the scan",
+      "sujet": "Cost projections provided by the platform"
     },
     {
-      "raison": "partagé par le compte de facturation, non imputable par projet",
-      "sujet": "Palier gratuit BigQuery"
+      "raison": "shared by the billing account, cannot be attributed per project",
+      "sujet": "BigQuery free tier"
     },
     {
-      "raison": "absentes de INFORMATION_SCHEMA.JOBS",
-      "sujet": "Lectures par l'API Storage Read"
+      "raison": "missing from INFORMATION_SCHEMA.JOBS",
+      "sujet": "Reads through the Storage Read API"
     },
     {
-      "raison": "valeur NULL dans INFORMATION_SCHEMA.JOBS",
-      "sujet": "Octets facturés des requêtes sous politique de lignes"
+      "raison": "NULL value in INFORMATION_SCHEMA.JOBS",
+      "sujet": "Billed bytes of queries under a row access policy"
     }
   ],
   "objets": [
@@ -1305,7 +1305,7 @@
         "F11"
       ],
       "echecs_n": 3,
-      "etat": "actif",
+      "etat": "active",
       "executions_n": 180,
       "externe": false,
       "id": "lab-a.sq_daily_kpi",
@@ -1330,7 +1330,7 @@
         "F11"
       ],
       "echecs_n": 0,
-      "etat": "actif",
+      "etat": "active",
       "executions_n": 180,
       "externe": false,
       "id": "lab-a.sq_export",
@@ -1350,7 +1350,7 @@
         "F11"
       ],
       "echecs_n": 0,
-      "etat": "désactivée",
+      "etat": "disabled",
       "executions_n": 0,
       "externe": false,
       "id": "lab-a.sq_old",
@@ -1370,7 +1370,7 @@
         "F11"
       ],
       "echecs_n": 0,
-      "etat": "actif",
+      "etat": "active",
       "executions_n": 26,
       "externe": false,
       "id": "lab-a.sq_weekly",
@@ -1445,7 +1445,7 @@
       "sql_dynamique": null
     }
   ],
-  "perimetre": "projets lab-a (données) ; régions EU, europe-west1, US",
+  "perimetre": "projects lab-a (data); regions EU, europe-west1, US",
   "plateforme": "bigquery",
   "regles": {
     "debit_mo_s": [
@@ -1457,11 +1457,11 @@
     "vivante_jours": 30
   },
   "rejouabilite": {
-    "base": "1/3 familles, fenêtre non lue, sqlglot X, duckdb X",
+    "base": "1/3 families, window not read, sqlglot X, duckdb X",
     "bases": {
-      "executions": "10/911 exécutions, fenêtre non lue, sqlglot X, duckdb X",
-      "familles": "1/3 familles, fenêtre non lue, sqlglot X, duckdb X",
-      "poids": "1 000 000/2 000 001 000 000 octets, fenêtre non lue, sqlglot X, duckdb X"
+      "executions": "10/911 executions, window not read, sqlglot X, duckdb X",
+      "familles": "1/3 families, window not read, sqlglot X, duckdb X",
+      "poids": "1,000,000/2,000,001,000,000 bytes, window not read, sqlglot X, duckdb X"
     },
     "categories": {
       "C0": {
@@ -1508,7 +1508,7 @@
     "fonctions": {
       "predict": 1
     },
-    "mention": "accepté ≠ résultat identique",
+    "mention": "accepted ≠ identical result",
     "non_testees": {
       "executions": 0,
       "familles": 0
@@ -1518,7 +1518,7 @@
       "executions": 1,
       "familles": 1
     },
-    "statut": "lu",
+    "statut": "read",
     "taux": {
       "executions": {
         "bas": null,
@@ -1528,12 +1528,12 @@
           "B12"
         ],
         "confiance": null,
-        "formule": "traduit et accepté par DuckDB (C0) / C0 à C6 ; C7 compté à part",
+        "formule": "translated and accepted by DuckDB (C0) / C0 to C6; C7 counted separately",
         "haut": null,
         "hypotheses": [
-          "accepté ≠ résultat identique"
+          "accepted ≠ identical result"
         ],
-        "nature": "calculé",
+        "nature": "computed",
         "raison": null,
         "unite": "%",
         "valeur": 1.1
@@ -1546,12 +1546,12 @@
           "B12"
         ],
         "confiance": null,
-        "formule": "traduit et accepté par DuckDB (C0) / C0 à C6 ; C7 compté à part",
+        "formule": "translated and accepted by DuckDB (C0) / C0 to C6; C7 counted separately",
         "haut": null,
         "hypotheses": [
-          "accepté ≠ résultat identique"
+          "accepted ≠ identical result"
         ],
-        "nature": "calculé",
+        "nature": "computed",
         "raison": null,
         "unite": "%",
         "valeur": 33.3
@@ -1564,13 +1564,13 @@
           "B12"
         ],
         "confiance": null,
-        "formule": "traduit et accepté par DuckDB (C0) / C0 à C6 ; C7 compté à part",
+        "formule": "translated and accepted by DuckDB (C0) / C0 to C6; C7 counted separately",
         "haut": null,
         "hypotheses": [
-          "accepté ≠ résultat identique",
-          "poids lu pour 2/3 familles"
+          "accepted ≠ identical result",
+          "weight read for 2/3 families"
         ],
-        "nature": "calculé",
+        "nature": "computed",
         "raison": null,
         "unite": "%",
         "valeur": 0.0
@@ -1579,19 +1579,19 @@
   },
   "resume": {
     "DAF": [
-      "Mesuré sur 180 jours : 3,8 To facturés à la demande, 820,5 slot-heures en réservé ; les deux ne s'additionnent pas.",
-      "À la demande, fourchette catalogue : 0,00 à 21,88 $ ; réservé, non estimé : prix de votre contrat non lu.",
-      "Historique facturé qui ne part pas avec la copie : 250 Mo sur 1 table (F06, F07)."
+      "Measured over 180 days: 3.8 TB billed on demand, 820.5 reserved slot-hours; the two do not add up.",
+      "On-demand, list-price range: $0.00 to $21.88; reserved, not estimated: your contract price not read.",
+      "Billed history that does not leave with the copy: 250 MB across 1 table (F06, F07)."
     ],
     "DSI": [
-      "9 tables présentes (5 Go) et 11 objets à reconstruire hors tables.",
-      "Mouvement : 2 figée(s), 7 vivante(s), 0 recréée(s), 0 non déterminée(s).",
-      "Rejouabilité : 1/3 familles acceptées par DuckDB ; accepté ≠ résultat identique."
+      "9 present tables (5 GB) and 11 objects to rebuild besides tables.",
+      "Movement: 2 frozen, 7 live, 0 recreated, 0 not determined.",
+      "Replayability: 1/3 families accepted by DuckDB; accepted ≠ identical result."
     ],
     "RSSI": [
-      "2 tables ou politiques à reconstruire côté sécurité (F10) ; la copie demande un principal non filtré.",
-      "3 dépendances externes (F01, F02), 2 écritures hors de la plateforme (F03), 1 partage avec consommateurs externes (F09).",
-      "Rôles propriétaires (F04) : sans objet sur BigQuery, où les droits sont portés par les datasets et les tables."
+      "2 tables or policies to rebuild on the security side (F10); the copy requires an unfiltered principal.",
+      "3 external dependencies (F01, F02), 2 writes outside the platform (F03), 1 share with external consumers (F09).",
+      "Owner roles (F04): not applicable on BigQuery, where privileges are carried by datasets and tables."
     ]
   },
   "schema": "canot.scan/2",
@@ -1626,8 +1626,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-15",
       "nom": "scratch",
       "octets_actifs": 50000000,
       "octets_historique": 0,
@@ -1665,8 +1665,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "figée",
-      "mouvement_preuve": "dernière écriture le 01/03/2025",
+      "mouvement": "frozen",
+      "mouvement_preuve": "last write on 2025-03-01",
       "nom": "archive_2023",
       "octets_actifs": 3000000000,
       "octets_historique": 0,
@@ -1704,8 +1704,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-15",
       "nom": "gcs_events",
       "octets_actifs": null,
       "octets_historique": null,
@@ -1743,8 +1743,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-15",
       "nom": "sheet_targets",
       "octets_actifs": null,
       "octets_historique": null,
@@ -1787,8 +1787,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-15",
       "nom": "customers",
       "octets_actifs": 200000000,
       "octets_historique": 0,
@@ -1836,8 +1836,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-15",
       "nom": "events_20261001",
       "octets_actifs": 120000000,
       "octets_historique": 0,
@@ -1875,8 +1875,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-15",
       "nom": "orders",
       "octets_actifs": 900000000,
       "octets_historique": 250000000,
@@ -1912,8 +1912,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "vivante",
-      "mouvement_preuve": "dernière écriture le 15/10/2026",
+      "mouvement": "live",
+      "mouvement_preuve": "last write on 2026-10-15",
       "nom": "orders_snap",
       "octets_actifs": 10000000,
       "octets_historique": 0,
@@ -1951,8 +1951,8 @@
         "partage": null
       },
       "lignes": 1000,
-      "mouvement": "figée",
-      "mouvement_preuve": "dernière écriture le 01/09/2026",
+      "mouvement": "frozen",
+      "mouvement_preuve": "last write on 2026-09-01",
       "nom": "read_by_api_only",
       "octets_actifs": 700000000,
       "octets_historique": 0,

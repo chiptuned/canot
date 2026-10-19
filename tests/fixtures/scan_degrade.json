@@ -2,10 +2,10 @@
  "schema": "canot.scan/1",
  "plateforme": "snowflake",
  "as_of": "2026-10-17T10:00:00Z",
- "perimetre": "compte ab98765, base PROD",
+ "perimetre": "account ab98765, database PROD",
  "edition": null,
  "niveau_droits": 1,
- "mode_sql": "lecture seule",
+ "mode_sql": "read-only",
  "versions": {
   "canot": "0.1.0",
   "sqlglot": "30.22.0",
@@ -15,7 +15,7 @@
   {
    "id": "S01",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLES",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -24,7 +24,7 @@
   {
    "id": "S02",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.COLUMNS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -33,8 +33,8 @@
   {
    "id": "S03",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_STORAGE_METRICS",
-   "statut": "non_lu",
-   "raison": "droit absent",
+   "statut": "not_read",
+   "raison": "missing privilege",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -42,8 +42,8 @@
   {
    "id": "S04",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.STORAGE_USAGE",
-   "statut": "non_lu",
-   "raison": "droit absent",
+   "statut": "not_read",
+   "raison": "missing privilege",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -51,8 +51,8 @@
   {
    "id": "S05",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.METERING_DAILY_HISTORY",
-   "statut": "non_lu",
-   "raison": "droit absent",
+   "statut": "not_read",
+   "raison": "missing privilege",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -60,8 +60,8 @@
   {
    "id": "S06",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY",
-   "statut": "non_lu",
-   "raison": "droit absent",
+   "statut": "not_read",
+   "raison": "missing privilege",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -69,8 +69,8 @@
   {
    "id": "S07",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_DML_HISTORY",
-   "statut": "non_lu",
-   "raison": "droit absent",
+   "statut": "not_read",
+   "raison": "missing privilege",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -78,8 +78,8 @@
   {
    "id": "S08",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_QUERY_PRUNING_HISTORY",
-   "statut": "non_lu",
-   "raison": "droit absent",
+   "statut": "not_read",
+   "raison": "missing privilege",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -87,7 +87,7 @@
   {
    "id": "S09",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.VIEWS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -96,7 +96,7 @@
   {
    "id": "S10",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.PROCEDURES",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -105,7 +105,7 @@
   {
    "id": "S11",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASKS",
-   "statut": "lu",
+   "statut": "read",
    "raison": null,
    "lignes": 10,
    "fenetre": null,
@@ -114,8 +114,8 @@
   {
    "id": "S12",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASK_HISTORY",
-   "statut": "non_lu",
-   "raison": "délai dépassé",
+   "statut": "not_read",
+   "raison": "timed out",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -123,8 +123,8 @@
   {
    "id": "S13",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY",
-   "statut": "non_lu",
-   "raison": "niveau de droits non demandé",
+   "statut": "not_read",
+   "raison": "privilege level not requested",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -132,8 +132,8 @@
   {
    "id": "S14",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY",
-   "statut": "non_lu",
-   "raison": "niveau de droits non demandé",
+   "statut": "not_read",
+   "raison": "privilege level not requested",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -141,8 +141,8 @@
   {
    "id": "S15",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.POLICY_REFERENCES",
-   "statut": "non_lu",
-   "raison": "niveau de droits non demandé",
+   "statut": "not_read",
+   "raison": "privilege level not requested",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -150,8 +150,8 @@
   {
    "id": "S16",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.TAG_REFERENCES",
-   "statut": "non_lu",
-   "raison": "niveau de droits non demandé",
+   "statut": "not_read",
+   "raison": "privilege level not requested",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -159,8 +159,8 @@
   {
    "id": "S17",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_ROLES",
-   "statut": "non_lu",
-   "raison": "niveau de droits non demandé",
+   "statut": "not_read",
+   "raison": "privilege level not requested",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -168,8 +168,8 @@
   {
    "id": "S18",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_USERS",
-   "statut": "non_lu",
-   "raison": "niveau de droits non demandé",
+   "statut": "not_read",
+   "raison": "privilege level not requested",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null
@@ -177,8 +177,8 @@
   {
    "id": "S19",
    "vue": "SNOWFLAKE.ACCOUNT_USAGE.SHARES",
-   "statut": "non_lu",
-   "raison": "niveau de droits non demandé",
+   "statut": "not_read",
+   "raison": "privilege level not requested",
    "lignes": null,
    "fenetre": null,
    "latence_max_h": null

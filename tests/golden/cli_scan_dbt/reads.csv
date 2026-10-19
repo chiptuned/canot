@@ -1,0 +1,4 @@
+id,view,status,reason,limits,rows,window_from,window_to,max_latency_h
+B01,target/manifest.json,read,,,583,,,
+B02,target/run_results.json,read,,,16,2026-10-17T08:42:58.456644Z,2026-10-17T08:43:24.336260Z,
+B03,target/catalog.json,not_read,absent or not exposed,"columns, types and volumes of relations; replayability not tested by DuckDB EXPLAIN",,,,

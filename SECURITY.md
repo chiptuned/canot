@@ -1,21 +1,21 @@
-# Sécurité
+# Security
 
-## Signaler une vulnérabilité
+## Reporting a vulnerability
 
-Écrivez à **vincent@q4o.com** avec « Canot sécurité » en objet. N'ouvrez pas d'issue publique pour une faille.
-Accusé de réception sous 3 jours ouvrés, correctif ou plan sous 30 jours.
+Email **vincent@q4o.com** with "Canot security" in the subject line. Do not open a public issue for a vulnerability.
+Acknowledgment within 3 business days, fix or plan within 30 days.
 
-## Ce que fait Canot de vos données
+## What Canot does with your data
 
-- Il tourne dans vos comptes : la source est lue en lecture seule, la copie est écrite dans un stockage à vous.
-- Il n'envoie rien à q4o ni à un tiers : pas de télémétrie, pas de serveur.
-- Les identifiants passent par des variables d'environnement ou la configuration locale de la CLI du fournisseur, jamais par la ligne de commande.
-- La clé qui signe le dossier est créée sur la machine qui lance l'exercice (`~/.canot/evidence.key`, droits 600).
+- It runs in your accounts: the source is read in read-only mode, and the copy is written to storage you own.
+- It sends nothing to q4o or to any third party: no telemetry, no server.
+- Credentials are passed through environment variables or the provider CLI's local configuration, never on the command line.
+- The key that signs the evidence log is created on the machine that runs the exercise (`~/.canot/evidence.key`, permissions 600).
 
-## Ce que la signature prouve, et ce qu'elle ne prouve pas
+## What the signature proves, and what it does not
 
-Elle prouve que le journal n'a pas été modifié depuis sa signature (`canot verify-evidence`). Elle ne prouve ni l'identité de l'auteur, ni la date. Pour une preuve datée, archivez le dossier dans un système d'archivage horodaté.
+It proves that the log has not been modified since it was signed (`canot verify-evidence`). It proves neither the author's identity nor the date. For dated evidence, store the evidence log in a timestamped archival system.
 
-## Versions prises en charge
+## Supported versions
 
-La dernière version publiée sur PyPI. Le projet est en alpha.
+The latest version published on PyPI. The project is in alpha.

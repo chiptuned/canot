@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://canot.io/</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://canot.io/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://canot.io/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://canot.io/"/>
+  </url>
+  <url>
+    <loc>https://canot.io/en/</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://canot.io/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://canot.io/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://canot.io/"/>
+  </url>
+  <url>
+    <loc>https://canot.io/pourquoi.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://canot.io/pourquoi.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://canot.io/en/why.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://canot.io/pourquoi.html"/>
+  </url>
+  <url>
+    <loc>https://canot.io/en/why.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://canot.io/pourquoi.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://canot.io/en/why.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://canot.io/pourquoi.html"/>
+  </url>
+  <url>
+    <loc>https://canot.io/methode.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://canot.io/methode.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://canot.io/en/method.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://canot.io/methode.html"/>
+  </url>
+  <url>
+    <loc>https://canot.io/en/method.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://canot.io/methode.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://canot.io/en/method.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://canot.io/methode.html"/>
+  </url>
+  <url>
+    <loc>https://canot.io/offres.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://canot.io/offres.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://canot.io/en/offers.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://canot.io/offres.html"/>
+  </url>
+  <url>
+    <loc>https://canot.io/en/offers.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://canot.io/offres.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://canot.io/en/offers.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://canot.io/offres.html"/>
+  </url>
+  <url>
+    <loc>https://canot.io/faq.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://canot.io/faq.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://canot.io/en/faq.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://canot.io/faq.html"/>
+  </url>
+  <url>
+    <loc>https://canot.io/en/faq.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://canot.io/faq.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://canot.io/en/faq.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://canot.io/faq.html"/>
+  </url>
+  <url>
+    <loc>https://canot.io/rapport.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://canot.io/rapport.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://canot.io/en/report.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://canot.io/rapport.html"/>
+  </url>
+  <url>
+    <loc>https://canot.io/en/report.html</loc>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://canot.io/rapport.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://canot.io/en/report.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://canot.io/rapport.html"/>
+  </url>
+  <url>
+    <loc>https://canot.io/docs.html</loc>
+  </url>
+  <url>
+    <loc>https://canot.io/discrepancies.html</loc>
+  </url>
+</urlset>

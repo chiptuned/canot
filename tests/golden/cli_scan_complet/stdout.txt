@@ -1,17 +1,17 @@
-Canot scan en lecture seule (niveau 3 : + droits et outils (pseudonymisés))
-Source : compte xy12345, base CANOT_LAB
-  DSI : 12 tables présentes (19,4 Go) et 20 objets à reconstruire hors tables.
-  DSI : Mouvement : 3 figée(s), 7 vivante(s), 1 recréée(s), 1 non déterminée(s).
-  DSI : Rejouabilité : 0/5 familles acceptées par DuckDB ; accepté ≠ résultat identique.
-  DAF : Consommation mesurée sur 365 jours : 43,5 crédits.
-  DAF : En dollars, fourchette catalogue du 17/10/2026 : 113,10 à 226,20 $ ; prix de votre contrat non lu.
-  DAF : Historique facturé qui ne part pas avec la copie : 6,3 Go sur 2 tables (F06, F07).
-  RSSI : 5 tables ou politiques à reconstruire côté sécurité (F10) ; la copie demande un principal non filtré.
-  RSSI : 5 dépendances externes (F01, F02), 2 écritures hors de la plateforme (F03), 1 partage avec consommateurs externes (F09).
-  RSSI : 1 rôle propriétaire sans titulaire (F04).
-À examiner : F01 ×3, F02 ×2, F03 ×2, F04 ×1, F05 ×3, F06 ×1, F07 ×1, F08 ×2, F09 ×1, F10 ×5, F11 ×7, F12 ×3
-Lectures : 33 faites, 2 non lues (détail et raisons dans le rapport)
-Rapport à transmettre : <TMP>/out/scan.html
-Données : <TMP>/out/scan.json et les CSV du même dossier
-Pour nous le transmettre : <TMP>/out/scan-partage.json (des comptes seulement : ni nom de table, ni SQL, ni identité) sur https://canot.io/offres.html#demarrer
-Besoin d'aide pour lire ce rapport ou préparer la suite ? https://canot.io/#contact
+Canot read-only scan (level 3: + privileges and tools (pseudonymized))
+Source: account xy12345, database CANOT_LAB
+  DSI: 12 present tables (19.4 GB) and 20 objects to rebuild besides tables.
+  DSI: Movement: 3 frozen, 7 live, 1 recreated, 1 not determined.
+  DSI: Replayability: 0/5 families accepted by DuckDB; accepted ≠ identical result.
+  DAF: Consumption measured over 365 days: 43.5 credits.
+  DAF: In dollars, list-price range as of 17/10/2026: $113.10 to $226.20; your contract price not read.
+  DAF: Billed history that does not leave with the copy: 6.3 GB across 2 tables (F06, F07).
+  RSSI: 5 tables or policies to rebuild on the security side (F10); the copy requires an unfiltered principal.
+  RSSI: 5 external dependencies (F01, F02), 2 writes outside the platform (F03), 1 share with external consumers (F09).
+  RSSI: 1 owner role with no holder (F04).
+To review: F01 ×3, F02 ×2, F03 ×2, F04 ×1, F05 ×3, F06 ×1, F07 ×1, F08 ×2, F09 ×1, F10 ×5, F11 ×7, F12 ×3
+Reads: 33 done, 2 not read (details and reasons in the report)
+Report to share: <TMP>/out/scan.html
+Data: <TMP>/out/scan.json and the CSV files in the same folder
+To send it to us: <TMP>/out/scan-share.json (counts only: no table name, no SQL, no identity) at https://canot.io/offres.html#demarrer
+Need help reading this report or planning the next step? https://canot.io/#contact

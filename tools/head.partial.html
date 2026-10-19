@@ -1,35 +1,64 @@
+<!-- lang: fr -->
 <!doctype html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Canot : reprenez la main sur vos données</title>
-<meta name="description" content="Canot teste la sortie de votre plateforme de données (Snowflake, BigQuery, Databricks) dans vos propres comptes et vous remet un dossier de preuve signé.">
-<link rel="canonical" href="https://canot.io/">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
-<meta property="og:title" content="Canot : votre plan de sortie, exécuté et mesuré">
-<meta property="og:description" content="Un exercice de sortie dans vos propres comptes, et un dossier signé que votre comité et vos achats peuvent lire.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://canot.io/">
-<meta property="og:image" content="https://canot.io/assets/canot-symbole.png">
-<meta name="theme-color" content="#f4f6f7">
-<link rel="stylesheet" href="style.css">
+<title>@@title@@</title>
+<meta name="description" content="@@desc@@">
+<link rel="canonical" href="@@canonical@@">
+@@alternates@@<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+@@og@@<meta name="theme-color" content="#f4f6f7">
+<link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<a class="skip" href="#contact">Aller au contact</a>
+<a class="skip" href="@@skip_href@@">@@skip_label@@</a>
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="/" aria-label="Canot, accueil"><img src="assets/canot-symbole.svg" alt="" width="52" height="27"><span>canot</span></a>
+    <a class="brand" href="/" aria-label="Canot, accueil"><img src="/assets/canot-symbole.svg" alt="" width="52" height="27"><span>canot</span></a>
     <nav class="main" aria-label="Navigation principale">
-      <a class="hide-s" href="pourquoi.html">Pourquoi</a>
-      <a class="hide-s" href="methode.html">Méthode</a>
-      <a class="hide-s" href="ecarts.html">Écarts</a>
-      <a class="hide-s" href="docs.html">Documentation</a>
-      <a class="hide-s" href="offres.html">Offres</a>
-      <a href="rapport.html">Exemple de rapport</a>
+      <a class="hide-s" href="/pourquoi.html">Pourquoi</a>
+      <a class="hide-s" href="/methode.html">Méthode</a>
+      <a class="hide-s" href="/discrepancies.html" hreflang="en">Écarts</a>
+      <a class="hide-s" href="/docs.html" hreflang="en">Documentation</a>
+      <a class="hide-s" href="/offres.html">Offres</a>
+      <a href="/rapport.html">Exemple de rapport</a>
+      @@switch@@
       <a class="btn btn-dark" href="https://github.com/chiptuned/canot">Tester gratuitement</a>
     </nav>
   </div>
 </header>
 
-<main>
+<main id="main">
+<!-- lang: en -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>@@title@@</title>
+<meta name="description" content="@@desc@@">
+<link rel="canonical" href="@@canonical@@">
+@@alternates@@<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+@@og@@<meta name="theme-color" content="#f4f6f7">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="skip" href="@@skip_href@@">@@skip_label@@</a>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/en/" aria-label="Canot, home"><img src="/assets/canot-symbole.svg" alt="" width="52" height="27"><span>canot</span></a>
+    <nav class="main" aria-label="Main navigation">
+      <a class="hide-s" href="/en/why.html">Why</a>
+      <a class="hide-s" href="/en/method.html">Method</a>
+      <a class="hide-s" href="/discrepancies.html">Discrepancies</a>
+      <a class="hide-s" href="/docs.html">Docs</a>
+      <a class="hide-s" href="/en/offers.html">Offers</a>
+      <a href="/en/report.html">Example report</a>
+      @@switch@@
+      <a class="btn btn-dark" href="https://github.com/chiptuned/canot">Try it free</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">

@@ -1,7 +1,7 @@
-"""Banc de test Snowflake : un entrepôt volontairement complexe, dans une base dédiée (CANOT_LAB) d'un compte d'essai.
-Prérequis : le script d'administration (rôle CANOT_LAB + utilisateur CANOT_LAB_USER) a été lancé une fois par un administrateur.
-Chaque création est tentée séparément : ce qui exige une édition supérieure est signalé puis sauté.
-Usage : SNOWFLAKE_PRIVATE_KEY_PATH=... python lab/snowflake_lab.py COMPTE [--drop]"""
+"""Snowflake test bench: a deliberately complex warehouse, in a dedicated database (CANOT_LAB) of a trial account.
+Prerequisite: the administration script (CANOT_LAB role + CANOT_LAB_USER user) has been run once by an administrator.
+Each object is created separately: anything that requires a higher edition is reported, then skipped.
+Usage: SNOWFLAKE_PRIVATE_KEY_PATH=... python lab/snowflake_lab.py ACCOUNT [--drop]"""
 import os
 import sys
 
@@ -29,22 +29,22 @@ def run(sql, desc="", tag=None):
         return True
     except Exception as e:
         skipped.append((desc or sql[:60], str(e).splitlines()[0][:140]))
-        print("SAUTÉ", desc or sql[:60], "->", str(e).splitlines()[0][:110])
+        print("SKIPPED", desc or sql[:60], "->", str(e).splitlines()[0][:110])
         return False
 
 
 if "--drop" in sys.argv:
-    run("drop database if exists CANOT_LAB", "suppression de la base")
+    run("drop database if exists CANOT_LAB", "drop the database")
     sys.exit(0)
 
-run("create database if not exists CANOT_LAB", "base CANOT_LAB")
+run("create database if not exists CANOT_LAB", "database CANOT_LAB")
 for sc in ("RAW", "STAGING", "MART", "DBT", "OPS", "SHARED"):
-    run(f"create schema if not exists CANOT_LAB.{sc} with managed access" if sc == "MART" else f"create schema if not exists CANOT_LAB.{sc}", f"schéma {sc}")
+    run(f"create schema if not exists CANOT_LAB.{sc} with managed access" if sc == "MART" else f"create schema if not exists CANOT_LAB.{sc}", f"schema {sc}")
 run("use database CANOT_LAB")
 
-# --- brut : types variés, volumes modestes
+# --- raw: varied types, modest volumes
 run("""create or replace table RAW.CUSTOMERS (customer_id number(38,0), full_name varchar, email varchar, country varchar(2),
-       signed_up_at timestamp_ntz, segment varchar, profile variant) comment = 'Clients (inventés)' as
+       signed_up_at timestamp_ntz, segment varchar, profile variant) comment = 'Customers (made-up)' as
        select seq4()+1, 'client_'||(seq4()+1), 'client_'||(seq4()+1)||'@exemple.test', decode(uniform(0,5,random(1)),0,'FR',1,'DE',2,'ES',3,'IT',4,'NL','BE'),
               dateadd(day, uniform(0,900,random(2)), '2023-01-01'::timestamp_ntz), decode(uniform(0,2,random(3)),0,'pro',1,'perso','asso'),
               object_construct('plan','p'||uniform(1,3,random(4)),'tags',array_construct('a','b'))
@@ -63,20 +63,20 @@ run("""create or replace table RAW.EVENTS (event_id number, ts timestamp_ltz, ac
        select seq4()+1, dateadd(second, seq4(), '2024-06-01'::timestamp_ltz), object_construct('user_id','u'||uniform(1,5000,random(16)),'device','web'),
               array_construct(object_construct('k','page','v','/p/'||uniform(1,40,random(17)))), parse_json('{"cart":3,"flags":["a","b"],"ab":{"variant":"A"}}'),
               to_geography('POINT('||(2+uniform(0,100,random(18))/100)||' '||(48.5+uniform(0,100,random(19))/100)||')') from table(generator(rowcount => 200000))""", "RAW.EVENTS (OBJECT, ARRAY, VARIANT, GEOGRAPHY)")
-run("create or replace transient table RAW.TMP_IMPORT (id number, note varchar)", "table transitoire")
+run("create or replace transient table RAW.TMP_IMPORT (id number, note varchar)", "transient table")
 run("create or replace table RAW.ORDERS_CLONE clone RAW.ORDERS", "clone")
 
-# --- préparation : vues, vue sécurisée
+# --- staging: views, secure view
 run("create or replace view STAGING.STG_CUSTOMERS as select customer_id, lower(email) email, country, coalesce(segment,'inconnu') segment, signed_up_at from RAW.CUSTOMERS", "vue")
 run("create or replace view STAGING.STG_ORDERS as select order_id, customer_id, order_ts, to_date(order_ts) order_date, total, status from RAW.ORDERS", "vue")
-run("create or replace secure view STAGING.SV_CUSTOMERS_PII as select customer_id, email, full_name from RAW.CUSTOMERS", "vue sécurisée")
+run("create or replace secure view STAGING.SV_CUSTOMERS_PII as select customer_id, email, full_name from RAW.CUSTOMERS", "secure view")
 
-# --- modèle : tables, vue matérialisée (Enterprise), table dynamique
+# --- mart: tables, materialized view (Enterprise), dynamic table
 run("create or replace table MART.FCT_ORDERS cluster by (order_date) as select o.order_id, o.customer_id, o.order_date, o.total, o.status, c.country, c.segment from STAGING.STG_ORDERS o join STAGING.STG_CUSTOMERS c using (customer_id)", "MART.FCT_ORDERS (clustering)")
-run("create or replace materialized view MART.MV_DAILY_REVENUE as select order_date, status, count(*) orders, sum(total) revenue from MART.FCT_ORDERS group by order_date, status", "vue matérialisée")
-run("create or replace dynamic table MART.DT_COUNTRY_REVENUE target_lag = '1 day' warehouse = CANOT_WH as select country, sum(total) revenue, count(*) orders from MART.FCT_ORDERS group by country", "table dynamique")
+run("create or replace materialized view MART.MV_DAILY_REVENUE as select order_date, status, count(*) orders, sum(total) revenue from MART.FCT_ORDERS group by order_date, status", "materialized view")
+run("create or replace dynamic table MART.DT_COUNTRY_REVENUE target_lag = '1 day' warehouse = CANOT_WH as select country, sum(total) revenue, count(*) orders from MART.FCT_ORDERS group by country", "dynamic table")
 
-# --- routines : SQL, JavaScript, Python
+# --- routines: SQL, JavaScript, Python
 run("create or replace function MART.FX_TO_CENTS(x number(12,2)) returns number as 'cast(round(x*100) as number)'", "UDF SQL")
 run("create or replace function MART.CLEAN_NAME(s varchar) returns varchar language javascript as 'return S == null ? null : S.toLowerCase().replace(/[^a-z0-9]+/g, \"_\");'", "UDF JavaScript")
 run("""create or replace function MART.SLUG(s varchar) returns varchar language python runtime_version = '3.11' handler = 'f' as
@@ -85,49 +85,49 @@ def f(s):
     return None if s is None else ''.join(c if c.isalnum() else '-' for c in s.lower())
        $$""", "UDF Python")
 run("""create or replace procedure MART.SP_REFRESH_MART() returns varchar language sql as
-       $$ begin create or replace table MART.DIM_CUSTOMERS as select * from STAGING.STG_CUSTOMERS; return 'ok'; end; $$""", "procédure SQL")
+       $$ begin create or replace table MART.DIM_CUSTOMERS as select * from STAGING.STG_CUSTOMERS; return 'ok'; end; $$""", "SQL procedure")
 run("""create or replace procedure MART.SP_PURGE(days float) returns varchar language javascript as
-       $$ var r = snowflake.execute({sqlText: "select count(*) from RAW.EVENTS where ts < dateadd(day, -" + DAYS + ", current_timestamp())"}); return "ok"; $$""", "procédure JavaScript")
+       $$ var r = snowflake.execute({sqlText: "select count(*) from RAW.EVENTS where ts < dateadd(day, -" + DAYS + ", current_timestamp())"}); return "ok"; $$""", "JavaScript procedure")
 
-# --- flux, tâches, séquence, formats, stages, intégrations
-run("create or replace stream OPS.ORDERS_STREAM on table RAW.ORDERS", "flux (stream)")
-run("create or replace sequence OPS.SEQ_BATCH start = 1000 increment = 1", "séquence")
-run("create or replace file format OPS.FF_CSV type = csv field_delimiter = ';' skip_header = 1", "format de fichier")
-run("create or replace stage OPS.STG_INTERNE file_format = OPS.FF_CSV", "stage interne")
-run("create or replace storage integration LAB_S3_INT type = external_stage storage_provider = 'S3' enabled = true storage_aws_role_arn = 'arn:aws:iam::123456789012:role/canot-lab' storage_allowed_locations = ('s3://canot-lab-inexistant/')", "intégration de stockage (factice)")
-run("create or replace stage OPS.STG_EXTERNE url = 's3://canot-lab-inexistant/in/' storage_integration = LAB_S3_INT file_format = OPS.FF_CSV", "stage externe S3 (factice)")
-run("create or replace task OPS.T_REFRESH warehouse = CANOT_WH schedule = 'USING CRON 0 3 * * * Europe/Paris' as call MART.SP_REFRESH_MART()", "tâche planifiée (suspendue)")
-run("create or replace task OPS.T_ON_STREAM warehouse = CANOT_WH after OPS.T_REFRESH as insert into OPS.EVENTS_LOG select current_timestamp(), 'refresh'", "tâche dépendante")
-run("create or replace table OPS.EVENTS_LOG (ts timestamp_ltz, msg varchar)", "journal d'exécution")
+# --- streams, tasks, sequence, file formats, stages, integrations
+run("create or replace stream OPS.ORDERS_STREAM on table RAW.ORDERS", "stream")
+run("create or replace sequence OPS.SEQ_BATCH start = 1000 increment = 1", "sequence")
+run("create or replace file format OPS.FF_CSV type = csv field_delimiter = ';' skip_header = 1", "file format")
+run("create or replace stage OPS.STG_INTERNE file_format = OPS.FF_CSV", "internal stage")
+run("create or replace storage integration LAB_S3_INT type = external_stage storage_provider = 'S3' enabled = true storage_aws_role_arn = 'arn:aws:iam::123456789012:role/canot-lab' storage_allowed_locations = ('s3://canot-lab-inexistant/')", "storage integration (dummy)")
+run("create or replace stage OPS.STG_EXTERNE url = 's3://canot-lab-inexistant/in/' storage_integration = LAB_S3_INT file_format = OPS.FF_CSV", "external S3 stage (dummy)")
+run("create or replace task OPS.T_REFRESH warehouse = CANOT_WH schedule = 'USING CRON 0 3 * * * Europe/Paris' as call MART.SP_REFRESH_MART()", "scheduled task (suspended)")
+run("create or replace task OPS.T_ON_STREAM warehouse = CANOT_WH after OPS.T_REFRESH as insert into OPS.EVENTS_LOG select current_timestamp(), 'refresh'", "dependent task")
+run("create or replace table OPS.EVENTS_LOG (ts timestamp_ltz, msg varchar)", "execution log")
 
-# --- gouvernance : politiques, étiquettes, rôles
-run("create or replace masking policy OPS.MASK_EMAIL as (v varchar) returns varchar -> case when current_role() in ('CANOT_LAB') then v else '***' end", "politique de masquage")
-run("alter table RAW.CUSTOMERS modify column email set masking policy OPS.MASK_EMAIL", "masquage appliqué")
-run("create or replace row access policy OPS.RAP_COUNTRY as (c varchar) returns boolean -> case when current_role() in ('CANOT_LAB', 'ACCOUNTADMIN') then true else c = 'FR' end", "politique d'accès aux lignes (filtre partiel pour les autres rôles)")
-run("alter table RAW.CUSTOMERS add row access policy OPS.RAP_COUNTRY on (country)", "politique d'accès appliquée")  # pas sur MART.FCT_ORDERS : la vue matérialisée l'interdit
-run("create or replace tag OPS.PII allowed_values 'oui', 'non'", "étiquette")
-run("alter table RAW.CUSTOMERS set tag OPS.PII = 'oui'", "étiquette posée")
+# --- governance: policies, tags, roles
+run("create or replace masking policy OPS.MASK_EMAIL as (v varchar) returns varchar -> case when current_role() in ('CANOT_LAB') then v else '***' end", "masking policy")
+run("alter table RAW.CUSTOMERS modify column email set masking policy OPS.MASK_EMAIL", "masking applied")
+run("create or replace row access policy OPS.RAP_COUNTRY as (c varchar) returns boolean -> case when current_role() in ('CANOT_LAB', 'ACCOUNTADMIN') then true else c = 'FR' end", "row access policy (partial filter for other roles)")
+run("alter table RAW.CUSTOMERS add row access policy OPS.RAP_COUNTRY on (country)", "row access policy applied")  # not on MART.FCT_ORDERS: the materialized view prevents it
+run("create or replace tag OPS.PII allowed_values 'oui', 'non'", "tag")
+run("alter table RAW.CUSTOMERS set tag OPS.PII = 'oui'", "tag set")
 for r in ("LAB_ANALYST", "LAB_ENGINEER", "LAB_FINANCE"):
-    run(f"create role if not exists {r}", f"rôle {r}")
+    run(f"create role if not exists {r}", f"role {r}")
 run("grant usage on database CANOT_LAB to role LAB_ANALYST")
 run("grant usage on schema CANOT_LAB.MART to role LAB_ANALYST")
-run("grant select on all tables in schema CANOT_LAB.MART to role LAB_ANALYST", "droits sur le modèle")
+run("grant select on all tables in schema CANOT_LAB.MART to role LAB_ANALYST", "grants on the mart")
 run("grant usage on database CANOT_LAB to role LAB_FINANCE")
 run("grant select on all tables in schema CANOT_LAB.MART to role LAB_FINANCE")
 
-# --- partage sortant (data sharing)
-run("create or replace share LAB_SHARE", "partage sortant")
+# --- outbound share (data sharing)
+run("create or replace share LAB_SHARE", "outbound share")
 run("grant usage on database CANOT_LAB to share LAB_SHARE")
 run("grant usage on schema CANOT_LAB.SHARED to share LAB_SHARE")
 
-# --- le lecteur Canot lit la base du banc de test
+# --- the Canot reader can read the test bench database
 for sql in ("grant usage on database CANOT_LAB to role CANOT_READER",
             "grant usage on all schemas in database CANOT_LAB to role CANOT_READER",
             "grant select on all tables in database CANOT_LAB to role CANOT_READER",
             "grant select on all views in database CANOT_LAB to role CANOT_READER"):
-    run(sql, "droit du lecteur Canot : " + sql.split(" to ")[0][6:60])
+    run(sql, "Canot reader grant: " + sql.split(" to ")[0][6:60])
 
-# --- charge de travail réaliste : applications, étiquettes de requête, utilisateurs
+# --- realistic workload: applications, query tags, users
 work = [
     ("looker", "select country, sum(total) ca from MART.FCT_ORDERS where order_date >= '2024-06-01' group by country order by ca desc"),
     ("looker", "select order_date, revenue from MART.MV_DAILY_REVENUE where status = 'paid' order by order_date"),
@@ -141,8 +141,8 @@ work = [
 ]
 for _ in range(2):
     for app, q in work:
-        run(q, f"charge {app}", tag=f'{{"app":"{app}"}}')
-print(f"\n{done} créations/exécutions réussies, {len(skipped)} sautées")
+        run(q, f"workload {app}", tag=f'{{"app":"{app}"}}')
+print(f"\n{done} successful creations/executions, {len(skipped)} skipped")
 for d, e in skipped:
     print("  -", d, "|", e)
 con.close()

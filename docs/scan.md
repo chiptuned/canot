@@ -1,92 +1,92 @@
-# `canot scan` : ce qui est lu, avec quels droits
+# `canot scan`: what is read, with which permissions
 
-Le scan produit `scan.html` (à transmettre), `scan.json` et des CSV. Il décrit votre plateforme ; il ne recommande ni de partir ni de rester.
+The scan produces `scan.html` (to share), `scan.json` and CSV files (`flags.csv`, `families.csv`, `reads.csv`, `tables.csv`). It describes your platform; it recommends neither leaving nor staying.
 
-## Garanties
+## Guarantees
 
-- **Lecture seule.** (Projet dbt : aucune requête, des fichiers lus, voir [dbt](#dbt).) Chaque requête passe par une garde avant d'être envoyée : seuls `SELECT`, `SHOW`, `DESCRIBE` et `ALTER SESSION SET` sont admis. Tout le reste est refusé sans rien envoyer. Les fonctions `SYSTEM$` sont refusées aussi.
-- **Jamais le contenu des tables.** Le scan lit des métadonnées et l'historique d'exécution. Il ne demande aucun droit de lecture sur les données.
-- **Le SQL brut n'est pas écrit.** Les littéraux sont masqués (`WHERE email = ?`), les requêtes qui contiennent un mot de passe ou un secret sont comptées puis jetées. Le texte brut n'est écrit qu'avec `--include-sql-text`, dans `scan-sql-brut.json` (droits 0600), et le rapport le signale.
-- **Identités pseudonymisées.** Les utilisateurs et rôles de requêtes sont remplacés par un pseudonyme (HMAC, sel tiré à chaque scan et jamais écrit). Les e-mails, identifiants de connexion et adresses IP ne sont jamais lus. Les chemins de stockage sont réduits au nom du compartiment.
-- **Aucune lecture silencieusement perdue.** Chaque lecture est consignée « lu » ou « non lu » avec sa raison. Une valeur non lue reste vide, jamais 0.
+- **Read-only.** (dbt project: no queries, only files are read, see [dbt](#dbt).) Every query goes through a guard before it is sent: only `SELECT`, `SHOW`, `DESCRIBE` and `ALTER SESSION SET` are allowed. Everything else is rejected without sending anything. `SYSTEM$` functions are rejected too.
+- **Never the content of your tables.** The scan reads metadata and execution history. It requests no read permission on the data.
+- **Raw SQL is not written.** Literals are masked (`WHERE email = ?`), and queries that contain a password or a secret are counted, then discarded. Raw text is written only with `--include-sql-text`, to `scan-sql-raw.json` (permissions 0600), and the report says so.
+- **Pseudonymized identities.** Query users and roles are replaced with a pseudonym (HMAC, with a salt drawn for each scan and never written). Email addresses, login names and IP addresses are never read. Storage paths are reduced to the bucket name.
+- **No read silently lost.** Every read is recorded as "read" or "not read" with its reason. A value that was not read stays empty, never 0.
 
-## Niveaux (`--level`, 3 par défaut)
+## Levels (`--level`, 3 by default)
 
-| Niveau | Contenu | Droits en plus |
+| Level | Content | Additional permissions |
 |---|---|---|
-| 1 | Inventaire, types de colonnes, volumes, historique facturé, consommation, objets (vues, routines, tâches, stages, partages…), dépendances | métadonnées et consommation |
-| 2 | + formes de requêtes normalisées et leur rejouabilité, lectures et écritures par table, politiques | accès à l'historique des requêtes |
-| 3 | + rôles propriétaires, outils clients, types d'utilisateurs, capacités réservées | droits et sessions |
+| 1 | Inventory, column types, volumes, billed history, consumption, objects (views, routines, tasks, stages, shares…), dependencies | metadata and consumption |
+| 2 | + normalized query shapes and their replayability, reads and writes per table, policies | access to query history |
+| 3 | + owner roles, client tools, user types, reserved capacity | grants and sessions |
 
-Ce que vos droits ne permettent pas est consigné « non lu » dans le rapport (constat F12) : le scan lit ce qui lui est ouvert et dit ce qu'il n'a pas vu.
+What your permissions do not allow is recorded as "not read" in the report (finding F12): the scan reads what it has access to and states what it did not see.
 
 ## Snowflake
 
-`canot snowflake-setup --generate-key --base MA_BASE` écrit le script à relire et à lancer par un administrateur. Il crée un rôle, un entrepôt XS qui se suspend après 60 s, un plafond de crédits, et accorde les rôles de base de Snowflake :
+`canot snowflake-setup --generate-key --base MY_DATABASE` writes the script for an administrator to review and run. It creates a role, an XS warehouse that suspends after 60 s and a credit cap, and grants Snowflake's database roles:
 
-| Rôle de base | Niveau | Sert à |
+| Database role | Level | Used for |
 |---|---|---|
-| `SNOWFLAKE.OBJECT_VIEWER` | 1 | tables, colonnes, vues, routines, tâches, stages, dépendances |
-| `SNOWFLAKE.USAGE_VIEWER` | 1 | volumes, crédits, historique, chargements |
-| `SNOWFLAKE.GOVERNANCE_VIEWER` | 2 | historique des requêtes, lectures par table, politiques, étiquettes |
-| `SNOWFLAKE.SECURITY_VIEWER` | 3 | rôles, utilisateurs (nom et type seulement), sessions |
+| `SNOWFLAKE.OBJECT_VIEWER` | 1 | tables, columns, views, routines, tasks, stages, dependencies |
+| `SNOWFLAKE.USAGE_VIEWER` | 1 | volumes, credits, history, loads |
+| `SNOWFLAKE.GOVERNANCE_VIEWER` | 2 | query history, reads per table, policies, tags |
+| `SNOWFLAKE.SECURITY_VIEWER` | 3 | roles, users (name and type only), sessions |
 
-Jamais demandés : `IMPORTED PRIVILEGES`, `MANAGE GRANTS`, `IMPORT SHARE`, `USAGE` sur les fonctions, `READ` sur les stages.
+Never requested: `IMPORTED PRIVILEGES`, `MANAGE GRANTS`, `IMPORT SHARE`, `USAGE` on functions, `READ` on stages.
 
-Limites connues : `ACCOUNT_USAGE` a une latence de 45 minutes à 3 heures (jusqu'à 2 jours pour l'historique de chargement). Le rapport affiche la latence de chaque lecture. `ACCESS_HISTORY` exige l'édition Enterprise ; sans elle, les lectures par table se déduisent de `TABLE_QUERY_PRUNING_HISTORY` avec une confiance moyenne.
+Known limits: `ACCOUNT_USAGE` has a latency of 45 minutes to 3 hours (up to 2 days for load history). The report shows the latency of each read. `ACCESS_HISTORY` requires Enterprise edition; without it, reads per table are inferred from `TABLE_QUERY_PRUNING_HISTORY` with medium confidence.
 
 ## BigQuery
 
-`canot bigquery-setup --project MON_PROJET --member user:…` écrit le script `gcloud` d'un rôle personnalisé `canotScanner`. Permissions obligatoires : `bigquery.jobs.create`, `bigquery.jobs.listAll`, `bigquery.datasets.get`, `bigquery.tables.list`, `bigquery.tables.get`, `bigquery.tables.getIamPolicy`, `bigquery.routines.list`, `bigquery.routines.get`, `bigquery.models.list`, `bigquery.models.getMetadata`, `bigquery.reservations.list`, `bigquery.reservationAssignments.list`, `bigquery.capacityCommitments.list`, `bigquery.bireservations.get`, `bigquery.config.get`. Optionnelles : `bigquery.rowAccessPolicies.list`, `bigquery.transfers.get`, `bigquery.connections.list`, `bigquery.dataPolicies.list`.
+`canot bigquery-setup --project MY_PROJECT --member user:…` writes the `gcloud` script for a `canotScanner` custom role. Required permissions: `bigquery.jobs.create`, `bigquery.jobs.listAll`, `bigquery.datasets.get`, `bigquery.tables.list`, `bigquery.tables.get`, `bigquery.tables.getIamPolicy`, `bigquery.routines.list`, `bigquery.routines.get`, `bigquery.models.list`, `bigquery.models.getMetadata`, `bigquery.reservations.list`, `bigquery.reservationAssignments.list`, `bigquery.capacityCommitments.list`, `bigquery.bireservations.get`, `bigquery.config.get`. Optional: `bigquery.rowAccessPolicies.list`, `bigquery.transfers.get`, `bigquery.connections.list`, `bigquery.dataPolicies.list`.
 
-Jamais : `bigquery.tables.getData`, ni les rôles `bigquery.user` ou `jobUser`.
+Never: `bigquery.tables.getData`, nor the `bigquery.user` or `jobUser` roles.
 
-Points de méthode :
-- Une requête `INFORMATION_SCHEMA` par région (les régions ne sont pas hiérarchiques : `EU` ne couvre pas `europe-west1`). BigQuery facture au moins 10 Mo par requête de ce type, sans cache : le scan plafonne chaque requête et fait un essai à blanc avant.
-- Les volumes viennent de `TABLE_STORAGE` quand elle est lisible, sinon de l'API `tables.get`. Canot ne modifie jamais le paramétrage du projet pour l'activer.
-- Sous une politique de lignes, `total_bytes_billed` est vide : le rapport le dit au lieu d'afficher 0.
-- Le palier gratuit est partagé par le compte de facturation : il n'est pas imputable par projet.
+Method notes:
+- One `INFORMATION_SCHEMA` query per region (regions are not hierarchical: `EU` does not cover `europe-west1`). BigQuery bills at least 10 MB per query of this type, without caching: the scan caps each query and runs a dry run first.
+- Volumes come from `TABLE_STORAGE` when it is readable, otherwise from the `tables.get` API. Canot never changes the project settings to enable it.
+- Under a row access policy, `total_bytes_billed` is empty: the report says so instead of showing 0.
+- The free tier is shared across the billing account: it cannot be attributed per project.
 
 ## dbt
 
-`canot scan dbt://CHEMIN_DU_PROJET` lit les artefacts du projet, sans réseau ni commande dbt : `target/manifest.json` (obligatoire), `target/run_results.json` et `target/catalog.json` s'ils existent. `CHEMIN` peut être le projet, son dossier `target/` ou le fichier `manifest.json` ; un dossier de projet passé sans `dbt://` est reconnu aussi. Sans manifest, `dbt parse` le produit en lisant les fichiers du projet, sans se connecter à l'entrepôt. Un seul niveau (1) : `--level` est ramené à 1.
+`canot scan dbt://PROJECT_PATH` reads the project's artifacts, with no network and no dbt command: `target/manifest.json` (required), plus `target/run_results.json` and `target/catalog.json` if they exist. `PATH` can be the project, its `target/` folder or the `manifest.json` file; a project folder passed without `dbt://` is recognized too. Without a manifest, `dbt parse` produces one by reading the project files, without connecting to the warehouse. A single level (1): `--level` is brought down to 1.
 
-| Lu | Ce qu'on garde |
+| Read | What is kept |
 |---|---|
-| `manifest.json` | modèles (matérialisation, relation cible, dépendances), tests, sources, seeds, snapshots, expositions, métriques, macros du projet, paquets (nombre de macros), adaptateur et version de dbt, graphe des dépendances (`liens` : chaque `ref()` et `source()`) |
-| SQL compilé des modèles, tests, snapshots | empreinte sha256 de la forme normalisée (littéraux masqués), nombre de lignes, fonctions et constructions propres au dialecte de l'adaptateur (sqlglot), fonctions absentes de DuckDB, catégorie de traduction vers DuckDB (C0 à C7, mêmes règles que les requêtes) ; jamais le texte |
-| `run_results.json` | état de la dernière invocation par nœud, échecs, lignes en échec des tests, date de dernière écriture des tables |
-| `catalog.json` | colonnes et types (squelette pour l'EXPLAIN DuckDB), lignes et octets si l'adaptateur les donne, propriétaire pseudonymisé |
+| `manifest.json` | models (materialization, target relation, dependencies), tests, sources, seeds, snapshots, exposures, metrics, project macros, packages (number of macros), adapter and dbt version, dependency graph (`liens`: every `ref()` and `source()`) |
+| Compiled SQL of models, tests, snapshots | sha256 fingerprint of the normalized shape (literals masked), line count, functions and constructs specific to the adapter's dialect (sqlglot), functions missing from DuckDB, DuckDB translation category (C0 to C7, same rules as for queries); never the text |
+| `run_results.json` | status of the last invocation per node, failures, failing rows of tests, last write date of tables |
+| `catalog.json` | columns and types (skeleton for the DuckDB EXPLAIN), rows and bytes if the adapter provides them, pseudonymized owner |
 
-Portabilité d'un traitement : `traduisible` quand sqlglot traduit le SQL vers DuckDB (accepté par EXPLAIN si `catalog.json` est lu, « non testé » sinon) ; `a_reconstruire` seulement sur un fait lu : fonction absente de DuckDB, traduction impossible, matérialisation propre à l'adaptateur (par exemple `dynamic_table`) ; `non_determine` pour un modèle Python, un SQL non compilé encore plein de Jinja, ou un SQL qui contient un secret (compté puis écarté).
+Portability of a transformation: `traduisible` (translatable) when sqlglot translates the SQL to DuckDB (accepted by EXPLAIN if `catalog.json` is read, "not tested" otherwise); `a_reconstruire` (to rebuild) only on a fact that was read: a function missing from DuckDB, an impossible translation, an adapter-specific materialization (for example `dynamic_table`); `non_determine` (undetermined) for a Python model, uncompiled SQL still full of Jinja, or SQL that contains a secret (counted, then discarded).
 
-Constats : F13 pour un traitement à reconstruire (avec la raison), F08 pour un modèle dont le SQL dépend de Jinja et de macros (blocs `{% %}`, appels autres que `ref`, `source`, `config` ; les tests génériques de dbt ne comptent pas), F11 pour le DAG du projet (dernière invocation, échecs ; planification non lue : elle vit dans l'orchestrateur), F01 pour une source externe (emplacement réduit au compartiment), F12 pour un artefact absent. Consommation, volumes facturés et droits ne sont pas dans ces fichiers : le rapport les dit « non lus ».
+Findings: F13 for a transformation to rebuild (with the reason), F08 for a model whose SQL depends on Jinja and macros (`{% %}` blocks, calls other than `ref`, `source`, `config`; dbt's generic tests do not count), F11 for the project DAG (last invocation, failures; scheduling not read: it lives in the orchestrator), F01 for an external source (location reduced to the bucket), F12 for a missing artifact. Consumption, billed volumes and permissions are not in these files: the report marks them "not read".
 
-Validé le 19/10/2026 sur le projet du banc `lab/dbt` (artefacts d'un `dbt build` réel, dbt 1.12.6, adaptateur Snowflake) : 8 modèles (4 vues staging, 4 tables marts), 8 tests, 4 sources, 19 liens ; constats F11 et F12 (pas de `catalog.json`). Copie de ces artefacts et sorties figées : `tests/fixtures/dbt/banc`, `tests/golden/cli_scan_dbt`.
+Validated on 2026-10-19 on the test bench project `lab/dbt` (artifacts from a real `dbt build`, dbt 1.12.6, Snowflake adapter): 8 models (4 staging views, 4 mart tables), 8 tests, 4 sources, 19 links; findings F11 and F12 (no `catalog.json`). Copy of these artifacts and frozen outputs: `tests/fixtures/dbt/banc`, `tests/golden/cli_scan_dbt`.
 
-### Preuve P3 : `canot rejeu-dbt`
+### P3 evidence: `canot replay-dbt`
 
-`canot rejeu-dbt dbt://PROJET --base copie.duckdb` (ou `--iceberg DESTINATION --drill-out DOSSIER` pour la copie Iceberg écrite par `canot drill`) rejoue chaque modèle SQL dans un DuckDB local, dans l'ordre du graphe, à partir des tables sources de la copie, puis compare sa sortie à la table que la plateforme avait matérialisée, avec les critères de `canot drill` : nombre de lignes, statistiques par colonne, empreinte de contenu. Les types de la sortie rejouée sont alignés sur ceux de la table d'origine avant la comparaison ; chaque conversion est consignée. Le résultat (`rejeu-dbt.json`) et le dossier signé (`evidence.jsonl`, à vérifier par `canot verify-evidence`) classent chaque modèle :
+`canot replay-dbt dbt://PROJECT --base copy.duckdb` (or `--iceberg DESTINATION --drill-out FOLDER` for the Iceberg copy written by `canot drill`) replays each SQL model in a local DuckDB, in graph order, from the source tables of the copy, then compares its output to the table the platform had materialized, using the same criteria as `canot drill`: row count, per-column statistics, content fingerprint. The types of the replayed output are aligned with those of the original table before the comparison; each conversion is recorded. The result (`replay-dbt.json`) and the signed evidence log (`evidence.jsonl`, to check with `canot verify-evidence`) classify each model:
 
-| Statut | Sens |
+| Status | Meaning |
 |---|---|
-| `identique` | rejoué, comparé, aucun écart dans les tolérances |
-| `different` | rejoué, comparé, écart (lignes, statistiques ou empreinte) |
-| `non_compare` | rejoué, mais aucune table d'origine dans la copie (une vue) ; sa sortie alimente les modèles suivants |
-| `non_rejouable` | avec la raison : langage Python, incrémental (dépend de l'état antérieur), éphémère (rejoué à travers ses utilisateurs), fonction propre ou matérialisation propre à l'adaptateur, traduction refusée, table absente de la copie, dépendance non rejouée |
+| `identique` (identical) | replayed, compared, no discrepancy within tolerances |
+| `different` | replayed, compared, discrepancy (rows, statistics or fingerprint) |
+| `non_compare` (not compared) | replayed, but no original table in the copy (a view); its output feeds the downstream models |
+| `non_rejouable` (not replayable) | with the reason: Python language, incremental (depends on prior state), ephemeral (replayed through the models that use it), adapter-specific function or materialization, translation rejected, table missing from the copy, dependency not replayed |
 
-Il faut le SQL compilé dans le manifest (`dbt compile` ou `dbt build` l'y met). Testé le 19/10/2026 sur les artefacts du banc et une copie DuckDB construite par les tests (tables d'origine écrites à la main, sans réseau) : 4 tables marts identiques, 4 vues rejouées non comparées, écart injecté détecté, y compris en lisant le lac écrit par `canot drill`.
+The compiled SQL must be in the manifest (`dbt compile` or `dbt build` puts it there). Tested on 2026-10-19 on the test bench artifacts and a DuckDB copy built by the tests (original tables written by hand, no network): 4 identical mart tables, 4 views replayed but not compared, an injected discrepancy detected, including when reading the Iceberg copy written by `canot drill`.
 
-Premier rejeu sur une copie réelle (19/10/2026) : `canot drill` du compte Snowflake du banc (schémas RAW et marts) vers une copie Iceberg local, puis `canot rejeu-dbt --lac`, sans nouvelle requête vers la plateforme. Résultat : `int_order_totals` identique, 4 vues rejouées non comparées, 3 marts différents (`dbt_fct_orders` : 150 000 lignes à l'origine, 25 325 rejouées ; `dbt_customer_ltv` ; `dbt_daily_revenue`). Ces écarts sont justes : la table des clients est protégée par une politique de lignes et le rôle de lecture du drill n'en voit qu'une partie. La copie des entrées est incomplète et le rejeu le montre : c'est exactement ce que P3 doit détecter (le constat F10 du scan Snowflake rappelle qu'une copie demande un principal non filtré par ces politiques).
+First replay on a real copy (2026-10-19): `canot drill` of the test bench Snowflake account (RAW and marts schemas) to a local Iceberg copy, then `canot replay-dbt --iceberg`, with no new query to the platform. Result: `int_order_totals` identical, 4 views replayed but not compared, 3 marts different (`dbt_fct_orders`: 150,000 rows originally, 25,325 replayed; `dbt_customer_ltv`; `dbt_daily_revenue`). These discrepancies are correct: the customers table is protected by a row access policy and the drill's read role only sees part of it. The copy of the inputs is incomplete and the replay shows it: this is exactly what P3 must detect (finding F10 of the Snowflake scan points out that a copy requires a principal not filtered by these policies).
 
-Le même essai a montré un faux écart, corrigé depuis : `int_order_totals` était classé différent alors que lignes et statistiques étaient égales. Cause, colonne par colonne : `ORDER_ID` et `ITEMS` égaux (la conversion consignée `ITEMS : HUGEINT -> INTEGER` ne change aucune valeur) ; `BASKET_VALUE` est une somme de flottants (`UNIT_PRICE` en FLOAT) que Snowflake et DuckDB additionnent dans un ordre différent. 36 971 valeurs diffèrent au dernier bit (`121.79` contre `121.79000000000002`, écart relatif au plus 4e-16), et l'empreinte de contenu hache le texte exact. Désormais, quand lignes et statistiques sont égales et que seule l'empreinte diffère, le rejeu recalcule l'empreinte des deux côtés avec les colonnes flottantes arrondies à 12 chiffres significatifs (plus fin que la tolérance relative de 1e-9). Si elle est alors égale, le modèle est « identique dans la tolérance » et le rapport consigne les colonnes arrondies, le nombre de valeurs différentes au bit et l'écart relatif maximal mesuré (`verification.empreinte_flottants`). Un écart plus grand reste « différent ».
+The same run revealed a false discrepancy, since fixed: `int_order_totals` was classified as different although rows and statistics were equal. Cause, column by column: `ORDER_ID` and `ITEMS` equal (the recorded conversion `ITEMS : HUGEINT -> INTEGER` changes no value); `BASKET_VALUE` is a sum of floats (`UNIT_PRICE` as FLOAT) that Snowflake and DuckDB add up in a different order. 36,971 values differ in the last bit (`121.79` versus `121.79000000000002`, relative difference at most 4e-16), and the content fingerprint hashes the exact text. Now, when rows and statistics are equal and only the fingerprint differs, the replay recomputes the fingerprint on both sides with float columns rounded to 12 significant digits (finer than the relative tolerance of 1e-9). If it is then equal, the model is "identical within tolerance" and the report records the rounded columns, the number of values that differ in the last bit and the maximum measured relative difference (`verification.empreinte_flottants`). A larger discrepancy stays "different".
 
-## Lire les chiffres
+## Reading the figures
 
-Chaque chiffre porte sa nature : **mesuré** (lu tel quel), **calculé** (déduit de mesures, formule donnée), **estimé** (fourchette et hypothèses), **non lu** ou **non estimé** (avec la raison). Les prix sont des repères datés et sourcés ; passez `--credit-price` avec le prix de votre contrat pour les remplacer. Le coût de lecture et la durée d'une copie sont des estimations de planification : `canot drill` les remplace par des mesures.
+Every figure carries its nature: **measured** (read as is), **computed** (derived from measurements, formula given), **estimated** (range and assumptions), **not read** or **not estimated** (with the reason). Prices are dated, sourced reference points; pass `--credit-price` with your contract price to replace them. The read cost and the duration of a copy are planning estimates: `canot drill` replaces them with measurements.
 
-La rejouabilité mesure combien de formes de requêtes sont traduites vers DuckDB **et acceptées** par lui, sur un squelette vide typé à partir de vos colonnes. **Accepté ne veut pas dire résultat identique** : seul `canot drill` compare les résultats. Les requêtes sur des tables hors du périmètre lu, les requêtes dont la plateforme ne donne pas le texte et les requêtes de métadonnées sont comptées à part, hors taux.
+Replayability measures how many query shapes are translated to DuckDB **and accepted** by it, on an empty skeleton typed from your columns. **Accepted does not mean identical result**: only `canot drill` compares results. Queries on tables outside the scope that was read, queries whose text the platform does not provide and metadata queries are counted separately, outside the rate.
 
-## Ce que le scan ne voit pas
+## What the scan does not see
 
-Les lectures par l'API Storage Read et les requêtes lancées depuis d'autres projets (BigQuery), les consommateurs de partages et `RESULT_SCAN` (Snowflake), les traitements plus rares que la fenêtre lue (365 jours sur Snowflake, 90 à 180 jours sur BigQuery). La fenêtre réelle est affichée à côté de chaque constat.
+Reads through the Storage Read API and queries run from other projects (BigQuery), consumers of shares and `RESULT_SCAN` (Snowflake), jobs that run less often than the window that was read (365 days on Snowflake, 90 to 180 days on BigQuery). The actual window is shown next to each finding.

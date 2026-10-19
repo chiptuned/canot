@@ -1,0 +1,32 @@
+code,title,label,target_type,target,observed,confidence,based_on
+F01,External dependency,To review,objet,CANOT_LAB.EXT.S3_PUBLIC,External stage (s3://canot-lab-public).,,S19
+F01,External dependency,To review,objet,SNOWFLAKE_SAMPLE_DATA,Database imported from an inbound share.,,S20
+F01,External dependency,To review,table,CANOT_LAB.EXT.US_STATES,External table: data outside the platform (s3://canot-lab-public).,,S01
+F02,Hidden external dependency,To review,objet,CANOT_LAB.MART.V_KPI,"Depends on CANOT_LAB.EXT.US_STATES, outside the platform, through 2 levels: CANOT_LAB.MART.V_KPI → CANOT_LAB.STG.V_STATES → CANOT_LAB.EXT.US_STATES (s3://canot-lab-public).",,S10 ; S11
+F02,Hidden external dependency,To review,objet,CANOT_LAB.STG.V_STATES,"Depends on CANOT_LAB.EXT.US_STATES, outside the platform, through 1 level: CANOT_LAB.STG.V_STATES → CANOT_LAB.EXT.US_STATES (s3://canot-lab-public).",,S10 ; S11
+F03,Write outside the platform,To review,famille,5cf082fb4538,Write outside the platform observed: 3 executions; destination: s3://canot-lab-public.,,S24
+F03,Write outside the platform,To review,objet,CANOT_LAB.OPS.T_EXPORT_NIGHTLY,Task that writes outside the platform (declared in its definition); destination: s3://canot-lab-export.,,S14 ; S15 ; S16
+F04,Owner role with no holder,To review,role,LAB_ORPHAN,"Role LAB_ORPHAN owns 1 object and is granted to no user, neither directly nor through another role.",,S28 ; S29
+F05,Storage with no observed read,To review,table,CANOT_LAB.RAW.ARCHIVE_1,"5 GB stored. No read observed in ACCESS_HISTORY from 2025-10-18 to 2026-10-17; blind spots: share consumers, RESULT_SCAN. Shared with 2 external consumers: their reads are not seen.",high,S03 ; S25
+F05,Storage with no observed read,To review,table,CANOT_LAB.RAW.ARCHIVE_2,"5 GB stored. No read observed in ACCESS_HISTORY from 2025-10-18 to 2026-10-17; blind spots: share consumers, RESULT_SCAN.",high,S03 ; S25
+F05,Storage with no observed read,To review,table,CANOT_LAB.RAW.ARCHIVE_3,"5 GB stored. No read observed in ACCESS_HISTORY from 2025-10-18 to 2026-10-17; blind spots: share consumers, RESULT_SCAN.",high,S03 ; S25
+F06,Billed history that does not transfer,To review,table,CANOT_LAB.RAW.ORDERS,"6 GB of billed history (Time Travel and Fail-safe), retention 30 days, for 2 GB active; this history does not leave with the copy.",,S03
+F07,Dropped table still billed,To review,table,CANOT_LAB.RAW.TMP_DROPPED,Dropped on 2026-10-10; 300 MB still billed (Time Travel and Fail-safe).,,S01 ; S03
+F08,Dynamic SQL,To review,objet,CANOT_LAB.MART.SP_DYNAMIC_JS,Procedure (JAVASCRIPT): builds SQL at run time; the objects it touches cannot be read from the code.,,S13
+F08,Dynamic SQL,To review,objet,CANOT_LAB.MART.SP_DYNAMIC_PY,Procedure (PYTHON): builds SQL at run time; the objects it touches cannot be read from the code.,,S13
+F09,External consumers,To review,objet,S_CLIENTS,Share to 2 target accounts; 2 shared objects. Consumer reads are not seen by this scan.,,S32
+F10,Security to rebuild,To review,objet,CANOT_LAB.OPS.MP_EMAIL,Masking policy applied to 1 object; it does not leave with the copy; the copy requires an unfiltered principal.,,S26
+F10,Security to rebuild,To review,objet,CANOT_LAB.OPS.PII,Tag applied to 1 object; it does not leave with the copy.,,S27
+F10,Security to rebuild,To review,objet,CANOT_LAB.OPS.RAP_COUNTRY,Row access policy applied to 1 object; it does not leave with the copy; the copy requires an unfiltered principal.,,S26
+F10,Security to rebuild,To review,table,CANOT_LAB.MART.FCT_ORDERS,Policies: OPS.RAP_COUNTRY. They do not leave with the copy; the copy requires a principal not filtered by these policies.,,S26 ; S27
+F10,Security to rebuild,To review,table,CANOT_LAB.RAW.CUSTOMERS,Policies: OPS.MP_EMAIL; 1 tag. They do not leave with the copy; the copy requires a principal not filtered by these policies.,,S26 ; S27
+F11,Scheduled chain and its failures,To review,objet,CANOT_LAB.MART.DT_COUNTRY_REVENUE,"Dynamic table, schedule 1 day; runs not read.",,S22
+F11,Scheduled chain and its failures,To review,objet,CANOT_LAB.OPS.ORDERS_STREAM,Stream; on CANOT_LAB.RAW.ORDERS.,,
+F11,Scheduled chain and its failures,To review,objet,CANOT_LAB.OPS.P_EVENTS,"Pipe, state RUNNING; runs not read.",,S17 ; S18
+F11,Scheduled chain and its failures,To review,objet,CANOT_LAB.OPS.T_DAILY,"Task, schedule USING CRON 0 3 * * * Europe/Paris, state started; 365 runs, 2 failures, last on 2026-10-17.",,S14 ; S15 ; S16
+F11,Scheduled chain and its failures,To review,objet,CANOT_LAB.OPS.T_EXPORT_NIGHTLY,"Task, schedule USING CRON 0 2 * * * UTC, state started; 30 runs, 30 failures, last on 2026-10-17.",,S14 ; S15 ; S16
+F11,Scheduled chain and its failures,To review,objet,CANOT_LAB.OPS.T_REFRESH,"Task, state started; 365 runs, 0 failures, last on 2026-10-17; chain: CANOT_LAB.OPS.T_DAILY → CANOT_LAB.OPS.T_REFRESH.",,S14 ; S15 ; S16
+F11,Scheduled chain and its failures,To review,objet,CANOT_LAB.OPS.T_SERVERLESS,"Task, schedule 60 MINUTE, state suspended; 0 runs, 0 failures.",,S14 ; S15 ; S16
+F12,Incomplete read,To review,lecture,S33,STREAMS not read (missing privilege); limits: streams (F11).,,
+F12,Incomplete read,To review,lecture,S34,TASK_VERSIONS not read (missing privilege); limits: task versions (F11).,,
+F12,Incomplete read,To review,lecture,lectures_par_table,Reads not determined for 1 table; limits: storage with no observed read (F05).,,S09 ; S25

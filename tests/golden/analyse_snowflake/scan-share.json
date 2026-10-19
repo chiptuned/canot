@@ -1,0 +1,76 @@
+{
+  "as_of": "2026-10-17T10:00:00Z",
+  "capacites": {
+    "export": [
+      "iceberg"
+    ],
+    "inventaire": "complet",
+    "preuve": [
+      "P1",
+      "P2"
+    ],
+    "statut": "tested"
+  },
+  "constats": {
+    "F01": 3,
+    "F02": 2,
+    "F03": 2,
+    "F04": 1,
+    "F05": 3,
+    "F06": 1,
+    "F07": 1,
+    "F08": 2,
+    "F09": 1,
+    "F10": 5,
+    "F11": 7,
+    "F12": 3
+  },
+  "famille": "entrepot",
+  "lectures": {
+    "faites": 33,
+    "non_lues": 2
+  },
+  "niveau_droits": 3,
+  "objets": {
+    "base_importee": 2,
+    "etiquette": 1,
+    "flux": 1,
+    "fonction": 3,
+    "partage": 2,
+    "pipe": 1,
+    "politique_lignes": 1,
+    "politique_masquage": 1,
+    "procedure": 3,
+    "stage": 2,
+    "table_dynamique": 1,
+    "tache": 4,
+    "vue": 3
+  },
+  "plateforme": "snowflake",
+  "portabilite": {},
+  "rejouabilite_familles_pct": 66.7,
+  "resume": {
+    "DAF": [
+      "Consumption measured over 365 days: 43.5 credits.",
+      "In dollars, list-price range as of 17/10/2026: $113.10 to $226.20; your contract price not read.",
+      "Billed history that does not leave with the copy: 6.3 GB across 2 tables (F06, F07)."
+    ],
+    "DSI": [
+      "12 present tables (19.4 GB) and 20 objects to rebuild besides tables.",
+      "Movement: 3 frozen, 7 live, 1 recreated, 1 not determined.",
+      "Replayability: 2/3 families accepted by DuckDB; accepted ≠ identical result."
+    ],
+    "RSSI": [
+      "5 tables or policies to rebuild on the security side (F10); the copy requires an unfiltered principal.",
+      "5 external dependencies (F01, F02), 2 writes outside the platform (F03), 1 share with external consumers (F09).",
+      "1 owner role with no holder (F04)."
+    ]
+  },
+  "schema": "canot.share/1",
+  "tables": 14,
+  "versions": {
+    "canot": "0.1.0",
+    "duckdb": "1.5.6",
+    "sqlglot": "30.22.0"
+  }
+}

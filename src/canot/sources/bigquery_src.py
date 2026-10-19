@@ -17,39 +17,41 @@ SCAN_PERMISSIONS = (
     "bigquery.reservations.list", "bigquery.reservationAssignments.list", "bigquery.capacityCommitments.list", "bigquery.bireservations.get",
     "bigquery.config.get",
 )
-# optionnelles : sans elles, ces lectures sont consignées « non lu » dans le rapport
+# optional: without them, these reads are logged as "not read" in the report
 SCAN_OPTIONAL_PERMISSIONS = ("bigquery.rowAccessPolicies.list", "bigquery.transfers.get", "bigquery.connections.list", "bigquery.dataPolicies.list")
 
+MEMBER_PLACEHOLDER = "<user:first.last@example.com  or  serviceAccount:canot@<PROJECT>.iam.gserviceaccount.com>"
+
 SETUP_SH = """\
-# Canot : accès en lecture seule à BigQuery. À relire puis à lancer par un administrateur du projet.
-# Le rôle ne contient aucune permission de lecture du contenu des tables (ni tables.getData, ni les rôles bigquery.user / jobUser).
-PROJECT=<PROJET>
-MEMBER=<user:prenom.nom@exemple.fr  ou  serviceAccount:canot@<PROJET>.iam.gserviceaccount.com>
+# Canot: read-only access to BigQuery. Review it, then have a project administrator run it.
+# The role holds no permission to read table contents (no tables.getData, no bigquery.user / jobUser roles).
+PROJECT=<PROJECT>
+MEMBER=<user:first.last@example.com  or  serviceAccount:canot@<PROJECT>.iam.gserviceaccount.com>
 
 gcloud iam roles create canotScanner --project="$PROJECT" \\
-  --title="Canot : lecture des métadonnées" \\
-  --description="Inventaire, volumes, historique des jobs, objets et politiques. Aucune lecture du contenu des tables." \\
+  --title="Canot: metadata reader" \\
+  --description="Inventory, volumes, job history, objects and policies. No read of table contents." \\
   --permissions="{perms}"
 
 gcloud projects add-iam-policy-binding "$PROJECT" --member="$MEMBER" --role="projects/$PROJECT/roles/canotScanner"
 
-# Optionnel : politiques de lignes, requêtes planifiées, connexions, politiques de données (sinon : « non lu » dans le rapport).
+# Optional: row access policies, scheduled queries, connections, data policies (otherwise: "not read" in the report).
 # gcloud iam roles update canotScanner --project="$PROJECT" --add-permissions="{optional}"
 
-# Pour un exercice de sortie complet (canot drill), qui lit les données : sur les seuls datasets à copier,
-# roles/bigquery.dataViewer, et sur le projet roles/bigquery.readSessionUser. Pas pour le scan.
+# For a full exit exercise (canot drill), which reads the data: on the datasets to copy only,
+# roles/bigquery.dataViewer, and on the project roles/bigquery.readSessionUser. Not needed for the scan.
 """
 
 
 def setup_script(project: str | None = None, member: str | None = None) -> str:
     sh = SETUP_SH.format(perms=",".join(SCAN_PERMISSIONS), optional=",".join(SCAN_OPTIONAL_PERMISSIONS))
-    if project:
-        sh = sh.replace("<PROJET>", project)
     if member:
-        sh = sh.replace("<user:prenom.nom@exemple.fr  ou  serviceAccount:canot@" + (project or "<PROJET>") + ".iam.gserviceaccount.com>", member)
+        sh = sh.replace(MEMBER_PLACEHOLDER, member)
+    if project:
+        sh = sh.replace("<PROJECT>", project)
     return sh
 
-MIN_BILLED = 10 * 1024**2  # BigQuery facture au moins 10 Mo par vue INFORMATION_SCHEMA citée, sans cache
+MIN_BILLED = 10 * 1024**2  # BigQuery bills at least 10 MB per INFORMATION_SCHEMA view referenced, without cache
 DEFAULT_MAX_BYTES = 10 * 1024**3
 LABELS = {"tool": "canot"}
 
@@ -65,21 +67,21 @@ def _job_config(**kw):
         from google.cloud import bigquery
 
         return bigquery.QueryJobConfig(**kw)
-    except ImportError:  # client de test
+    except ImportError:  # test client
         from types import SimpleNamespace
 
         return SimpleNamespace(**kw)
 
 
 class BigQuerySource(Source):
-    """bigquery://PROJET/DATASET1,DATASET2[?location=EU]  (sans dataset : tous ceux du projet).
+    """bigquery://PROJECT/DATASET1,DATASET2[?location=EU]  (no dataset: all datasets in the project).
 
-    Sans `location`, la région de chaque dataset est lue sur le dataset lui-même : les régions ne sont pas
-    hiérarchiques (EU ne couvre pas europe-west1).
+    Without `location`, each dataset's region is read from the dataset itself: regions are not
+    hierarchical (EU does not cover europe-west1).
 
-    Authentification : identifiants applicatifs Google (GOOGLE_APPLICATION_CREDENTIALS ou
-    `gcloud auth application-default login`). Droits minimaux : BigQuery Data Viewer sur les datasets,
-    BigQuery Job User sur le projet, et BigQuery Resource Viewer pour lire l'historique des jobs."""
+    Authentication: Google application default credentials (GOOGLE_APPLICATION_CREDENTIALS or
+    `gcloud auth application-default login`). Minimum roles: BigQuery Data Viewer on the datasets,
+    BigQuery Job User on the project, and BigQuery Resource Viewer to read the job history."""
 
     dialect = "bigquery"
     kind = "bigquery"
@@ -89,7 +91,7 @@ class BigQuerySource(Source):
         qs = {k: v[0] for k, v in parse_qs(u.query).items()}
         self.project = u.netloc
         raw = [d for d in u.path.strip("/").split(",") if d]
-        # "bigquery://FACTURATION/projet-donnees.dataset" : lire un dataset d'un autre projet (jeux publics inclus)
+        # "bigquery://BILLING/data-project.dataset": read a dataset from another project (public datasets included)
         self.data_project = next((d.rsplit(".", 1)[0] for d in raw if "." in d), self.project)
         self.datasets = [d.rsplit(".", 1)[-1] for d in raw]
         self.location = qs.get("location")
@@ -97,14 +99,14 @@ class BigQuerySource(Source):
         self.cost = {"requetes": 0, "dry_runs": 0, "octets_estimes": 0, "octets_factures": None}
         self._locations: dict[str, str | None] = {}
         if client is None:
-            from google.cloud import bigquery  # extra optionnel
+            from google.cloud import bigquery  # optional extra
 
             client = bigquery.Client(project=self.project, location=self.location)
         self.client = client
 
     def run_readonly(self, sql: str, location: str | None = None, *, max_bytes: int | None = None) -> list[dict]:
-        """Exécuteur du scan : garde lecture seule, dry-run d'abord, refus si l'estimation dépasse le plafond,
-        puis exécution étiquetée tool=canot avec maximum_bytes_billed. Lève sans rien exécuter en cas de refus."""
+        """Scan executor: read-only guard, dry run first, refusal if the estimate exceeds the cap,
+        then execution labeled tool=canot with maximum_bytes_billed. Raises without running anything on refusal."""
         check_readonly(sql, "bigquery")
         loc = location or self.location
         cap = max(max_bytes or self.max_bytes_billed, MIN_BILLED)
@@ -141,7 +143,7 @@ class BigQuerySource(Source):
         return f"{q(self.data_project, 'bigquery')}.{table.sql_for('bigquery')}"
 
     def _job(self, sql: str):
-        try:  # étiquette : ces requêtes sont les nôtres, on les exclut de l'historique rejoué
+        try:  # label: these queries are ours, excluded from the replayed history
             from google.cloud import bigquery
 
             return self.client.query(sql, job_config=bigquery.QueryJobConfig(labels={"tool": "canot"}))
@@ -174,7 +176,7 @@ class BigQuerySource(Source):
                 pass
             for (t,) in self._rows(f"select table_name from {info}.TABLES where table_type='BASE TABLE' order by 1"):
                 n, b = sizes.get(t, (None, None))
-                if n is None:  # projet de données différent ou droits limités : métadonnées de la table
+                if n is None:  # different data project or limited grants: table metadata
                     try:
                         meta = self.client.get_table(f"{self.data_project}.{ds}.{t}")
                         n, b = meta.num_rows, meta.num_bytes
@@ -186,7 +188,7 @@ class BigQuerySource(Source):
     def read(self, table: TableInfo, batch_rows: int = 100_000) -> Iterator[pa.RecordBatch]:
         ref = f"{self.data_project}.{table.schema}.{table.name}"
         bqs = None
-        try:  # API Storage Read : bien plus rapide que les pages REST
+        try:  # Storage Read API: much faster than REST pages
             from google.cloud import bigquery_storage
 
             bqs = bigquery_storage.BigQueryReadClient()
@@ -241,8 +243,8 @@ class BigQuerySource(Source):
         return out
 
     def usage_90d(self) -> dict | None:
-        """Consommation sur 90 jours. La facturation à la demande (octets facturés) et la capacité réservée (slots) sont séparées :
-        additionner les deux n'aurait pas de sens."""
+        """90-day consumption. On-demand billing (bytes billed) and reserved capacity (slots) are kept apart:
+        adding them up would be meaningless."""
         try:
             tot = [0, 0, 0, 0]
             for loc in self._regions():

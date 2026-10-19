@@ -17,15 +17,15 @@
     "preuve": [
       {
         "forme": "P1",
-        "libelle": "parité des données"
+        "libelle": "data parity"
       },
       {
         "forme": "P2",
-        "libelle": "rejeu de requêtes"
+        "libelle": "query replay"
       }
     ],
-    "statut": "testé",
-    "teste_sur": "canot drill, 17/10/2026 : compte d'essai Snowflake, TPC-H SF10 (docs/banc-essai.md)"
+    "statut": "tested",
+    "teste_sur": "canot drill, 2026-10-17: Snowflake trial account, TPC-H SF10 (docs/banc-essai.md)"
   },
   "carte_sortie": {},
   "cout_du_scan": {
@@ -36,9 +36,9 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_lu",
-      "raison": "durée non transmise par la collecte",
-      "unite": "secondes",
+      "nature": "not_read",
+      "raison": "duration not provided by collection",
+      "unite": "seconds",
       "valeur": null
     },
     "lectures": {
@@ -63,14 +63,14 @@
         "S12"
       ],
       "confiance": null,
-      "formule": "lectures tentées, lues ou refusées par la plateforme",
+      "formule": "reads attempted, read or refused by the platform",
       "haut": null,
       "hypotheses": [
-        "une lecture = une requête"
+        "one read = one query"
       ],
-      "nature": "calculé",
+      "nature": "computed",
       "raison": null,
-      "unite": "requêtes",
+      "unite": "queries",
       "valeur": 12
     }
   },
@@ -82,9 +82,9 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_lu",
-      "raison": "METERING_DAILY_HISTORY non lue : droit absent",
-      "unite": "crédits",
+      "nature": "not_read",
+      "raison": "METERING_DAILY_HISTORY not read: missing privilege",
+      "unite": "credits",
       "valeur": null
     },
     "credits_par_entrepot": [],
@@ -97,12 +97,12 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_estimé",
-      "raison": "crédits non lus",
+      "nature": "not_estimated",
+      "raison": "credits not read",
       "unite": "USD",
       "valeur": null
     },
-    "note": "Crédits mesurés ; en dollars, seulement avec le prix fourni ou une fourchette catalogue datée.",
+    "note": "Credits measured; in dollars, only with the price provided or a dated list-price range.",
     "stockage_monnaie": {
       "bas": null,
       "base": [],
@@ -110,8 +110,8 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_estimé",
-      "raison": "prix de votre contrat non lu",
+      "nature": "not_estimated",
+      "raison": "your contract price not read",
       "unite": "USD",
       "valeur": null
     },
@@ -122,9 +122,9 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_lu",
-      "raison": "STORAGE_USAGE non lue : droit absent",
-      "unite": "octets",
+      "nature": "not_read",
+      "raison": "STORAGE_USAGE not read: missing privilege",
+      "unite": "bytes",
       "valeur": null
     },
     "transferts": []
@@ -155,8 +155,8 @@
       "cible_type": "objet",
       "code": "F11",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Chaîne planifiée et ses échecs",
+      "etiquette": "To review",
+      "libelle": "Scheduled chain and its failures",
       "preuve": {
         "chaine": [
           "PROD.OPS.T_NIGHTLY"
@@ -165,7 +165,7 @@
         "etat": "started",
         "executions_n": null
       },
-      "texte": "Tâche, planification USING CRON 0 1 * * * UTC, état started ; exécutions non lues."
+      "texte": "Task, schedule USING CRON 0 1 * * * UTC, state started; runs not read."
     },
     {
       "base": [],
@@ -173,13 +173,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "droit absent",
+        "raison": "missing privilege",
         "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_STORAGE_METRICS"
       },
-      "texte": "TABLE_STORAGE_METRICS non lue (droit absent) ; limite : octets actifs et historique (F05, F06, F07, fourchettes)."
+      "texte": "TABLE_STORAGE_METRICS not read (missing privilege); limits: active bytes and history (F05, F06, F07, ranges)."
     },
     {
       "base": [],
@@ -187,13 +187,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "droit absent",
+        "raison": "missing privilege",
         "vue": "SNOWFLAKE.ACCOUNT_USAGE.STORAGE_USAGE"
       },
-      "texte": "STORAGE_USAGE non lue (droit absent) ; limite : stockage moyen facturé."
+      "texte": "STORAGE_USAGE not read (missing privilege); limits: average billed storage."
     },
     {
       "base": [],
@@ -201,13 +201,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "droit absent",
+        "raison": "missing privilege",
         "vue": "SNOWFLAKE.ACCOUNT_USAGE.METERING_DAILY_HISTORY"
       },
-      "texte": "METERING_DAILY_HISTORY non lue (droit absent) ; limite : crédits par service."
+      "texte": "METERING_DAILY_HISTORY not read (missing privilege); limits: credits per service."
     },
     {
       "base": [],
@@ -215,13 +215,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "droit absent",
+        "raison": "missing privilege",
         "vue": "SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY"
       },
-      "texte": "WAREHOUSE_METERING_HISTORY non lue (droit absent) ; limite : crédits par entrepôt."
+      "texte": "WAREHOUSE_METERING_HISTORY not read (missing privilege); limits: credits per warehouse."
     },
     {
       "base": [],
@@ -229,13 +229,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "droit absent",
+        "raison": "missing privilege",
         "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_DML_HISTORY"
       },
-      "texte": "TABLE_DML_HISTORY non lue (droit absent) ; limite : dernières écritures (mouvement)."
+      "texte": "TABLE_DML_HISTORY not read (missing privilege); limits: latest writes (movement)."
     },
     {
       "base": [],
@@ -243,13 +243,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "droit absent",
+        "raison": "missing privilege",
         "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_QUERY_PRUNING_HISTORY"
       },
-      "texte": "TABLE_QUERY_PRUNING_HISTORY non lue (droit absent) ; limite : repli des lectures par table (F05)."
+      "texte": "TABLE_QUERY_PRUNING_HISTORY not read (missing privilege); limits: fallback for reads per table (F05)."
     },
     {
       "base": [],
@@ -257,13 +257,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "délai dépassé",
+        "raison": "timed out",
         "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASK_HISTORY"
       },
-      "texte": "TASK_HISTORY non lue (délai dépassé) ; limite : exécutions et échecs des tâches (F11)."
+      "texte": "TASK_HISTORY not read (timed out); limits: task runs and failures (F11)."
     },
     {
       "base": [],
@@ -271,13 +271,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "niveau de droits non demandé",
+        "raison": "privilege level not requested",
         "vue": "SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY"
       },
-      "texte": "QUERY_HISTORY non lue (niveau de droits non demandé) ; limite : familles de requêtes, rejouabilité, écritures observées (F03)."
+      "texte": "QUERY_HISTORY not read (privilege level not requested); limits: query families, replayability, observed writes (F03)."
     },
     {
       "base": [],
@@ -285,13 +285,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "niveau de droits non demandé",
+        "raison": "privilege level not requested",
         "vue": "SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY"
       },
-      "texte": "ACCESS_HISTORY non lue (niveau de droits non demandé) ; limite : lectures par objet : F05 non calculé ; édition non déterminée (Standard ou droit absent)."
+      "texte": "ACCESS_HISTORY not read (privilege level not requested); limits: reads per object: F05 not computed; edition not determined (Standard or missing privilege)."
     },
     {
       "base": [],
@@ -299,13 +299,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "niveau de droits non demandé",
+        "raison": "privilege level not requested",
         "vue": "SNOWFLAKE.ACCOUNT_USAGE.POLICY_REFERENCES"
       },
-      "texte": "POLICY_REFERENCES non lue (niveau de droits non demandé) ; limite : politiques appliquées (F10)."
+      "texte": "POLICY_REFERENCES not read (privilege level not requested); limits: applied policies (F10)."
     },
     {
       "base": [],
@@ -313,13 +313,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "niveau de droits non demandé",
+        "raison": "privilege level not requested",
         "vue": "SNOWFLAKE.ACCOUNT_USAGE.TAG_REFERENCES"
       },
-      "texte": "TAG_REFERENCES non lue (niveau de droits non demandé) ; limite : étiquettes (F10)."
+      "texte": "TAG_REFERENCES not read (privilege level not requested); limits: tags (F10)."
     },
     {
       "base": [],
@@ -327,13 +327,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "niveau de droits non demandé",
+        "raison": "privilege level not requested",
         "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_ROLES"
       },
-      "texte": "GRANTS_TO_ROLES non lue (niveau de droits non demandé) ; limite : rôles propriétaires sans titulaire (F04)."
+      "texte": "GRANTS_TO_ROLES not read (privilege level not requested); limits: owner roles with no holder (F04)."
     },
     {
       "base": [],
@@ -341,13 +341,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "niveau de droits non demandé",
+        "raison": "privilege level not requested",
         "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_USERS"
       },
-      "texte": "GRANTS_TO_USERS non lue (niveau de droits non demandé) ; limite : rôles propriétaires sans titulaire (F04)."
+      "texte": "GRANTS_TO_USERS not read (privilege level not requested); limits: owner roles with no holder (F04)."
     },
     {
       "base": [],
@@ -355,13 +355,13 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
-        "raison": "niveau de droits non demandé",
+        "raison": "privilege level not requested",
         "vue": "SNOWFLAKE.ACCOUNT_USAGE.SHARES"
       },
-      "texte": "SHARES non lue (niveau de droits non demandé) ; limite : consommateurs externes (F09)."
+      "texte": "SHARES not read (privilege level not requested); limits: external consumers (F09)."
     },
     {
       "base": [
@@ -371,17 +371,17 @@
       "cible_type": "lecture",
       "code": "F12",
       "confiance": null,
-      "etiquette": "À examiner",
-      "libelle": "Lecture incomplète",
+      "etiquette": "To review",
+      "libelle": "Incomplete read",
       "preuve": {
         "routines": [
           "PROD.MART.SP_HIDDEN"
         ]
       },
-      "texte": "Code non lu pour 1 routine (filtré par droits ou non transmis) ; limite : SQL dynamique (F08)."
+      "texte": "Code not read for 1 routine (filtered by privileges or not provided); limits: dynamic SQL (F08)."
     }
   ],
-  "edition": "non déterminée (Standard ou droit absent)",
+  "edition": "not determined (Standard or missing privilege)",
   "f04_lu": false,
   "famille": "entrepot",
   "familles": [],
@@ -393,8 +393,8 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_estimé",
-      "raison": "crédits non lus",
+      "nature": "not_estimated",
+      "raison": "credits not read",
       "unite": "USD",
       "valeur": null
     },
@@ -405,9 +405,9 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_estimé",
-      "raison": "volume non lu",
-      "unite": "crédits",
+      "nature": "not_estimated",
+      "raison": "volume not read",
+      "unite": "credits",
       "valeur": null
     },
     "duree_lecture": {
@@ -417,9 +417,9 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_estimé",
-      "raison": "volume non lu",
-      "unite": "heures",
+      "nature": "not_estimated",
+      "raison": "volume not read",
+      "unite": "hours",
       "valeur": null
     },
     "reprise": {
@@ -430,16 +430,16 @@
         "S10",
         "S11"
       ],
-      "confiance": "basse",
-      "formule": "objets × jours par objet + colonnes × jours par colonne",
+      "confiance": "low",
+      "formule": "objects × days per object + columns × days per column",
       "haut": 5.0,
       "hypotheses": [
-        "3 objets à reconstruire et 1 colonne à type propre à la plateforme",
-        "hypothèses de q4o : 0,25 à 1,5 jour par objet, 0,1 à 0,5 par colonne, à discuter"
+        "3 objects to rebuild and 1 column with a platform-specific type",
+        "q4o assumptions: 0.25 to 1.5 day per object, 0.1 to 0.5 per column, open to discussion"
       ],
-      "nature": "estimé",
+      "nature": "estimated",
       "raison": null,
-      "unite": "jours",
+      "unite": "days",
       "valeur": null
     },
     "volume": {
@@ -449,9 +449,9 @@
       "formule": null,
       "haut": null,
       "hypotheses": [],
-      "nature": "non_lu",
-      "raison": "TABLE_STORAGE_METRICS non lue : droit absent",
-      "unite": "octets",
+      "nature": "not_read",
+      "raison": "TABLE_STORAGE_METRICS not read: missing privilege",
+      "unite": "bytes",
       "valeur": null
     }
   },
@@ -465,7 +465,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLES"
     },
     {
@@ -475,7 +475,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.COLUMNS"
     },
     {
@@ -483,9 +483,9 @@
       "id": "S03",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "octets actifs et historique (F05, F06, F07, fourchettes)",
-      "raison": "droit absent",
-      "statut": "non_lu",
+      "limite": "active bytes and history (F05, F06, F07, ranges)",
+      "raison": "missing privilege",
+      "statut": "not_read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_STORAGE_METRICS"
     },
     {
@@ -493,9 +493,9 @@
       "id": "S04",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "stockage moyen facturé",
-      "raison": "droit absent",
-      "statut": "non_lu",
+      "limite": "average billed storage",
+      "raison": "missing privilege",
+      "statut": "not_read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.STORAGE_USAGE"
     },
     {
@@ -503,9 +503,9 @@
       "id": "S05",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "crédits par service",
-      "raison": "droit absent",
-      "statut": "non_lu",
+      "limite": "credits per service",
+      "raison": "missing privilege",
+      "statut": "not_read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.METERING_DAILY_HISTORY"
     },
     {
@@ -513,9 +513,9 @@
       "id": "S06",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "crédits par entrepôt",
-      "raison": "droit absent",
-      "statut": "non_lu",
+      "limite": "credits per warehouse",
+      "raison": "missing privilege",
+      "statut": "not_read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY"
     },
     {
@@ -523,9 +523,9 @@
       "id": "S07",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "dernières écritures (mouvement)",
-      "raison": "droit absent",
-      "statut": "non_lu",
+      "limite": "latest writes (movement)",
+      "raison": "missing privilege",
+      "statut": "not_read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_DML_HISTORY"
     },
     {
@@ -533,9 +533,9 @@
       "id": "S08",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "repli des lectures par table (F05)",
-      "raison": "droit absent",
-      "statut": "non_lu",
+      "limite": "fallback for reads per table (F05)",
+      "raison": "missing privilege",
+      "statut": "not_read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.TABLE_QUERY_PRUNING_HISTORY"
     },
     {
@@ -545,7 +545,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.VIEWS"
     },
     {
@@ -555,7 +555,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.PROCEDURES"
     },
     {
@@ -565,7 +565,7 @@
       "lignes": 10,
       "limite": null,
       "raison": null,
-      "statut": "lu",
+      "statut": "read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASKS"
     },
     {
@@ -573,9 +573,9 @@
       "id": "S12",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "exécutions et échecs des tâches (F11)",
-      "raison": "délai dépassé",
-      "statut": "non_lu",
+      "limite": "task runs and failures (F11)",
+      "raison": "timed out",
+      "statut": "not_read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.TASK_HISTORY"
     },
     {
@@ -583,9 +583,9 @@
       "id": "S13",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "familles de requêtes, rejouabilité, écritures observées (F03)",
-      "raison": "niveau de droits non demandé",
-      "statut": "non_lu",
+      "limite": "query families, replayability, observed writes (F03)",
+      "raison": "privilege level not requested",
+      "statut": "not_read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY"
     },
     {
@@ -593,9 +593,9 @@
       "id": "S14",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "lectures par objet : F05 non calculé ; édition non déterminée (Standard ou droit absent)",
-      "raison": "niveau de droits non demandé",
-      "statut": "non_lu",
+      "limite": "reads per object: F05 not computed; edition not determined (Standard or missing privilege)",
+      "raison": "privilege level not requested",
+      "statut": "not_read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.ACCESS_HISTORY"
     },
     {
@@ -603,9 +603,9 @@
       "id": "S15",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "politiques appliquées (F10)",
-      "raison": "niveau de droits non demandé",
-      "statut": "non_lu",
+      "limite": "applied policies (F10)",
+      "raison": "privilege level not requested",
+      "statut": "not_read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.POLICY_REFERENCES"
     },
     {
@@ -613,9 +613,9 @@
       "id": "S16",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "étiquettes (F10)",
-      "raison": "niveau de droits non demandé",
-      "statut": "non_lu",
+      "limite": "tags (F10)",
+      "raison": "privilege level not requested",
+      "statut": "not_read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.TAG_REFERENCES"
     },
     {
@@ -623,9 +623,9 @@
       "id": "S17",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "rôles propriétaires sans titulaire (F04)",
-      "raison": "niveau de droits non demandé",
-      "statut": "non_lu",
+      "limite": "owner roles with no holder (F04)",
+      "raison": "privilege level not requested",
+      "statut": "not_read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_ROLES"
     },
     {
@@ -633,9 +633,9 @@
       "id": "S18",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "rôles propriétaires sans titulaire (F04)",
-      "raison": "niveau de droits non demandé",
-      "statut": "non_lu",
+      "limite": "owner roles with no holder (F04)",
+      "raison": "privilege level not requested",
+      "statut": "not_read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.GRANTS_TO_USERS"
     },
     {
@@ -643,14 +643,14 @@
       "id": "S19",
       "latence_max_h": null,
       "lignes": null,
-      "limite": "consommateurs externes (F09)",
-      "raison": "niveau de droits non demandé",
-      "statut": "non_lu",
+      "limite": "external consumers (F09)",
+      "raison": "privilege level not requested",
+      "statut": "not_read",
       "vue": "SNOWFLAKE.ACCOUNT_USAGE.SHARES"
     }
   ],
   "liens": [],
-  "mode_sql": "lecture seule",
+  "mode_sql": "read-only",
   "mouvements": {
     "base": [
       "S01"
@@ -658,7 +658,7 @@
     "figée": 0,
     "non_determine": 2,
     "recréée": 1,
-    "regle": "recréée : DDL de moins de 7 jours sans écriture postérieure ; vivante : écriture de moins de 30 jours ; figée : dernière écriture plus ancienne ; non déterminée : écritures non lues",
+    "regle": "recreated: DDL less than 7 days old with no later write; live: write less than 30 days old; frozen: older last write; not determined: writes not read",
     "vivante": 0
   },
   "ne_part_pas": {
@@ -682,9 +682,9 @@
         "formule": null,
         "haut": null,
         "hypotheses": [],
-        "nature": "non_lu",
-        "raison": "TABLE_STORAGE_METRICS non lue : droit absent",
-        "unite": "octets",
+        "nature": "not_read",
+        "raison": "TABLE_STORAGE_METRICS not read: missing privilege",
+        "unite": "bytes",
         "valeur": null
       },
       "tables": 0
@@ -695,66 +695,66 @@
       "vue": 1
     },
     "routines_par_langage": {
-      "NON LU": 1
+      "NOT READ": 1
     }
   },
   "niveau_droits": 1,
   "non_estime": [
     {
-      "raison": "STORAGE_USAGE non lue : droit absent",
-      "sujet": "Stockage moyen facturé"
+      "raison": "STORAGE_USAGE not read: missing privilege",
+      "sujet": "Average billed storage"
     },
     {
-      "raison": "prix de votre contrat non lu",
-      "sujet": "Coût du stockage"
+      "raison": "your contract price not read",
+      "sujet": "Storage cost"
     },
     {
-      "raison": "METERING_DAILY_HISTORY non lue : droit absent",
-      "sujet": "Crédits consommés"
+      "raison": "METERING_DAILY_HISTORY not read: missing privilege",
+      "sujet": "Credits consumed"
     },
     {
-      "raison": "crédits non lus",
-      "sujet": "Crédits en dollars"
+      "raison": "credits not read",
+      "sujet": "Credits in dollars"
     },
     {
-      "raison": "TABLE_STORAGE_METRICS non lue : droit absent",
-      "sujet": "Volume à copier"
+      "raison": "TABLE_STORAGE_METRICS not read: missing privilege",
+      "sujet": "Volume to copy"
     },
     {
-      "raison": "volume non lu",
-      "sujet": "Durée de lecture de la copie"
+      "raison": "volume not read",
+      "sujet": "Copy read time"
     },
     {
-      "raison": "volume non lu",
-      "sujet": "Crédits de lecture de la copie"
+      "raison": "volume not read",
+      "sujet": "Copy read credits"
     },
     {
-      "raison": "crédits non lus",
-      "sujet": "Coût de lecture de la copie"
+      "raison": "credits not read",
+      "sujet": "Copy read cost"
     },
     {
-      "raison": "QUERY_HISTORY non lue : niveau de droits non demandé",
-      "sujet": "Rejouabilité des requêtes"
+      "raison": "QUERY_HISTORY not read: privilege level not requested",
+      "sujet": "Query replayability"
     },
     {
-      "raison": "TABLE_STORAGE_METRICS non lue : droit absent",
-      "sujet": "Historique facturé"
+      "raison": "TABLE_STORAGE_METRICS not read: missing privilege",
+      "sujet": "Billed history"
     },
     {
-      "raison": "prix de votre contrat non lu",
-      "sujet": "Tarif de votre contrat"
+      "raison": "your contract price not read",
+      "sujet": "Your contract rate"
     },
     {
-      "raison": "dépendent de votre contrat et de votre architecture",
-      "sujet": "Stockage d'arrivée, double exploitation, fonctionnement après la sortie"
+      "raison": "depend on your contract and your architecture",
+      "sujet": "Destination storage, running both platforms in parallel, operations after the exit"
     },
     {
-      "raison": "accepté ≠ résultat identique : traduit vers DuckDB, non comparé ; un canot drill compare les résultats",
-      "sujet": "Résultat identique des requêtes traduites"
+      "raison": "accepted ≠ identical result: translated to DuckDB, not compared; a canot drill compares the results",
+      "sujet": "Identical results of translated queries"
     },
     {
-      "raison": "non reprises : elles ne se vérifient pas depuis le scan",
-      "sujet": "Projections de coût fournies par la plateforme"
+      "raison": "not used: they cannot be verified from the scan",
+      "sujet": "Cost projections provided by the platform"
     }
   ],
   "objets": [
@@ -817,7 +817,7 @@
       "sql_dynamique": null
     }
   ],
-  "perimetre": "compte ab98765, base PROD",
+  "perimetre": "account ab98765, database PROD",
   "plateforme": "snowflake",
   "regles": {
     "debit_mo_s": [
@@ -831,26 +831,26 @@
   "rejouabilite": {
     "base": null,
     "categories": {},
-    "mention": "accepté ≠ résultat identique",
-    "raison": "QUERY_HISTORY non lue : niveau de droits non demandé",
-    "statut": "non_lu",
+    "mention": "accepted ≠ identical result",
+    "raison": "QUERY_HISTORY not read: privilege level not requested",
+    "statut": "not_read",
     "taux": {}
   },
   "resume": {
     "DAF": [
-      "Consommation non lue : METERING_DAILY_HISTORY non lue : droit absent.",
-      "En dollars, non estimé : crédits non lus.",
-      "Historique facturé non lu : TABLE_STORAGE_METRICS non lue : droit absent."
+      "Consumption not read: METERING_DAILY_HISTORY not read: missing privilege.",
+      "In dollars, not estimated: credits not read.",
+      "Billed history not read: TABLE_STORAGE_METRICS not read: missing privilege."
     ],
     "DSI": [
-      "3 tables présentes (volume non lu) et 3 objets à reconstruire hors tables.",
-      "Mouvement : 0 figée(s), 0 vivante(s), 1 recréée(s), 2 non déterminée(s).",
-      "Rejouabilité non lue : QUERY_HISTORY non lue : niveau de droits non demandé."
+      "3 present tables (volume not read) and 3 objects to rebuild besides tables.",
+      "Movement: 0 frozen, 0 live, 1 recreated, 2 not determined.",
+      "Replayability not read: QUERY_HISTORY not read: privilege level not requested."
     ],
     "RSSI": [
-      "Politiques non lues : POLICY_REFERENCES non lue : niveau de droits non demandé.",
-      "0 dépendance externe (F01, F02), 0 écriture hors de la plateforme (F03), 0 partage avec consommateurs externes (F09).",
-      "Rôles propriétaires sans titulaire non déterminés : droits non lus."
+      "Policies not read: POLICY_REFERENCES not read: privilege level not requested.",
+      "0 external dependencies (F01, F02), 0 writes outside the platform (F03), 0 shares with external consumers (F09).",
+      "Owner roles with no holder not determined: privileges not read."
     ]
   },
   "schema": "canot.scan/2",
@@ -883,8 +883,8 @@
         "partage": null
       },
       "lignes": null,
-      "mouvement": "recréée",
-      "mouvement_preuve": "dernière DDL le 16/10/2026, écritures non lues",
+      "mouvement": "recreated",
+      "mouvement_preuve": "last DDL on 2026-10-16, writes not read",
       "nom": "KPI",
       "octets_actifs": null,
       "octets_historique": null,
@@ -921,7 +921,7 @@
       },
       "lignes": null,
       "mouvement": null,
-      "mouvement_preuve": "écritures non lues",
+      "mouvement_preuve": "writes not read",
       "nom": "ARCHIVE_2019",
       "octets_actifs": null,
       "octets_historique": null,
@@ -963,7 +963,7 @@
       },
       "lignes": null,
       "mouvement": null,
-      "mouvement_preuve": "écritures non lues",
+      "mouvement_preuve": "writes not read",
       "nom": "ORDERS",
       "octets_actifs": null,
       "octets_historique": null,

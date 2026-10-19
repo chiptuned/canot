@@ -23,7 +23,7 @@ def _e(x) -> str:
 
 
 def synthese(res: dict) -> dict:
-    """Le constat en langage simple : ce qui est identique, ce qui diffère, ce qui est à traiter."""
+    """The finding in plain language: what is identical, what differs, what needs action."""
     s = res["summary"]
     tabs = res["checks"]
     rows = sum(c["rows_target"] for c in tabs)
@@ -40,39 +40,39 @@ def synthese(res: dict) -> dict:
     todo = len(qm) + len(qu) + (1 if prec_cols else 0) + (1 if lossy_no_diff else 0) + (1 if objs else 0) + len(s["tables_error"])
     f = []
     if not ko and not s["tables_error"]:
-        f.append(("ok", "Identique", "Le contenu arrive à l'identique." if not prec else "Le contenu arrive, à une précision près.",
-                  f"Les {len(tabs)} tables, soit {rows:,} lignes, ont été copiées puis comparées : nombre de lignes, statistiques par colonne et empreinte du contenu.".replace(",", " ")
-                  + (" Seules les colonnes signalées plus bas diffèrent." if prec else " Aucune différence.")))
+        f.append(("ok", "Identical", "The content arrives identical." if not prec else "The content arrives, except for precision.",
+                  f"All {len(tabs)} tables, {rows:,} rows in total, were copied then compared: row count, per-column statistics and content fingerprint."
+                  + (" Only the columns flagged below differ." if prec else " No difference.")))
     else:
-        f.append(("warn", "Écart", "Des données diffèrent.", f"{len(ko) + len(s['tables_error'])} table(s) sur {s['tables_total']} ne sont pas identiques : à corriger avant de conclure."))
+        f.append(("warn", "Mismatch", "Some data differs.", f"{len(ko) + len(s['tables_error'])} table(s) out of {s['tables_total']} are not identical: fix them before drawing conclusions."))
     if res["queries"]:
         done = [q for q in res["queries"] if q["status"] != "skipped"]
         tag = "ok" if not qm and not qu else "info"
-        f.append((tag, f"{s['queries_match']} sur {len(done)}", "Vos rapports donnent les mêmes chiffres." if tag == "ok" else "Vos rapports donnent presque les mêmes chiffres.",
-                  f"{len(done)} requêtes de reporting ont été rejouées des deux côtés. {s['queries_match']} rendent exactement le même résultat."))
+        f.append((tag, f"{s['queries_match']} of {len(done)}", "Your reports give the same figures." if tag == "ok" else "Your reports give almost the same figures.",
+                  f"{len(done)} reporting queries were replayed on both sides. {s['queries_match']} return exactly the same result."))
     for q in qm:
-        f.append(("warn", "À traiter", "Un rapport rend un résultat différent.", f"{q['sql'][:110].strip()}… : {q['detail'] or 'résultat différent'}. Les chiffres sont peut-être justes et la présentation diffère : mieux vaut le savoir avant le départ."))
+        f.append(("warn", "To address", "A report returns a different result.", f"{q['sql'][:110].strip()}…: {q['detail'] or 'different result'}. The figures may be right and only the presentation differs: better to know before leaving."))
     if qu:
-        f.append(("warn", "À traiter", f"{len(qu)} requête(s) n'ont pas pu être rejouées.", "Fonction ou syntaxe propre à la plateforme d'origine : à réécrire pour la destination."))
+        f.append(("warn", "To address", f"{len(qu)} query(ies) could not be replayed.", "Function or syntax specific to the source platform: rewrite it for the destination."))
     if qs:
-        f.append(("info", "Non rejouées", f"{len(qs)} requête(s) portent sur des tables trop volumineuses.", "Le rejeu charge les tables en mémoire. Augmentez --replay-max-gb ou rejouez sur un échantillon."))
+        f.append(("info", "Not replayed", f"{len(qs)} query(ies) read tables that are too large.", "The replay loads tables in memory. Raise --replay-max-gb or replay on a sample."))
     if prec_cols:
         lines = []
         for t, col in sorted(prec_cols):
             c = conv.get((t, col))
-            lines.append(f"{t}.{col} : {c['source_type']} devient {c['target_type']}" if c else f"{t}.{col}")
-        f.append(("warn", "À traiter", f"{len(prec_cols)} colonne(s) perdent de la précision à l'arrivée.", " · ".join(lines) + ". Les valeurs diffèrent au-delà de la précision du type d'arrivée. Ce n'est pas une corruption : c'est un choix de type à décider avant de partir."))
+            lines.append(f"{t}.{col}: {c['source_type']} becomes {c['target_type']}" if c else f"{t}.{col}")
+        f.append(("warn", "To address", f"{len(prec_cols)} column(s) lose precision on arrival.", " · ".join(lines) + ". The values differ beyond the precision of the target type. This is not corruption: it is a type choice to make before leaving."))
     if lossy_no_diff:
-        f.append(("warn", "À traiter", f"{len(lossy_no_diff)} conversion(s) de type avec perte possible.", "Aucune différence observée sur ces données, mais d'autres valeurs pourraient en montrer : la liste est plus bas."))
+        f.append(("warn", "To address", f"{len(lossy_no_diff)} type conversion(s) with possible loss.", "No difference observed on this data, but other values could show one: the list is below."))
     if objs:
-        f.append(("warn", "À traiter", f"{objs} objet(s) ne partent pas tels quels.", "Vues, routines, tâches planifiées : à reconstruire sur la destination."))
-    f.append(("info", "Signé", "Toute modification du journal se voit.", "Chaque étape est enregistrée dans un journal signé avec une clé créée chez vous. La signature garantit l'intégrité du journal, pas l'identité de son auteur ni la date : l'empreinte de la clé est indiquée en bas du dossier."))
+        f.append(("warn", "To address", f"{objs} object(s) do not move as is.", "Views, routines, scheduled tasks: rebuild them on the destination."))
+    f.append(("info", "Signed", "Any change to the log shows.", "Each step is recorded in a log signed with a key created on your side. The signature attests the integrity of the log, not the identity of its author nor the date: the key fingerprint is shown at the bottom of the report."))
     if ko or s["tables_error"]:
-        verdict = "Sortie non prouvée sur ce périmètre : des données diffèrent."
+        verdict = "Exit not proven on this scope: some data differs."
     elif todo == 0:
-        verdict = "Sortie faisable sur ce périmètre. Rien à traiter avant de partir."
+        verdict = "Exit feasible on this scope. Nothing to address before leaving."
     else:
-        verdict = f"Sortie faisable sur ce périmètre. {'Un point' if todo == 1 else str(todo) + ' points'} à traiter avant de partir."
+        verdict = f"Exit feasible on this scope. {'One point' if todo == 1 else str(todo) + ' points'} to address before leaving."
     return {"verdict": verdict, "findings": f, "todo": todo}
 
 
@@ -85,97 +85,100 @@ def _key_fingerprint(out: Path) -> str:
         h = hashlib.sha256(raw).hexdigest()
         return " ".join(h[i:i + 8] for i in range(0, 32, 8))
     except Exception:
-        return "non disponible"
+        return "not available"
+
+
+REREAD_FILE = "reread.sql"
 
 
 def write_relire_sql(res: dict, out: Path) -> Path:
-    """Un fichier SQL pour relire la copie avec DuckDB, sans Canot : preuve qu'elle ne dépend pas de l'outil."""
+    """A SQL file to reread the copy with DuckDB, without Canot: evidence that it does not depend on the tool."""
     loc = res.get("copy_location") or {}
-    lines = ["-- Relire la copie sans Canot, avec DuckDB (https://duckdb.org).", "-- Lancez : duckdb < relire.sql", "INSTALL iceberg; LOAD iceberg;"]
+    lines = ["-- Reread the copy without Canot, with DuckDB (https://duckdb.org).", f"-- Run: duckdb < {REREAD_FILE}", "INSTALL iceberg; LOAD iceberg;"]
     if loc.get("kind") == "s3":
-        lines += ["-- Stockage compatible S3 : créez d'abord un secret avec VOS clés (ne les collez jamais dans un fichier partagé).",
-                  "-- CREATE SECRET (TYPE S3, KEY_ID '...', SECRET '...', ENDPOINT 'hôte-s3', URL_STYLE 'path');"]
+        lines += ["-- S3-compatible storage: first create a secret with YOUR keys (never paste them into a shared file).",
+                  "-- CREATE SECRET (TYPE S3, KEY_ID '...', SECRET '...', ENDPOINT 's3-host', URL_STYLE 'path');"]
     for fqn, meta in sorted((loc.get("metadata") or {}).items()):
         path = meta[len("file://"):] if meta.startswith("file://") else meta
-        lines.append(f"SELECT '{fqn}' AS table_name, count(*) AS lignes FROM iceberg_scan('{path}');")
-    p = out / "relire.sql"
+        lines.append(f"SELECT '{fqn}' AS table_name, count(*) AS row_count FROM iceberg_scan('{path}');")
+    p = out / REREAD_FILE
     p.write_text("\n".join(lines) + "\n")
     return p
 
 
 def _fmt_cost(c) -> str:
     if isinstance(c, (list, tuple)):
-        return f"{c[0]}" if c[0] == c[1] else f"{c[0]} à {c[1]}"
+        return f"{c[0]}" if c[0] == c[1] else f"{c[0]} to {c[1]}"
     return str(c)
 
 
 def _clean_path(p: str) -> str:
-    """Un chemin local devient « …/dossier » : pas d'identifiant d'utilisateur dans un dossier transmis."""
+    """A local path becomes "…/folder": no user name in a report that gets shared."""
     return re.sub(r"^file://(?:/[^/ ]+)*/([^/ ]+/[^/ ]+)$", r"…/\1", str(p))
 
 
 def _clean(label: str) -> str:
-    """Pas de chemins locaux dans un dossier qu'on transmet."""
+    """No local paths in a report that gets shared."""
     return re.sub(r"(local|duckdb):[^ ]*/([^/ ]+)", r"\1:\2", str(label))
 
 
 def write_report(res: dict, out: Path) -> Path:
     s = res["summary"]
     (out / "report.json").write_text(json.dumps(res, indent=2, default=str, ensure_ascii=False))
-    ok = s["parity"] == "complète"
+    ok = s["parity"] == "complete"
     rows = "".join(
         f"<tr><td>{_e(c['table'])}</td><td>{c['rows_source']}</td><td>{c['rows_target']}</td>"
-        f"<td class='{'ok' if c['ok'] else ('warn' if c.get('precision_cols') and c['rows_source'] == c['rows_target'] and c['fingerprint_ok'] else 'ko')}'>{'identique' if c['ok'] else ('précision' if c.get('precision_cols') and c['rows_source'] == c['rows_target'] and c['fingerprint_ok'] else 'écart')}</td>"
+        f"<td class='{'ok' if c['ok'] else ('warn' if c.get('precision_cols') and c['rows_source'] == c['rows_target'] and c['fingerprint_ok'] else 'ko')}'>{'identical' if c['ok'] else ('precision' if c.get('precision_cols') and c['rows_source'] == c['rows_target'] and c['fingerprint_ok'] else 'mismatch')}</td>"
         f"<td>{_e('; '.join(c['stats_diffs'][:3]))}{' buckets ' + _e(c['bad_buckets'][:5]) if c['bad_buckets'] else ''}</td></tr>"
         for c in res["checks"])
     qrows = "".join(
-        f"<tr><td><code>{_e(q['sql'][:140])}</code></td><td class='{'ok' if q['status']=='match' else ('warn' if q['status']=='skipped' else 'ko')}'>{_e({'skipped': 'non rejouée'}.get(q['status'], q['status']))}"
-        f"{' (ordre différent)' if q['order_differs'] else ''}</td><td>{_e(q['detail'])}</td></tr>" for q in res["queries"])
+        f"<tr><td><code>{_e(q['sql'][:140])}</code></td><td class='{'ok' if q['status']=='match' else ('warn' if q['status']=='skipped' else 'ko')}'>{_e({'skipped': 'not replayed'}.get(q['status'], q['status']))}"
+        f"{' (different order)' if q['order_differs'] else ''}</td><td>{_e(q['detail'])}</td></tr>" for q in res["queries"])
     crows = "".join(f"<tr><td>{_e(c['table'])}.{_e(c['column'])}</td><td>{_e(c['source_type'])} → {_e(c['target_type'])}</td>"
-                    f"<td class='{'warn' if c['lossy'] else ''}'>{_e(c['note'])}{' (perte possible)' if c['lossy'] else ''}</td></tr>" for c in res["conversions"])
+                    f"<td class='{'warn' if c['lossy'] else ''}'>{_e(c['note'])}{' (possible loss)' if c['lossy'] else ''}</td></tr>" for c in res["conversions"])
     nonp = res["scan"]["non_portable_columns"]
     objs = res["scan"]["objects_that_do_not_move"]
     objrows = "".join(f"<tr><td>{_e(k)}</td><td>{len(v)}</td><td>{_e(', '.join(v[:8]))}{'…' if len(v) > 8 else ''}</td></tr>" for k, v in objs.items() if v)
     rto = s.get("rto")
     sy = synthese(res)
     finds = "".join(f'<div class="find"><span class="tag {t}">{_e(tag)}</span><div><b>{_e(h)}</b><span>{_e(d)}</span></div></div>' for t, tag, h, d in sy["findings"])
-    page = f"""<!doctype html><html lang="fr"><meta charset="utf-8"><title>Dossier de preuve Canot</title><style>{CSS}</style>
-<h1>Dossier de preuve : exercice de sortie</h1>
-<p>Source : <code>{_e(_clean(res['source']))}</code> · Cible : <code>{_e(_clean(res['target']))}</code> · Constat daté du {datetime.now().strftime('%d/%m/%Y à %H:%M')}, sur le périmètre exécuté · Canot {_e(res['env']['canot'])}</p>
-<h2 style="border:0;margin-bottom:0">Synthèse</h2><p class="verdict"><b>@@VERDICT@@</b></p>@@FINDINGS@@
-<div class="box"><b>Constat :</b> <span class="{'ok' if ok else 'warn'}">{_e('contenu identique' if ok else 'écarts à examiner')}</span> —
-{s['tables_ok']}/{s['tables_total']} tables identiques, {s['queries_match']}/{s['queries_total']} requêtes identiques,
-{s['queries_untranslatable']} non rejouables, {s['queries_mismatch']} avec écart, {s['lossy_conversions']} conversion(s) avec perte possible.</div>
-<h2>Mesures de cet exercice</h2><ul>
-{('<li>Débit de copie mesuré : ' + str(s['throughput_mb_s']) + ' Mo/s</li>') if s['throughput_mb_s'] else ''}
-{('<li>Temps de reprise estimé (fourchette) : ' + _e(f"{rto['seconds'][0]} à {rto['seconds'][1]} s — {rto['basis']}") + '</li>') if rto else ''}
-{('<li>Crédits d\'entrepôt consommés (est.) : ' + str(s['warehouse_credits_used_est']) + (' · coût : ' + _fmt_cost(s['cost_usd_est']) + ' $ (' + _e(s.get('cost_basis') or '') + ')' if s['cost_usd_est'] else '') + '</li>') if s['warehouse_credits_used_est'] is not None else ''}
-<li>Durée totale de l'exercice : {s['duration_s']} s</li></ul>
-<p class="small">Ces mesures décrivent cet exercice, sur ce périmètre. Elles ne comparent pas deux plateformes.</p>
-<h2>Où est la copie</h2>
-<p>Destination : <code>{_e(_clean(res['copy_location']['target']))}</code> · emplacement : <code>{_e(_clean_path(res['copy_location']['warehouse']))}</code> · catalogue : {_e(res['copy_location']['catalog'])}.<br>
-La copie est au format Apache Iceberg : vous pouvez la relire sans Canot. Le fichier <code>relire.sql</code> à côté de ce dossier contient les commandes DuckDB pour le faire.</p>
-<h2>Tables</h2><table><tr><th>Table</th><th>Lignes source</th><th>Lignes cible</th><th>Résultat</th><th>Détail</th></tr>{rows}</table>
-<h2>Requêtes rejouées des deux côtés</h2><table><tr><th>Requête</th><th>Résultat</th><th>Détail</th></tr>{qrows or '<tr><td colspan=3>aucune</td></tr>'}</table>
-<h2>Conversions de types</h2><table>{crows or '<tr><td>aucune</td></tr>'}</table>
-<h2>Ce qui ne part pas tel quel</h2>
-<p>Colonnes à type propre à la plateforme : {len(nonp)}. Objets à reconstruire (vues, procédures, tâches…) :</p>
-<table><tr><th>Type</th><th>Nombre</th><th>Exemples</th></tr>{objrows or '<tr><td colspan=3>aucun détecté</td></tr>'}</table>
-<h2>Ce que ces chiffres ne disent pas</h2>
-<ul><li>Ils concernent le périmètre exécuté, à la date du constat. Ils ne disent rien des autres tables ni de demain.</li>
-<li>Ils ne comparent pas deux plateformes : ni durées, ni coûts, ni performances.</li>
-<li>Ils ne couvrent ni les droits d'accès, ni les vues, ni les tâches planifiées, ni les applications branchées sur la plateforme.</li>
-<li>Ce n'est pas une certification et ce n'est pas un avis juridique sur vos contrats.</li></ul>
-<h2>Tolérances appliquées</h2><p><code>{_e(json.dumps(res['tolerances'], ensure_ascii=False))}</code></p>
-<h2>Intégrité du dossier</h2>
-<p>Journal chaîné : {res['seal']['entries']} entrées, dernière empreinte <code>{_e(res['seal']['last_hash'])}</code>.
-Toute modification du journal se voit. Vérification : <code>canot verify-evidence {_e(out.name)}</code></p>
-<p>Empreinte de la clé publique de signature : <code>{_e(_key_fingerprint(out))}</code>.
-La signature garantit l'intégrité du journal. Elle n'établit ni l'identité de l'auteur ni la date : pour cela, conservez le dossier dans votre propre archivage horodaté.</p>
-<p class="small"><i>Ce rapport est un relevé de mesures pour votre propre évaluation. Ce n'est pas une certification et il ne dit pas si vos contrats ou votre organisation sont conformes à un règlement.</i></p>
+    page = f"""<!doctype html><html lang="en"><meta charset="utf-8"><title>Canot evidence report</title><style>{CSS}</style>
+<h1>Evidence report: exit exercise</h1>
+<p>Source: <code>{_e(_clean(res['source']))}</code> · Target: <code>{_e(_clean(res['target']))}</code> · Finding dated {datetime.now().strftime('%Y-%m-%d %H:%M')}, on the scope run · Canot {_e(res['env']['canot'])}</p>
+<h2 style="border:0;margin-bottom:0">Summary</h2><p class="verdict"><b>@@VERDICT@@</b></p>@@FINDINGS@@
+<div class="box"><b>Finding:</b> <span class="{'ok' if ok else 'warn'}">{_e('identical content' if ok else 'mismatches to review')}</span> —
+{s['tables_ok']}/{s['tables_total']} identical tables, {s['queries_match']}/{s['queries_total']} identical queries,
+{s['queries_untranslatable']} not replayable, {s['queries_mismatch']} with a mismatch, {s['lossy_conversions']} conversion(s) with possible loss.</div>
+<h2>Measurements from this exercise</h2><ul>
+{('<li>Measured copy throughput: ' + str(s['throughput_mb_s']) + ' MB/s</li>') if s['throughput_mb_s'] else ''}
+{('<li>Estimated recovery time (range): ' + _e(f"{rto['seconds'][0]} to {rto['seconds'][1]} s — {rto['basis']}") + '</li>') if rto else ''}
+{('<li>Warehouse credits used (est.): ' + str(s['warehouse_credits_used_est']) + (' · cost: ' + _fmt_cost(s['cost_usd_est']) + ' USD (' + _e(s.get('cost_basis') or '') + ')' if s['cost_usd_est'] else '') + '</li>') if s['warehouse_credits_used_est'] is not None else ''}
+<li>Total exercise duration: {s['duration_s']} s</li></ul>
+<p class="small">These measurements describe this exercise, on this scope. They do not compare two platforms.</p>
+<h2>Where the copy is</h2>
+<p>Destination: <code>{_e(_clean(res['copy_location']['target']))}</code> · location: <code>{_e(_clean_path(res['copy_location']['warehouse']))}</code> · catalog: {_e(res['copy_location']['catalog'])}.<br>
+The copy is in Apache Iceberg format: you can reread it without Canot. The <code>{REREAD_FILE}</code> file next to this report holds the DuckDB commands to do so.</p>
+<h2>Tables</h2><table><tr><th>Table</th><th>Source rows</th><th>Target rows</th><th>Result</th><th>Details</th></tr>{rows}</table>
+<h2>Queries replayed on both sides</h2><table><tr><th>Query</th><th>Result</th><th>Details</th></tr>{qrows or '<tr><td colspan=3>none</td></tr>'}</table>
+<h2>Type conversions</h2><table>{crows or '<tr><td>none</td></tr>'}</table>
+<h2>What does not move as is</h2>
+<p>Columns with a platform-specific type: {len(nonp)}. Objects to rebuild (views, procedures, tasks…):</p>
+<table><tr><th>Type</th><th>Count</th><th>Examples</th></tr>{objrows or '<tr><td colspan=3>none detected</td></tr>'}</table>
+<h2>What these figures do not say</h2>
+<ul><li>They cover the scope that was run, on the date of the finding. They say nothing about other tables or about tomorrow.</li>
+<li>They do not compare two platforms: no durations, costs or performance.</li>
+<li>They do not cover access rights, views, scheduled tasks or the applications connected to the platform.</li>
+<li>This is not a certification and not a legal opinion on your contracts.</li></ul>
+<h2>Tolerances applied</h2><p><code>{_e(json.dumps(res['tolerances'], ensure_ascii=False))}</code></p>
+<h2>Report integrity</h2>
+<p>Chained log: {res['seal']['entries']} entries, last hash <code>{_e(res['seal']['last_hash'])}</code>.
+Any change to the log shows. Verification: <code>canot verify-evidence {_e(out.name)}</code></p>
+<p>Fingerprint of the public signing key: <code>{_e(_key_fingerprint(out))}</code>.
+The signature attests the integrity of the log. It establishes neither the identity of the author nor the date: for that, keep the report in your own timestamped archive.</p>
+<p class="small"><i>This report is a record of measurements for your own assessment. It is not a certification and it does not say whether your contracts or your organization meet any regulation.</i></p>
 </html>"""
     page = page.replace("@@VERDICT@@", _e(sy["verdict"])).replace("@@FINDINGS@@", finds)
-    page = page.replace("</html>", '''<div class="cta">Ce dossier couvre le périmètre que vous avez choisi. Pour l'obtenir sur votre environnement, avec trois scénarios de coût de sortie et la marche à suivre : <a href="https://canot.io/#contact">canot.io</a>.</div></html>''')
+    page = page.replace("</html>", '''<div class="cta">This report covers the scope you chose. To get it on your environment, with three exit-cost scenarios and the steps to follow: <a href="https://canot.io/#contact">canot.io</a>.</div></html>''')
     write_relire_sql(res, out)
     p = out / "report.html"
     p.write_text(page)

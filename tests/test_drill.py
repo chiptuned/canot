@@ -38,7 +38,7 @@ def test_happy_path_and_evidence(demo, tmp_path):
     db, q = demo
     res, out = drill(DuckDBSource(str(db)), tmp_path, q)
     s = res["summary"]
-    assert s["parity"] == "complète" and s["tables_ok"] == 3 and s["queries_match"] == 4
+    assert s["parity"] == "complete" and s["tables_ok"] == 3 and s["queries_match"] == 4
     assert verify_dir(out)[0]
 
 
@@ -69,7 +69,7 @@ class LossySource(DuckDBSource):
 def test_silent_corruption_is_detected(demo, tmp_path):
     db, q = demo
     res, _ = drill(LossySource(str(db)), tmp_path, q)
-    assert res["summary"]["parity"] == "écarts"
+    assert res["summary"]["parity"] == "mismatch"
     bad = [c for c in res["checks"] if not c["ok"]]
     assert bad and bad[0]["table"] == "shop.orders"
 
@@ -116,23 +116,23 @@ def test_scaleway_named_profile(tmp_path, monkeypatch):
 
 def test_demo_command_end_to_end_and_synthesis(tmp_path, capsys, monkeypatch):
     from canot.cli import main
-    monkeypatch.setattr("canot.demo.make_tpch", lambda *a, **k: (_ for _ in ()).throw(OSError("hors ligne")))  # jeu de secours, sans réseau
+    monkeypatch.setattr("canot.demo.make_tpch", lambda *a, **k: (_ for _ in ()).throw(OSError("offline")))  # fallback dataset, no network
     from canot.evidence import verify_dir
 
     assert main(["demo", "--out", str(tmp_path / "d"), "--rows", "2000", "--no-open"]) == 0
-    html = (tmp_path / "d" / "dossier" / "report.html").read_text()
-    assert "Sortie faisable sur ce périmètre" in html and "canot.io/#contact" in html
-    assert "perdent de la précision" in html and "TIMESTAMP_NS" in html  # le piège des nanosecondes est signalé comme point à traiter
-    assert "/tmp" not in html and "/private" not in html and "None" not in html  # pas de chemin local ni de « None » dans un dossier transmis
-    assert "Empreinte de la clé publique" in html
-    assert verify_dir(tmp_path / "d" / "dossier")[0]
+    html = (tmp_path / "d" / "evidence" / "report.html").read_text()
+    assert "Exit feasible on this scope" in html and "canot.io/#contact" in html
+    assert "lose precision" in html and "TIMESTAMP_NS" in html  # the nanosecond trap is flagged as a point to address
+    assert "/tmp" not in html and "/private" not in html and "None" not in html  # no local path and no "None" in a shared report
+    assert "Fingerprint of the public signing key" in html
+    assert verify_dir(tmp_path / "d" / "evidence")[0]
 
 
 def test_synthesis_flags_corruption(demo, tmp_path):
     from canot.report import synthese
 
     res, _ = drill(LossySource(str(demo[0])), tmp_path, demo[1])
-    assert synthese(res)["verdict"].startswith("Sortie non prouvée")
+    assert synthese(res)["verdict"].startswith("Exit not proven")
 
 
 def test_snowflake_setup_generates_key(tmp_path, monkeypatch, capsys):
@@ -141,7 +141,7 @@ def test_snowflake_setup_generates_key(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("HOME", str(tmp_path))
     assert main(["snowflake-setup", "--generate-key", "--base", "MABASE"]) == 0
     out = capsys.readouterr().out
-    assert "MABASE" in out and "RSA_PUBLIC_KEY = '" in out and "<clé publique" not in out
+    assert "MABASE" in out and "RSA_PUBLIC_KEY = '" in out and "<public key" not in out and "<DATABASE>" not in out
     assert (tmp_path / ".canot" / "snowflake_rsa_key.p8").stat().st_mode & 0o077 == 0
 
 
@@ -151,22 +151,22 @@ def test_errors_are_readable():
     msg = explain(ModuleNotFoundError("x", name="google.cloud"), ["scan", "--from", "bigquery://p/d"])
     assert "canot[bigquery]" in msg and "uvx --from" in msg
     assert "gcloud auth application-default login" in explain(type("DefaultCredentialsError", (Exception,), {})("x"), [])
-    assert explain(RuntimeError("autre chose"), []) is None
+    assert explain(RuntimeError("something else"), []) is None
 
 
-def test_relire_sql_runs_with_plain_duckdb(tmp_path, monkeypatch):
-    """La copie doit se relire sans Canot : on exécute vraiment relire.sql avec DuckDB."""
+def test_reread_sql_runs_with_plain_duckdb(tmp_path, monkeypatch):
+    """The copy must be readable without Canot: actually run reread.sql with DuckDB."""
     import duckdb
     from canot.cli import main
-    monkeypatch.setattr("canot.demo.make_tpch", lambda *a, **k: (_ for _ in ()).throw(OSError("hors ligne")))
+    monkeypatch.setattr("canot.demo.make_tpch", lambda *a, **k: (_ for _ in ()).throw(OSError("offline")))
 
     assert main(["demo", "--out", str(tmp_path / "d"), "--rows", "1000", "--no-open"]) == 0
-    sql = (tmp_path / "d" / "dossier" / "relire.sql").read_text()
+    sql = (tmp_path / "d" / "evidence" / "reread.sql").read_text()
     con = duckdb.connect()
     try:
         con.execute("INSTALL iceberg; LOAD iceberg;")
-    except Exception as e:  # hors ligne : l'extension ne peut pas être téléchargée
-        pytest.skip(f"extension iceberg indisponible : {e}")
+    except Exception as e:  # offline: the extension cannot be downloaded
+        pytest.skip(f"iceberg extension unavailable: {e}")
     counts = {}
     for line in sql.splitlines():
         if line.startswith("SELECT"):
@@ -176,7 +176,7 @@ def test_relire_sql_runs_with_plain_duckdb(tmp_path, monkeypatch):
 
 
 def test_table_vide_et_fuseau_non_utc(tmp_path):
-    """Régressions trouvées sur un vrai compte Snowflake : table vide sans lot Arrow, TIMESTAMP_TZ en fuseau nommé."""
+    """Regressions found on a real Snowflake account: empty table without an Arrow batch, TIMESTAMP_TZ in a named time zone."""
     import pyarrow as pa
     from pyiceberg.catalog.sql import SqlCatalog
 
@@ -204,36 +204,36 @@ def test_table_vide_et_fuseau_non_utc(tmp_path):
 
 
 def test_demo_tpch_si_l_extension_est_disponible(tmp_path):
-    """La démo par défaut est TPC-H (si l'extension peut se télécharger) : 8 tables, et l'écart de nanosecondes est signalé."""
+    """The default demo is TPC-H (if the extension can be downloaded): 8 tables, and the nanosecond mismatch is flagged."""
     import duckdb
     import pytest
 
     try:
         duckdb.connect().execute("install tpch")
     except Exception:
-        pytest.skip("extension tpch indisponible (hors ligne)")
+        pytest.skip("tpch extension unavailable (offline)")
     from canot.cli import main
 
     assert main(["demo", "--out", str(tmp_path / "d"), "--sf", "0.01", "--no-open"]) in (0, 1)
-    html = (tmp_path / "d" / "dossier" / "report.html").read_text()
+    html = (tmp_path / "d" / "evidence" / "report.html").read_text()
     assert "TPC-H" in html or "lineitem" in html.lower()
     assert "TIMESTAMP_NS" in html
 
 
 def test_demo_est_un_raccourci_exact(tmp_path, capsys, monkeypatch):
-    """Les deux commandes affichées par `canot demo` donnent le même résultat que la démo : on les rejoue à la main."""
+    """The two commands shown by `canot demo` give the same result as the demo: replay them by hand."""
     import re
 
     from canot.cli import main
 
-    monkeypatch.setattr("canot.demo.make_tpch", lambda *a, **k: (_ for _ in ()).throw(OSError("hors ligne")))
+    monkeypatch.setattr("canot.demo.make_tpch", lambda *a, **k: (_ for _ in ()).throw(OSError("offline")))
     out = tmp_path / "d"
     assert main(["demo", "--out", str(out), "--no-open"]) == 0
     shown = capsys.readouterr().out
     assert f"canot demo-data {out}/demo.duckdb --tpch" in shown
     m = re.search(r"canot drill (\S+) (\S+) --queries (\S+) --out (\S+)", shown)
-    assert m and m.group(2) == f"{out}/iceberg"
-    # même source, mêmes requêtes, même dossier de sortie : la commande longue rejoue l'exercice
+    assert m and m.group(2) == f"{out}/iceberg" and m.group(3) == f"{out}/queries.sql" and m.group(4) == f"{out}/evidence"
+    # same source, same queries, same output folder: the long command replays the exercise
     assert main(["drill", m.group(1), str(tmp_path / "autre"), "--queries", m.group(3), "--out", str(tmp_path / "o2")]) in (0, 1)
     assert (tmp_path / "o2" / "report.json").exists()
 

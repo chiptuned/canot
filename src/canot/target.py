@@ -25,7 +25,7 @@ class Target:
     warehouse: str
     props: dict[str, str] = field(default_factory=dict)
     workdir: Path = Path(".")
-    catalog_uri: str | None = None  # défaut : un fichier SQLite dans le dossier de travail
+    catalog_uri: str | None = None  # default: a SQLite file in the working folder
 
     def catalog(self):
         from pyiceberg.catalog.sql import SqlCatalog
@@ -39,7 +39,7 @@ class Target:
             p = Path(self.warehouse.replace("file://", ""))
             if p.exists():
                 shutil.rmtree(p)
-            return f"supprimé : {p}"
+            return f"deleted: {p}"
         from pyarrow import fs
 
         u = urlparse(self.warehouse)
@@ -52,16 +52,16 @@ class Target:
         )
         path = f"{u.netloc}{u.path}".rstrip("/")
         s3.delete_dir_contents(path, missing_dir_ok=True)
-        return f"vidé : s3://{path}"
+        return f"emptied: s3://{path}"
 
 
 def _scw_config() -> tuple[str | None, str | None]:
-    """Clés de la CLI Scaleway (`scw init`) : ~/.config/scw/config.yaml.
-    Profil par défaut, ou le profil nommé par SCW_PROFILE (voir `scw init profile=NOM`)."""
+    """Keys from the Scaleway CLI (`scw init`): ~/.config/scw/config.yaml.
+    Default profile, or the profile named by SCW_PROFILE (see `scw init profile=NAME`)."""
     path = Path(os.environ.get("SCW_CONFIG_PATH", Path.home() / ".config" / "scw" / "config.yaml"))
     wanted = os.environ.get("SCW_PROFILE")
     ak = sk = None
-    section = None  # None = haut du fichier ; sinon nom du profil en cours
+    section = None  # None = top of the file; otherwise the current profile name
     try:
         for raw in path.read_text().splitlines():
             if not raw.strip() or raw.lstrip().startswith("#"):
@@ -96,13 +96,13 @@ def _creds() -> dict[str, str]:
 
 
 def _catalog_uri(value: str | None) -> str | None:
-    """--catalog postgresql://... ou env:NOM : la seconde forme évite de mettre un mot de passe sur la ligne de commande."""
+    """--catalog postgresql://... or env:NAME: the second form keeps a password off the command line."""
     if not value:
         return None
     if value.startswith("env:"):
         got = os.environ.get(value[4:])
         if not got:
-            raise ValueError(f"Variable d'environnement vide ou absente : {value[4:]}")
+            raise ValueError(f"Environment variable empty or missing: {value[4:]}")
         return got
     return value
 
@@ -112,11 +112,11 @@ def parse_target(spec: str, bucket: str | None, workdir: Path, catalog: str | No
     if "://" not in spec and ":" in spec and spec.split(":", 1)[0] in PROVIDERS:
         provider, region = spec.split(":", 1)
         if not bucket:
-            raise ValueError(f"--bucket est obligatoire pour la cible {spec!r}")
+            raise ValueError(f"--bucket is required for the target {spec!r}")
         endpoint = PROVIDERS[provider][0].format(region=region)
         props = {"s3.endpoint": endpoint, "s3.region": region, **_creds()}
         if not props.get("s3.access-key-id"):
-            raise ValueError("Clés d'accès absentes : lancez `scw init`, ou définissez CANOT_S3_ACCESS_KEY et CANOT_S3_SECRET_KEY.")
+            raise ValueError("Access keys missing: run `scw init`, or set CANOT_S3_ACCESS_KEY and CANOT_S3_SECRET_KEY.")
         return Target("s3", f"{provider}:{region}/{bucket}", f"s3://{bucket}/canot", props, workdir, uri)
     if spec.startswith("s3://"):
         u = urlparse(spec)
@@ -126,9 +126,9 @@ def parse_target(spec: str, bucket: str | None, workdir: Path, catalog: str | No
             props["s3.endpoint"] = qs["endpoint"]
         if "region" in qs:
             props["s3.region"] = qs["region"]
-        if "proxy" in qs:  # proxy d'entreprise
+        if "proxy" in qs:  # corporate proxy
             props["s3.proxy-uri"] = qs["proxy"]
-        if "ca" in qs:  # autorité de certification interne : transmise au SDK AWS par ses variables d'environnement habituelles
+        if "ca" in qs:  # internal certificate authority: passed to the AWS SDK through its usual environment variables
             os.environ.setdefault("AWS_CA_BUNDLE", qs["ca"])
             os.environ.setdefault("SSL_CERT_FILE", qs["ca"])
         return Target("s3", f"s3://{u.netloc}{u.path}", f"s3://{u.netloc}{u.path}".rstrip("/"), props, workdir, uri)

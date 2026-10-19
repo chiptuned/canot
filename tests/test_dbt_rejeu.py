@@ -1,7 +1,7 @@
-"""Preuve P3 sur le projet dbt du banc : modèles rejoués dans DuckDB sur une copie locale, comparés aux tables d'origine.
+"""P3 evidence on the test bench dbt project: models replayed in DuckDB on a local copy, compared with the original tables.
 
-Les « tables d'origine » sont construites ici par un SQL écrit à la main (équivalent des modèles, pas le SQL de dbt) sur un
-petit jeu de données : sans réseau, sans compte. Les artefacts sont la copie de lab/dbt (dbt build réel sur Snowflake).
+The "original tables" are built here with hand-written SQL (equivalent to the models, not the dbt SQL) on a small
+dataset: no network, no account. The artifacts are the copy of lab/dbt (real dbt build on Snowflake).
 """
 import copy
 import json
@@ -17,7 +17,7 @@ FIX = Path(__file__).parent / "fixtures" / "dbt" / "banc"
 MARTS = ("dbt_customer_ltv", "dbt_daily_revenue", "dbt_fct_orders", "int_order_totals")
 STG = ("stg_customers", "stg_order_lines", "stg_orders", "stg_products")
 
-ORIGINES = {  # ce que Snowflake aurait matérialisé, avec des types à la Snowflake (NUMBER)
+ORIGINES = {  # what Snowflake would have materialized, with Snowflake-style types (NUMBER)
     "int_order_totals": """select l.order_id, cast(sum(l.qty * p.unit_price) as decimal(38,2)) as basket_value,
                                   cast(sum(l.qty) as decimal(38,0)) as items
                            from RAW.order_lines l join RAW.products p on p.product_id = l.product_id group by l.order_id""",
@@ -49,14 +49,14 @@ def copie_duckdb(path: Path, ecart: bool = False) -> Path:
                    1 + i % 3 as qty from range(1, 1201) t(i)""")
     for name in ("int_order_totals", "dbt_fct_orders", "dbt_customer_ltv", "dbt_daily_revenue"):
         con.execute(f"create table DBT_dbt_mart.{name} as {ORIGINES[name]}")
-    if ecart:  # la plateforme a produit autre chose que ce que le SQL donne sur ces entrées
+    if ecart:  # the platform produced something other than what the SQL gives on these inputs
         con.execute("update DBT_dbt_mart.dbt_daily_revenue set revenue = revenue + 1 where rowid = (select min(rowid) from DBT_dbt_mart.dbt_daily_revenue)")
     con.close()
     return path
 
 
 def projet_etendu(tmp_path: Path) -> Path:
-    """Le banc + des modèles que DuckDB ne peut pas rejouer : fonction propre, incrémental, Python, et un descendant."""
+    """The bench + models DuckDB cannot replay: platform-specific function, incremental, Python, and a descendant."""
     man = json.loads((FIX / "target" / "manifest.json").read_text(encoding="utf-8"))
     base = man["nodes"]["model.canot_lab.dbt_daily_revenue"]
     fct = "CANOT_LAB.DBT_dbt_mart.dbt_fct_orders"
@@ -90,17 +90,18 @@ def test_rejeu_banc_identique_et_dossier_signe(tmp_path):
     res = run_rejeu(f"dbt://{FIX}", out, tmp_path / "k.key", base=str(db), log=lambda *_: None)
     par = _par(res)
     assert {m: par[m]["statut"] for m in MARTS} == dict.fromkeys(MARTS, "identique")
-    assert {m: par[m]["statut"] for m in STG} == dict.fromkeys(STG, "non_compare")  # vues : pas de table d'origine
+    assert {m: par[m]["statut"] for m in STG} == dict.fromkeys(STG, "non_compare")  # views: no original table
     assert all(par[m]["verification"]["ok"] and par[m]["verification"]["fingerprint_ok"] for m in MARTS)
     assert par["dbt_customer_ltv"]["verification"]["rows_target"] == par["dbt_customer_ltv"]["verification"]["rows_source"] > 0
-    assert any("orders" in c and "-> DECIMAL(38,0)" in c for c in par["dbt_customer_ltv"]["conversions"])  # types alignés, consignés
+    assert any("orders" in c and "-> DECIMAL(38,0)" in c for c in par["dbt_customer_ltv"]["conversions"])  # types aligned, logged
     s = res["summary"]
     assert s == {**s, "modeles": 8, "identique": 4, "non_compare": 4, "different": 0, "non_rejouable": 0}
     assert verify_dir(out)[0]
-    rapport = json.loads((out / "rejeu-dbt.json").read_text(encoding="utf-8"))
-    assert rapport["schema"] == "canot.rejeu-dbt/1" and rapport["forme"] == "P3"
-    brut = (out / "rejeu-dbt.json").read_text(encoding="utf-8") + (out / "evidence.jsonl").read_text(encoding="utf-8")
-    assert "coalesce(" not in brut.lower() and "select " not in brut.lower()  # jamais le SQL des modèles
+    assert not (out / "rejeu-dbt.json").exists()
+    rapport = json.loads((out / "replay-dbt.json").read_text(encoding="utf-8"))
+    assert rapport["schema"] == "canot.replay-dbt/1" and rapport["forme"] == "P3"
+    brut = (out / "replay-dbt.json").read_text(encoding="utf-8") + (out / "evidence.jsonl").read_text(encoding="utf-8")
+    assert "coalesce(" not in brut.lower() and "select " not in brut.lower()  # never the models' SQL
 
 
 def test_rejeu_detecte_un_ecart(tmp_path):
@@ -115,10 +116,10 @@ def test_rejeu_classe_le_non_rejouable_avec_sa_raison(tmp_path):
     res = run_rejeu(f"dbt://{projet_etendu(tmp_path)}", tmp_path / "out", tmp_path / "k.key", base=str(db), log=lambda *_: None)
     par = _par(res)
     assert par["m_propre"]["statut"] == "non_rejouable" and "CONDITIONAL_TRUE_EVENT" in par["m_propre"]["raison"]
-    assert par["m_inc"]["statut"] == "non_rejouable" and par["m_inc"]["raison"].startswith("incrémental")
+    assert par["m_inc"]["statut"] == "non_rejouable" and par["m_inc"]["raison"].startswith("incremental")
     assert par["m_py"]["statut"] == "non_rejouable" and "python" in par["m_py"]["raison"]
     assert par["m_apres"]["statut"] == "non_rejouable" and "m_propre" in par["m_apres"]["raison"]
-    assert res["summary"]["non_rejouable"] == 4 and res["summary"]["identique"] == 4 and res["summary"]["preuve"] == "partielle"
+    assert res["summary"]["non_rejouable"] == 4 and res["summary"]["identique"] == 4 and res["summary"]["preuve"] == "partial"
 
 
 def test_table_source_absente(tmp_path):
@@ -127,13 +128,13 @@ def test_table_source_absente(tmp_path):
     con.execute("drop table RAW.products")
     con.close()
     par = _par(run_rejeu(f"dbt://{FIX}", tmp_path / "out", tmp_path / "k.key", base=str(db), log=lambda *_: None))
-    assert par["stg_products"]["statut"] == "non_rejouable" and "table absente de la copie" in par["stg_products"]["raison"]
+    assert par["stg_products"]["statut"] == "non_rejouable" and "table missing from the copy" in par["stg_products"]["raison"]
     assert "stg_products" in par["int_order_totals"]["raison"] and par["dbt_fct_orders"]["statut"] == "non_rejouable"
     assert par["stg_orders"]["statut"] == "non_compare"
 
 
 def test_rejeu_sur_le_lac_ecrit_par_canot_drill(tmp_path):
-    """Bout en bout : canot drill copie la base vers Iceberg, le rejeu lit le lac (sources et tables d'origine copiées)."""
+    """End to end: canot drill copies the database to Iceberg, the replay reads the lake (copied sources and original tables)."""
     from canot.drill import run_drill
     from canot.sources.duckdb_src import DuckDBSource
     from canot.target import parse_target
@@ -147,7 +148,7 @@ def test_rejeu_sur_le_lac_ecrit_par_canot_drill(tmp_path):
                       log=lambda *_: None)
     finally:
         src.close()
-    assert r["summary"]["parity"] == "complète"
+    assert r["summary"]["parity"] == "complete"
     res = run_rejeu(f"dbt://{FIX}", tmp_path / "out", tmp_path / "k.key", lac=str(tmp_path / "lac"), drill_out=str(drill_out),
                     log=lambda *_: None)
     assert {m: _par(res)[m]["statut"] for m in MARTS} == dict.fromkeys(MARTS, "identique")
@@ -158,14 +159,23 @@ def test_cli_rejeu_dbt(tmp_path, capsys):
 
     db = copie_duckdb(tmp_path / "copie.duckdb")
     out = tmp_path / "out"
-    assert cli_run(["rejeu-dbt", f"dbt://{FIX}", "--base", str(db), "--out", str(out), "--key", str(tmp_path / "k.key")]) == 0
-    assert "4 identique(s), 0 différent(s), 4 rejoué(s) non comparé(s), 0 non rejouable(s), sur 8 modèle(s)" in capsys.readouterr().out
+    assert cli_run(["replay-dbt", f"dbt://{FIX}", "--base", str(db), "--out", str(out), "--key", str(tmp_path / "k.key")]) == 0
+    assert "4 identical, 0 different, 4 replayed but not compared, 0 not replayable, out of 8 model(s)" in capsys.readouterr().out
+    assert (out / "replay-dbt.json").exists()
     db2 = copie_duckdb(tmp_path / "copie2.duckdb", ecart=True)
-    assert cli_run(["rejeu-dbt", f"dbt://{FIX}", "--base", str(db2), "--out", str(tmp_path / "o2"), "--key", str(tmp_path / "k.key")]) == 1
+    assert cli_run(["replay-dbt", f"dbt://{FIX}", "--base", str(db2), "--out", str(tmp_path / "o2"), "--key", str(tmp_path / "k.key")]) == 1
+
+
+def test_cli_old_names_and_lac_alias_are_gone(tmp_path, capsys):
+    from canot.cli import run as cli_run
+
+    for argv in (["rejeu-dbt", f"dbt://{FIX}"], ["replay-dbt", f"dbt://{FIX}", "--lac", str(tmp_path)], ["connecteurs"]):
+        with pytest.raises(SystemExit):
+            cli_run(argv)
 
 
 def test_copie_absente_message_clair(tmp_path):
-    with pytest.raises(ValueError, match="indiquez la copie"):
+    with pytest.raises(ValueError, match="specify the copy"):
         run_rejeu(f"dbt://{FIX}", tmp_path / "out", tmp_path / "k.key", log=lambda *_: None)
 
 
@@ -174,13 +184,13 @@ def test_mcp_explique_un_rejeu(tmp_path):
 
     db = copie_duckdb(tmp_path / "copie.duckdb", ecart=True)
     run_rejeu(f"dbt://{FIX}", tmp_path / "out", tmp_path / "k.key", base=str(db), log=lambda *_: None)
-    e = agent.expliquer_rapport(str(tmp_path / "out" / "rejeu-dbt.json"))
-    assert e["forme"] == "P3 rejeu de traitements" and [d["modele"] for d in e["differents"]] == ["model.canot_lab.dbt_daily_revenue"]
-    assert len(e["non_compares"]) == 4 and e["non_rejouables"] == []
+    e = agent.explain_report(str(tmp_path / "out" / "replay-dbt.json"))
+    assert e["form"] == "P3 pipeline replay" and [d["model"] for d in e["different"]] == ["model.canot_lab.dbt_daily_revenue"]
+    assert len(e["not_compared"]) == 4 and e["not_replayable"] == []
 
 
 def _copie_flottante(path: Path, decalage: str) -> Path:
-    """Cas du premier rejeu réel : UNIT_PRICE en DOUBLE, BASKET_VALUE somme flottante, ITEMS en INTEGER (rejeu : HUGEINT)."""
+    """Case of the first real replay: UNIT_PRICE as DOUBLE, BASKET_VALUE a float sum, ITEMS as INTEGER (replay: HUGEINT)."""
     copie_duckdb(path)
     con = duckdb.connect(str(path))
     con.execute("alter table RAW.products alter unit_price type double")
@@ -188,7 +198,7 @@ def _copie_flottante(path: Path, decalage: str) -> Path:
     con.execute("""create table DBT_dbt_mart.int_order_totals as select l.order_id, sum(l.qty * p.unit_price) as basket_value,
                    cast(sum(l.qty) as integer) as items
                    from RAW.order_lines l join RAW.products p on p.product_id = l.product_id group by l.order_id""")
-    # somme flottante dans un autre ordre côté plateforme : la valeur diffère de la nôtre (ici au dernier bit)
+    # float sum in another order on the platform side: the value differs from ours (here in the last bit)
     con.execute(f"update DBT_dbt_mart.int_order_totals set basket_value = {decalage} where order_id % 3 = 0")
     con.close()
     return path
@@ -198,12 +208,12 @@ def test_regression_somme_flottante_au_dernier_bit(tmp_path):
     db = _copie_flottante(tmp_path / "c.duckdb", "nextafter(basket_value, 1e300)")
     par = _par(run_rejeu(f"dbt://{FIX}", tmp_path / "out", tmp_path / "k.key", base=str(db), log=lambda *_: None))
     r = par["int_order_totals"]
-    assert r["verification"]["fingerprint_ok"] is False and r["verification"]["stats_ok"] is True  # l'empreinte exacte diffère
-    assert any(c.startswith("items : HUGEINT -> INTEGER") for c in r["conversions"])
+    assert r["verification"]["fingerprint_ok"] is False and r["verification"]["stats_ok"] is True  # the exact fingerprint differs
+    assert any(c.startswith("items: HUGEINT -> INTEGER") for c in r["conversions"])
     ef = r["verification"]["empreinte_flottants"]
     assert ef["egale"] and ef["chiffres_significatifs"] == 12 and ef["colonnes"] == ["basket_value"]
     assert ef["ecarts_exacts"]["basket_value"]["valeurs_differentes_au_bit"] > 0 and ef["ecarts_exacts"]["basket_value"]["ecart_relatif_max"] < 1e-12
-    assert r["statut"] == "identique" and "dernier bit" in r["note"]
+    assert r["statut"] == "identique" and "last bit" in r["note"]
 
 
 def test_regression_ecart_flottant_reel_reste_different(tmp_path):

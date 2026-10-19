@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sample report | Canot</title>
+<meta name="description" content="A sample exit drill summary produced by Canot, on the TPC-H reference dataset.">
+<link rel="canonical" href="https://canot.io/en/report.html">
+<link rel="alternate" hreflang="fr" href="https://canot.io/rapport.html">
+<link rel="alternate" hreflang="en" href="https://canot.io/en/report.html">
+<link rel="alternate" hreflang="x-default" href="https://canot.io/rapport.html">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css?v=58fb23a29c">
+</head>
+<body class="rp">
+<div class="page">
+  <div class="bar">
+    <a class="brand" href="/en/" aria-label="Canot, home"><img src="/assets/canot-symbole.svg" alt="" width="48" height="25"><span>canot</span></a>
+    <a href="/en/#contact"><b>Get yours →</b></a> <span class="lang-switch" aria-label="Language / Langue"><a href="/rapport.html" hreflang="fr" lang="fr">FR</a> | <b aria-current="true">EN</b></span>
+  </div>
+  <main>
+  <article>
+    <div class="head">
+      <div class="top-row"><span>Exit drill summary</span><span class="tagex">Sample · TPC-H dataset</span></div>
+      <h1>Exit feasible on this scope. One item to fix before leaving.</h1>
+      <dl class="meta">
+        <div><dt>Source</dt><dd>DuckDB (TPC-H generated locally)</dd></div>
+        <div><dt>Destination</dt><dd>Apache Iceberg</dd></div>
+        <div><dt>Scope</dt><dd>8 tables, 8.7 million rows</dd></div>
+        <div><dt>Date</dt><dd>October 19, 2026</dd></div>
+      </dl>
+    </div>
+    <ul class="findings">
+      <li><span class="tag ok">Identical</span><div><span class="t">Seven tables out of eight arrive identical.</span><span class="d">The 8 TPC-H tables were copied, then compared: row count, per-column statistics and a fingerprint of each table's content. The eighth differs only in the precision of one column, see below.</span></div></li>
+      <li><span class="tag info">3 of 4</span><div><span class="t">Three queries out of four return the same figures.</span><span class="d">Four TPC-H queries were replayed on both sides. Three return exactly the same result; the fourth reads every column of the largest table and reveals the gap below.</span></div></li>
+      <li><span class="tag warn">To fix</span><div><span class="t">One timestamp column loses precision.</span><span class="d">The source keeps nanoseconds; Apache Iceberg (version 2) stops at microseconds. The instant is identical to the microsecond. Canot added this column for the demonstration: on your data, the same gap shows up in nanosecond timestamp columns.</span></div></li>
+      <li><span class="tag info">Signed</span><div><span class="t">Any change to the evidence is visible.</span><span class="d">Each step is recorded in a log signed with a key created on your side. If a line of the log changes, verification fails. The signature attests to the file's integrity, not to its author or its date.</span></div></li>
+    </ul>
+    <div class="use"><b>What you can do with it</b><span>Attach this file to your exit plan, present it to your risk committee, or use it as a quantified basis for your next renewal.</span></div>
+    <div class="foot">
+      <span>A set of measurements for your own assessment. It is not a certification and says nothing about whether your contracts meet any requirement.</span>
+      <a href="https://github.com/chiptuned/canot/tree/main/examples/tpch">Full technical report</a>
+    </div>
+  </article>
+  </main>
+</div>
+</body>
+</html>

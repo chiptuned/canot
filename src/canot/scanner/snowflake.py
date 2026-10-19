@@ -1,13 +1,13 @@
-"""Collecte Snowflake de `canot scan` : SNOWFLAKE.ACCOUNT_USAGE d'abord (tout le compte, fenêtre de `days` jours), SHOW pour combler les trous.
+"""Snowflake collection for `canot scan`: SNOWFLAKE.ACCOUNT_USAGE first (whole account, window of `days` days), SHOW to fill the gaps.
 
-ACCOUNT_USAGE a jusqu'à 3 h de retard (2 jours pour COPY_HISTORY) : la base scannée est recoupée en temps réel par son
-INFORMATION_SCHEMA (tables, colonnes, vues, routines, stages, pipes) et par SHOW (tâches, flux, tables dynamiques). Un objet vu
-seulement en temps réel est ajouté et marqué (table : flags « recente », detail.source ; objet : detail.inventaire, detail.recent) ;
-son historique ACCOUNT_USAGE reste None. Le bilan est dans snapshot["fraicheur"].
+ACCOUNT_USAGE lags by up to 3 h (2 days for COPY_HISTORY): the scanned database is cross-checked in real time through its
+INFORMATION_SCHEMA (tables, columns, views, routines, stages, pipes) and through SHOW (tasks, streams, dynamic tables). An object seen
+only in real time is added and marked (table: flag "recente", detail.source; object: detail.inventaire, detail.recent);
+its ACCOUNT_USAGE history stays None. The summary is in snapshot["fraicheur"].
 
-Lecture seule : chaque SQL passe par guard.check_readonly avant d'être envoyé. Agrégation côté serveur. Le texte SQL brut ne sort de
-collect() que par le second retour (familles brutes, clé `_sql`) ; les définitions de code sont analysées ici puis jetées.
-Jamais lus : BIND_VALUES, ERROR_MESSAGE, USERS.EMAIL/LOGIN_NAME, CLIENT_ENVIRONMENT, CLIENT_IP, LAST_DDL_BY, chemins des stages."""
+Read-only: every SQL statement goes through guard.check_readonly before it is sent. Aggregation happens server-side. Raw SQL text leaves
+collect() only through the second return value (raw families, key `_sql`); code definitions are analyzed here, then discarded.
+Never read: BIND_VALUES, ERROR_MESSAGE, USERS.EMAIL/LOGIN_NAME, CLIENT_ENVIRONMENT, CLIENT_IP, LAST_DDL_BY, stage paths."""
 from __future__ import annotations
 
 import json
@@ -27,7 +27,7 @@ from .model import Collector, bucket_only, classify_failure, pseudo
 AU = "SNOWFLAKE.ACCOUNT_USAGE"
 FAMILLES_MAX = 500
 ATTRIBUTION_MAX = 2000
-# latence maximale annoncée par Snowflake, en heures (docs.snowflake.com/en/sql-reference/account-usage) ; SHOW : temps réel
+# maximum latency documented by Snowflake, in hours (docs.snowflake.com/en/sql-reference/account-usage); SHOW: real time
 LATENCE_H = {
     "TABLES": 1.5, "COLUMNS": 1.5, "VIEWS": 1.5, "TABLE_STORAGE_METRICS": 1.5, "STORAGE_USAGE": 2, "METERING_DAILY_HISTORY": 3,
     "WAREHOUSE_METERING_HISTORY": 3, "QUERY_ATTRIBUTION_HISTORY": 8, "TABLE_DML_HISTORY": 6, "TABLE_QUERY_PRUNING_HISTORY": 4,
@@ -36,21 +36,21 @@ LATENCE_H = {
     "DATA_TRANSFER_HISTORY": 2, "DYNAMIC_TABLE_REFRESH_HISTORY": 3, "QUERY_HISTORY": 0.75, "ACCESS_HISTORY": 3,
     "POLICY_REFERENCES": 2, "TAG_REFERENCES": 2, "GRANTS_TO_ROLES": 2, "GRANTS_TO_USERS": 2, "USERS": 2, "SESSIONS": 3, "SHARES": 3,
 }
-FILTREES_PAR_DROITS = "lignes filtrées par les droits du rôle : les objets non visibles sont absents"
-# recoupement en temps réel (INFORMATION_SCHEMA de la base, SHOW) : objets créés depuis moins que la latence d'ACCOUNT_USAGE
-TEMPS_REEL = "temps réel, filtré par les droits du rôle : recoupe ACCOUNT_USAGE"
-TROP_RECENTE = "table trop récente pour ACCOUNT_USAGE"
-# requêtes jamais remontées : utilisateurs, stages, secrets, fichiers (PUT/GET), intégrations
+FILTREES_PAR_DROITS = "rows filtered by the role's privileges: objects it cannot see are missing"
+# real-time cross-check (the database's INFORMATION_SCHEMA, SHOW): objects created more recently than the ACCOUNT_USAGE latency
+TEMPS_REEL = "real time, filtered by the role's privileges: cross-checks ACCOUNT_USAGE"
+TROP_RECENTE = "table too recent for ACCOUNT_USAGE"
+# queries never collected: users, stages, secrets, files (PUT/GET), integrations
 EXCLU_QUERY_TYPE = ("%USER%", "%STAGE%", "%SECRET%", "%PASSWORD%", "%FILES%", "%INTEGRATION%")
 
 
-# --- petites conversions ------------------------------------------------------------------------------------
+# --- small conversions ----------------------------------------------------------------------------------------
 
 def _iso(v) -> str | None:
     if v is None:
         return None
     if isinstance(v, datetime):
-        v = v if v.tzinfo else v.replace(tzinfo=timezone.utc)  # session en UTC
+        v = v if v.tzinfo else v.replace(tzinfo=timezone.utc)  # session in UTC
         return v.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     if isinstance(v, date):
         return v.isoformat()
@@ -80,7 +80,7 @@ def _ts(dt: datetime) -> str:
 
 
 def _ident(name: str) -> str:
-    """Identifiant non entre guillemets -> majuscules (stockage Snowflake) ; sinon tel quel."""
+    """Unquoted identifier -> uppercase (Snowflake storage); otherwise as is."""
     name = name.strip()
     return name.upper() if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_$]*", name) else name.strip('"')
 
@@ -101,12 +101,12 @@ def _coltype(r: dict) -> str:
 
 
 def _hours(h) -> str:
-    s = f"{h:.1f}".replace(".", ",")
-    return s[:-2] if s.endswith(",0") else s
+    s = f"{h:.1f}"
+    return s[:-2] if s.endswith(".0") else s
 
 
 def _rt_merge(au: list[dict] | None, rt: list[dict] | None, key) -> list[dict] | None:
-    """Lignes d'ACCOUNT_USAGE + lignes temps réel absentes d'ACCOUNT_USAGE (marquées `_rt`). None si aucune des deux n'est lue."""
+    """ACCOUNT_USAGE rows + real-time rows missing from ACCOUNT_USAGE (marked `_rt`). None if neither was read."""
     if au is None and rt is None:
         return None
     seen = {key(r) for r in au or []}
@@ -120,7 +120,7 @@ def _scope(db: str | None, schemas: list[str], dbcol: str, schcol: str | None) -
     return out
 
 
-# --- analyse locale des définitions (le texte ne quitte pas cette fonction) -----------------------------------
+# --- local analysis of definitions (the text never leaves this function) -------------------------------------
 
 _DYN_SQL = re.compile(r"\bEXECUTE\s+IMMEDIATE\b|\bIDENTIFIER\s*\(\s*[:$]", re.I)
 _DYN_CALL = {"JAVASCRIPT": re.compile(r"snowflake\.(execute|createStatement)\s*\(", re.I),
@@ -132,7 +132,7 @@ _SQL_LITERAL = re.compile(r"'(?:[^']|'')*'")
 
 
 def _dynamic(lang: str | None, body: str | None) -> bool | None:
-    """SQL dynamique : EXECUTE IMMEDIATE / IDENTIFIER(:var) en SQL ; appel d'exécution avec chaîne construite ailleurs. None si non visible."""
+    """Dynamic SQL: EXECUTE IMMEDIATE / IDENTIFIER(:var) in SQL; an execution call with a string built elsewhere. None if not visible."""
     if body is None:
         return None
     lang = (lang or "SQL").upper()
@@ -145,7 +145,7 @@ def _dynamic(lang: str | None, body: str | None) -> bool | None:
 
 
 def _qualify(ref: str, db: str | None, schema: str | None) -> str | None:
-    """'stg/chemin' ou 'S.OBJ' -> 'DB.S.OBJ' (non entre guillemets : majuscules) ; @~ et @%t (stages internes) -> None."""
+    """'stg/path' or 'S.OBJ' -> 'DB.S.OBJ' (unquoted: uppercase); @~ and @%t (internal stages) -> None."""
     if not ref or ref.startswith(("~", "%")):
         return None
     parts = [p.strip('"') if p.startswith('"') else p.upper() for p in ref.split("/")[0].split(".")][-3:]
@@ -154,7 +154,7 @@ def _qualify(ref: str, db: str | None, schema: str | None) -> str | None:
 
 
 def _code_refs(lang: str | None, body: str | None, db: str | None, schema: str | None) -> tuple[list[str], list[str]]:
-    """(stages référencés, compartiments/hôtes externes) d'une définition ; jamais de chemin."""
+    """(referenced stages, external buckets/hosts) of a definition; never a path."""
     if not body:
         return [], []
     text = _SQL_LITERAL.sub("''", body) if (lang or "SQL").upper() == "SQL" else body
@@ -168,7 +168,7 @@ def _tables_in(sql: str | None, db: str | None, schema: str | None) -> list[str]
         return []
     try:
         tree = sqlglot.parse_one(sql, read="snowflake")
-    except Exception:  # noqa: BLE001 : définition non analysable, on ne déduit rien
+    except Exception:  # noqa: BLE001: unparsable definition, nothing is inferred
         return []
     out = set()
     for t in tree.find_all(exp.Table):
@@ -182,7 +182,7 @@ def _tables_in(sql: str | None, db: str | None, schema: str | None) -> list[str]
 
 
 def _location(first: str | None, third: str | None, db: str | None = None, schema: str | None = None) -> tuple[str | None, str | None]:
-    """(compartiment externe, stage nommé) depuis SPLIT_PART(loc,'/',1) et SPLIT_PART(loc,'/',3) : le chemin n'est jamais lu."""
+    """(external bucket, named stage) from SPLIT_PART(loc,'/',1) and SPLIT_PART(loc,'/',3): the path is never read."""
     first = (first or "").lstrip('["').strip()
     if first.endswith(":") and third:
         return bucket_only(f"{first}//{third}"), None
@@ -197,7 +197,7 @@ def _split_location(loc) -> tuple[str | None, str | None]:
 
 
 def _app(tag: str | None) -> str | None:
-    """Nom d'application tiré de QUERY_TAG (JSON {"app": ...} ou jeton court) ; tout le reste est ignoré (peut contenir une identité)."""
+    """Application name taken from QUERY_TAG (JSON {"app": ...} or a short token); everything else is ignored (it may hold an identity)."""
     if not tag:
         return None
     token = re.compile(r"[A-Za-z0-9_.:-]{1,40}")
@@ -230,12 +230,12 @@ def _new_objet(kind: str, oid: str, schema: str | None = None, **kw) -> dict:
     return o
 
 
-# --- collecte ---------------------------------------------------------------------------------------------
+# --- collection -------------------------------------------------------------------------------------------
 
 def collect(run, *, base: str, schemas: list[str] | None, level: int, salt: bytes, days: int = 365,
             now: datetime | None = None) -> tuple[dict, list[dict]]:
-    """Lit le compte en lecture seule. `run(sql) -> list[dict]` (clés en MAJUSCULES). Renvoie (snapshot, familles brutes avec `_sql`).
-    `base` vide ou "*" : tout le compte. `now` sert aux tests (sinon l'heure UTC courante)."""
+    """Reads the account, read-only. `run(sql) -> list[dict]` (UPPERCASE keys). Returns (snapshot, raw families with `_sql`).
+    Empty `base` or "*": whole account. `now` is for tests (otherwise the current UTC time)."""
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc).replace(microsecond=0)
     start = now - timedelta(days=days)
     fen = {"du": _iso(start), "au": _iso(now)}
@@ -256,7 +256,7 @@ def collect(run, *, base: str, schemas: list[str] | None, level: int, salt: byte
     def read(view: str, sql, *, lvl: int = 1, windowed: bool = False):
         vue = view if view.startswith("SHOW") else f"{AU}.{view}"
         if level < lvl:
-            c.skip(vue, f"non demandé (niveau {level})")
+            c.skip(vue, f"not requested (level {level})")
             return None
         fn = sql if callable(sql) else (lambda: q(sql))
         lat = 0 if view.startswith("SHOW") else LATENCE_H.get(view.split(" ")[0])
@@ -267,9 +267,9 @@ def collect(run, *, base: str, schemas: list[str] | None, level: int, salt: byte
 
     R: dict[str, list[dict] | None] = {}
 
-    # ---- niveau 1 : inventaire, volumes, consommation (OBJECT_VIEWER, USAGE_VIEWER)
+    # ---- level 1: inventory, volumes, consumption (OBJECT_VIEWER, USAGE_VIEWER)
     def metering():
-        q("ALTER SESSION SET TIMEZONE = 'UTC'")  # USAGE_DATE en UTC, comme ORGANIZATION_USAGE
+        q("ALTER SESSION SET TIMEZONE = 'UTC'")  # USAGE_DATE in UTC, like ORGANIZATION_USAGE
         return q(f"SELECT SERVICE_TYPE, SUM(CREDITS_USED) AS UTILISES, SUM(CREDITS_BILLED) AS FACTURES, MIN(USAGE_DATE) AS DU, "
                  f"MAX(USAGE_DATE) AS AU FROM {AU}.METERING_DAILY_HISTORY WHERE USAGE_DATE >= {since_d} GROUP BY SERVICE_TYPE ORDER BY SERVICE_TYPE")
     R["metering"] = read("METERING_DAILY_HISTORY", metering, windowed=True)
@@ -300,7 +300,7 @@ def collect(run, *, base: str, schemas: list[str] | None, level: int, salt: byte
     R["dml"] = read("TABLE_DML_HISTORY", f"SELECT TABLE_ID, MAX(END_TIME) AS DERNIERE, COUNT(*) AS INTERVALLES, SUM(ROWS_ADDED) AS AJOUTEES, "
                     f"SUM(ROWS_UPDATED) AS MODIFIEES, SUM(ROWS_REMOVED) AS RETIREES FROM {AU}.TABLE_DML_HISTORY "
                     f"WHERE START_TIME >= {since}{sc('DATABASE_NAME', 'SCHEMA_NAME')} GROUP BY TABLE_ID", windowed=True)
-    # les lectures de Canot (drill) sont retirées par leur empreinte, connue de QUERY_ATTRIBUTION_HISTORY (même rôle de base)
+    # Canot's own reads (drill) are removed by their hash, known to QUERY_ATTRIBUTION_HISTORY (same database role)
     R["pruning"] = read("TABLE_QUERY_PRUNING_HISTORY", f"SELECT TABLE_ID, SUM(NUM_QUERIES) AS N, MAX(INTERVAL_END_TIME) AS DERNIERE "
                         f"FROM {AU}.TABLE_QUERY_PRUNING_HISTORY WHERE INTERVAL_START_TIME >= {since}{sc('DATABASE_NAME', 'SCHEMA_NAME')} "
                         f"AND COALESCE(QUERY_PARAMETERIZED_HASH, '') NOT IN (SELECT QUERY_PARAMETERIZED_HASH FROM {AU}.QUERY_ATTRIBUTION_HISTORY "
@@ -334,7 +334,7 @@ def collect(run, *, base: str, schemas: list[str] | None, level: int, salt: byte
     R["serverless"] = read("SERVERLESS_TASK_HISTORY", f"SELECT DATABASE_NAME, SCHEMA_NAME, TASK_NAME, SUM(CREDITS_USED) AS CREDITS "
                            f"FROM {AU}.SERVERLESS_TASK_HISTORY WHERE START_TIME >= {since}{sc('DATABASE_NAME', 'SCHEMA_NAME')} GROUP BY 1, 2, 3",
                            windowed=True)
-    # STREAMS est absent de la table des rôles de base : lecture tentée, SHOW STREAMS en repli au niveau 2
+    # STREAMS is missing from the database-role table: read attempted, SHOW STREAMS as the level-2 fallback
     R["streams"] = read("STREAMS", f"SELECT STREAM_CATALOG, STREAM_SCHEMA, STREAM_NAME, OWNER, TABLE_NAME, SOURCE_TYPE, MODE, STALE_AFTER "
                         f"FROM {AU}.STREAMS WHERE DELETED IS NULL{sc('STREAM_CATALOG', 'STREAM_SCHEMA')}")
     R["pipes"] = read("PIPES", f"SELECT PIPE_CATALOG, PIPE_SCHEMA, PIPE_NAME, PIPE_OWNER, IS_AUTOINGEST_ENABLED, DEFINITION "
@@ -355,8 +355,8 @@ def collect(run, *, base: str, schemas: list[str] | None, level: int, salt: byte
                            f"MODE(TARGET_LAG_SEC) AS LAG FROM {AU}.DYNAMIC_TABLE_REFRESH_HISTORY WHERE REFRESH_START_TIME >= {since}"
                            f"{sc('DATABASE_NAME', 'SCHEMA_NAME')} GROUP BY 1, 2, 3", windowed=True)
 
-    # ---- niveau 1, temps réel : INFORMATION_SCHEMA de la base scannée (métadonnées seulement, mêmes droits que la lecture)
-    # ACCOUNT_USAGE a jusqu'à 3 h de retard : un objet créé entre-temps n'y figure pas encore. Base par base : rien pour « tout le compte ».
+    # ---- level 1, real time: INFORMATION_SCHEMA of the scanned database (metadata only, same privileges as the read)
+    # ACCOUNT_USAGE lags by up to 3 h: an object created in the meantime is not there yet. Database by database: nothing for "whole account".
     def rt(view: str, sql: str):
         res = c.read(f"{db}.INFORMATION_SCHEMA.{view}", lambda: q(sql), latence_max_h=0)
         if res is not None:
@@ -381,14 +381,14 @@ def collect(run, *, base: str, schemas: list[str] | None, level: int, salt: byte
         R["rt_procedures"] = rt("PROCEDURES", f"SELECT PROCEDURE_CATALOG, PROCEDURE_SCHEMA, PROCEDURE_NAME, PROCEDURE_OWNER, PROCEDURE_LANGUAGE, "
                                               f"EXTERNAL_ACCESS_INTEGRATIONS, PROCEDURE_DEFINITION, LAST_ALTERED "
                                               f"FROM {isch}.PROCEDURES{rsc('PROCEDURE_SCHEMA')}")
-        # stages et pipes : INFORMATION_SCHEMA plutôt que SHOW, pour ne jamais lire le chemin des stages (SPLIT_PART côté serveur)
+        # stages and pipes: INFORMATION_SCHEMA rather than SHOW, so stage paths are never read (SPLIT_PART server-side)
         R["rt_stages"] = rt("STAGES", f"SELECT STAGE_CATALOG, STAGE_SCHEMA, STAGE_NAME, STAGE_OWNER, STAGE_TYPE, STAGE_REGION, "
                                       f"SPLIT_PART(STAGE_URL, '/', 1) AS URL1, SPLIT_PART(STAGE_URL, '/', 3) AS URL3 "
                                       f"FROM {isch}.STAGES{rsc('STAGE_SCHEMA')}")
         R["rt_pipes"] = rt("PIPES", f"SELECT PIPE_CATALOG, PIPE_SCHEMA, PIPE_NAME, PIPE_OWNER, IS_AUTOINGEST_ENABLED, DEFINITION "
                                     f"FROM {isch}.PIPES{rsc('PIPE_SCHEMA')}")
 
-    # ---- niveau 2 : requêtes, lectures par objet, politiques (GOVERNANCE_VIEWER), compléments SHOW
+    # ---- level 2: queries, reads per object, policies (GOVERNANCE_VIEWER), SHOW complements
     excl = " AND ".join(f"QUERY_TYPE NOT LIKE {_lit(p)}" for p in EXCLU_QUERY_TYPE)
     qh_where = f"START_TIME >= {since} AND {not_canot} AND QUERY_PARAMETERIZED_HASH IS NOT NULL AND {excl}"
     R["qh"] = read("QUERY_HISTORY", f"SELECT QUERY_PARAMETERIZED_HASH AS H, ANY_VALUE(QUERY_TEXT) AS TXT, MODE(QUERY_TYPE) AS QUERY_TYPE, "
@@ -405,7 +405,7 @@ def collect(run, *, base: str, schemas: list[str] | None, level: int, salt: byte
     ah_state = {"semaines": 0, "du": None, "echec": None}
 
     def access_history_week(a: datetime, b: datetime) -> str:
-        """Une semaine d'ACCESS_HISTORY, agrégée par objet : lectures (objets de base, vues résolues) et écritures. Canot exclu."""
+        """One week of ACCESS_HISTORY, aggregated per object: reads (base objects, resolved views) and writes. Canot excluded."""
         pref = f" AND STARTSWITH(f.value:\"objectName\"::STRING, {_lit(db + '.')})" if db else ""
         mine = (f"ah.QUERY_ID NOT IN (SELECT QUERY_ID FROM {AU}.QUERY_HISTORY WHERE QUERY_TAG = 'canot' "
                 f"AND START_TIME >= {_ts(a - timedelta(days=1))} AND START_TIME < {_ts(b)})")
@@ -419,7 +419,7 @@ def collect(run, *, base: str, schemas: list[str] | None, level: int, salt: byte
 
     def access_history():
         out = []
-        for k in range(math.ceil(days / 7)):  # du plus récent au plus ancien : un échec en route laisse la période récente
+        for k in range(math.ceil(days / 7)):  # newest to oldest: a failure along the way keeps the recent period
             b, a = now - timedelta(days=7 * k), max(start, now - timedelta(days=7 * (k + 1)))
             try:
                 out += q(access_history_week(a, b))
@@ -433,8 +433,8 @@ def collect(run, *, base: str, schemas: list[str] | None, level: int, salt: byte
     R["access"] = read("ACCESS_HISTORY", access_history, lvl=2, windowed=True)
     if R["access"] is not None and ah_state["echec"] is not None:
         last()["fenetre"]["du"] = _iso(ah_state["du"])
-        last()["raison"] = (f"partielle : {ah_state['semaines']}/{math.ceil(days / 7)} semaines lues, "
-                            f"arrêt sur {classify_failure(ah_state['echec'])}")
+        last()["raison"] = (f"partial: {ah_state['semaines']}/{math.ceil(days / 7)} weeks read, "
+                            f"stopped on {classify_failure(ah_state['echec'])}")
 
     R["policies"] = read("POLICY_REFERENCES", f"SELECT POLICY_DB, POLICY_SCHEMA, POLICY_NAME, POLICY_KIND, REF_DATABASE_NAME, REF_SCHEMA_NAME, "
                          f"REF_ENTITY_NAME, REF_ENTITY_DOMAIN, REF_COLUMN_NAME, POLICY_STATUS FROM {AU}.POLICY_REFERENCES "
@@ -448,14 +448,14 @@ def collect(run, *, base: str, schemas: list[str] | None, level: int, salt: byte
     R["show_dt"] = read("SHOW DYNAMIC TABLES", f"SHOW DYNAMIC TABLES {where}", lvl=2)
     R["show_ice"] = read("SHOW ICEBERG TABLES", f"SHOW ICEBERG TABLES {where}", lvl=2)
     R["show_ext"] = read("SHOW EXTERNAL TABLES", f"SHOW EXTERNAL TABLES {where}", lvl=2)
-    # SHOW STREAMS / SHOW TASKS : repli si la vue ACCOUNT_USAGE est refusée, et recoupement en temps réel sinon
+    # SHOW STREAMS / SHOW TASKS: fallback if the ACCOUNT_USAGE view is refused, real-time cross-check otherwise
     R["show_streams"] = read("SHOW STREAMS", f"SHOW STREAMS {where}", lvl=2)
     R["show_tasks"] = read("SHOW TASKS", f"SHOW TASKS {where}", lvl=2)
 
-    # ---- niveau 3 : droits, utilisateurs (pseudonymisés), outils, partages (SECURITY_VIEWER)
-    R["role_tree"] = read("GRANTS_TO_ROLES (hiérarchie des rôles)", f"SELECT NAME AS ROLE, GRANTEE_NAME AS PARENT FROM {AU}.GRANTS_TO_ROLES "
+    # ---- level 3: privileges, users (pseudonymized), tools, shares (SECURITY_VIEWER)
+    R["role_tree"] = read("GRANTS_TO_ROLES (role hierarchy)", f"SELECT NAME AS ROLE, GRANTEE_NAME AS PARENT FROM {AU}.GRANTS_TO_ROLES "
                           f"WHERE GRANTED_ON IN ('ROLE', 'DATABASE_ROLE') AND PRIVILEGE = 'USAGE' AND DELETED_ON IS NULL", lvl=3)
-    R["grants"] = read("GRANTS_TO_ROLES (droits sur le périmètre)", f"SELECT GRANTED_TO, GRANTED_ON, PRIVILEGE, COUNT(*) AS N, "
+    R["grants"] = read("GRANTS_TO_ROLES (privileges in scope)", f"SELECT GRANTED_TO, GRANTED_ON, PRIVILEGE, COUNT(*) AS N, "
                        f"COUNT(DISTINCT GRANTEE_NAME) AS BENEFICIAIRES FROM {AU}.GRANTS_TO_ROLES WHERE DELETED_ON IS NULL"
                        f"{sc('TABLE_CATALOG')} GROUP BY 1, 2, 3 ORDER BY 4 DESC", lvl=3)
     R["role_users"] = read("GRANTS_TO_USERS", f"SELECT g.ROLE AS ROLE, COUNT(DISTINCT g.GRANTEE_NAME) AS N FROM {AU}.GRANTS_TO_USERS g "
@@ -465,7 +465,7 @@ def collect(run, *, base: str, schemas: list[str] | None, level: int, salt: byte
                          f"MAX(CREATED_ON) AS DERNIERE FROM {AU}.SESSIONS WHERE CREATED_ON >= {since} GROUP BY 1 ORDER BY 2 DESC", lvl=3, windowed=True)
     hashes = [r["H"] for r in R["qh"] or [] if r.get("H")]
     if hashes and level >= 3:
-        R["family_tools"] = read("QUERY_HISTORY × SESSIONS (outil par famille)",
+        R["family_tools"] = read("QUERY_HISTORY × SESSIONS (tool per family)",
                                  f"SELECT q.QUERY_PARAMETERIZED_HASH AS H, s.CLIENT_APPLICATION_ID AS OUTIL, COUNT(*) AS N "
                                  f"FROM {AU}.QUERY_HISTORY q JOIN {AU}.SESSIONS s ON s.SESSION_ID = q.SESSION_ID WHERE q.START_TIME >= {since} "
                                  f"AND COALESCE(q.QUERY_TAG, '') <> 'canot' AND q.QUERY_PARAMETERIZED_HASH IN ("
@@ -476,20 +476,20 @@ def collect(run, *, base: str, schemas: list[str] | None, level: int, salt: byte
     return _assemble(R, c, db=db, schs=schs, level=level, salt=salt, days=days, now=now, fen=fen, in_scope=in_scope)
 
 
-# --- assemblage (pur) -------------------------------------------------------------------------------------
+# --- assembly (pure) --------------------------------------------------------------------------------------
 
 def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, in_scope) -> tuple[dict, list[dict]]:
     lu = {k: v is not None for k, v in R.items()}
 
     def rt_mark(o: dict, r: dict, au_key: str, source: str = "information_schema") -> dict:
-        """Objet vu seulement en temps réel : `recent` si la vue ACCOUNT_USAGE correspondante a bien été lue (sinon simple repli)."""
+        """Object seen only in real time: `recent` if the matching ACCOUNT_USAGE view was actually read (otherwise a plain fallback)."""
         if r.get("_rt"):
-            o["detail"]["inventaire"] = source  # « source » est déjà pris par les flux (type de la source)
+            o["detail"]["inventaire"] = source  # "source" is already used by streams (source type)
             if lu.get(au_key):
                 o["detail"]["recent"] = True
         return o
 
-    # recoupement temps réel des objets : par identifiant, les lignes absentes d'ACCOUNT_USAGE sont ajoutées et marquées
+    # real-time cross-check of objects: by identifier, rows missing from ACCOUNT_USAGE are added and marked
     def key3(*cols):
         return lambda r: _fqn(*(r.get(x) for x in cols))
     stage_rows = _rt_merge(R["stages"], R.get("rt_stages"), key3("STAGE_CATALOG", "STAGE_SCHEMA", "STAGE_NAME"))
@@ -498,12 +498,12 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
     proc_rows = _rt_merge(R["procedures"], R.get("rt_procedures"), key3("PROCEDURE_CATALOG", "PROCEDURE_SCHEMA", "PROCEDURE_NAME"))
     mv_names = {_fqn(r["TABLE_CATALOG"], r["TABLE_SCHEMA"], r["TABLE_NAME"]) for r in (R["tables"] or []) + (R.get("rt_tables") or [])
                 if r.get("TABLE_TYPE") == "MATERIALIZED VIEW"}
-    # VIEWS liste aussi les vues matérialisées (vérifié sur un compte réel) : elles sont décrites une fois, comme vue_materialisee
+    # VIEWS also lists materialized views (checked on a real account): they are described once, as vue_materialisee
     not_mv = key3("TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME")
     view_rows = _rt_merge([r for r in R["views"] if not_mv(r) not in mv_names] if lu["views"] else None,
                           [r for r in R.get("rt_views") or [] if not_mv(r) not in mv_names] if lu.get("rt_views") else None, not_mv)
 
-    # dépendances déclarées : objet référent -> objets référencés
+    # declared dependencies: referencing object -> referenced objects
     deps: dict[str, list[str]] = defaultdict(list)
     for r in R["deps"] or []:
         src = _fqn(r["REFERENCING_DATABASE"], r["REFERENCING_SCHEMA"], r["REFERENCING_OBJECT_NAME"])
@@ -511,7 +511,7 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
         if dst not in deps[src]:
             deps[src].append(dst)
 
-    # ---- stages (servent à résoudre les références des autres objets)
+    # ---- stages (used to resolve the other objects' references)
     objets: list[dict] = []
     stage_bucket: dict[str, str | None] = {}
     for r in stage_rows or []:
@@ -538,20 +538,20 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
     for r in trows:
         by_name[_fqn(r["TABLE_CATALOG"], r["TABLE_SCHEMA"], r["TABLE_NAME"])].append(r)
     known_ids = {x["TABLE_ID"] for x in trows}
-    for r in tsm.values():  # supprimées hors fenêtre mais encore facturées (clones, fail-safe) ; tout, si TABLES est refusée
+    for r in tsm.values():  # dropped outside the window but still billed (clones, fail-safe); everything, if TABLES is refused
         if r["ID"] not in known_ids and (r.get("DELETED") or R["tables"] is None):
             by_name[_fqn(r["TABLE_CATALOG"], r["TABLE_SCHEMA"], r["TABLE_NAME"])].append(
                 {"TABLE_ID": r["ID"], "TABLE_CATALOG": r["TABLE_CATALOG"], "TABLE_SCHEMA": r["TABLE_SCHEMA"], "TABLE_NAME": r["TABLE_NAME"],
                  "TABLE_TYPE": "BASE TABLE", "IS_TRANSIENT": r.get("IS_TRANSIENT"), "DELETED": r.get("TABLE_DROPPED") if r.get("DELETED") else None,
                  "_tsm_seul": True})
-    # temps réel : une table vivante dans INFORMATION_SCHEMA sans version vivante dans ACCOUNT_USAGE est ajoutée (créée ou recréée récemment)
+    # real time: a live table in INFORMATION_SCHEMA with no live version in ACCOUNT_USAGE is added (recently created or recreated)
     rt_by_name = {_fqn(r["TABLE_CATALOG"], r["TABLE_SCHEMA"], r["TABLE_NAME"]): r for r in R.get("rt_tables") or []
                   if r.get("TABLE_TYPE") not in ("VIEW", "MATERIALIZED VIEW")}
     for name, r in rt_by_name.items():
         live = [x for x in by_name.get(name, []) if not x.get("DELETED")]
         if not live:
             by_name[name].append({**r, "TABLE_ID": None, "DELETED": None, "_rt": True})
-        elif all(x.get("_tsm_seul") for x in live):  # TABLES refusée : le type, le propriétaire, etc. viennent du temps réel
+        elif all(x.get("_tsm_seul") for x in live):  # TABLES refused: type, owner, etc. come from real time
             for x in live:
                 by_name[name][by_name[name].index(x)] = {**r, "TABLE_ID": x["TABLE_ID"], "DELETED": None, "_rt_complete": True}
     tables: list[dict] = []
@@ -581,11 +581,11 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
                 t["detail"]["type_non_lu"] = True
             if r.get("_rt_complete"):
                 t["detail"].update(inventaire="information_schema", modifiee_le=_iso(r.get("LAST_ALTERED")))
-            if r.get("_rt"):  # vue seulement en temps réel : volumes de la vue temps réel, historique ACCOUNT_USAGE inconnu (None, jamais 0)
+            if r.get("_rt"):  # seen only in real time: volumes from the real-time view, ACCOUNT_USAGE history unknown (None, never 0)
                 t["octets_actifs"] = _int(r.get("BYTES"))
                 t["detail"].update(source="information_schema", modifiee_le=_iso(r.get("LAST_ALTERED")),
                                    octets_source="INFORMATION_SCHEMA.TABLES.BYTES",
-                                   historique_non_lu=TROP_RECENTE if lu["tables"] else "ACCOUNT_USAGE.TABLES non lue")
+                                   historique_non_lu=TROP_RECENTE if lu["tables"] else "ACCOUNT_USAGE.TABLES not read")
                 if lu["tables"]:
                     flags.append("recente")
             m = tsm.get(r["TABLE_ID"]) if r["TABLE_ID"] is not None else None
@@ -613,7 +613,7 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
         if t is not None:
             t["colonnes"].append({"nom": r["COLUMN_NAME"], "type": _coltype(r)})
 
-    # recoupement des colonnes et des types avec la vue temps réel (version vivante seulement) : l'état présent l'emporte, l'écart est dit
+    # cross-check of columns and types against the real-time view (live version only): the present state wins, the gap is reported
     rt_cols: dict[str, list[dict]] = defaultdict(list)
     for r in R.get("rt_columns") or []:
         rt_cols[_fqn(r["TABLE_CATALOG"], r["TABLE_SCHEMA"], r["TABLE_NAME"])].append({"nom": r["COLUMN_NAME"], "type": _coltype(r)})
@@ -627,21 +627,21 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
             d["vue_temps_reel"] = True
             au_type = next((x.get("TABLE_TYPE") for x in by_name[name] if x.get("TABLE_ID") == d["table_id"]), None)
             if au_type and live.get("TABLE_TYPE") and au_type != live["TABLE_TYPE"]:
-                d["ecart_type"] = f"{au_type} dans ACCOUNT_USAGE, {live['TABLE_TYPE']} en temps réel"
+                d["ecart_type"] = f"{au_type} in ACCOUNT_USAGE, {live['TABLE_TYPE']} in real time"
             rt_bytes = _int(live.get("BYTES"))
             d["octets_temps_reel"] = rt_bytes
-            if t["octets_actifs"] == 0 and rt_bytes:  # métriques de stockage pas encore calculées pour une table récente
+            if t["octets_actifs"] == 0 and rt_bytes:  # storage metrics not computed yet for a recent table
                 d["volume_en_retard"] = True
         cols = rt_cols.get(name)
         if cols is None:
             continue
         if t["colonnes"] and t["colonnes"] != cols:
             before, after = {x["nom"]: x["type"] for x in t["colonnes"]}, {x["nom"]: x["type"] for x in cols}
-            parts = [f"{n} {what}" for n, what in ((len(after.keys() - before.keys()), "ajoutée(s)"),
-                                                     (len(before.keys() - after.keys()), "retirée(s)"),
-                                                     (sum(before[k] != after[k] for k in before.keys() & after.keys()), "de type changé"))
+            parts = [f"{n} {what}" for n, what in ((len(after.keys() - before.keys()), "added"),
+                                                     (len(before.keys() - after.keys()), "removed"),
+                                                     (sum(before[k] != after[k] for k in before.keys() & after.keys()), "with changed type"))
                      if n]
-            d["ecart_colonnes"] = "colonnes en temps réel : " + (", ".join(parts) if parts else "ordre changé")
+            d["ecart_colonnes"] = "columns in real time: " + (", ".join(parts) if parts else "order changed")
         t["colonnes"] = cols
 
     dml = {r["TABLE_ID"]: r for r in R["dml"] or []}
@@ -651,7 +651,7 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
     for r in R["copy"] or []:
         copy_by_table[r["TABLE_ID"]].append(r)
 
-    # ACCESS_HISTORY : lectures (objets de base) et écritures par objet ; inutilisable s'il est vide alors que l'élagage montre des lectures
+    # ACCESS_HISTORY: reads (base objects) and writes per object; not usable if empty while pruning shows reads
     reads, writes = defaultdict(lambda: [0, None]), defaultdict(lambda: [0, None])
     for r in R["access"] or []:
         acc = (reads if r["SENS"] == "L" else writes)
@@ -663,15 +663,15 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
     ah_rows = len(R["access"] or [])
     ah_ok = lu["access"] and (ah_rows > 0 or (lu["pruning"] and pruning_reads == 0))
     if level < 2:
-        edition = "non déterminée (ACCESS_HISTORY non demandé)"
+        edition = "not determined (ACCESS_HISTORY not requested)"
     elif not lu["access"]:
-        edition = "non déterminée (Standard ou droit absent)"
+        edition = "not determined (Standard or missing privilege)"
     elif not ah_ok:
-        edition = "non déterminée (ACCESS_HISTORY vide alors que des lectures sont observées ailleurs)"
-    elif ah_rows == 0:  # vide, corroboré par l'élagage : lectures à 0 admises, édition non prouvée
-        edition = "non déterminée (ACCESS_HISTORY lisible, sans ligne)"
+        edition = "not determined (ACCESS_HISTORY empty while reads are observed elsewhere)"
+    elif ah_rows == 0:  # empty, corroborated by pruning: zero reads accepted, edition not proven
+        edition = "not determined (ACCESS_HISTORY readable, no rows)"
     else:
-        edition = "Enterprise ou supérieure"
+        edition = "Enterprise or higher"
 
     pol_by_table, tag_by_table = defaultdict(list), defaultdict(list)
     policies: dict[str, dict] = {}
@@ -711,8 +711,8 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
         tid, d = t["detail"]["table_id"], t["detail"]
         name = _fqn(t["base"], t["schema"], t["nom"])
         if d.get("source") == "information_schema":
-            # historique ACCOUNT_USAGE pas encore disponible : rien n'est déduit (ni 0 lecture, ni 0 chargement) ; une lecture
-            # ou une écriture déjà visible dans ACCESS_HISTORY, par son nom, reste une observation
+            # ACCOUNT_USAGE history not available yet: nothing is inferred (neither 0 reads nor 0 loads); a read
+            # or a write already visible in ACCESS_HISTORY, by name, is still an observation
             d.update(requetes_pruning_n=None, dernier_scan_pruning=None, jamais_lu_pruning=None, jamais_lu=None)
             if ah_ok and name in reads:
                 t["n_lectures"], t["derniere_lecture"] = reads[name][0], reads[name][1]
@@ -731,7 +731,7 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
         d["dernier_scan_pruning"] = _iso(p["DERNIERE"]) if p else None
         d["jamais_lu_pruning"] = (d["requetes_pruning_n"] == 0) if lu["pruning"] else None
         if ah_ok:
-            alive = t["id"] == name  # une version supprimée ne se retrouve que par son identifiant interne
+            alive = t["id"] == name  # a dropped version is only found by its internal id
             rd = reads.get(tid) or (reads.get(name) if alive else None) or [0, None]
             wr = writes.get(tid) or (writes.get(name) if alive else None) or [0, None]
             t["n_lectures"], t["derniere_lecture"] = rd[0], rd[1]
@@ -748,7 +748,7 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
             srcs = sorted({b for b in (loc_bucket(r.get("LOC1"), r.get("LOC3"), t["base"], t["schema"]) for r in loads) if b})
             if srcs:
                 d["sources_chargement"] = ", ".join(srcs)
-        if t["id"] == name:  # politiques, étiquettes et SHOW ne visent que la version vivante
+        if t["id"] == name:  # policies, tags and SHOW only target the live version
             t["politiques"], t["etiquettes"] = pol_by_table.get(name, []), sorted(tag_by_table.get(name, []))
             if name in ice:
                 d.update(volume_externe=ice[name].get("EXTERNAL_VOLUME_NAME"), catalogue=ice[name].get("CATALOG_NAME"))
@@ -759,7 +759,7 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
                 if stage:
                     d["stage"] = stage
 
-    # ---- objets
+    # ---- objects
     mv_rows = _rt_merge([r for r in R["tables"] or [] if r.get("TABLE_TYPE") == "MATERIALIZED VIEW" and not r.get("DELETED")] if lu["tables"] else None,
                         [r for r in R.get("rt_tables") or [] if r.get("TABLE_TYPE") == "MATERIALIZED VIEW"] if lu.get("rt_tables") else None,
                         key3("TABLE_CATALOG", "TABLE_SCHEMA", "TABLE_NAME"))
@@ -774,7 +774,7 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
         oid = _fqn(r["TABLE_CATALOG"], r["TABLE_SCHEMA"], r["TABLE_NAME"])
         stages, hosts = _code_refs("SQL", r.get("VIEW_DEFINITION"), r["TABLE_CATALOG"], r["TABLE_SCHEMA"])
         dx = externals(stages, hosts)
-        # vue récente : OBJECT_DEPENDENCIES ne la connaît pas encore ; ses références viennent de sa définition (analysée ici, puis jetée)
+        # recent view: OBJECT_DEPENDENCIES does not know it yet; its references come from its definition (analyzed here, then discarded)
         ref = deps.get(oid, []) or ([x for x in _tables_in(r.get("VIEW_DEFINITION"), r["TABLE_CATALOG"], r["TABLE_SCHEMA"]) if x != oid]
                                     if r.get("_rt") else [])
         objets.append(rt_mark(_new_objet("vue", oid, r["TABLE_SCHEMA"], langage="sql", proprietaire=r.get("TABLE_OWNER"), externe=bool(dx),
@@ -787,11 +787,11 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
         seen: dict[str, dict] = {}
         for r in rows or []:
             oid = _fqn(r[f"{pre}_CATALOG"], r[f"{pre}_SCHEMA"], r[f"{pre}_NAME"])
-            if oid in seen:  # surcharges : un objet par nom
+            if oid in seen:  # overloads: one object per name
                 seen[oid]["detail"]["surcharges_n"] += 1
                 continue
             lang, body = r.get(f"{pre}_LANGUAGE"), r.get(defcol)
-            is_ext = _yes(r.get("IS_EXTERNAL"))  # fonction externe : la définition est l'URL du service, réduite à l'hôte
+            is_ext = _yes(r.get("IS_EXTERNAL"))  # external function: the definition is the service URL, reduced to the host
             stages, hosts = _code_refs(lang, body, r[f"{pre}_CATALOG"], r[f"{pre}_SCHEMA"])
             eai = r.get("EXTERNAL_ACCESS_INTEGRATIONS")
             dx = externals(stages, hosts)
@@ -806,11 +806,11 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
             seen[oid] = o
             objets.append(o)
 
-    # tâches : TASKS + historique + crédits serverless
+    # tasks: TASKS + history + serverless credits
     th = {_fqn(r["DATABASE_NAME"], r["SCHEMA_NAME"], r["NAME"]): r for r in R["task_history"] or []}
     sv = {_fqn(r["DATABASE_NAME"], r["SCHEMA_NAME"], r["TASK_NAME"]): r for r in R["serverless"] or []}
     task_rows = {_fqn(r["TASK_DATABASE"], r["TASK_SCHEMA"], r["TASK_NAME"]): r for r in R["tasks"] or []}
-    for r in R.get("show_tasks") or []:  # SHOW TASKS : tâches absentes de TASKS (récentes, ou TASKS refusée)
+    for r in R.get("show_tasks") or []:  # SHOW TASKS: tasks missing from TASKS (recent, or TASKS refused)
         oid = _fqn(r.get("DATABASE_NAME"), r.get("SCHEMA_NAME"), r.get("NAME"))
         if oid not in task_rows and in_scope(r.get("DATABASE_NAME"), r.get("SCHEMA_NAME")):
             task_rows[oid] = {"TASK_DATABASE": r.get("DATABASE_NAME"), "TASK_SCHEMA": r.get("SCHEMA_NAME"), "TASK_NAME": r.get("NAME"),
@@ -820,7 +820,7 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
                               "_rt": True}
     for oid in sorted(set(task_rows) | set(th)):
         r, h = task_rows.get(oid, {}), th.get(oid)
-        hist = lu["task_history"] and not (r.get("_rt") and h is None)  # tâche récente sans historique : exécutions inconnues, pas 0
+        hist = lu["task_history"] and not (r.get("_rt") and h is None)  # recent task with no history: executions unknown, not 0
         dbn, sch = (oid.split(".") + [None])[:2]
         defn = r.get("DEFINITION")
         try:
@@ -838,7 +838,7 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
         if r.get("_rt") and d["credits_serverless"] == 0.0:
             d["credits_serverless"] = None
         objets.append(rt_mark(_new_objet("tache", oid, sch, langage="sql", proprietaire=r.get("TASK_OWNER"), etat=r.get("STATE"),
-                                         planification=r.get("SCHEDULE") or (("après " + d["predecesseurs"]) if d["predecesseurs"] else None),
+                                         planification=r.get("SCHEDULE") or (("after " + d["predecesseurs"]) if d["predecesseurs"] else None),
                                          reference=_tables_in(defn, dbn, sch) if not call else [],
                                          executions_n=(_int(h["N"]) if h else 0) if hist else None,
                                          echecs_n=(_int(h["ECHECS"]) if h else 0) if hist else None,
@@ -866,7 +866,7 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
     for r in pipe_rows or []:
         oid = _fqn(r["PIPE_CATALOG"], r["PIPE_SCHEMA"], r["PIPE_NAME"])
         defn, loads = r.get("DEFINITION"), copy_by_pipe.get(oid, [])
-        hist = lu["copy"] and not (r.get("_rt") and not loads)  # pipe récent sans chargement visible : inconnu, pas 0
+        hist = lu["copy"] and not (r.get("_rt") and not loads)  # recent pipe with no visible load: unknown, not 0
         stages, hosts = _code_refs("SQL", defn, r["PIPE_CATALOG"], r["PIPE_SCHEMA"])
         for x in loads:
             bucket, stage = _location(x.get("LOC1"), x.get("LOC3"), r["PIPE_CATALOG"], r["PIPE_SCHEMA"])
@@ -883,14 +883,14 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
                                          detail={"auto_ingest": _yes(r.get("IS_AUTOINGEST_ENABLED")), "definition_visible": defn is not None,
                                                  **({"stages": ", ".join(sorted(set(stages)))} if stages else {})}), r, "pipes"))
 
-    # tables dynamiques : TABLES (IS_DYNAMIC) + historique de rafraîchissement + SHOW DYNAMIC TABLES
+    # dynamic tables: TABLES (IS_DYNAMIC) + refresh history + SHOW DYNAMIC TABLES
     dtr = {_fqn(r["DATABASE_NAME"], r["SCHEMA_NAME"], r["NAME"]): r for r in R["dt_refresh"] or []}
     dts = {_fqn(r.get("DATABASE_NAME"), r.get("SCHEMA_NAME"), r.get("NAME")): r for r in R.get("show_dt") or []}
     dyn = {t["id"]: t for t in tables if "dynamique" in t["flags"] and not t["supprimee_le"]}
     for oid in sorted(set(dyn) | set(dtr) | {k for k, r in dts.items() if in_scope(r.get("DATABASE_NAME"), r.get("SCHEMA_NAME"))}):
         h, s, t = dtr.get(oid), dts.get(oid, {}), dyn.get(oid)
         lag = s.get("TARGET_LAG") or (f"{_int(h['LAG'])} s" if h and h.get("LAG") is not None else None)
-        # vue seulement en temps réel : table récente (INFORMATION_SCHEMA), ou seulement SHOW DYNAMIC TABLES
+        # seen only in real time: recent table (INFORMATION_SCHEMA), or only SHOW DYNAMIC TABLES
         rt_src = ("information_schema" if t and t["detail"].get("source") == "information_schema"
                   else "show" if t is None and h is None and s else None)
         hist = lu["dt_refresh"] and not (rt_src and h is None)
@@ -915,13 +915,13 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
         objets.append(_new_objet("partage", r["NAME"], proprietaire=r.get("OWNER"), externe=bool(targets),
                                  detail={"base": r.get("DATABASE_NAME") or None, "comptes_cibles_n": len(targets),
                                          "annonce": bool(r.get("LISTING_GLOBAL_NAME"))}))
-    if ah_ok:  # écritures observées vers les stages (déchargements)
+    if ah_ok:  # observed writes to stages (unloads)
         for o in objets:
             if o["kind"] == "stage":
                 o["detail"]["ecritures_observees_n"] = writes.get(o["id"], [0])[0]
     objets += list(policies.values()) + list(tags.values())
 
-    # ---- consommation
+    # ---- consumption
     wh = {r.get("NAME"): r for r in R.get("show_wh") or []}
     par_entrepot = None
     if lu["wmh"] or wh:
@@ -936,7 +936,7 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
             if w:
                 e.update(taille=w.get("SIZE"), type=w.get("TYPE"), auto_suspend_s=_int(w.get("AUTO_SUSPEND")),
                          clusters_max=_int(w.get("MAX_CLUSTER_COUNT")), etat=w.get("STATE"))
-    st = R["storage"][0] if R["storage"] and _int(R["storage"][0].get("JOURS")) else None  # aucun jour lu : non lu, pas 0
+    st = R["storage"][0] if R["storage"] and _int(R["storage"][0].get("JOURS")) else None  # no day read: not read, not 0
     qah = R["qah"] or []
     metering = {
         "par_service": [{"service": r["SERVICE_TYPE"], "credits": _num(r["FACTURES"]), "credits_utilises": _num(r["UTILISES"])}
@@ -956,7 +956,7 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
                    "familles_attribuees_total": _int(qah[0]["FAMILLES_TOTAL"]) if qah else (0 if lu["qah"] else None)},
     }
 
-    # ---- familles brutes (texte SQL brut : uniquement ici) et totaux
+    # ---- raw families (raw SQL text: only here) and totals
     credits_by_hash = {r["H"]: _num(r["CREDITS"]) for r in qah}
     tools: dict[str, list] = defaultdict(list)
     for r in R.get("family_tools") or []:
@@ -978,10 +978,10 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
         "familles_total": _int(qh[0]["FAMILLES_TOTAL"]) if qh else 0, "executions_total": _int(qh[0]["EXEC_TOTAL"]) if qh else 0,
         "temps_ms_total": _num(qh[0]["MS_TOTAL"]) if qh else 0, "familles_lues": len(qh), "familles_max": FAMILLES_MAX,
         "du": _iso(qh[0].get("DU_TOTAL")) if qh else None, "au": _iso(qh[0].get("AU_TOTAL")) if qh else None,
-        "exclusions": "requêtes de Canot (QUERY_TAG='canot'), types " + ", ".join(EXCLU_QUERY_TYPE) + ", empreinte absente",
+        "exclusions": "Canot's own queries (QUERY_TAG='canot'), types " + ", ".join(EXCLU_QUERY_TYPE) + ", missing hash",
     }
 
-    # ---- droits (niveau 3) : rôles en clair, utilisateurs seulement comptés
+    # ---- privileges (level 3): roles in clear, users only counted
     droits = None
     if level >= 3:
         parents: dict[str, set] = defaultdict(set)
@@ -996,7 +996,7 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
         both = lu["role_tree"] and lu["role_users"]
         types = defaultdict(int)
         for r in R["users"] or []:
-            types[r.get("TYPE") or "non renseigné"] += 1
+            types[r.get("TYPE") or "unspecified"] += 1
         droits = {
             "roles": [{"nom": n, "utilisateurs_n": direct.get(n, 0) if lu["role_users"] else None, "parents": sorted(parents.get(n, ())),
                        "proprietaire_d_objets": n in owners, "titulaire": holder(n) if both else None} for n in names]
@@ -1009,11 +1009,11 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
         }
 
     fraicheur = _fraicheur(c.lectures, tables, objets, db)
-    perim = (f"base {db}" if db else "tout le compte") + (f" (schémas {', '.join(schs)})" if schs else "")
-    perim += " ; consommation, stockage, requêtes et droits : tout le compte"
+    perim = (f"database {db}" if db else "whole account") + (f" (schemas {', '.join(schs)})" if schs else "")
+    perim += "; consumption, storage, queries and privileges: whole account"
     snapshot = {
         "schema": "canot.scan/1", "plateforme": "snowflake", "as_of": _iso(now), "perimetre": perim, "edition": edition,
-        "niveau_droits": level, "mode_sql": "lecture seule", "versions": {"canot": __version__, "sqlglot": sqlglot.__version__},
+        "niveau_droits": level, "mode_sql": "read-only", "versions": {"canot": __version__, "sqlglot": sqlglot.__version__},
         "fenetre": fen, "lectures": c.lectures, "tables": tables, "objets": objets, "familles": [], "metering": metering,
         "rejouabilite": None, "requetes": requetes, "droits": droits, "fraicheur": fraicheur,
     }
@@ -1021,29 +1021,29 @@ def _assemble(R: dict, c: Collector, *, db, schs, level, salt, days, now, fen, i
 
 
 def _fraicheur(lectures: list[dict], tables: list[dict], objets: list[dict], db: str | None) -> dict:
-    """Ce que le recoupement en temps réel a vu et qu'ACCOUNT_USAGE ne montre pas encore ; latence des vues ACCOUNT_USAGE lues."""
+    """What the real-time cross-check saw that ACCOUNT_USAGE does not show yet; latency of the ACCOUNT_USAGE views read."""
     n_t = sum("recente" in t["flags"] for t in tables)
     n_o = sum(bool(o["detail"].get("recent")) for o in objets)
-    lat = max((x["latence_max_h"] for x in lectures if x["statut"] == "lu" and x["vue"].startswith(AU + ".")
+    lat = max((x["latence_max_h"] for x in lectures if x["statut"] == "read" and x["vue"].startswith(AU + ".")
                and x["latence_max_h"] is not None), default=None)
-    jusqu = f", dont la latence va jusqu'à {_hours(lat)} h selon les vues" if lat is not None else ""
+    jusqu = f", whose latency reaches {_hours(lat)} h depending on the view" if lat is not None else ""
     rt_tables = next((x for x in lectures if x["vue"] == f"{db}.INFORMATION_SCHEMA.TABLES"), None) if db else None
     if not db:
-        texte = ("Recoupement en temps réel non fait : il se fait base par base, et le périmètre est tout le compte. "
-                 "Les objets créés depuis moins que la latence d'ACCOUNT_USAGE" + (f" (jusqu'à {_hours(lat)} h selon les vues)" if lat is not None else "")
-                 + " peuvent manquer.")
-    elif rt_tables is None or rt_tables["statut"] != "lu":
-        raison = (rt_tables or {}).get("raison") or "non tenté"
-        texte = (f"Recoupement en temps réel non lu ({raison}) : les objets créés depuis moins que la latence d'ACCOUNT_USAGE peuvent manquer.")
+        texte = ("Real-time cross-check not done: it runs database by database, and the scope is the whole account. "
+                 "Objects created more recently than the ACCOUNT_USAGE latency" + (f" (up to {_hours(lat)} h depending on the view)" if lat is not None else "")
+                 + " may be missing.")
+    elif rt_tables is None or rt_tables["statut"] != "read":
+        raison = (rt_tables or {}).get("raison") or "not attempted"
+        texte = (f"Real-time cross-check not read ({raison}): objects created more recently than the ACCOUNT_USAGE latency may be missing.")
     elif n_t or n_o:
-        quoi = " et ".join(s for s in (f"{n_t} table{'s' if n_t > 1 else ''}" if n_t else "",
-                                       f"{n_o} objet{'s' if n_o > 1 else ''}" if n_o else "") if s)
-        texte = (f"{quoi} vu{'s' if n_t + n_o > 1 else ''} seulement en temps réel : absent{'s' if n_t + n_o > 1 else ''} "
-                 f"d'ACCOUNT_USAGE{jusqu} ; leur historique (volumes facturés, lectures) n'est pas encore disponible.")
+        quoi = " and ".join(s for s in (f"{n_t} table{'s' if n_t > 1 else ''}" if n_t else "",
+                                        f"{n_o} object{'s' if n_o > 1 else ''}" if n_o else "") if s)
+        texte = (f"{quoi} seen only in real time: missing from ACCOUNT_USAGE{jusqu}; "
+                 f"{'their' if n_t + n_o > 1 else 'its'} history (billed volumes, reads) is not available yet.")
     else:
-        texte = "Recoupement en temps réel (INFORMATION_SCHEMA, SHOW) : aucun objet absent d'ACCOUNT_USAGE."
+        texte = "Real-time cross-check (INFORMATION_SCHEMA, SHOW): no object missing from ACCOUNT_USAGE."
     n_v = sum(bool(t["detail"].get("volume_en_retard")) for t in tables)
     if n_v:
-        texte += (f" {n_v} table{'s' if n_v > 1 else ''} à 0 octet dans TABLE_STORAGE_METRICS mais non vide{'s' if n_v > 1 else ''} "
-                  f"en temps réel : métriques de stockage pas encore à jour, volume sous-estimé.")
+        texte += (f" {n_v} table{'s' if n_v > 1 else ''} at 0 bytes in TABLE_STORAGE_METRICS but not empty "
+                  f"in real time: storage metrics not up to date yet, volume underestimated.")
     return {"recents_seulement_temps_reel": {"tables": n_t, "objets": n_o}, "volumes_en_retard": n_v, "latence_max_h": lat, "texte": texte}

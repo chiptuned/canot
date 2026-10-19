@@ -1,1 +1,1 @@
-"""`canot scan` complet : collecte en lecture seule, analyse pure, rapport. Voir model.py pour le contrat de données."""
+"""Full `canot scan`: read-only collection, pure analysis, report. See model.py for the data contract."""

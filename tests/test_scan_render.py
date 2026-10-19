@@ -1,4 +1,4 @@
-"""render_html() et write_csv() : page autonome sans script, sections du §4 dans l'ordre, listes de 20 lignes, CSV déterministes."""
+"""render_html() and write_csv(): self-contained page with no script, §4 sections in order, 20-row lists, deterministic CSV."""
 import base64
 import csv
 import hashlib
@@ -15,16 +15,18 @@ from canot.scanner.render import CSS, MAX_ROWS, render_html, write_csv
 
 FIX = Path(__file__).parent / "fixtures"
 CANARI = "canari-7f3a@exemple.test"
-FORBIDDEN = ("économie", "gaspillage", "inutile", "inutilisé", "critique", "urgent", "facile", "garanti",
-             "conforme", "certifié", "ligne par ligne")
-SECTIONS = ("entete", "perimetre", "couts", "mouvements", "ne-part-pas", "dependances", "rejouabilite", "fourchettes",
-            "constats", "non-estime", "methode", "suite")
+FORBIDDEN = ("savings", "waste", "wasted", "useless", "unused", "critical", "urgent", "easy", "guaranteed", "compliant", "certified",
+             "row by row",
+             # French equivalents: stay vigilant on leftovers
+             "économie", "gaspillage", "inutile", "inutilisé", "critique", "facile", "garanti", "conforme", "certifié", "ligne par ligne")
+SECTIONS = ("header", "scope", "costs", "movements", "stays-behind", "dependencies", "replayability", "ranges",
+            "findings", "not-estimated", "method", "next")
 ALL = ("snowflake", "bigquery", "degrade")
 
 
 def result(name: str, sql_brut: bool = False) -> dict:
     r = analyze(json.loads((FIX / f"scan_{name}.json").read_text(encoding="utf-8")))
-    r["avec_sql_brut"] = sql_brut  # posé par run.scan_full après l'analyse
+    r["avec_sql_brut"] = sql_brut  # set by run.scan_full after the analysis
     return r
 
 
@@ -33,7 +35,7 @@ def text(page: str) -> str:
 
 
 class _Lists(HTMLParser):
-    """Compte les lignes de données de chaque <table> et les <li> de chaque <ul>."""
+    """Counts the data rows of each <table> and the <li> of each <ul>."""
 
     def __init__(self):
         super().__init__()
@@ -113,59 +115,61 @@ def test_listes_tronquees_a_20_lignes():
     page = render_html(r)
     p = _Lists()
     p.feed(page)
-    assert p.tables and max(p.tables) <= MAX_ROWS + 1  # + l'en-tête
+    assert p.tables and max(p.tables) <= MAX_ROWS + 1  # + the header row
     assert max(p.lists) <= MAX_ROWS
-    assert "… et 13 autres dans drapeaux.csv." in page  # 33 constats F05
-    assert "autres dans tables.csv." in page and "autres dans lectures.csv." in page
+    assert "… and 13 more in flags.csv." in page  # 33 F05 findings
+    assert "more in tables.csv." in page and "more in reads.csv." in page
     assert sum(1 for d in r["drapeaux"] if d["code"] == "F05") == 33
 
 
 def test_entete_diffusion_interne_et_encadres():
     page = render_html(result("snowflake"))
-    head = page[page.index('id="entete"'):page.index('id="perimetre"')]
-    assert "Diffusion interne" in head and "17/10/2026 à 10:00 UTC" in head and "enterprise" in head
-    for k in ("DSI", "DAF", "RSSI"):
+    head = page[page.index('id="header"'):page.index('id="scope"')]
+    assert "Internal distribution" in head and "2026-10-17 10:00 UTC" in head and "enterprise" in head
+    for k in ("CIO", "CFO", "CISO"):
         assert f"<h3>{k}</h3>" in head
-    assert "retard de 6 h au plus" in head
+    assert "up to 6 h behind" in head
+    assert '<html lang="en">' in page
 
 
 def test_bandeau_sql_brut_seulement_sur_demande():
-    assert "Texte SQL brut exporté" in render_html(result("bigquery", sql_brut=True))
-    assert "Texte SQL brut exporté" not in render_html(result("bigquery", sql_brut=False))
+    assert "Raw SQL text exported" in render_html(result("bigquery", sql_brut=True))
+    assert "scan-sql-raw.json" in render_html(result("bigquery", sql_brut=True))
+    assert "Raw SQL text exported" not in render_html(result("bigquery", sql_brut=False))
 
 
 def test_constats_a_examiner_et_formulations_types():
     t = text(render_html(result("snowflake")))
-    assert t.count("À examiner") >= 12
-    assert ("Aucune lecture observée dans ACCESS_HISTORY du 18/10/2025 au 17/10/2026 ; "
-            "non vus : consommateurs de partages, RESULT_SCAN.") in t
-    assert "accepté ≠ résultat identique" in t and "Traduit vers DuckDB, non comparé." in t
+    assert t.count("To review") >= 12
+    assert ("No read observed in ACCESS_HISTORY from 2025-10-18 to 2026-10-17; "
+            "blind spots: share consumers, RESULT_SCAN.") in t
+    assert "accepted ≠ identical result" in t and "Translated to DuckDB, not compared." in t
     bq = text(render_html(result("bigquery")))
-    assert "Non estimé : prix de votre contrat non lu." in bq
-    assert "ne s'additionnent pas" in bq
+    assert "Not estimated: your contract price not read." in bq
+    assert "do not add up" in bq
 
 
 def test_degrade_affiche_non_lu_jamais_zero():
     t = text(render_html(result("degrade")))
-    assert "Non lu : METERING_DAILY_HISTORY non lue : droit absent." in t
-    assert "Une absence de constat ne vaut que pour les lectures faites" in t
-    assert "0 crédits" not in t
+    assert "Not read: METERING_DAILY_HISTORY not read: missing privilege." in t
+    assert "An absence of findings only holds for the reads done" in t
+    assert "0 credits" not in t and "0.00 credits" not in t
 
 
 def test_methode_lectures_droits_cout_du_scan():
     t = text(render_html(result("degrade")))
-    m = t[t.index("Méthode"):t.index("Suite")]
-    assert "ACCESS_HISTORY" in m and "niveau de droits non demandé" in m and "SNOWFLAKE.OBJECT_VIEWER" in m
-    assert "SNOWFLAKE.SECURITY_VIEWER" not in m.split("Jamais demandés")[0]  # niveau 1
-    assert "Requêtes émises" in m and "12 requêtes" in m and "Non lu : durée non transmise par la collecte." in m
-    assert "SELECT, SHOW, DESCRIBE et ALTER SESSION SET" in m
+    m = t[t.index("Method"):t.index("Next steps")]
+    assert "ACCESS_HISTORY" in m and "privilege level not requested" in m and "SNOWFLAKE.OBJECT_VIEWER" in m
+    assert "SNOWFLAKE.SECURITY_VIEWER" not in m.split("Never requested")[0]  # level 1
+    assert "Queries sent" in m and "12 queries" in m and "Not read: duration not provided by collection." in m
+    assert "SELECT, SHOW, DESCRIBE and ALTER SESSION SET" in m
 
 
 def test_suite_et_lien_unique():
     page = render_html(result("snowflake"))
-    s = text(page[page.index('id="suite"'):])
-    assert "Ce rapport décrit votre plateforme ; il ne recommande ni de partir ni de rester." in s
-    assert s.index("canot drill") < s.index("22 000 € HT") < s.index("canot.io")
+    s = text(page[page.index('id="next"'):])
+    assert "This report describes your platform; it recommends neither leaving nor staying." in s
+    assert s.index("canot drill") < s.index("€22,000 excl. VAT") < s.index("canot.io")
 
 
 def test_imprimable_a4_et_theme_clair_sombre():
@@ -175,19 +179,22 @@ def test_imprimable_a4_et_theme_clair_sombre():
 def test_csv_fichiers_et_contenu(tmp_path):
     r = result("snowflake")
     paths = write_csv(r, tmp_path)
-    assert [p.name for p in paths] == ["tables.csv", "drapeaux.csv", "familles.csv", "lectures.csv"]
+    assert [p.name for p in paths] == ["tables.csv", "flags.csv", "families.csv", "reads.csv"]
     rows = {p.name: list(csv.DictReader(p.open(encoding="utf-8"))) for p in paths}
-    assert len(rows["lectures.csv"]) == len(r["lectures"]) and len(rows["tables.csv"]) == len(r["tables"])
-    assert len(rows["drapeaux.csv"]) == len(r["drapeaux"]) and {x["etiquette"] for x in rows["drapeaux.csv"]} == {"À examiner"}
-    fam_cols = set(rows["familles.csv"][0])
-    assert "sql_normalise" in fam_cols and not {"texte", "sql", "utilisateur", "role"} & fam_cols
+    assert len(rows["reads.csv"]) == len(r["lectures"]) and len(rows["tables.csv"]) == len(r["tables"])
+    assert {x["status"] for x in rows["reads.csv"]} <= {"read", "not_read"}
+    assert len(rows["flags.csv"]) == len(r["drapeaux"]) and {x["label"] for x in rows["flags.csv"]} == {"To review"}
+    fam_cols = set(rows["families.csv"][0])
+    assert "normalized_sql" in fam_cols and not {"text", "texte", "sql", "user", "utilisateur", "role"} & fam_cols
     legacy = next(x for x in rows["tables.csv"] if x["id"] == "CANOT_LAB.MART.DIM_LEGACY")
-    assert legacy["n_lectures"] == "" and legacy["mouvement"] == ""
+    assert legacy["reads_n"] == "" and legacy["movement"] == ""
+    orders = next(x for x in rows["tables.csv"] if x["id"] == "CANOT_LAB.RAW.ORDERS")
+    assert orders["movement"] == "live"
 
 
 def test_csv_valeur_non_lue_vide_jamais_zero(tmp_path):
     rows = list(csv.DictReader(write_csv(result("degrade"), tmp_path)[0].open(encoding="utf-8")))
-    assert all(x["octets_actifs"] == "" and x["n_lectures"] == "" for x in rows)
+    assert all(x["active_bytes"] == "" and x["reads_n"] == "" for x in rows)
 
 
 def _recent_result(n: int = 2) -> dict:
@@ -197,7 +204,7 @@ def _recent_result(n: int = 2) -> dict:
         s["tables"].append({**base, "id": f"CANOT_LAB.LAB.NEW_{i}", "nom": f"NEW_{i}", "flags": ["recente"], "octets_historique": None,
                             "n_lectures": None, "detail": {"source": "information_schema", "creee_le": "2026-10-17T09:30:00Z"}})
     s["fraicheur"] = {"recents_seulement_temps_reel": {"tables": n, "objets": 0}, "latence_max_h": 48,
-                      "texte": f"{n} tables vues seulement en temps réel : absentes d'ACCOUNT_USAGE."}
+                      "texte": f"{n} tables seen only in real time: missing from ACCOUNT_USAGE."}
     r = analyze(s)
     r["avec_sql_brut"] = False
     return r
@@ -205,17 +212,17 @@ def _recent_result(n: int = 2) -> dict:
 
 def test_fraicheur_dans_le_perimetre_les_couts_et_les_mouvements():
     t = text(render_html(_recent_result()))
-    per = t[t.index("Périmètre"):t.index("Coûts observés")]
-    assert "Fraîcheur : 2 tables vues seulement en temps réel : absentes d'ACCOUNT_USAGE." in per
-    couts = t[t.index("Coûts observés"):t.index("Mouvements")]
-    assert "2 tables récentes sans historique dans ACCOUNT_USAGE" in couts
-    mv = t[t.index("Mouvements"):t.index("Ce qui ne part pas")]
-    assert "2 tables vues seulement en temps réel : écritures et lectures pas encore disponibles dans ACCOUNT_USAGE" in mv
+    per = t[t.index("Scope"):t.index("Observed costs")]
+    assert "Freshness: 2 tables seen only in real time: missing from ACCOUNT_USAGE." in per
+    couts = t[t.index("Observed costs"):t.index("Movements")]
+    assert "2 recent tables with no history in ACCOUNT_USAGE" in couts
+    mv = t[t.index("Movements"):t.index("What does not leave")]
+    assert "2 tables seen only in real time: writes and reads not yet available in ACCOUNT_USAGE" in mv
     assert render_html(_recent_result()).encode() == render_html(_recent_result()).encode()
     for w in FORBIDDEN:
         assert w not in t.lower(), w
     plain = text(render_html(result("snowflake")))
-    assert "Fraîcheur" not in plain and "récentes sans historique" not in plain and "Inventaire vide" not in plain
+    assert "Freshness" not in plain and "recent tables with no history" not in plain and "Empty inventory" not in plain
 
 
 def test_inventaire_vide_avec_requetes_ou_credits_lus_le_dit():
@@ -224,7 +231,7 @@ def test_inventaire_vide_avec_requetes_ou_credits_lus_le_dit():
     r = analyze(s)
     r["avec_sql_brut"] = False
     t = text(render_html(r))
-    per = t[t.index("Périmètre"):t.index("Coûts observés")]
-    assert ("Inventaire vide alors que des requêtes ou des crédits ont été lus : vérifier la base scannée et les droits du rôle "
-            "sur ses objets") in per
-    assert "Inventaire vide" not in text(render_html(result("degrade")))
+    per = t[t.index("Scope"):t.index("Observed costs")]
+    assert ("Empty inventory although queries or credits were read: check the scanned database and the role's privileges "
+            "on its objects") in per
+    assert "Empty inventory" not in text(render_html(result("degrade")))

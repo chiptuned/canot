@@ -1,4 +1,4 @@
-"""Rejouabilité (spec §3) : catégories consignées d'avance, normalisation, secrets, vie privée, taux, déterminisme."""
+"""Replayability (spec §3): categories recorded in advance, normalization, secrets, privacy, rates, determinism."""
 import importlib.util
 import json
 import logging
@@ -17,8 +17,10 @@ _spec.loader.exec_module(corpus)
 CANARI = corpus.CANARI
 SALT = b"sel-de-test-fixe"
 FENETRE = {"du": "2025-10-18T00:00:00Z", "au": "2026-10-17T00:00:00Z"}
-INTERDITS = ("économie", "gaspillage", "inutile", "inutilisé", "critique", "urgent", "facile", "garanti",
-             "conforme", "certifié", "ligne par ligne", "compatible")
+INTERDITS = ("savings", "waste", "wasted", "useless", "unused", "critical", "urgent", "easy", "guaranteed",
+             "compliant", "certified", "row by row", "compatible",
+             "économie", "gaspillage", "inutile", "inutilisé", "critique", "facile", "garanti",
+             "conforme", "certifié", "ligne par ligne")
 CTX = {"snowflake": (corpus.SNOWFLAKE_TABLES, corpus.SNOWFLAKE_FUNCTIONS),
        "bigquery": (corpus.BIGQUERY_TABLES, corpus.BIGQUERY_FUNCTIONS)}
 
@@ -41,11 +43,11 @@ def dump(*objs) -> str:
     return json.dumps(objs, ensure_ascii=False, sort_keys=True)
 
 
-# --- corpus consigné d'avance ------------------------------------------------------------------------------
+# --- corpus recorded in advance ------------------------------------------------------------------------------
 
 def test_corpus_size_and_coverage():
     assert len(corpus.CORPUS) >= 60
-    assert {c for *_, c in corpus.CORPUS} - {None} == set(replay.CATEGORIES)  # None : non testée
+    assert {c for *_, c in corpus.CORPUS} - {None} == set(replay.CATEGORIES)  # None: not tested
 
 
 @pytest.mark.parametrize("dialect,qid,sql,attendu", corpus.CORPUS, ids=[e[1] for e in corpus.CORPUS])
@@ -90,7 +92,7 @@ def test_secret_compte_jamais_retenu():
 
 
 def test_commande_verbe_seul():
-    # revérification de la spec : sqlglot garde le reste d'une Command, mot de passe compris
+    # re-check of the spec: sqlglot keeps the rest of a Command, password included
     tree = sqlglot.parse_one(f"create user bob password = '{CANARI}'", read="snowflake")
     assert isinstance(tree, sqlglot.exp.Command) and CANARI in tree.sql("snowflake")
     forme, infos = replay.normalize(f"call ops.sp_refresh('{CANARI}')", "snowflake")
@@ -98,7 +100,7 @@ def test_commande_verbe_seul():
     assert infos["empreinte"] == replay.normalize("call ops.other_proc(42)", "snowflake")[1]["empreinte"]
 
 
-# --- vie privée -----------------------------------------------------------------------------------------------
+# --- privacy -----------------------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("dialect", ["snowflake", "bigquery"])
 def test_canari_absent_de_toute_sortie(dialect, caplog, capsys):
@@ -138,7 +140,7 @@ def test_c1_empreinte_sans_litteral():
     assert CANARI not in dump(a)
 
 
-# --- normalisation et empreinte -------------------------------------------------------------------------------
+# --- normalization and fingerprint -------------------------------------------------------------------------------
 
 def test_meme_empreinte_si_seuls_les_litteraux_different():
     q1 = "/* tableau */ select * from raw.orders where status = 'paid' and amount > 10 and order_id in (1, 2, 3) and is_test = false"
@@ -187,7 +189,7 @@ def test_tables_referencees():
     assert infos["tables"] == ["acme-data.sales.orders"]
 
 
-# --- écritures hors plateforme (F03) ---------------------------------------------------------------------------
+# --- writes outside the platform (F03) ---------------------------------------------------------------------------
 
 def test_export_reduit_au_compartiment():
     sql = next(s for d, i, s, _ in corpus.CORPUS if i == "S49")
@@ -220,7 +222,7 @@ def test_lecture_de_fichier_sans_ecriture_externe():
     assert familles[0]["ecriture_externe"] is False and familles[0]["detail"]["stages"] == ["RAW.LANDING"]
 
 
-# --- fonctions propres -----------------------------------------------------------------------------------------
+# --- platform-specific functions -----------------------------------------------------------------------------------------
 
 def test_fonctions_et_udf():
     rows = raw_rows("snowflake", [e for e in corpus.CORPUS if e[1] in ("S02", "S29", "S36", "S43", "S44")])
@@ -229,7 +231,7 @@ def test_fonctions_et_udf():
     assert {"qualify", "lateral", "explode", "historicaldata", "udf:CLEAN_EMAIL", "moteur:SYSTEM$CLUSTERING_INFORMATION"} <= fonctions
     assert rej["fonctions"]["udf:CLEAN_EMAIL"] == 1
     udf = next(f for f in familles if "udf:CLEAN_EMAIL" in f["fonctions"])
-    assert udf["detail"]["raison"] == "UDF du client"
+    assert udf["detail"]["raison"] == "customer UDF"
     sans, _ = run("snowflake", rows, known_functions=[])
     assert "moteur:CLEAN_EMAIL" in {k for f in sans for k in f["fonctions"]}
 
@@ -237,7 +239,7 @@ def test_fonctions_et_udf():
 def test_udf_bigquery_nom_qualifie():
     sql = next(s for d, i, s, _ in corpus.CORPUS if i == "B24")
     familles, _ = run("bigquery", raw_rows("bigquery", [("bigquery", "B24", sql, None)]))
-    assert "udf:NORMALIZE_SKU" in familles[0]["fonctions"] and familles[0]["detail"]["raison"] == "UDF du client"
+    assert "udf:NORMALIZE_SKU" in familles[0]["fonctions"] and familles[0]["detail"]["raison"] == "customer UDF"
 
 
 def test_liaison_client_n_est_pas_une_variable():
@@ -262,22 +264,22 @@ def test_squelette_types():
         sk.close()
 
 
-# --- taux ------------------------------------------------------------------------------------------------------
+# --- rates ------------------------------------------------------------------------------------------------------
 
 def test_taux_et_base():
     familles, rej = run("snowflake")
     cats = rej["categories"]
     testables = sum(cats[c]["familles"] for c in replay.BASE_TAUX)
     assert testables == len(familles) - cats["C7"]["familles"] - rej["non_testees"]["familles"]
-    assert rej["base"] == (f"{cats['C0']['familles']}/{testables} familles, du 18/10/2025 au 17/10/2026, "
+    assert rej["base"] == (f"{cats['C0']['familles']}/{testables} families, from 2025-10-18 to 2026-10-17, "
                            f"sqlglot {sqlglot.__version__}, duckdb {rej['versions']['duckdb']}")
-    assert rej["mention"] == "accepté ≠ résultat identique" and rej["libelle_c0"] == "traduit et accepté par DuckDB"
+    assert rej["mention"] == "accepted ≠ identical result" and rej["libelle_c0"] == "translated and accepted by DuckDB"
     t = rej["taux"]["familles"]
-    assert t["nature"] == "calculé" and t["unite"] == "%" and t["valeur"] == round(100 * cats["C0"]["familles"] / testables, 1)
-    assert "accepté ≠ résultat identique" in t["hypotheses"] and t["base"] == ["S12"]
-    assert rej["bases"]["executions"].endswith(f"exécutions, du 18/10/2025 au 17/10/2026, sqlglot {sqlglot.__version__}, "
+    assert t["nature"] == "computed" and t["unite"] == "%" and t["valeur"] == round(100 * cats["C0"]["familles"] / testables, 1)
+    assert "accepted ≠ identical result" in t["hypotheses"] and t["base"] == ["S12"]
+    assert rej["bases"]["executions"].endswith(f"executions, from 2025-10-18 to 2026-10-17, sqlglot {sqlglot.__version__}, "
                                                f"duckdb {rej['versions']['duckdb']}")
-    assert rej["taux"]["poids"]["nature"] == "calculé" and "crédits" in rej["bases"]["poids"]
+    assert rej["taux"]["poids"]["nature"] == "computed" and "credits" in rej["bases"]["poids"]
     assert cats["C0"]["poids"] == 0.5 * cats["C0"]["familles"]
 
 
@@ -286,12 +288,12 @@ def test_poids_non_lu_jamais_zero():
     _, rej = run("snowflake", rows)
     assert all(c["poids"] is None for c in rej["categories"].values())
     p = rej["taux"]["poids"]
-    assert p["nature"] == "non_lu" and p["valeur"] is None and p["raison"] == "crédits non lus"
+    assert p["nature"] == "not_read" and p["valeur"] is None and p["raison"] == "credits not read"
 
 
 def test_poids_en_octets_pour_bigquery():
     _, rej = run("bigquery")
-    assert rej["poids_unite"] == "octets" and "octets" in rej["bases"]["poids"]
+    assert rej["poids_unite"] == "octets" and "bytes" in rej["bases"]["poids"]
     assert rej["categories"]["C0"]["poids"] == 10_000_000 * rej["categories"]["C0"]["familles"]
 
 
@@ -301,7 +303,7 @@ def test_colonnes_non_lues():
     assert cats[replay.R_NON_TESTE] is None
     assert {f["categorie"] for f in familles} == {None, "C1", "C2", "C3", "C7"}
     assert rej["non_testees"]["familles"] > 0 and rej["categories"]["C0"]["familles"] == 0
-    assert all(t["nature"] == "non_estimé" and t["valeur"] is None for t in rej["taux"].values())
+    assert all(t["nature"] == "not_estimated" and t["valeur"] is None for t in rej["taux"].values())
 
 
 def test_decimal_du_connecteur():
@@ -324,7 +326,7 @@ def test_forme_non_generable_traitee_en_c1(monkeypatch):
 
 def test_fenetre_non_lue():
     _, rej = run("snowflake", fenetre=None)
-    assert "fenêtre non lue" in rej["base"]
+    assert "window not read" in rej["base"]
 
 
 def test_vocabulaire():
@@ -333,7 +335,7 @@ def test_vocabulaire():
         assert mot not in out, mot
 
 
-# --- déterminisme ----------------------------------------------------------------------------------------------
+# --- determinism ----------------------------------------------------------------------------------------------
 
 def test_determinisme_a_l_octet():
     a = dump(run("snowflake"), run("bigquery"))
@@ -351,7 +353,7 @@ def test_raw_text_export():
     rows.append({**rows[0], "_sql": corpus.SECRETS[0], "hash_plateforme": "h-secret"})
     out = replay.raw_text_export(rows, "snowflake")
     assert [e["hash_plateforme"] for e in out] == ["h-S14", "h-S05"]
-    assert any(CANARI in e["sql"] for e in out)  # demandé explicitement : le texte brut, hors secrets
+    assert any(CANARI in e["sql"] for e in out)  # explicitly requested: the raw text, secrets excluded
     assert "h-secret" not in dump(out) and "PASSWORD" not in dump(out).upper()
     familles, _ = run("snowflake", rows)
     assert {e["empreinte"] for e in out} == {f["empreinte"] for f in familles}
@@ -359,23 +361,23 @@ def test_raw_text_export():
 
 
 def test_requetes_de_metadonnees_comptees_a_part():
-    """INFORMATION_SCHEMA / ACCOUNT_USAGE : le catalogue de la plateforme n'a pas d'équivalent à rejouer, donc C7 et hors taux."""
+    """INFORMATION_SCHEMA / ACCOUNT_USAGE: the platform catalog has nothing equivalent to replay, hence C7 and outside the rates."""
     for dialect, sql in (("snowflake", "select table_name from snowflake.account_usage.tables where deleted is null"),
                          ("bigquery", "select table_name from `p.d.INFORMATION_SCHEMA.TABLES`")):
         assert replay.classify(sql, dialect, {}, ()) == "C7"
 
 
 def test_table_hors_perimetre_n_abaisse_pas_le_taux():
-    """Une requête sur une table absente de l'inventaire n'est pas « non portable » : elle est non testée, hors taux."""
+    """A query on a table absent from the inventory is not "not portable": it is not tested, outside the rates."""
     cols = {"DB.S.T": [{"nom": "A", "type": "NUMBER"}]}
     assert replay.classify("select a from db.s.t", "snowflake", cols, ()) == "C0"
     assert replay.classify("select a from autre_base.s.ailleurs", "snowflake", cols, ()) is None
-    # une construction propre à la plateforme reste C5 même si la table manque
+    # a platform-specific construct stays C5 even when the table is missing
     assert replay.classify("select metadata$action from db.s.flux", "snowflake", cols, ()) == "C5"
 
 
 def test_texte_absent_n_est_pas_non_analysable():
-    """Une requête interne dont la plateforme ne donne pas le texte est non testée, pas « non analysable » (C1)."""
+    """An internal query whose text the platform does not provide is not tested, not "not parsable" (C1)."""
     familles, rej = replay.process_familles(
         [{"_sql": "", "hash_plateforme": "h", "n_exec": 6000, "temps_ms": 1, "credits": None, "octets": None, "query_type": "SELECT"}],
         "snowflake", columns={}, known_functions=(), salt=b"s")

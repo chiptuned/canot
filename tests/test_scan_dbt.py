@@ -1,4 +1,4 @@
-"""Connecteur dbt : inventaire par les artefacts (manifest, run_results, catalog), sans réseau ni commande dbt."""
+"""dbt connector: inventory from the artifacts (manifest, run_results, catalog), with no network and no dbt command."""
 import copy
 import json
 import socket
@@ -17,7 +17,9 @@ FIX = Path(__file__).parent / "fixtures" / "dbt" / "banc"
 LAB = Path(__file__).parents[1] / "lab" / "dbt"
 SENTINELLE = "CANOT_SENTINELLE_7f3a"
 EMAIL = "jean.dupont@exemple.test"
-FORBIDDEN = ("économie", "gaspillage", "inutile", "inutilisé", "critique", "urgent", "facile", "garanti",
+FORBIDDEN = ("savings", "waste", "wasted", "useless", "unused", "critical", "urgent", "easy", "guaranteed",
+             "compliant", "certified", "row by row",
+             "économie", "gaspillage", "inutile", "inutilisé", "critique", "facile", "garanti",
              "conforme", "certifié", "ligne par ligne")
 
 
@@ -41,26 +43,26 @@ def _sorties(r: dict, tmp_path) -> str:
             + "".join(p.read_text(encoding="utf-8") for p in tmp_path.glob("*.csv")))
 
 
-# --- banc : copie des artefacts de lab/dbt ---------------------------------------------------------------------
+# --- test bench: copy of the lab/dbt artifacts ---------------------------------------------------------------------
 
 
 def test_banc_comptes_graphe_et_lectures():
     s = _collect(FIX)
     assert valider_snapshot(s) == []
     assert s["plateforme"] == "dbt" and s["famille"] == "fichiers" and s["schema"] == "canot.scan/2"
-    assert "adaptateur snowflake, dbt 1.12.6" in s["perimetre"]
+    assert "adapter snowflake, dbt 1.12.6" in s["perimetre"]
     assert _kinds(s) == {"source_dbt": 4, "modele_dbt": 8, "test_dbt": 8, "paquet_dbt": 2, "dag": 1}
     mods = {o["id"]: o for o in s["objets"] if o["kind"] == "modele_dbt"}
     mats = {i: o["detail"]["materialisation"] for i, o in mods.items()}
     assert sorted(i.split(".")[-1] for i, m in mats.items() if m == "view") == ["stg_customers", "stg_order_lines", "stg_orders", "stg_products"]
     assert sorted(i.split(".")[-1] for i, m in mats.items() if m == "table") == ["dbt_customer_ltv", "dbt_daily_revenue", "dbt_fct_orders",
                                                                                  "int_order_totals"]
-    # relations stockées : 4 sources + 4 tables marts (les vues ne stockent rien)
+    # stored relations: 4 sources + 4 mart tables (views store nothing)
     assert sorted(t["id"] for t in s["tables"]) == sorted(
         [f"CANOT_LAB.RAW.{n}" for n in ("customers", "order_lines", "orders", "products")]
         + [f"CANOT_LAB.DBT_dbt_mart.{n}" for n in ("dbt_customer_ltv", "dbt_daily_revenue", "dbt_fct_orders", "int_order_totals")])
     assert all(t["stockage"] == {"connexion": "dbt:snowflake", "type": "snowflake"} for t in s["tables"])
-    # chaque ref() et source() devient un lien ; les tests dépendent de leur modèle
+    # every ref() and source() becomes a link; tests depend on their model
     man = json.loads((FIX / "target" / "manifest.json").read_text(encoding="utf-8"))
     attendus = {(c, p) for c, ps in man["parent_map"].items() for p in ps}
     assert {(x["de"], x["vers"]) for x in s["liens"]} == attendus and len(s["liens"]) == 19
@@ -71,8 +73,8 @@ def test_banc_comptes_graphe_et_lectures():
     assert fct["executions_n"] == 1 and fct["echecs_n"] == 0 and fct["etat"] == "success" and fct["portabilite"] == "traduisible"
     assert len(fct["empreinte_code"]) == 64 and fct["lignes_code"] == 4 and fct["sql_dynamique"] is False
     lec = {x["vue"]: x for x in s["lectures"]}
-    assert lec["target/manifest.json"]["statut"] == "lu" and lec["target/run_results.json"]["lignes"] == 16
-    assert lec["target/catalog.json"] == {**lec["target/catalog.json"], "statut": "non_lu", "raison": "absent ou non exposé"}
+    assert lec["target/manifest.json"]["statut"] == "read" and lec["target/run_results.json"]["lignes"] == 16
+    assert lec["target/catalog.json"] == {**lec["target/catalog.json"], "statut": "not_read", "raison": "absent or not exposed"}
     dag = next(o for o in s["objets"] if o["kind"] == "dag")
     assert dag["executions_n"] == 1 and dag["echecs_n"] == 0 and dag["detail"]["noeuds_executes_n"] == 16
     assert s["cout_du_scan"]["requetes"] == 0
@@ -82,25 +84,25 @@ def test_banc_analyse_drapeaux_et_partage(tmp_path):
     r = analyze(_collect(FIX))
     codes = sorted((f["code"], f["cible"]) for f in r["drapeaux"])
     assert codes == [("F11", "dbt:canot_lab"), ("F12", "B03")]
-    assert "planification non lue" in r["drapeaux"][0]["texte"] and "1 exécution, 0 échec" in r["drapeaux"][0]["texte"]
-    assert r["capacites"]["statut"] == "testé" and r["capacites"]["export"] == []
-    assert r["capacites"]["preuve"] == [{"forme": "P3", "libelle": "rejeu de traitements"}]
+    assert "schedule not read" in r["drapeaux"][0]["texte"] and "1 run, 0 failures" in r["drapeaux"][0]["texte"]
+    assert r["capacites"]["statut"] == "tested" and r["capacites"]["export"] == []
+    assert r["capacites"]["preuve"] == [{"forme": "P3", "libelle": "pipeline replay"}]
     assert r["carte_sortie"] == {"portable_tel_quel": {"donnees": 4}, "traduisible": {"planification": 1, "traitement": 16}}
-    assert r["mouvements"]["vivante"] + r["mouvements"]["figée"] == 4  # les 4 tables marts : écriture lue dans run_results
+    assert r["mouvements"]["vivante"] + r["mouvements"]["figée"] == 4  # the 4 mart tables: write read from run_results
     p = partage(r)
-    assert p["schema"] == "canot.partage/1" and p["famille"] == "fichiers" and p["tables"] == 8
+    assert p["schema"] == "canot.share/1" and p["famille"] == "fichiers" and p["tables"] == 8
     brut = json.dumps(p, ensure_ascii=False)
     for nom in ("canot_lab", "stg_", "dbt_fct", "CANOT_LAB"):
         assert nom not in brut
     tout = _sorties(r, tmp_path).lower()
     for w in FORBIDDEN:
         assert w not in tout, w
-    assert "lower(" not in tout and "coalesce(" not in tout  # aucun SQL de modèle
+    assert "lower(" not in tout and "coalesce(" not in tout  # no model SQL
 
 
 @pytest.mark.skipif(not (LAB / "target" / "manifest.json").exists(), reason="lab/dbt/target/manifest.json absent")
 def test_projet_reel_du_banc():
-    """Les artefacts réels de lab/dbt (dbt build sur le compte Snowflake du banc) : la validation qui fonde le statut « testé »."""
+    """The real lab/dbt artifacts (dbt build on the bench Snowflake account): the validation behind the "tested" status."""
     s = _collect(LAB)
     assert valider_snapshot(s) == []
     k = _kinds(s)
@@ -110,7 +112,7 @@ def test_projet_reel_du_banc():
     assert len(vues) == 4 and len(tables) == 4 and len(s["liens"]) == 19
 
 
-# --- synthétique : constructions propres, gabarit, canaris -----------------------------------------------------
+# --- synthetic: platform-specific constructs, template, canaries -----------------------------------------------------
 
 
 def _node(man, base_uid, uid, name, **kw):
@@ -185,16 +187,16 @@ def test_synthetique_portabilite_et_drapeaux(tmp_path):
     assert m["portabilite"] == "a_reconstruire" and m["detail"]["fonctions_propres"] == ["CONDITIONAL_TRUE_EVENT"]
     assert m["sql_dynamique"] is True and m["detail"]["jinja_blocs_n"] == 1
     assert o["model.canot_lab.m_dyn"]["portabilite"] == "a_reconstruire"
-    assert "dynamic_table propre à l'adaptateur snowflake" in o["model.canot_lab.m_dyn"]["detail"]["raison_portabilite"]
+    assert "dynamic_table specific to the snowflake adapter" in o["model.canot_lab.m_dyn"]["detail"]["raison_portabilite"]
     assert o["model.canot_lab.m_py"]["portabilite"] == "non_determine" and o["model.canot_lab.m_py"]["langage"] == "python"
     assert o["model.canot_lab.m_eph"]["portabilite"] == "traduisible" and o["model.canot_lab.m_eph"]["sorties"] == []
-    assert o["model.canot_lab.m_brut"]["detail"]["analyse"] == "brut" and o["model.canot_lab.m_brut"]["portabilite"] == "traduisible"
+    assert o["model.canot_lab.m_brut"]["detail"]["analyse"] == "raw" and o["model.canot_lab.m_brut"]["portabilite"] == "traduisible"
     sec = o["model.canot_lab.m_secret"]
     assert sec["empreinte_code"] is None and sec["portabilite"] == "non_determine" and s["rejouabilite"]["secrets_ecartes"]["familles"] == 1
-    # catalogue lu : EXPLAIN DuckDB sur le squelette ; les vues staging lisent des sources typées
+    # catalog read: DuckDB EXPLAIN on the skeleton; staging views read typed sources
     assert o["model.canot_lab.stg_orders"]["detail"]["categorie"] == "C0"
     assert o["model.canot_lab.stg_customers"]["detail"]["categorie"] == "C0"
-    assert s["rejouabilite"]["categories"]["C0"]["familles"] >= 2 and s["rejouabilite"]["taux"]["familles"]["nature"] == "calculé"
+    assert s["rejouabilite"]["categories"]["C0"]["familles"] >= 2 and s["rejouabilite"]["taux"]["familles"]["nature"] == "computed"
     t = {x["id"]: x for x in s["tables"]}
     assert t["CANOT_LAB.RAW.orders"]["lignes"] == 1000 and t["CANOT_LAB.RAW.orders"]["octets_actifs"] == 4096
     assert t["CANOT_LAB.RAW.orders"]["proprietaire"].startswith("r-") and t["CANOT_LAB.RAW.ext"]["type"] == "EXTERNE"
@@ -210,11 +212,11 @@ def test_synthetique_portabilite_et_drapeaux(tmp_path):
     for f in r["drapeaux"]:
         by.setdefault(f["code"], set()).add(f["cible"])
     assert by["F13"] == {"model.canot_lab.m_propre", "model.canot_lab.m_dyn"}
-    assert by["F08"] == {"model.canot_lab.m_propre"}  # les tests génériques (macros de dbt-core) ne comptent pas
+    assert by["F08"] == {"model.canot_lab.m_propre"}  # generic tests (dbt-core macros) do not count
     assert by["F01"] == {"CANOT_LAB.RAW.ext"} and by["F11"] == {"dbt:canot_lab"}
     f13 = next(f for f in r["drapeaux"] if f["cible"] == "model.canot_lab.m_propre" and f["code"] == "F13")
-    assert "fonction absente de DuckDB : CONDITIONAL_TRUE_EVENT" in f13["texte"]
-    assert "1 échec" in next(f for f in r["drapeaux"] if f["code"] == "F11")["texte"]
+    assert "function absent from DuckDB: CONDITIONAL_TRUE_EVENT" in f13["texte"]
+    assert "1 failure" in next(f for f in r["drapeaux"] if f["code"] == "F11")["texte"]
     assert not {"F14", "F15", "F16"} & set(by)
 
 
@@ -224,7 +226,7 @@ def test_aucun_code_ni_canari_dans_les_sorties(tmp_path):
     tout = _sorties(r, out)
     for x in (SENTINELLE, EMAIL, "password", "conditional_true_event(", "def model", "compartiment-x/"):
         assert x not in tout, x
-    assert "s3://compartiment-x" in tout  # emplacement réduit au compartiment
+    assert "s3://compartiment-x" in tout  # location reduced to the bucket
 
 
 def test_sans_catalogue_ni_run_results(tmp_path):
@@ -232,11 +234,11 @@ def test_sans_catalogue_ni_run_results(tmp_path):
     (d / "target" / "run_results.json").unlink()
     s = _collect(d)
     lec = {x["vue"].split("/")[-1]: x for x in s["lectures"]}
-    assert lec["run_results.json"]["statut"] == "non_lu" and lec["catalog.json"]["statut"] == "non_lu"
+    assert lec["run_results.json"]["statut"] == "not_read" and lec["catalog.json"]["statut"] == "not_read"
     mod = next(o for o in s["objets"] if o["id"] == "model.canot_lab.stg_orders")
-    assert mod["executions_n"] is None and mod["echecs_n"] is None  # non lu : jamais 0
+    assert mod["executions_n"] is None and mod["echecs_n"] is None  # not read: never 0
     assert mod["detail"]["categorie"] is None and mod["portabilite"] == "traduisible"
-    assert s["rejouabilite"]["taux"]["familles"]["nature"] == "non_estimé"
+    assert s["rejouabilite"]["taux"]["familles"]["nature"] == "not_estimated"
     r = analyze(s)
     assert {f["cible"] for f in r["drapeaux"] if f["code"] == "F12"} == {lec["run_results.json"]["id"], lec["catalog.json"]["id"]}
 
@@ -246,39 +248,39 @@ def test_manifest_illisible_lecture_non_lue(tmp_path):
     d.mkdir(parents=True)
     (d / "manifest.json").write_text("[1, 2]", encoding="utf-8")
     s = _collect(d.parent)
-    assert s["lectures"][0]["statut"] == "non_lu" and s["tables"] == [] and valider_snapshot(s) == []
+    assert s["lectures"][0]["statut"] == "not_read" and s["tables"] == [] and valider_snapshot(s) == []
 
 
 def test_aucun_reseau_pendant_la_collecte(monkeypatch, tmp_path):
     d = projet_synthetique(tmp_path)
 
     def interdit(*a, **k):
-        raise AssertionError("connexion réseau tentée")
+        raise AssertionError("network connection attempted")
 
     monkeypatch.setattr(socket, "socket", interdit)
     monkeypatch.setattr(socket, "create_connection", interdit)
     assert _collect(d)["objets"]
 
 
-# --- URL, registre, CLI ---------------------------------------------------------------------------------------
+# --- URL, registry, CLI ---------------------------------------------------------------------------------------
 
 
 def test_formes_d_url(tmp_path):
     cible = (FIX / "target").resolve()
     for u in (f"dbt://{FIX}", f"dbt://{FIX}/target", f"dbt://{FIX}/target/manifest.json", f"dbt+file://{FIX}"):
         assert dbt_scan.ProjetDbt(u).cible == cible
-    assert connectors.for_url(str(FIX)).name == "dbt"  # dossier de projet sans schéma
+    assert connectors.for_url(str(FIX)).name == "dbt"  # project folder without a scheme
     assert connectors.for_url(str(tmp_path)) is None
-    with pytest.raises(ValueError, match="URL dbt : aucun manifest.json"):
+    with pytest.raises(ValueError, match="dbt URL: no manifest.json"):
         connectors.open_url(f"dbt://{tmp_path}")
 
 
 def test_registre_et_niveau():
     c = connectors.get("dbt")
-    assert c.famille == "fichiers" and c.status == "testé" and c.capabilities.inventaire == "complet"
+    assert c.famille == "fichiers" and c.status == "tested" and c.capabilities.inventaire == "complet"
     assert c.capabilities.niveaux == (1,) and c.capabilities.export == () and c.capabilities.preuve == ("P3",)
     assert connectors.effective_level(dbt_scan.ProjetDbt(f"dbt://{FIX}"), 3) == 1
-    assert "complet (niveau 1)" in connectors.table()
+    assert "full (level 1)" in connectors.table()
 
 
 def test_cli_scan_bout_en_bout(tmp_path, capsys):
@@ -287,19 +289,19 @@ def test_cli_scan_bout_en_bout(tmp_path, capsys):
     out = tmp_path / "out"
     assert cli_run(["scan", f"dbt://{FIX}", "--out", str(out)]) == 0
     stdout = capsys.readouterr().out
-    assert "niveau 1" in stdout and "À examiner : F11 ×1, F12 ×1" in stdout
-    for f in ("scan.json", "scan.html", "tables.csv", "drapeaux.csv", "familles.csv", "lectures.csv", "scan-partage.json"):
+    assert "level 1" in stdout and "To review: F11 ×1, F12 ×1" in stdout
+    for f in ("scan.json", "scan.html", "tables.csv", "flags.csv", "families.csv", "reads.csv", "scan-share.json"):
         assert (out / f).exists(), f
     r = json.loads((out / "scan.json").read_text(encoding="utf-8"))
     assert r["niveau_droits"] == 1 and r["familles"] == [] and r["plateforme"] == "dbt"
-    assert json.loads((out / "scan-partage.json").read_text(encoding="utf-8"))["schema"] == "canot.partage/1"
+    assert json.loads((out / "scan-share.json").read_text(encoding="utf-8"))["schema"] == "canot.share/1"
 
 
 def test_cli_drill_refuse_un_projet_dbt(tmp_path, capsys):
     from canot.cli import main
 
     assert main(["drill", f"dbt://{FIX}", str(tmp_path / "lac")]) == 1
-    assert "drill indisponible pour des fichiers de projet" in capsys.readouterr().err
+    assert "drill is not available for project files" in capsys.readouterr().err
 
 
 def test_include_sql_text_sans_objet(tmp_path, capsys):
@@ -307,4 +309,4 @@ def test_include_sql_text_sans_objet(tmp_path, capsys):
 
     out = tmp_path / "out"
     assert cli_run(["scan", f"dbt://{FIX}", "--out", str(out), "--include-sql-text"]) == 0
-    assert "sans objet ici" in capsys.readouterr().out and not (out / "scan-sql-brut.json").exists()
+    assert "does not apply here" in capsys.readouterr().out and not (out / "scan-sql-brut.json").exists()

@@ -1,4 +1,4 @@
-"""Contrat canot.scan/2 (additif) : validateur, drapeaux F13-F16 sur snapshot synthétique, rapport et partage pilotés par les capacités."""
+"""canot.scan/2 contract (additive): validator, F13-F16 flags on a synthetic snapshot, report and share file driven by capabilities."""
 import copy
 import hashlib
 import html
@@ -17,8 +17,10 @@ from canot.scanner.run import partage
 FIX = Path(__file__).parent / "fixtures"
 V1 = ("snowflake", "bigquery", "degrade")
 SENTINELLES = ("CANOT_SENTINELLE_7f3a", "password")
-FORBIDDEN = ("économie", "gaspillage", "inutile", "inutilisé", "critique", "urgent", "facile", "garanti",
-             "conforme", "certifié", "ligne par ligne")
+FORBIDDEN = ("savings", "waste", "wasted", "useless", "unused", "critical", "urgent", "easy", "guaranteed", "compliant", "certified",
+             "row by row",
+             # French equivalents: stay vigilant on leftovers
+             "économie", "gaspillage", "inutile", "inutilisé", "critique", "facile", "garanti", "conforme", "certifié", "ligne par ligne")
 
 
 def snap(name: str) -> dict:
@@ -42,7 +44,7 @@ def mini(*objets) -> dict:
             "objets": list(objets), "metering": None}
 
 
-# --- contrat -------------------------------------------------------------------------------------------------
+# --- contract -------------------------------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize("name", V1 + ("dataiku_synthetique",))
@@ -58,7 +60,7 @@ def test_le_validateur_refuse_code_brut_et_valeurs_hors_contrat():
     s["liens"].append({"de": "a", "nature": "lit"})
     s["schema"] = "canot.scan/9"
     err = " | ".join(valider_snapshot(s))
-    for attendu in ("champ brut refusé (sql)", "portabilité 'portable'", "n'est pas un sha256", "incomplet", "schema inattendu"):
+    for attendu in ("raw field refused (sql)", "portability 'portable'", "is not a sha256", "incomplete", "unexpected schema"):
         assert attendu in err
 
 
@@ -68,13 +70,13 @@ def test_scan_json_v2_est_v1_plus_des_champs(name):
     assert r["schema"] == "canot.scan/2" and r["famille"] == "entrepot" and r["liens"] == [] and r["carte_sortie"] == {}
     c = r["capacites"]
     assert c == connectors.get(r["plateforme"]).capacites()
-    assert c["statut"] == "testé" and [p["forme"] for p in c["preuve"]] == ["P1", "P2"] and c["teste_sur"].startswith("canot drill, 1")
-    for o in r["objets"]:  # objets /1 inchangés : aucun champ /2 ajouté
+    assert c["statut"] == "tested" and [p["forme"] for p in c["preuve"]] == ["P1", "P2"] and c["teste_sur"].startswith("canot drill, 2026-10-1")
+    for o in r["objets"]:  # /1 objects unchanged: no /2 field added
         assert not {"portabilite", "famille_objet", "formats_export", "empreinte_code", "extensions"} & set(o)
     assert all("stockage" not in t for t in r["tables"])
 
 
-# --- drapeaux F13 à F16 ----------------------------------------------------------------------------------------
+# --- flags F13 to F16 ----------------------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize("name", V1)
@@ -89,12 +91,12 @@ def test_fixture_synthetique_drapeaux_attendus():
     assert set(flags(r, "F15")) == {"BANC.modele_churn", "BANC.modele_zip"}
     assert set(flags(r, "F16")) == {"MODELE.marge_cumulee", "MODELE.ratio_annuel"}
     assert set(flags(r, "F11")) == {"BANC.nuit"} and flags(r, "F11")["BANC.nuit"]["preuve"]["echecs_n"] == 1
-    # négatifs : traduisible, code lu sans licence, format ouvert, mesure déclarée triviale ou trop courte
+    # negatives: translatable, code read with no license, open format, measure declared trivial or too short
     tous = {f["cible"] for f in r["drapeaux"]}
     for i in ("BANC.jointure_sql", "BANC.score_py", "PLUGIN.ouvert", "BANC.modele_mlflow", "MODELE.ventes_total", "MODELE.compte", "BANC.exploration"):
         assert i not in tous, i
     for f in r["drapeaux"]:
-        assert f["etiquette"] == "À examiner" and f["libelle"] == LIBELLES[f["code"]]
+        assert f["etiquette"] == "To review" and f["libelle"] == LIBELLES[f["code"]]
         for w in FORBIDDEN:
             assert w not in (f["texte"] + f["libelle"]).lower(), (w, f["texte"])
 
@@ -112,21 +114,21 @@ def test_f14_licence_usage_et_recette_de_plugin_sans_plugin_inventorie():
                      obj("recette_plugin", "r1", extensions=["p_absent"])))
     f = flags(r, "F14")
     assert set(f) == {"p_lic", "r1"}
-    assert "licence commerciale" in f["p_lic"]["texte"] and "aucun usage observé" in f["p_lic"]["texte"]
-    assert "non inventoriée (p_absent)" in f["r1"]["texte"]
+    assert "license commerciale" in f["p_lic"]["texte"] and "no use observed" in f["p_lic"]["texte"]
+    assert "not inventoried (p_absent)" in f["r1"]["texte"]
     seul = analyze(mini(obj("plugin", "p")))
-    assert "usage par objet non lu" in flags(seul, "F14")["p"]["texte"]
+    assert "use per object not read" in flags(seul, "F14")["p"]["texte"]
 
 
 def test_f15_non_lu_dit_non_determine_jamais_non_exportable():
     r = analyze(mini(obj("modele_entraine", "m_absent"), obj("modele_entraine", "m_none", formats_export=None),
                      obj("modele_entraine", "m_vide", formats_export=[]), obj("modele_entraine", "m_onnx", formats_export=["ONNX"]),
-                     obj("modele_ml", "bq_v1")))  # kind /1 de BigQuery : pas de données /2, pas de F15
+                     obj("modele_ml", "bq_v1")))  # BigQuery /1 kind: no /2 data, no F15
     f = flags(r, "F15")
     assert set(f) == {"m_absent", "m_none", "m_vide"}
     for i in ("m_absent", "m_none"):
-        assert "non déterminé" in f[i]["texte"] and "non exportable" not in f[i]["texte"] and f[i]["preuve"]["determine"] is False
-    assert "aucun format lu" in f["m_vide"]["texte"] and f["m_vide"]["preuve"]["determine"] is True
+        assert "not determined" in f[i]["texte"] and "not exportable" not in f[i]["texte"] and f[i]["preuve"]["determine"] is False
+    assert "no format read" in f["m_vide"]["texte"] and f["m_vide"]["preuve"]["determine"] is True
 
 
 def test_f16_critere_declare_puis_nombre_de_lignes():
@@ -135,7 +137,7 @@ def test_f16_critere_declare_puis_nombre_de_lignes():
     assert set(flags(r, "F16")) == {"a", "c"}
 
 
-# --- sorties : aucun code brut, partage, rapport ---------------------------------------------------------------
+# --- outputs: no raw code, share file, report ---------------------------------------------------------------
 
 
 def _sorties(r: dict, tmp_path) -> str:
@@ -147,7 +149,7 @@ def _sorties(r: dict, tmp_path) -> str:
 
 def test_aucune_sentinelle_dans_les_sorties(tmp_path):
     s = synth()
-    assert any("CANOT_SENTINELLE_7f3a" in json.dumps(o) for o in s["objets"])  # la fixture la contient bien
+    assert any("CANOT_SENTINELLE_7f3a" in json.dumps(o) for o in s["objets"])  # the fixture does contain it
     tout = _sorties(analyze(s), tmp_path)
     for x in SENTINELLES:
         assert x not in tout, x
@@ -156,14 +158,14 @@ def test_aucune_sentinelle_dans_les_sorties(tmp_path):
 def test_partage_reste_partage_1_avec_champs_ajoutes():
     r = analyze(synth())
     p = partage(r)
-    assert p["schema"] == "canot.partage/1" and p["famille"] == "science_donnees"
-    assert p["capacites"] == {"inventaire": "partiel", "export": [], "preuve": [], "statut": "écrit, non testé"}
+    assert p["schema"] == "canot.share/1" and p["famille"] == "science_donnees"
+    assert p["capacites"] == {"inventaire": "partiel", "export": [], "preuve": [], "statut": "written, untested"}
     assert p["portabilite"] == {"a_reconstruire": 7, "exporte_proprietaire": 1, "non_determine": 1, "portable_tel_quel": 1, "traduisible": 6}
     brut = json.dumps(p, ensure_ascii=False)
     for nom in ("BANC.", "PLUGIN.", "MODELE.", "postgres-banc"):
         assert nom not in brut
     sf = partage(analyze(snap("snowflake")))
-    assert sf["capacites"] == {"inventaire": "complet", "export": ["iceberg"], "preuve": ["P1", "P2"], "statut": "testé"}
+    assert sf["capacites"] == {"inventaire": "complet", "export": ["iceberg"], "preuve": ["P1", "P2"], "statut": "tested"}
 
 
 def test_partage_d_un_scan_v1_inchange():
@@ -179,18 +181,19 @@ def _text(page: str) -> str:
 
 def test_rapport_affiche_les_capacites_honnetement():
     t = _text(render_html({**analyze(snap("snowflake")), "avec_sql_brut": False}))
-    cap = t[t.index("Capacités"):t.index("Coûts observés")]
-    assert "inventorié, ni exporté ni rejoué" in cap and "non fait par ce scan" in cap and "iceberg, avec canot drill" in cap
-    assert "P1 parité des données ; P2 rejeu de requêtes" in cap and "Connecteur Snowflake : testé ; test consigné : canot drill, 17/10/2026" in cap
-    assert "Carte de sortie" not in t
-    for name in ("bigquery", "degrade"):  # « Aucun constat pour » : jamais F13-F16 sur un entrepôt
+    cap = t[t.index("Capabilities"):t.index("Observed costs")]
+    assert "inventoried, neither exported nor replayed" in cap and "not done by this scan" in cap and "iceberg, with canot drill" in cap
+    assert "full, levels 1 to 3" in cap
+    assert "P1 data parity; P2 query replay" in cap and "Snowflake connector: tested; recorded test: canot drill, 2026-10-17" in cap
+    assert "Exit map" not in t
+    for name in ("bigquery", "degrade"):  # "No finding for": never F13-F16 on a warehouse
         b = _text(render_html({**analyze(snap(name)), "avec_sql_brut": False}))
-        aucun = b[b.index("Aucun constat pour"):].split(".")[0]
+        aucun = b[b.index("No finding for"):].split(".")[0]
         assert "F12" in aucun or "F01" in aucun or "F04" in aucun
         assert not any(c in aucun for c in CODES_HORS_ENTREPOT)
     d = _text(render_html({**analyze(synth()), "avec_sql_brut": False}))
-    assert "Scan de sortie : Dataiku" in d and "Aucune forme de preuve n'est déclarée pour Dataiku" in d
-    assert "aucune date de test consignée dans le dépôt" in d and "Carte de sortie" in d and "à reconstruire" in d
+    assert "Exit scan: Dataiku" in d and "No form of evidence is declared for Dataiku" in d
+    assert "no test date recorded in the repository" in d and "Exit map" in d and "to rebuild" in d
     for w in FORBIDDEN:
         assert w not in d.lower(), w
 
@@ -198,7 +201,7 @@ def test_rapport_affiche_les_capacites_honnetement():
 def test_rapport_v1_sans_capacites_ne_montre_pas_la_section():
     r = {k: v for k, v in analyze(snap("bigquery")).items() if k not in ("famille", "capacites", "liens", "carte_sortie")}
     t = _text(render_html({**r, "schema": "canot.scan/1", "avec_sql_brut": False}))
-    assert "Capacités" not in t and "Scan de sortie : BigQuery" in t and "tables.getData" in t
+    assert "Capabilities" not in t and "Exit scan: BigQuery" in t and "tables.getData" in t
 
 
 def test_droits_lus_dans_la_fiche_du_connecteur(monkeypatch):
@@ -218,29 +221,29 @@ def test_expliquer_scan_lit_v1_et_v2(tmp_path):
     r = analyze(synth())
     p = tmp_path / "scan.json"
     p.write_text(json.dumps(r), encoding="utf-8")
-    e = agent.expliquer_scan(str(p))
-    assert e["famille"] == "science_donnees" and e["non_prouvable"]["constats"] == {"F13": 3, "F14": 1, "F15": 2, "F16": 2}
-    assert e["non_prouvable"]["objets_a_reconstruire"] == 7 and e["non_prouvable"]["formes_de_preuve_declarees"] == []
+    e = agent.explain_scan(str(p))
+    assert e["family"] == "science_donnees" and e["not_provable"]["findings"] == {"F13": 3, "F14": 1, "F15": 2, "F16": 2}
+    assert e["not_provable"]["objects_to_rebuild"] == 7 and e["not_provable"]["declared_evidence_forms"] == []
     p.write_text(json.dumps({**r, "schema": "canot.scan/1"}), encoding="utf-8")
-    assert agent.expliquer_scan(str(p))["non_prouvable"] is None
+    assert agent.explain_scan(str(p))["not_provable"] is None
 
 
 def test_outil_capacites_lit_le_registre(monkeypatch):
-    toutes = agent.capacites()
-    assert [c["plateforme"] for c in toutes["connecteurs"]] == list(connectors.CONNECTORS)
-    db = agent.capacites("Databricks")["connecteurs"][0]
-    assert db["statut"] == "écrit, non testé" and db["teste_sur"] is None and db["famille"] == "lakehouse"
-    assert "erreur" in agent.capacites("oracle")
+    toutes = agent.capabilities()
+    assert [c["plateforme"] for c in toutes["connectors"]] == list(connectors.CONNECTORS)
+    db = agent.capabilities("Databricks")["connectors"][0]
+    assert db["statut"] == "written, untested" and db["teste_sur"] is None and db["famille"] == "lakehouse"
+    assert "error" in agent.capabilities("oracle")
 
     class Faux(connectors.Connector):
         name, label, schemes, dialect, url = "faux", "Faux", ("faux",), "faux", "faux://"
         capabilities = connectors.Capabilities("aucun")
 
     monkeypatch.setitem(connectors.CONNECTORS, "faux", Faux())
-    assert agent.capacites("faux")["connecteurs"][0]["teste_sur"] is None
+    assert agent.capabilities("faux")["connectors"][0]["teste_sur"] is None
 
 
 def test_chaque_outil_mcp_est_documente():
-    doc = agent.lire_doc("commandes")
+    doc = agent.read_doc("commands")
     for fn in agent.TOOLS:
         assert f"| `{fn.__name__}" in doc, fn.__name__

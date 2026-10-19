@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Discrepancy catalogue | Canot</title>
+<meta name="description" content="What two engines return differently for the same query, measured with Canot: query, results, versions, date.">
+<link rel="canonical" href="https://canot.io/discrepancies.html">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#f4f6f7">
+<link rel="stylesheet" href="/style.css?v=58fb23a29c">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/en/" aria-label="Canot, home"><img src="/assets/canot-symbole.svg" alt="" width="52" height="27"><span>canot</span></a>
+    <nav class="main" aria-label="Main navigation">
+      <a class="hide-s" href="/en/why.html">Why</a>
+      <a class="hide-s" href="/en/method.html">Method</a>
+      <a class="hide-s" href="/discrepancies.html">Discrepancies</a>
+      <a class="hide-s" href="/docs.html">Docs</a>
+      <a class="hide-s" href="/en/offers.html">Offers</a>
+      <a href="/en/report.html">Example report</a>
+      <span class="lang-switch" aria-label="Language / Langue"><a href="/" hreflang="fr" lang="fr">FR</a> | <b aria-current="true">EN</b></span>
+      <a class="btn btn-dark" href="https://github.com/chiptuned/canot">Try it free</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="s ecarts"><div class="wrap"><h1 class="h2like">Discrepancy catalogue</h1>
+<p class="lead-p">What two engines return differently for the same query or the same type, measured with Canot: the query, the result on each side, the versions and the date. What is not measured yet is listed separately.</p>
+<article class="ecart" id="bigquery-date-trunc"><h2>BigQuery: DATE_TRUNC on a date returns a date, the copy returns a timestamp</h2><p class="mono-line">Measured on 2026-10-13 · BigQuery (public dataset thelook_ecommerce); DuckDB 1.5.6; sqlglot 30.22; Canot 0.1.0</p>
+<pre><code>select date_trunc(date(created_at), month) as m, count(*) as orders
+from `bigquery-public-data.thelook_ecommerce.orders` group by m order by m</code></pre>
+<dl class="duo"><div><dt>Source (BigQuery)</dt><dd><code>2019-01-01 (DATE type)</code></dd></div><div><dt>Copy (DuckDB on the Iceberg copy)</dt><dd><code>2019-01-01 00:00:00 (TIMESTAMP type)</code></dd></div></dl>
+<p><b>Why.</b> In this measurement, the translated query returns a TIMESTAMP where BigQuery returns a DATE. The days and counts are identical; only the column type changes, which can break a join or an export that expects a date.</p><p><b>What to do.</b> Write CAST(... AS DATE) explicitly in the query on the destination side, then rerun the exercise.</p></article><article class="ecart" id="snowflake-avg-decimal"><h2>Snowflake: the average of a decimal amount keeps 8 exact decimal places, the copy returns a float</h2><p class="mono-line">Measured on 2026-10-16 · Snowflake (trial account, TPC-H SF1); DuckDB 1.5.6; Canot 0.1.0</p>
+<pre><code>select l_returnflag, l_linestatus, avg(l_discount) as avg_disc
+from tpch_sf1.lineitem group by l_returnflag, l_linestatus</code></pre>
+<dl class="duo"><div><dt>Source (Snowflake)</dt><dd><code>0.04998530 (decimal, scale 8)</code></dd></div><div><dt>Copy (DuckDB on the Iceberg copy)</dt><dd><code>0.04998529583845148 (float)</code></dd></div></dl>
+<p><b>Why.</b> In Snowflake, the average of a decimal stays decimal, rounded to 8 decimal places; DuckDB computes it as a float. The relative difference is about 7e-8, above Canot&#x27;s default tolerance (1e-9).</p><p><b>What to do.</b> Decide on a tolerance: `decimal_abs` or `float_rel` in the tolerances file (`canot init-tolerances`), or round in the query. An accounting amount deserves a tolerance written down and signed off by the business.</p></article><article class="ecart" id="nanosecondes"><h2>Nanoseconds do not survive Iceberg v2</h2><p class="mono-line">Measured on 2026-10-17 · DuckDB 1.5.6; pyiceberg 0.12; Canot 0.1.0 (`canot demo`)</p>
+<pre><code>select min(scanned_at), max(scanned_at) from distrib.tickets</code></pre>
+<dl class="duo"><div><dt>Source (Any engine with nanosecond timestamps (for example DuckDB TIMESTAMP_NS, Snowflake TIMESTAMP(9)))</dt><dd><code>2026-03-01 08:00:10.000000311</code></dd></div><div><dt>Copy (Apache Iceberg v2)</dt><dd><code>2026-03-01 08:00:10</code></dd></div></dl>
+<p><b>Why.</b> Iceberg v2 timestamps stop at the microsecond: the copy rounds off anything below. This is not corruption, it is a limit of the destination type. The Iceberg v3 specification defines a nanosecond timestamp; support for it depends on each engine and each version.</p><p><b>What to do.</b> Decide whether sub-microsecond precision matters (sensor logs, trading, traceability). If it does, store the timestamp as text or as an integer (nanoseconds since 1970) alongside it, or target an Iceberg v3-compatible engine.</p></article>
+<h2>To be measured</h2><p class="lead-p">Not measured yet: draw no conclusion from it.</p><ul class="todo-list"><li><b>Time zones</b>: Snowflake TIMESTAMP_TZ, BigQuery TIMESTAMP (UTC): is the original offset preserved?</li><li><b>Null ordering</b>: Each engine puts NULLs first or last by default: an ORDER BY can return a different order.</li><li><b>Case and collation</b>: Text comparisons and sorting depend on the platform&#x27;s collation.</li><li><b>Semi-structured data</b>: VARIANT (Snowflake), JSON (BigQuery), STRUCT and ARRAY: text form and key order.</li><li><b>Large decimals</b>: Snowflake NUMBER(38), BigQuery BIGNUMERIC: how far is precision preserved?</li><li><b>Geography</b>: GEOGRAPHY / GEOMETRY: serialization format on the destination side.</li></ul>
+<p class="sources">Another discrepancy to suggest? Open an <a href="https://github.com/chiptuned/canot/issues">issue</a> with the query or the type, the result from each engine, the versions and the date.</p>
+</div></section>
+<section class="s contact-strip"><div class="wrap"><p>A question, or a test to suggest? <a class="btn btn-accent" href="/en/#contact">Write to us</a></p></div></section>
+</main>
+
+<footer class="bot">
+  <div class="wrap">
+    <span>Canot · a free tool (Apache-2.0) and engagements by <a href="https://q4o.com">Q4O</a>. This is not a certification.</span>
+    <span class="foot-links"><a href="/docs.html">Documentation</a> · <a href="/en/faq.html">FAQ</a> · <a href="/en/legal.html">Legal notice and privacy</a> · <a href="https://github.com/chiptuned/canot">Source code</a></span>
+  </div>
+</footer>
+<script src="/app.js?v=a7c197a686" defer></script>
+</body>
+</html>

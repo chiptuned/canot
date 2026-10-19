@@ -1,0 +1,3 @@
+code,title,label,target_type,target,observed,confidence,based_on
+F11,Scheduled chain and its failures,To review,objet,dbt:canot_lab,"DAG, schedule not read (orchestrator outside the dbt files), state last invocation: build; 1 run, 0 failures, last on 2026-10-17.",,B01 ; B02
+F12,Incomplete read,To review,lecture,B03,"target/catalog.json not read (absent or not exposed); limits: columns, types and volumes of relations; replayability not tested by DuckDB EXPLAIN.",,

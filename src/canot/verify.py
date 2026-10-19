@@ -24,11 +24,11 @@ class TableCheck:
     stats_diffs: list[str] = field(default_factory=list)
     fingerprint_ok: bool = True
     bad_buckets: list[int] = field(default_factory=list)
-    precision_cols: list[str] = field(default_factory=list)  # colonnes dont la valeur diffère parce que le type d'arrivée est moins précis
+    precision_cols: list[str] = field(default_factory=list)  # columns whose value differs because the target type is less precise
 
     @property
     def precision_only(self) -> bool:
-        """Seules des colonnes à conversion avec perte diffèrent : les lignes, les autres colonnes et l'empreinte sont identiques."""
+        """Only columns with a lossy conversion differ: rows, other columns and the fingerprint are identical."""
         return bool(self.precision_cols) and self.rows_source == self.rows_target and self.fingerprint_ok and self.schema_ok and len(self.stats_diffs) == sum(1 for _ in self.stats_diffs if _.split(".")[0] in self.precision_cols)
 
     @property
@@ -67,7 +67,7 @@ def _arrow(rel) -> pa.Table:
 
 
 def _combine(acc: dict, part: dict) -> dict:
-    """Fusionne les statistiques de deux lots : n, nn, sum s'additionnent ; min, max se comparent."""
+    """Merge the statistics of two batches: n, nn, sum add up; min, max compare."""
     for k, v in part.items():
         if v is None:
             acc.setdefault(k, None)
@@ -90,7 +90,7 @@ def _row(tbl: pa.Table) -> dict:
 
 def check_table(src: Source, t: TableInfo, ice_table, source_fp: dict[int, list[int]], tol: Tolerances,
                 lossy_cols: set[str] | frozenset[str] = frozenset()) -> TableCheck:
-    """Compare une table copiée à sa source. La copie est lue par lots : la mémoire reste bornée, quelle que soit la taille."""
+    """Compare a copied table with its source. The copy is read in batches: memory stays bounded, whatever the size."""
     schema = ice_table.schema().as_arrow()
     src_names = [c.name.lower() for c in t.columns]
     schema_ok = [n.lower() for n in schema.names] == src_names if src_names else True
@@ -106,7 +106,7 @@ def check_table(src: Source, t: TableInfo, ice_table, source_fp: dict[int, list[
         _combine(tgt, _row(_arrow(con.execute(sql_t))))
         con.close()
     tgt.setdefault("n", 0)
-    for col, what in keys:  # table vide : aucun lot, les compteurs valent 0
+    for col, what in keys:  # empty table: no batch, the counters are 0
         if what == "nn":
             tgt.setdefault(f"nn__{col}".lower(), 0)
 
@@ -116,14 +116,14 @@ def check_table(src: Source, t: TableInfo, ice_table, source_fp: dict[int, list[
     diffs = []
     rows_src = int(srow.get("n", -1))
     if rows_src != int(tgt["n"]):
-        diffs.append(f"nombre de lignes : {rows_src} / {tgt['n']}")
+        diffs.append(f"row count: {rows_src} / {tgt['n']}")
     precision_cols: list[str] = []
     for col, what in keys:
         key = f"{what}__{col}".lower()
         a, b = srow.get(key), tgt.get(key)
         ov = tol.abs_for(t.fqn, col)
         if not equal(a, b, tol, ov):
-            diffs.append(f"{col}.{what} : {a!r} / {b!r}")
+            diffs.append(f"{col}.{what}: {a!r} / {b!r}")
             if col in lossy_cols and col not in precision_cols:
                 precision_cols.append(col)
     bad = sorted(k for k in set(fp) | set(source_fp) if fp.get(k) != source_fp.get(k))
@@ -181,15 +181,15 @@ def _key(r: tuple) -> str:
 
 def compare_results(a: pa.Table, b: pa.Table, tol: Tolerances, ordered: bool) -> tuple[bool, str, bool]:
     if a.num_columns != b.num_columns:
-        return False, f"{a.num_columns} colonnes / {b.num_columns}", False
+        return False, f"{a.num_columns} columns / {b.num_columns}", False
     ra, rb = _rows(a), _rows(b)
     if len(ra) != len(rb):
-        return False, f"{len(ra)} lignes / {len(rb)}", False
+        return False, f"{len(ra)} rows / {len(rb)}", False
     sa, sb = sorted(ra, key=_key), sorted(rb, key=_key)
     for i, (x, y) in enumerate(zip(sa, sb)):
         for j, (u, v) in enumerate(zip(x, y)):
             if not equal(u, v, tol):
-                return False, f"ligne triée {i}, colonne {j} : {u!r} / {v!r}", False
+                return False, f"sorted row {i}, column {j}: {u!r} / {v!r}", False
     order_differs = ordered and any(not all(equal(u, v, tol) for u, v in zip(x, y)) for x, y in zip(ra, rb))
     return True, "", order_differs
 
@@ -218,7 +218,7 @@ def replay_queries(src: Source, queries: list[str], catalog, tables: list[TableI
         qc = QueryCheck(sql, None, "error")
         try:
             tree = sqlglot.parse_one(sql, read=src.dialect)
-            for tb in tree.find_all(exp.Table):  # le projet (catalogue) n'existe pas côté copie
+            for tb in tree.find_all(exp.Table):  # the project (catalog) does not exist on the copy side
                 tb.set("catalog", None)
             tr = tree.sql(dialect="duckdb")
             qc.translated = tr
@@ -228,9 +228,9 @@ def replay_queries(src: Source, queries: list[str], catalog, tables: list[TableI
                     c = by_bare.get(name.lower(), [])
                     t = c[0] if len(c) >= 1 else None
                 if t is None:
-                    raise LookupError(f"table inconnue de la copie : {name}")
+                    raise LookupError(f"table unknown to the copy: {name}")
                 if sizes and sizes.get(t.fqn, 0) > max_bytes:
-                    raise MemoryError(f"{t.fqn} pèse {sizes[t.fqn] / 1e9:.1f} Go : trop pour le rejeu en mémoire (limite {max_bytes / 1e9:.0f} Go, voir --replay-max-gb)")
+                    raise MemoryError(f"{t.fqn} weighs {sizes[t.fqn] / 1e9:.1f} GB: too large for in-memory replay (limit {max_bytes / 1e9:.0f} GB, see --replay-max-gb)")
                 load(t)
         except LookupError as e:
             qc.status, qc.detail = "untranslatable", str(e)

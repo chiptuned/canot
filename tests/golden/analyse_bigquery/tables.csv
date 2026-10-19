@@ -1,10 +1,10 @@
-id,base,schema,nom,type,lignes,octets_actifs,octets_historique,retention_jours,clone_de,supprimee_le,emplacement,proprietaire,mouvement,mouvement_preuve,n_lectures,derniere_lecture,n_ecritures,derniere_ecriture,derniere_ddl,colonnes_non_portables,politiques,etiquettes_n,drapeaux
-lab-a._tmp.scratch,lab-a,_tmp,scratch,TABLE,1000,50000000,0,1,,,,,vivante,dernière écriture le 15/10/2026,6,2026-10-16T08:00:00Z,30,2026-10-15T08:00:00Z,2025-06-01T00:00:00Z,,,0,
-lab-a.archive.archive_2023,lab-a,archive,archive_2023,TABLE,1000,3000000000,0,7,,,,,figée,dernière écriture le 01/03/2025,0,,0,2025-03-01T00:00:00Z,2025-03-01T00:00:00Z,,,0,F05
-lab-a.ext.gcs_events,lab-a,ext,gcs_events,EXTERNE,1000,,,1,,,gs://lab-bucket,,vivante,dernière écriture le 15/10/2026,4,2026-10-16T08:00:00Z,30,2026-10-15T08:00:00Z,2025-06-01T00:00:00Z,,,0,F01
-lab-a.ext.sheet_targets,lab-a,ext,sheet_targets,EXTERNE,1000,,,1,,,docs.google.com,,vivante,dernière écriture le 15/10/2026,2,2026-10-16T08:00:00Z,30,2026-10-15T08:00:00Z,2025-06-01T00:00:00Z,,,0,F01
-lab-a.raw.customers,lab-a,raw,customers,TABLE,1000,200000000,0,1,,,,,vivante,dernière écriture le 15/10/2026,33,2026-10-16T08:00:00Z,30,2026-10-15T08:00:00Z,2025-06-01T00:00:00Z,geo:GEOGRAPHY,pt-pii ; rap_country,0,F10
-lab-a.raw.events_20261001,lab-a,raw,events_20261001,TABLE,1000,120000000,0,1,,,,,vivante,dernière écriture le 15/10/2026,14,2026-10-16T08:00:00Z,30,2026-10-15T08:00:00Z,2025-06-01T00:00:00Z,"payload:JSON ; ctx:STRUCT<a INT64, b STRING>",,0,
-lab-a.raw.orders,lab-a,raw,orders,TABLE,1000,900000000,250000000,7,,,,,vivante,dernière écriture le 15/10/2026,80,2026-10-16T08:00:00Z,30,2026-10-15T08:00:00Z,2025-06-01T00:00:00Z,,,0,F06
-lab-a.raw.orders_snap,lab-a,raw,orders_snap,SNAPSHOT,1000,10000000,0,1,lab-a.raw.orders,,,,vivante,dernière écriture le 15/10/2026,1,2026-10-16T08:00:00Z,30,2026-10-15T08:00:00Z,2025-06-01T00:00:00Z,,,0,
-lab-a.raw.read_by_api_only,lab-a,raw,read_by_api_only,TABLE,1000,700000000,0,1,,,,,figée,dernière écriture le 01/09/2026,0,,30,2026-09-01T00:00:00Z,2025-06-01T00:00:00Z,,,0,F05
+id,database,schema,name,type,rows,active_bytes,history_bytes,retention_days,clone_of,dropped_on,location,owner,movement,movement_evidence,reads_n,last_read,writes_n,last_write,last_ddl,non_portable_columns,policies,tags_n,flags
+lab-a._tmp.scratch,lab-a,_tmp,scratch,TABLE,1000,50000000,0,1,,,,,live,last write on 2026-10-15,6,2026-10-16T08:00:00Z,30,2026-10-15T08:00:00Z,2025-06-01T00:00:00Z,,,0,
+lab-a.archive.archive_2023,lab-a,archive,archive_2023,TABLE,1000,3000000000,0,7,,,,,frozen,last write on 2025-03-01,0,,0,2025-03-01T00:00:00Z,2025-03-01T00:00:00Z,,,0,F05
+lab-a.ext.gcs_events,lab-a,ext,gcs_events,EXTERNE,1000,,,1,,,gs://lab-bucket,,live,last write on 2026-10-15,4,2026-10-16T08:00:00Z,30,2026-10-15T08:00:00Z,2025-06-01T00:00:00Z,,,0,F01
+lab-a.ext.sheet_targets,lab-a,ext,sheet_targets,EXTERNE,1000,,,1,,,docs.google.com,,live,last write on 2026-10-15,2,2026-10-16T08:00:00Z,30,2026-10-15T08:00:00Z,2025-06-01T00:00:00Z,,,0,F01
+lab-a.raw.customers,lab-a,raw,customers,TABLE,1000,200000000,0,1,,,,,live,last write on 2026-10-15,33,2026-10-16T08:00:00Z,30,2026-10-15T08:00:00Z,2025-06-01T00:00:00Z,geo:GEOGRAPHY,pt-pii ; rap_country,0,F10
+lab-a.raw.events_20261001,lab-a,raw,events_20261001,TABLE,1000,120000000,0,1,,,,,live,last write on 2026-10-15,14,2026-10-16T08:00:00Z,30,2026-10-15T08:00:00Z,2025-06-01T00:00:00Z,"payload:JSON ; ctx:STRUCT<a INT64, b STRING>",,0,
+lab-a.raw.orders,lab-a,raw,orders,TABLE,1000,900000000,250000000,7,,,,,live,last write on 2026-10-15,80,2026-10-16T08:00:00Z,30,2026-10-15T08:00:00Z,2025-06-01T00:00:00Z,,,0,F06
+lab-a.raw.orders_snap,lab-a,raw,orders_snap,SNAPSHOT,1000,10000000,0,1,lab-a.raw.orders,,,,live,last write on 2026-10-15,1,2026-10-16T08:00:00Z,30,2026-10-15T08:00:00Z,2025-06-01T00:00:00Z,,,0,
+lab-a.raw.read_by_api_only,lab-a,raw,read_by_api_only,TABLE,1000,700000000,0,1,,,,,frozen,last write on 2026-09-01,0,,30,2026-09-01T00:00:00Z,2025-06-01T00:00:00Z,,,0,F05

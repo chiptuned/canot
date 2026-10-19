@@ -26,7 +26,7 @@ class EvidenceLog:
         self.prev = "0" * 64
 
     def add(self, event: str, data: dict) -> None:
-        data = json.loads(json.dumps(data, sort_keys=True, default=str))  # normalise (clés int -> str) avant de hacher
+        data = json.loads(json.dumps(data, sort_keys=True, default=str))  # normalize (int keys -> str) before hashing
         e = {"seq": len(self.entries), "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
              "event": event, "data": data, "prev": self.prev}
         e["hash"] = _h(json.dumps({k: e[k] for k in ("seq", "ts", "event", "data", "prev")}, sort_keys=True, default=str).encode())
@@ -47,7 +47,7 @@ def load_or_create_key(path: Path, announce=None) -> Ed25519PrivateKey:
     if path.exists():
         return serialization.load_pem_private_key(path.read_bytes(), password=None)  # type: ignore[return-value]
     if announce:
-        announce(f"Clé de signature créée : {path}. Conservez-la : sans elle, deux dossiers ne sont pas signés par la même clé (voir CANOT_EVIDENCE_KEY_PATH).")
+        announce(f"Signing key created: {path}. Keep it: without it, two evidence folders are not signed by the same key (see CANOT_EVIDENCE_KEY_PATH).")
     path.parent.mkdir(parents=True, exist_ok=True)
     key = Ed25519PrivateKey.generate()
     path.write_bytes(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
@@ -58,19 +58,19 @@ def load_or_create_key(path: Path, announce=None) -> Ed25519PrivateKey:
 def verify_dir(d: Path, expect_pub: Path | None = None) -> tuple[bool, str]:
     try:
         if expect_pub is not None and (d / "evidence.pub").read_bytes().strip() != expect_pub.read_bytes().strip():
-            return False, "la clé publique du dossier n'est pas celle attendue"
+            return False, "the folder's public key is not the expected one"
         lines = [json.loads(l) for l in (d / "evidence.jsonl").read_text().splitlines() if l.strip()]
         prev = "0" * 64
         for e in lines:
             body = {k: e[k] for k in ("seq", "ts", "event", "data", "prev")}
             if e["prev"] != prev or _h(json.dumps(body, sort_keys=True, default=str).encode()) != e["hash"]:
-                return False, f"chaîne rompue à l'entrée {e['seq']}"
+                return False, f"chain broken at entry {e['seq']}"
             prev = e["hash"]
         pub = serialization.load_pem_public_key((d / "evidence.pub").read_bytes())
         assert isinstance(pub, Ed25519PublicKey)
         pub.verify(bytes.fromhex((d / "evidence.sig").read_text().strip()), prev.encode())
-        return True, f"{len(lines)} entrées, chaîne intacte, signature valide"
+        return True, f"{len(lines)} entries, chain intact, signature valid"
     except InvalidSignature:
-        return False, "signature invalide"
+        return False, "invalid signature"
     except Exception as e:
         return False, f"{type(e).__name__}: {e}"

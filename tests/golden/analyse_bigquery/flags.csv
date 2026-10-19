@@ -1,0 +1,20 @@
+code,title,label,target_type,target,observed,confidence,based_on
+F01,External dependency,To review,table,lab-a.ext.gcs_events,External table: data outside the platform (gs://lab-bucket).,,B03 ; B04 ; B05 ; B07 ; B08
+F01,External dependency,To review,table,lab-a.ext.sheet_targets,External table: data outside the platform (docs.google.com).,,B03 ; B04 ; B05 ; B07 ; B08
+F02,Hidden external dependency,To review,objet,lab-a.mart.v_sheet,"Depends on lab-a.ext.sheet_targets, outside the platform, through 1 level: lab-a.mart.v_sheet → lab-a.ext.sheet_targets (docs.google.com).",,B20
+F03,Write outside the platform,To review,famille,333333333333,Write outside the platform observed: 180 executions (scheduled_query); destination: gs://lab-exports.,,B10 ; B11 ; B12
+F03,Write outside the platform,To review,objet,lab-a.sq_export,Scheduled query that writes outside the platform (declared in its definition); destination: gs://lab-exports.,,B13
+F05,Storage with no observed read,To review,table,lab-a.archive.archive_2023,"3 GB stored. No read observed in INFORMATION_SCHEMA.JOBS from 2026-04-20 to 2026-10-17; blind spots: reads through the Storage Read API, queries run from other projects, Analytics Hub consumers.",medium,B07 ; B10 ; B11 ; B12
+F05,Storage with no observed read,To review,table,lab-a.raw.read_by_api_only,"700 MB stored. No read observed in INFORMATION_SCHEMA.JOBS from 2026-04-20 to 2026-10-17; blind spots: reads through the Storage Read API, queries run from other projects, Analytics Hub consumers.",medium,B07 ; B10 ; B11 ; B12
+F06,Billed history that does not transfer,To review,table,lab-a.raw.orders,"250 MB of billed history (Time Travel and Fail-safe), retention 7 days, for 900 MB active; this history does not leave with the copy.",,B07
+F08,Dynamic SQL,To review,objet,lab-a.mart.sp_rebuild,Procedure (SQL): builds SQL at run time; the objects it touches cannot be read from the code.,,B19
+F09,External consumers,To review,objet,lab-a.hub.listing_sales,Share to 1 subscriber; 1 shared object. Consumer reads are not seen by this scan.,,B16 ; B17
+F10,Security to rebuild,To review,objet,lab-a.raw.rap_country,Row access policy applied to 1 object; it does not leave with the copy; the copy requires an unfiltered principal.,,B14
+F10,Security to rebuild,To review,table,lab-a.raw.customers,"Policies: pt-pii, rap_country. They do not leave with the copy; the copy requires a principal not filtered by these policies.",,B09 ; B14
+F11,Scheduled chain and its failures,To review,objet,lab-a.sq_daily_kpi,"Scheduled query, schedule every 24 hours, state active; 180 runs, 3 failures, last on 2026-10-17.",,B13
+F11,Scheduled chain and its failures,To review,objet,lab-a.sq_export,"Scheduled query, schedule every day 05:00, state active; 180 runs, 0 failures.",,B13
+F11,Scheduled chain and its failures,To review,objet,lab-a.sq_old,"Scheduled query, schedule every 1 hours, state disabled; 0 runs, 0 failures.",,B13
+F11,Scheduled chain and its failures,To review,objet,lab-a.sq_weekly,"Scheduled query, schedule every monday 06:00, state active; 26 runs, 0 failures.",,B13
+F12,Incomplete read,To review,lecture,B15,API connections.list not read (missing privilege); limits: external connections (F01).,,
+F12,Incomplete read,To review,lecture,B18,`region-eu`.INFORMATION_SCHEMA.RESERVATIONS not read (privilege level not requested); limits: reserved capacity.,,
+F12,Incomplete read,To review,lecture,B22,`region-eu`.INFORMATION_SCHEMA.JOBS_BY_ORGANIZATION not read (privilege level not requested); limits: queries run from other projects.,,

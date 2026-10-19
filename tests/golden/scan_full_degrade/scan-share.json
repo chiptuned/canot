@@ -1,0 +1,56 @@
+{
+  "as_of": "2026-10-17T10:00:00Z",
+  "capacites": {
+    "export": [
+      "iceberg"
+    ],
+    "inventaire": "complet",
+    "preuve": [
+      "P1",
+      "P2"
+    ],
+    "statut": "tested"
+  },
+  "constats": {
+    "F11": 1,
+    "F12": 15
+  },
+  "famille": "entrepot",
+  "lectures": {
+    "faites": 5,
+    "non_lues": 14
+  },
+  "niveau_droits": 3,
+  "objets": {
+    "procedure": 1,
+    "tache": 1,
+    "vue": 1
+  },
+  "plateforme": "snowflake",
+  "portabilite": {},
+  "rejouabilite_familles_pct": 0.0,
+  "resume": {
+    "DAF": [
+      "Consumption not read: METERING_DAILY_HISTORY not read: missing privilege.",
+      "In dollars, not estimated: credits not read.",
+      "Billed history not read: TABLE_STORAGE_METRICS not read: missing privilege."
+    ],
+    "DSI": [
+      "3 present tables (volume not read) and 3 objects to rebuild besides tables.",
+      "Movement: 0 frozen, 0 live, 1 recreated, 2 not determined.",
+      "Replayability: 0/2 families accepted by DuckDB; accepted ≠ identical result."
+    ],
+    "RSSI": [
+      "Policies not read: POLICY_REFERENCES not read: privilege level not requested.",
+      "0 external dependencies (F01, F02), 0 writes outside the platform (F03), 0 shares with external consumers (F09).",
+      "Owner roles with no holder not determined: privileges not read."
+    ]
+  },
+  "schema": "canot.share/1",
+  "tables": 3,
+  "versions": {
+    "canot": "X",
+    "duckdb": "X",
+    "sqlglot": "X"
+  }
+}

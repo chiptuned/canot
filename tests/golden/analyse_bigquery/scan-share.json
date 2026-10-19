@@ -1,0 +1,69 @@
+{
+  "as_of": "2026-10-17T10:00:00Z",
+  "capacites": {
+    "export": [
+      "iceberg"
+    ],
+    "inventaire": "complet",
+    "preuve": [
+      "P1",
+      "P2"
+    ],
+    "statut": "tested"
+  },
+  "constats": {
+    "F01": 2,
+    "F02": 1,
+    "F03": 2,
+    "F05": 2,
+    "F06": 1,
+    "F08": 1,
+    "F09": 1,
+    "F10": 2,
+    "F11": 4,
+    "F12": 3
+  },
+  "famille": "entrepot",
+  "lectures": {
+    "faites": 18,
+    "non_lues": 4
+  },
+  "niveau_droits": 2,
+  "objets": {
+    "fonction": 1,
+    "modele_ml": 1,
+    "partage": 1,
+    "politique_lignes": 1,
+    "procedure": 1,
+    "requete_planifiee": 4,
+    "vue": 2,
+    "vue_materialisee": 1
+  },
+  "plateforme": "bigquery",
+  "portabilite": {},
+  "rejouabilite_familles_pct": 50.0,
+  "resume": {
+    "DAF": [
+      "Measured over 180 days: 3.8 TB billed on demand, 820.5 reserved slot-hours; the two do not add up.",
+      "On-demand, list-price range: $0.00 to $21.88; reserved, not estimated: your contract price not read.",
+      "Billed history that does not leave with the copy: 250 MB across 1 table (F06, F07)."
+    ],
+    "DSI": [
+      "9 present tables (5 GB) and 11 objects to rebuild besides tables.",
+      "Movement: 2 frozen, 7 live, 0 recreated, 0 not determined.",
+      "Replayability: 1/2 families accepted by DuckDB; accepted ≠ identical result."
+    ],
+    "RSSI": [
+      "2 tables or policies to rebuild on the security side (F10); the copy requires an unfiltered principal.",
+      "3 external dependencies (F01, F02), 2 writes outside the platform (F03), 1 share with external consumers (F09).",
+      "Owner roles (F04): not applicable on BigQuery, where privileges are carried by datasets and tables."
+    ]
+  },
+  "schema": "canot.share/1",
+  "tables": 9,
+  "versions": {
+    "canot": "0.1.0",
+    "duckdb": "1.5.6",
+    "sqlglot": "30.22.0"
+  }
+}

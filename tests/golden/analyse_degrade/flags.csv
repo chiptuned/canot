@@ -1,0 +1,17 @@
+code,title,label,target_type,target,observed,confidence,based_on
+F11,Scheduled chain and its failures,To review,objet,PROD.OPS.T_NIGHTLY,"Task, schedule USING CRON 0 1 * * * UTC, state started; runs not read.",,S11
+F12,Incomplete read,To review,lecture,S03,"TABLE_STORAGE_METRICS not read (missing privilege); limits: active bytes and history (F05, F06, F07, ranges).",,
+F12,Incomplete read,To review,lecture,S04,STORAGE_USAGE not read (missing privilege); limits: average billed storage.,,
+F12,Incomplete read,To review,lecture,S05,METERING_DAILY_HISTORY not read (missing privilege); limits: credits per service.,,
+F12,Incomplete read,To review,lecture,S06,WAREHOUSE_METERING_HISTORY not read (missing privilege); limits: credits per warehouse.,,
+F12,Incomplete read,To review,lecture,S07,TABLE_DML_HISTORY not read (missing privilege); limits: latest writes (movement).,,
+F12,Incomplete read,To review,lecture,S08,TABLE_QUERY_PRUNING_HISTORY not read (missing privilege); limits: fallback for reads per table (F05).,,
+F12,Incomplete read,To review,lecture,S12,TASK_HISTORY not read (timed out); limits: task runs and failures (F11).,,
+F12,Incomplete read,To review,lecture,S13,"QUERY_HISTORY not read (privilege level not requested); limits: query families, replayability, observed writes (F03).",,
+F12,Incomplete read,To review,lecture,S14,ACCESS_HISTORY not read (privilege level not requested); limits: reads per object: F05 not computed; edition not determined (Standard or missing privilege).,,
+F12,Incomplete read,To review,lecture,S15,POLICY_REFERENCES not read (privilege level not requested); limits: applied policies (F10).,,
+F12,Incomplete read,To review,lecture,S16,TAG_REFERENCES not read (privilege level not requested); limits: tags (F10).,,
+F12,Incomplete read,To review,lecture,S17,GRANTS_TO_ROLES not read (privilege level not requested); limits: owner roles with no holder (F04).,,
+F12,Incomplete read,To review,lecture,S18,GRANTS_TO_USERS not read (privilege level not requested); limits: owner roles with no holder (F04).,,
+F12,Incomplete read,To review,lecture,S19,SHARES not read (privilege level not requested); limits: external consumers (F09).,,
+F12,Incomplete read,To review,lecture,code_des_routines,Code not read for 1 routine (filtered by privileges or not provided); limits: dynamic SQL (F08).,,S10

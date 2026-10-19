@@ -24,20 +24,20 @@ class Conversion:
 def _convert_type(t: pa.DataType) -> tuple[pa.DataType, str | None, bool]:
     if pa.types.is_timestamp(t) and t.tz and t.tz.upper() not in ("UTC", "+00:00", "Z"):
         unit = "us" if t.unit == "ns" else t.unit
-        return pa.timestamp(unit, tz="UTC"), f"fuseau {t.tz} -> UTC (Iceberg ne garde que UTC) : l'instant est conservé, le nom du fuseau non", True
+        return pa.timestamp(unit, tz="UTC"), f"time zone {t.tz} -> UTC (Iceberg keeps UTC only): the instant is kept, the zone name is not", True
     if pa.types.is_timestamp(t) and t.unit == "ns":
-        return pa.timestamp("us", tz=t.tz), "ns -> us (Iceberg v2 ne garde pas les nanosecondes)", True
+        return pa.timestamp("us", tz=t.tz), "ns -> us (Iceberg v2 does not keep nanoseconds)", True
     if pa.types.is_large_string(t):
         return pa.string(), None, False
     if pa.types.is_null(t):
-        return pa.string(), "colonne entièrement nulle, typée texte", False
+        return pa.string(), "all-null column, typed as text", False
     if pa.types.is_unsigned_integer(t):
         wider = {8: pa.int16(), 16: pa.int32(), 32: pa.int64(), 64: pa.int64()}[t.bit_width]
-        return wider, "entier non signé -> signé", t.bit_width == 64
+        return wider, "unsigned integer -> signed", t.bit_width == 64
     if pa.types.is_decimal(t) and t.precision > 38:
-        return pa.string(), "précision > 38 stockée en texte", True
+        return pa.string(), "precision > 38 stored as text", True
     if pa.types.is_struct(t) and {f.name.lower() for f in t} >= {"epoch", "timezone"}:
-        return pa.string(), "TIMESTAMP_TZ natif Snowflake : fuseau d'origine gardé en texte", True
+        return pa.string(), "native Snowflake TIMESTAMP_TZ: original time zone kept as text", True
     if pa.types.is_list(t) or pa.types.is_large_list(t):
         inner, _, lossy = _convert_type(t.value_type)
         return pa.list_(inner), None, lossy
@@ -58,7 +58,7 @@ def target_schema(table: str, schema: pa.Schema, source_types: dict[str, str]) -
     for f in schema:
         nt, note, lossy = _convert_type(f.type)
         if note or nt != f.type:
-            convs.append(Conversion(table, f.name, source_types.get(f.name, str(f.type)), str(nt), lossy, note or "type normalisé"))
+            convs.append(Conversion(table, f.name, source_types.get(f.name, str(f.type)), str(nt), lossy, note or "normalized type"))
         fields.append(pa.field(f.name, nt, nullable=True))
     return pa.schema(fields), convs
 
