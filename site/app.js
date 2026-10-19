@@ -163,7 +163,7 @@
     { id: 'databricks', label: 'Databricks', rest: '://MY_WORKSPACE.cloud.databricks.com/sql/1.0/warehouses/MY_WAREHOUSE_ID?catalog=MY_CATALOG' },
     { id: 'bigquery', label: 'BigQuery', rest: '://MY_PROJECT/MY_DATASET?location=EU' },
     { id: 'redshift', label: 'Amazon Redshift', rest: '://MY_CLUSTER/MY_DATABASE', soon: true },
-    { id: 'fabric', label: 'Microsoft Fabric / Synapse', rest: '://MY_WORKSPACE', soon: true },
+    { id: 'fabric', label: 'Fabric / Synapse', rest: '://MY_WORKSPACE', soon: true },
     { id: 'teradata', label: 'Teradata', rest: '://MY_HOST/MY_DATABASE', soon: true },
     { id: 'oracle', label: 'Oracle', rest: '://MY_HOST/MY_SERVICE', soon: true },
     { id: 'sap', label: 'SAP Datasphere', rest: '://MY_TENANT', soon: true },
