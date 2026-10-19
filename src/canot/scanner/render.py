@@ -12,6 +12,7 @@ import io
 from pathlib import Path
 
 from .. import brand as _brand
+from .. import regulatory as _regulatory
 from .. import connectors
 from .analyze import (CODES_HORS_ENTREPOT, ETIQUETTE, KIND_LABELS, LIBELLES, MENTION_REJOUABILITE, cap, fmt_bytes, fmt_date, fmt_num,
                       parse_dt, pl, short_vue)
@@ -477,7 +478,7 @@ def render_html(result: dict) -> str:
     csp = f"default-src 'none'; style-src 'sha256-{css_hash}'; img-src 'none'; base-uri 'none'; form-action 'none'"
     body = "".join([_entete(result), "<main>", _perimetre(result), _capacites(result), _couts(result), _mouvements(result),
                     _ne_part_pas(result), _carte_sortie(result), _dependances(result), _rejouabilite(result), _fourchettes(result), _constats(result),
-                    _non_estime(result), _methode(result), _suite(), "</main>"])
+                    _non_estime(result), _regulatory.section("scan"), _methode(result), _suite(), "</main>"])
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8">'
             f'<meta http-equiv="Content-Security-Policy" content="{csp}">'
             f'<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">'

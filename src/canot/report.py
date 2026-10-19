@@ -7,6 +7,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from .regulatory import section as regulatory_section
 from .brand import CSS as BRAND_CSS, brand_bar, drill_share, share_block
 
 CSS = """body{font:15px/1.5 system-ui,sans-serif;max-width:960px;margin:2rem auto;padding:0 1rem;color:#14212b}
@@ -167,6 +168,7 @@ The copy is in Apache Iceberg format: you can reread it without Canot. The <code
 <h2>What does not move as is</h2>
 <p>Columns with a platform-specific type: {len(nonp)}. Objects to rebuild (views, procedures, tasks…):</p>
 <table><tr><th>Type</th><th>Count</th><th>Examples</th></tr>{objrows or '<tr><td colspan=3>none detected</td></tr>'}</table>
+{regulatory_section("drill", tag="div")}
 <h2>What these figures do not say</h2>
 <ul><li>They cover the scope that was run, on the date of the finding. They say nothing about other tables or about tomorrow.</li>
 <li>They do not compare two platforms: no durations, costs or performance.</li>
