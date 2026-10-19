@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS leads (
   platform TEXT NOT NULL, renewal TEXT NOT NULL, message TEXT,
   source TEXT DEFAULT 'contact', partage TEXT
 );
--- source: 'contact' (home page form) or 'offre' (qualified request from the offers page).
+-- source: 'contact' (home page form), 'offre' (qualified request from the offers page) or 'invited' (canot.io/invited, 30-minute request).
 -- partage: the scan-share.json attached to a qualified request (schema canot.share/1, or the former canot.partage/1).
 --          The column keeps its original name so the existing database needs no change.
 

@@ -49,6 +49,7 @@ EQUIV = {
     "method": ("/methode.html", "/en/method.html"),
     "offers": ("/offres.html", "/en/offers.html"),
     "review": ("/revue.html", "/en/review.html"),
+    "invited": ("/invited.html", "/en/invited.html"),
     "faq": ("/faq.html", "/en/faq.html"),
     "report": ("/rapport.html", "/en/report.html"),
     "legal": ("/mentions-legales.html", "/en/legal.html"),
@@ -65,6 +66,8 @@ PAGES = {
                "Offers", "Four ways to start with Canot: the tool on its own, the reversibility assessment, the DORA exit test, the subscription."),
     "review": (["review"], "Faire relire votre rapport", "Envoyez la synthèse de votre rapport Canot (des comptes seulement) : l'équipe derrière Canot le lit avec vous et vous dit ce qui compte.",
                "Get your report reviewed", "Send the summary of your Canot report (counts only): the team behind Canot reads it with you and tells you what matters."),
+    "invited": (["invited"], "Bienvenue", "Canot en trois minutes, et un formulaire pour réserver 30 minutes avec Vincent (Q4O).",
+                "Welcome", "Canot in three minutes, and a form to book 30 minutes with Vincent (Q4O)."),
     "faq": (["faq"], "Questions fréquentes", "Réponses aux questions fréquentes sur Canot : données, certification, contrats, durée d'un exercice.",
             "FAQ", "Answers to frequent questions about Canot: data, certification, contracts, how long an exercise takes."),
 }
@@ -344,9 +347,9 @@ def docs():
 
 
 # ---------------------------------------------------------------- links
-FR_TO_EN = {"index.html": "", "pourquoi.html": "why.html", "methode.html": "method.html", "offres.html": "offers.html", "revue.html": "review.html",
+FR_TO_EN = {"index.html": "", "pourquoi.html": "why.html", "methode.html": "method.html", "offres.html": "offers.html", "revue.html": "review.html", "invited.html": "invited.html",
             "faq.html": "faq.html", "rapport.html": "report.html", "mentions-legales.html": "legal.html"}
-EN_NAMES = {"", "index.html", "why.html", "method.html", "offers.html", "review.html", "faq.html", "report.html", "legal.html"}
+EN_NAMES = {"", "index.html", "why.html", "method.html", "offers.html", "review.html", "invited.html", "faq.html", "report.html", "legal.html"}
 RENAMED = {"ecarts.html": "discrepancies.html", "gaps.html": "discrepancies.html"}
 OLD_DOC_ANCHORS = {"commandes": "commands", "sur-site": "on-prem", "cibles": "targets"}
 
@@ -425,7 +428,10 @@ def home(lang, template):
 
 
 def secondary(lang, key, title, desc, body):
-    write(lang, key, head(lang, key, f"{title} | Canot", desc) + "\n" + body + "\n" + L10N[lang]["strip"] + "\n" + TAIL[lang])
+    h = head(lang, key, f"{title} | Canot", desc)
+    if key == "invited":  # a page to hand to people met in person: not indexed
+        h = h.replace("<title>", '<meta name="robots" content="noindex">\n<title>', 1)
+    write(lang, key, h + "\n" + body + "\n" + L10N[lang]["strip"] + "\n" + TAIL[lang])
 
 
 def main():

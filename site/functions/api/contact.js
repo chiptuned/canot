@@ -8,11 +8,11 @@ const SHARE_SCHEMAS = ["canot.share/1", "canot.partage/1"]; // scan-share.json (
 const T = {
   fr: {
     bad: "requête illisible", invalid: "demande invalide", renewal: "renouvellement", qualified: "Demande qualifiée",
-    withReport: " avec rapport Canot", number: "Demande n° ", titleQualified: "Canot : demande qualifiée", titleNew: "Canot : nouvelle demande",
+    withReport: " avec rapport Canot", number: "Demande n° ", titleQualified: "Canot : demande qualifiée", invited: "Invité : demande de 30 minutes", titleInvited: "Canot : invité, 30 minutes", titleNew: "Canot : nouvelle demande",
   },
   en: {
     bad: "bad request", invalid: "invalid request", renewal: "renewal", qualified: "Qualified request",
-    withReport: " with Canot report", number: "Request #", titleQualified: "Canot: qualified request", titleNew: "Canot: new request",
+    withReport: " with Canot report", number: "Request #", titleQualified: "Canot: qualified request", invited: "Invited: 30-minute request", titleInvited: "Canot: invited, 30 minutes", titleNew: "Canot: new request",
   },
 };
 const text = (body, status) => new Response(body, { status, headers: { "Content-Type": "text/plain; charset=utf-8" } });
@@ -30,6 +30,7 @@ export async function onRequestPost({ request, env }) {
   // Qualified request (offers page): a project description and the summary of a Canot scan
   // (scan-share.json: counts only, no table name, no SQL). `share` is the current field, `partage` the former one.
   const offre = body.kind === "offer" || body.kind === "offre";
+  const invited = body.kind === "invited"; // canot.io/invited: book 30 minutes (name and e-mail only are required)
   let share = null;
   if (offre) {
     f.message = String(body.message ?? "").replace(/\r/g, "").trim().slice(0, 2000);
@@ -44,8 +45,8 @@ export async function onRequestPost({ request, env }) {
     }
     if (!f.message) return text(t.invalid, 422);
   }
-  const renewalOk = offre ? (f.renewal === "" || /^\d{4}-\d{2}$/.test(f.renewal)) : /^\d{4}-\d{2}$/.test(f.renewal);
-  if (!f.name || !f.company || !EMAIL.test(f.email) || !f.platform || !renewalOk) {
+  const renewalOk = offre || invited ? (f.renewal === "" || /^\d{4}-\d{2}$/.test(f.renewal)) : /^\d{4}-\d{2}$/.test(f.renewal);
+  if (!f.name || !EMAIL.test(f.email) || (!invited && (!f.company || !f.platform)) || !renewalOk) {
     return text(t.invalid, 422);
   }
   let stored = false, notified = false, leadId = null;
@@ -54,7 +55,7 @@ export async function onRequestPost({ request, env }) {
       // The `partage` column keeps its name (existing database); it holds the scan-share.json content.
       const res = await env.LEADS.prepare(
         "INSERT INTO leads (created_at, name, company, email, platform, renewal, message, source, partage) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)"
-      ).bind(new Date().toISOString(), f.name, f.company, f.email, f.platform, f.renewal, f.message, offre ? "offre" : "contact", share).run();
+      ).bind(new Date().toISOString(), f.name, f.company, f.email, f.platform, f.renewal, f.message, invited ? "invited" : offre ? "offre" : "contact", share).run();
       stored = true;
       leadId = res && res.meta ? res.meta.last_row_id : null;
     } catch (e) { console.error("d1", e && e.message); }
@@ -63,8 +64,8 @@ export async function onRequestPost({ request, env }) {
     try {
       // The notification holds neither the e-mail address nor the message: the details stay in D1 (see tools/leads.sh).
       const first = f.name.split(" ")[0];
-      const note = `${first}, ${f.company}\n${f.platform}${f.renewal ? `, ${t.renewal} ${f.renewal}` : ""}${offre ? `\n${t.qualified}${share ? t.withReport : ""}` : ""}${leadId ? `\n${t.number}${leadId}` : ""}`;
-      const r = await fetch(env.CONTACT_WEBHOOK_URL, { method: "POST", headers: { "Content-Type": "text/plain; charset=utf-8", Title: offre ? t.titleQualified : t.titleNew, Priority: "high", Tags: "ship" }, body: note });
+      const note = invited ? `${first}${f.company ? `, ${f.company}` : ""}\n${t.invited}${leadId ? `\n${t.number}${leadId}` : ""}` : `${first}, ${f.company}\n${f.platform}${f.renewal ? `, ${t.renewal} ${f.renewal}` : ""}${offre ? `\n${t.qualified}${share ? t.withReport : ""}` : ""}${leadId ? `\n${t.number}${leadId}` : ""}`;
+      const r = await fetch(env.CONTACT_WEBHOOK_URL, { method: "POST", headers: { "Content-Type": "text/plain; charset=utf-8", Title: invited ? t.titleInvited : offre ? t.titleQualified : t.titleNew, Priority: "high", Tags: "ship" }, body: note });
       notified = r.ok;
     } catch (e) { console.error("webhook", e && e.message); }
   }

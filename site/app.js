@@ -78,9 +78,9 @@
   var SCHEMAS = ["canot.share/1", "canot.partage/1"];
   var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   function setup(form) {
-    var lead = form.getAttribute("data-lead"), offre = lead === "offre" || lead === "offer";
-    var thanks = document.getElementById(offre ? "thanks-offre" : "thanks"), msg = document.getElementById("thanks-msg"),
-        fail = document.getElementById(offre ? "fail-offre" : "fail"), send = form.querySelector("button.send"),
+    var lead = form.getAttribute("data-lead"), offre = lead === "offre" || lead === "offer", invited = lead === "invited";
+    var thanks = document.getElementById(invited ? "thanks-invited" : offre ? "thanks-offre" : "thanks"), msg = document.getElementById("thanks-msg"),
+        fail = document.getElementById(invited ? "fail-invited" : offre ? "fail-offre" : "fail"), send = form.querySelector("button.send"),
         again = document.getElementById("again"), preview = document.getElementById("preview"), body = document.getElementById("preview-body");
     var req = function (v) { return v.trim() ? "" : T.required; };
     // Arriving from the command line (`canot scan redshift://…`): preselect the platform and start the message
@@ -100,7 +100,8 @@
       email: function (v) { return v ? (EMAIL.test(v) ? "" : T.email) : T.required; },
       platform: function (v) { return v ? "" : T.required; }
     };
-    if (offre) checks.message = function (v) { return v.trim() ? "" : T.project; };
+    if (invited) { delete checks.company; delete checks.platform; }
+    else if (offre) checks.message = function (v) { return v.trim() ? "" : T.project; };
     else checks.renewal = function (v) { return v ? "" : T.required; };
     var fileInput = offre ? (form.elements.share || form.elements.partage) : null;
     var fileOut = fileInput ? form.querySelector('[data-for="' + fileInput.name + '"]') : null;
@@ -139,12 +140,13 @@
       var data = { lang: EN ? "en" : "fr" };
       ["name", "company", "email", "platform", "renewal", "message"].forEach(function (k) { data[k] = ((form.elements[k] && form.elements[k].value) || "").trim(); });
       data.website = form.elements.website.value;
+      if (invited) data.kind = "invited";
       if (offre) { data.kind = "offer"; if (share) data.share = share; }
       send.disabled = true;
       fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
         .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r; })
         .then(function () {
-          if (!offre && msg) {
+          if (!offre && !invited && msg) {
             var parts = data.renewal.split("-"), when = new Date(+parts[0], +parts[1] - 1, 1).toLocaleDateString(T.locale, { month: "long", year: "numeric" });
             msg.textContent = T.thanks(data.name.split(" ")[0], when);
           }
