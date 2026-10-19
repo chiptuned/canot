@@ -1,6 +1,6 @@
 [project]
 name = "canot"
-version = "0.3.5"
+version = "0.4.0"
 description = "Prouvez que vous pouvez partir : exercice de sortie Snowflake/Databricks vers Apache Iceberg, avec dossier de preuve."
 readme = "README.md"
 license = "Apache-2.0"

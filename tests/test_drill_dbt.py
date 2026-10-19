@@ -298,3 +298,22 @@ def test_mcp_explique_le_dossier_dbt(tmp_path):
     assert e["dbt"]["verdict"] == "mismatch" and [x["model"] for x in e["dbt"]["why_models_differ"]] == ["model.shop.customer_totals"]
     assert any(x["relation"].endswith("stg_orders") for x in e["dbt"]["not_copied"])
     assert agent.explain_report(str(out / "replay-dbt.json"))["form"] == "P3 pipeline replay"
+
+
+def test_correspondance_bigquery_et_databricks(tmp_path):
+    proj = build_project(tmp_path, profiles=(
+        "shop_profile:\n  target: bq\n  outputs:\n"
+        "    bq:\n      type: bigquery\n      method: service-account\n      keyfile: /keys/sa.json\n      project: data-proj\n"
+        "      execution_project: bill-proj\n      location: EU\n"
+        "    dbx:\n      type: databricks\n      host: https://adb-1.azuredatabricks.net/\n      http_path: /sql/1.0/warehouses/abc\n"
+        "      catalog: main\n      token: \"{{ env_var('DBX_TOKEN') }}\"\n"
+        "    dbx_clair:\n      type: databricks\n      host: h\n      http_path: p\n      token: dapi-clear\n"))
+    bq = dbt_drill.connexion(load_profile(proj, env={}), ["raw", "analytics"], proj, env={})
+    assert bq.url == "bigquery://bill-proj/data-proj.analytics,data-proj.raw?location=EU" and bq.database == "data-proj"
+    assert bq.env == {"GOOGLE_APPLICATION_CREDENTIALS": "/keys/sa.json"} and "sa.json" not in json.dumps(bq.description)
+    env = {"DBX_TOKEN": SECRET}
+    dbx = dbt_drill.connexion(load_profile(proj, target="dbx", env=env), ["raw"], proj, env=env)
+    assert dbx.url == "databricks://adb-1.azuredatabricks.net/sql/1.0/warehouses/abc?catalog=main" and dbx.env == {"DATABRICKS_TOKEN": SECRET}
+    assert SECRET not in json.dumps(dbx.description) + dbx.url
+    with pytest.raises(DbtProfileError, match="token is written in clear"):
+        dbt_drill.connexion(load_profile(proj, target="dbx_clair", env={}), ["raw"], proj, env={})

@@ -38,7 +38,7 @@ Sans compte ni données : la commande joue un exercice de sortie complet sur le 
 |---|---|---|
 | Snowflake | `snowflake://COMPTE/BASE` | disponible, testé : scan complet, copie, comparaison, rejeu des requêtes |
 | BigQuery | `bigquery://PROJET/DATASET` | disponible, testé : scan complet, copie, comparaison, rejeu des requêtes |
-| dbt | `dbt://CHEMIN_DU_PROJET` | disponible, testé : scan des fichiers du projet, rejeu des modèles (`canot replay-dbt`) |
+| dbt | `dbt://CHEMIN_DU_PROJET` | disponible, testé sur Snowflake : scan des fichiers du projet ; `canot drill dbt://` copie les tables que le projet utilise (entrepôt et identifiants lus dans votre profil dbt), puis rejoue les modèles et compare |
 | DuckDB | `fichier.duckdb` | disponible, testé : scan léger, copie, comparaison |
 | Databricks | `databricks://HÔTE/CHEMIN_HTTP?catalog=…` | écrit, pas encore validé sur un compte réel |
 | Amazon Redshift | `redshift://CLUSTER/BASE` | feuille de route, pas encore de connecteur |
