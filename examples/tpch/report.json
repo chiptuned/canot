@@ -11,18 +11,18 @@
     "tables_precision_only": 1,
     "queries_order_differs": 0,
     "lossy_conversions": 1,
-    "throughput_mb_s": 229.9,
+    "throughput_mb_s": 314.16,
     "rto": {
       "seconds": [
-        4.5,
-        9.7
+        3.3,
+        7.1
       ],
       "basis": "measured throughput ±, excluding human validation and application cutover"
     },
     "warehouse_credits_used_est": null,
     "cost_usd_est": null,
     "cost_basis": null,
-    "duration_s": 13.4,
+    "duration_s": 9.3,
     "parity": "mismatch"
   },
   "copy_location": {
@@ -31,14 +31,14 @@
     "kind": "local",
     "catalog": "SQLite (catalog.db in the output folder)",
     "metadata": {
-      "tpch.customer": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/customer/metadata/00001-78c61c1f-921f-41e2-9bcd-97cdc20a5435.metadata.json",
-      "tpch.lineitem": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/lineitem/metadata/00013-2fe72537-0270-4d38-bb8e-2cef05e0fd33.metadata.json",
-      "tpch.nation": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/nation/metadata/00001-01058f37-43c0-4c0e-97f6-181b7a3f3567.metadata.json",
-      "tpch.orders": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/orders/metadata/00003-030bb020-6e19-47d7-8cbd-4d96f6630047.metadata.json",
-      "tpch.part": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/part/metadata/00001-6f1fffa6-e605-4717-a0bb-341af90ba29a.metadata.json",
-      "tpch.partsupp": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/partsupp/metadata/00002-3d515974-5e4b-4a59-841f-0c4723a881a9.metadata.json",
-      "tpch.region": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/region/metadata/00001-b7fb19d0-63f0-46fb-b1dd-829db70b9cf8.metadata.json",
-      "tpch.supplier": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/supplier/metadata/00001-b50f18ca-0d6f-4152-bd9e-1bf4cbc2f1ef.metadata.json"
+      "tpch.customer": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/customer/metadata/00001-96b36f00-3f1a-483e-85c5-c381699efbf6.metadata.json",
+      "tpch.lineitem": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/lineitem/metadata/00013-84148358-8c44-402e-87ec-c94b6512988b.metadata.json",
+      "tpch.nation": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/nation/metadata/00001-132aec42-c934-42bb-9a32-576c33c2d4ad.metadata.json",
+      "tpch.orders": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/orders/metadata/00003-91c1c002-e0cb-4863-a1f8-a0de7612d79e.metadata.json",
+      "tpch.part": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/part/metadata/00001-37d35c85-87b4-44a9-8f0d-87e298bc15dc.metadata.json",
+      "tpch.partsupp": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/partsupp/metadata/00002-838beddf-9d60-45fa-9cfe-48011f27b400.metadata.json",
+      "tpch.region": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/region/metadata/00001-db2728af-e194-449a-ac28-d4f9be41fa77.metadata.json",
+      "tpch.supplier": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/supplier/metadata/00001-794e9db8-c21e-4b02-9ad9-9185fd061c36.metadata.json"
     }
   },
   "scan": {
@@ -295,8 +295,8 @@
     "sqlglot": "30.22.0"
   },
   "seal": {
-    "last_hash": "3ce3b217c91ce8d27a925c4db4a6c89c15c634cbd1f358fb7c20af5612417f5b",
-    "signature": "ae088347ec74fcb1a27d54d715cc2a9f990e134e54a2506d4baa4b985cf6c53796e39ef720597adb6ddeb457823fd7ea65edd4f245dec4c466713c8aea5d1e02",
+    "last_hash": "21c420989f4c97d14fc6c63525990aab7ed9c79496aca5f4739785adcf1a0c3e",
+    "signature": "85341d092a0913ef0615388f60b94d324d1b2daf11347911d9259fc1951217b235afd4ab167d2740ec044934ca79f8f0554aa53f66c216ddef513a6728498f09",
     "entries": 23
   },
   "source": "duckdb:/tmp/canot-sf1/demo.duckdb",

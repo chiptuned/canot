@@ -76,8 +76,26 @@ def test_seules_urls_canot_io_et_sources_de_prix(name):
     page = render_html(result(name))
     urls = {u.rstrip(".,;)") for u in re.findall(r"https?://[^\s\"'<>]+", html.unescape(page))}
     assert "https://canot.io" in urls
-    assert urls <= {"https://canot.io", *PRICE_SOURCES}, urls
-    assert page.count("<a ") == 1 and '<a href="https://canot.io">' in page
+    assert urls <= {"https://canot.io", "https://canot.io/en/offers.html#start", *PRICE_SOURCES}, urls
+    # three links: canot.io, the shareable-summary download (data: URI, nothing leaves the page), the form on canot.io
+    assert page.count("<a ") == 3 and '<a href="https://canot.io">' in page
+    assert page.count('download="scan-share.json"') == 1 and "<script" not in page
+
+
+@pytest.mark.parametrize("name", ALL)
+def test_le_resume_partageable_embarque_ne_contient_que_des_comptes(name):
+    import base64
+    import json
+
+    page = render_html(result(name, sql_brut=True))
+    m = re.search(r'href="data:application/json;base64,([A-Za-z0-9+/=]+)"', page)
+    payload = json.loads(base64.b64decode(m.group(1)))
+    assert payload["schema"] == "canot.share/1"
+    raw = json.dumps(payload)
+    assert CANARI not in raw
+    for t in result(name)["tables"]:
+        assert t["nom"] not in raw or len(t["nom"]) < 4  # no table names (very short names may coincide with a word)
+    assert "Canot" in page and "<svg" in page and "Export the shareable summary" in page
 
 
 @pytest.mark.parametrize("name", ALL)

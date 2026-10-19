@@ -11,6 +11,7 @@ import html
 import io
 from pathlib import Path
 
+from .. import brand as _brand
 from .. import connectors
 from .analyze import (CODES_HORS_ENTREPOT, ETIQUETTE, KIND_LABELS, LIBELLES, MENTION_REJOUABILITE, cap, fmt_bytes, fmt_date, fmt_num,
                       parse_dt, pl, short_vue)
@@ -65,6 +66,7 @@ a{color:var(--acc)}
 @media (max-width:640px){.trio{grid-template-columns:1fr}table{font-size:12px}th,td{padding:4px 3px}th[scope=row]{min-width:6em}.nat{min-width:7em}}
 @media print{:root{--bg:#fff;--fg:#000;--mut:#444;--line:#ccc;--soft:#f2f2f2;--acc:#1f3a5f;--tag:#6b3a0b;--tagbg:#fff}
 body{max-width:none;margin:0;padding:0;font-size:10.5px}h2{break-after:avoid}tr,.box,.alerte{break-inside:avoid}}"""
+CSS += _brand.CSS
 
 
 def _e(x) -> str:
@@ -178,9 +180,12 @@ def _entete(r: dict) -> str:
               "scan-sql-raw.json, next to this report, contains the raw text of your queries, literals included (permissions 0600). "
               "It is not meant for distribution.</p>") if r.get("avec_sql_brut") else ""
     boxes = "".join(f"<div class=box><h3>{AUDIENCES[k]}</h3><p>{_e(' '.join(r['resume'][k]))}</p></div>" for k in ("DSI", "DAF", "RSSI"))
-    return (f'<header id="header"><p class=diffusion>Internal distribution</p>'
+    from .run import partage  # the shareable summary: counts only
+
+    return (f'<header id="header">{_brand.brand_bar("Exit scan")}<p class=diffusion>Internal distribution</p>'
             f"<h1>Exit scan: {_e(_plateforme(r))}</h1>"
-            f"<p class=meta>{_e(' · '.join(meta))}</p>{alerte}<div class=trio>{boxes}</div></header>")
+            f"<p class=meta>{_e(' · '.join(meta))}</p>{alerte}<div class=trio>{boxes}</div>"
+            f'{_brand.share_block(partage(r), "scan-share.json")}</header>')
 
 
 def _perimetre(r: dict) -> str:

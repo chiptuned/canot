@@ -7,6 +7,8 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from .brand import CSS as BRAND_CSS, brand_bar, drill_share, share_block
+
 CSS = """body{font:15px/1.5 system-ui,sans-serif;max-width:960px;margin:2rem auto;padding:0 1rem;color:#14212b}
 h1{font-size:1.7rem}h2{margin-top:2rem;border-bottom:1px solid #cdd7de;padding-bottom:.3rem}
 table{border-collapse:collapse;width:100%;font-size:14px}td,th{border-bottom:1px solid #e1e8ec;padding:6px 8px;text-align:left;vertical-align:top}
@@ -142,10 +144,11 @@ def write_report(res: dict, out: Path) -> Path:
     rto = s.get("rto")
     sy = synthese(res)
     finds = "".join(f'<div class="find"><span class="tag {t}">{_e(tag)}</span><div><b>{_e(h)}</b><span>{_e(d)}</span></div></div>' for t, tag, h, d in sy["findings"])
-    page = f"""<!doctype html><html lang="en"><meta charset="utf-8"><title>Canot evidence report</title><style>{CSS}</style>
-<h1>Evidence report: exit exercise</h1>
+    page = f"""<!doctype html><html lang="en"><meta charset="utf-8"><title>Canot evidence report</title><style>{CSS}{BRAND_CSS}</style>
+{brand_bar("Evidence report")}<h1>Evidence report: exit exercise</h1>
 <p>Source: <code>{_e(_clean(res['source']))}</code> · Target: <code>{_e(_clean(res['target']))}</code> · Finding dated {datetime.now().strftime('%Y-%m-%d %H:%M')}, on the scope run · Canot {_e(res['env']['canot'])}</p>
 <h2 style="border:0;margin-bottom:0">Summary</h2><p class="verdict"><b>@@VERDICT@@</b></p>@@FINDINGS@@
+{share_block(drill_share(res), "drill-share.json")}
 <div class="box"><b>Finding:</b> <span class="{'ok' if ok else 'warn'}">{_e('identical content' if ok else 'mismatches to review')}</span> —
 {s['tables_ok']}/{s['tables_total']} identical tables, {s['queries_match']}/{s['queries_total']} identical queries,
 {s['queries_untranslatable']} not replayable, {s['queries_mismatch']} with a mismatch, {s['lossy_conversions']} conversion(s) with possible loss.</div>
