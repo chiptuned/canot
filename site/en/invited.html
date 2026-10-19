@@ -12,7 +12,7 @@
 <link rel="alternate" hreflang="x-default" href="https://canot.io/invited.html">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#f4f6f7">
-<link rel="stylesheet" href="/style.css?v=4750fa96de">
+<link rel="stylesheet" href="/style.css?v=cafa485864">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -35,29 +35,15 @@
 
 <section class="s who" id="brief">
   <div class="wrap">
-    <h1 class="h2like">Canot, in three minutes.</h1>
-    <p class="lead-p">You met Vincent from Q4O and he told you about Canot. This page repeats what he said, with a little more detail, and lets you book 30 minutes with him.</p>
-    <h2>The problem</h2>
-    <p class="lead-p">Moving onto a data platform is easy: vendors give you the tools. Checking that you can move <b>off</b> it is another matter. Regulators now ask for it (DORA requires a tested exit plan for critical ICT services, the Data Act requires exit clauses in cloud contracts), yet an exit plan on paper has never been executed: its duration, its cost and its gaps stay unknown until the day you need it.</p>
-    <h2>What Canot does</h2>
+    <h1 class="h2like">Canot, in short.</h1>
+    <p class="lead-p">Canot rehearses your exit from a data platform, then keeps the evidence.</p>
     <div class="who-grid">
-      <div class="who-card"><span class="k">1. Scan</span><p>Read-only inventory of what you run: tables, volumes, queries, costs, and what will not move as is. Nothing is changed on your side.</p></div>
-      <div class="who-card"><span class="k">2. Copy</span><p>Your data is copied to the destination you choose (a European host, or your own premises) in the open Apache Iceberg format. DuckDB, Spark or Trino read it: no dependency on Canot.</p></div>
-      <div class="who-card"><span class="k">3. Compare and replay</span><p>Row counts and per-column statistics are recomputed in the source engine and compared with the copy. Your most expensive queries, and your dbt models, are replayed on the copy.</p></div>
-      <div class="who-card"><span class="k">4. Evidence</span><p>A one-page report (verdict, what moves as is, what to fix) backed by a signed, hash-chained log that makes any change visible. Each table states its proof level.</p></div>
+      <div class="who-card"><span class="k">Copy</span><p>Your data moves to an open format, on your premises or at a European host.</p></div>
+      <div class="who-card"><span class="k">Compare</span><p>Counts, statistics, queries and dbt models replayed on the copy.</p></div>
+      <div class="who-card"><span class="k">Evidence</span><p>A one-page report backed by a signed log.</p></div>
     </div>
-    <h2>What Canot is not</h2>
-    <p class="lead-p">It is not a certification and not legal advice: it produces a dated record of measurements on the scope you ran. It does not compare every value one by one (the report says exactly what it proves and what it does not). It never needs write access to your platform, and the free tool sends nothing to us.</p>
-    <h2>Try it now</h2>
-    <p class="lead-p">No account and no data needed: the demo generates a benchmark dataset locally and runs the whole exercise.</p>
     <div class="cmd"><span class="p" aria-hidden="true">$</span><code>uvx canot demo</code></div>
-    <p class="note"><a href="/en/report.html">See an example report</a> · <a href="https://q4o-paris.github.io/canot/">Documentation</a> · <a href="https://github.com/q4o-paris/canot">Source code (Apache-2.0)</a></p>
-    <h2>Who it is for</h2>
-    <div class="who-grid">
-      <div class="who-card"><span class="k">Risk and compliance</span><p>A DORA exit plan that was executed and measured, with a test sheet ready for your register.</p></div>
-      <div class="who-card"><span class="k">CIOs and data leaders</span><p>A measured exit cost before you negotiate a renewal, instead of a rough estimate.</p></div>
-      <div class="who-card"><span class="k">Data engineers</span><p>One command, open-source code, tests. You see everything it does before you run it.</p></div>
-    </div>
+    <p class="note">No account, no data needed. <a href="/en/report.html">See an example report</a></p>
   </div>
 </section>
 
@@ -65,27 +51,11 @@
   <div class="wrap">
     <div class="lead">
       <h2 class="h2like">Book 30 minutes.</h2>
-      <p>Leave your details: Vincent comes back to you with a few slots. A first call is free: it is a conversation about your platform and your constraints, not a sales pitch.</p>
-      <p>Q4O is the Paris data studio that built Canot and runs exit exercises. <a href="https://q4o.com">About Q4O</a></p>
+      <p>Pick a slot.</p>
     </div>
     <div class="form-box">
-      <form id="form-invited" data-lead="invited" novalidate>
-        <div class="fields">
-          <label>Name<input name="name" autocomplete="name" required><span class="err" data-for="name"></span></label>
-          <label>Work email<input name="email" type="email" autocomplete="email" required><span class="err" data-for="email"></span></label>
-          <label>Company (optional)<input name="company" autocomplete="organization"></label>
-        </div>
-        <label>Context (optional)<textarea name="message" rows="4" maxlength="500" placeholder="Where we met, your platform, what you would like to talk about."></textarea></label>
-        <div class="hp" aria-hidden="true"><label>Do not fill in<input name="website" tabindex="-1" autocomplete="off"></label></div>
-        <div class="fail" id="fail-invited" role="alert" hidden></div>
-        <button class="send" type="submit">Ask for a call</button>
-        <p class="legal">This information is used only to reply to you. No trackers on this page. Data controller: Q4O. Details and rights: <a href="/en/legal.html#privacy">privacy</a>.</p>
-      </form>
-      <div class="thanks" id="thanks-invited" hidden>
-        <img src="/assets/canot-symbole.svg" alt="" width="160" height="82">
-        <span class="h">Request received.</span>
-        <p>Thank you. Vincent will get back to you with a few slots.</p>
-      </div>
+      <iframe class="booking" src="https://calendar.google.com/calendar/appointments/schedules/AcZssZ0CHGua0Kg4P-gOPQB77XBsNnnl_yBWl8ZQaRTE3-ak9jhNJww8-sH2mn6CXY9hncdkepefF81y?gv=true" title="Book 30 minutes with Vincent" loading="lazy" width="100%" height="680" frameborder="0"></iframe>
+      <p class="note"><a href="https://calendar.app.google/7fi6qx2f3euP369i8">Open the calendar in a new tab</a></p>
     </div>
   </div>
 </section>

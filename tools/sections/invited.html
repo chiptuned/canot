@@ -1,28 +1,14 @@
 <section class="s who" id="brief">
   <div class="wrap">
-    <h1 class="h2like">Canot, en trois minutes.</h1>
-    <p class="lead-p">Vous avez croisé Vincent de Q4O et il vous a parlé de Canot. Cette page reprend ce qu'il vous a dit, avec un peu plus de détail, et vous permet de réserver 30 minutes avec lui.</p>
-    <h2>Le problème</h2>
-    <p class="lead-p">Entrer sur une plateforme de données est facile : les éditeurs vous fournissent les outils. Vérifier que vous pouvez en <b>sortir</b>, c'est autre chose. Les régulateurs le demandent désormais (DORA exige un plan de sortie testé pour les services TIC critiques, le Data Act impose des clauses de sortie dans les contrats cloud), mais un plan de sortie sur le papier n'a jamais été exécuté : sa durée, son coût et ses écarts restent inconnus jusqu'au jour où vous en avez besoin.</p>
-    <h2>Ce que fait Canot</h2>
+    <h1 class="h2like">Canot, en bref.</h1>
+    <p class="lead-p">Canot répète votre sortie d'une plateforme de données, puis en garde la preuve.</p>
     <div class="who-grid">
-      <div class="who-card"><span class="k">1. Scan</span><p>Inventaire en lecture seule de ce que vous exploitez : tables, volumes, requêtes, coûts, et ce qui ne part pas tel quel. Rien n'est modifié chez vous.</p></div>
-      <div class="who-card"><span class="k">2. Copie</span><p>Vos données sont copiées vers la destination de votre choix (un hébergeur européen, ou chez vous) au format ouvert Apache Iceberg. DuckDB, Spark ou Trino la lisent : aucune dépendance à Canot.</p></div>
-      <div class="who-card"><span class="k">3. Comparaison et rejeu</span><p>Les comptes et les statistiques de chaque colonne sont recalculés dans le moteur source et comparés à la copie. Vos requêtes les plus coûteuses, et vos modèles dbt, sont rejoués sur la copie.</p></div>
-      <div class="who-card"><span class="k">4. Preuve</span><p>Un rapport d'une page (verdict, ce qui part tel quel, ce qu'il faut traiter) adossé à un journal signé qui rend toute modification visible. Chaque table indique son niveau de preuve.</p></div>
+      <div class="who-card"><span class="k">Copie</span><p>Vos données partent vers un format ouvert, chez vous ou chez un hébergeur européen.</p></div>
+      <div class="who-card"><span class="k">Compare</span><p>Comptes, statistiques, requêtes et modèles dbt rejoués sur la copie.</p></div>
+      <div class="who-card"><span class="k">Preuve</span><p>Un rapport d'une page, adossé à un journal signé.</p></div>
     </div>
-    <h2>Ce que Canot n'est pas</h2>
-    <p class="lead-p">Ce n'est ni une certification ni un avis juridique : il produit un relevé daté de mesures sur le périmètre exécuté. Il ne compare pas chaque valeur une à une (le rapport dit exactement ce qu'il prouve et ce qu'il ne prouve pas). Il n'a jamais besoin d'un accès en écriture à votre plateforme, et l'outil libre ne nous envoie rien.</p>
-    <h2>L'essayer maintenant</h2>
-    <p class="lead-p">Ni compte ni données nécessaires : la démo génère un jeu de données de référence en local et déroule tout l'exercice.</p>
     <div class="cmd"><span class="p" aria-hidden="true">$</span><code>uvx canot demo</code></div>
-    <p class="note"><a href="/rapport.html">Voir un exemple de rapport</a> · <a href="https://q4o-paris.github.io/canot/">Documentation</a> · <a href="https://github.com/q4o-paris/canot">Code source (Apache-2.0)</a></p>
-    <h2>Pour qui</h2>
-    <div class="who-grid">
-      <div class="who-card"><span class="k">Risques et conformité</span><p>Votre plan de sortie DORA, exécuté et mesuré, avec une fiche de test prête pour votre registre.</p></div>
-      <div class="who-card"><span class="k">DSI et directions data</span><p>Un coût de sortie mesuré avant de négocier votre renouvellement, au lieu d'une estimation à la louche.</p></div>
-      <div class="who-card"><span class="k">Ingénieurs data</span><p>Une commande, du code libre, des tests. Vous voyez tout ce qu'elle fait avant de la lancer.</p></div>
-    </div>
+    <p class="note">Sans compte ni données. <a href="/rapport.html">Voir un exemple de rapport</a></p>
   </div>
 </section>
 
@@ -30,27 +16,11 @@
   <div class="wrap">
     <div class="lead">
       <h2 class="h2like">Réservez 30 minutes.</h2>
-      <p>Laissez vos coordonnées : Vincent revient vers vous avec quelques créneaux. Le premier échange est gratuit : c'est une conversation sur votre plateforme et vos contraintes, pas un argumentaire commercial.</p>
-      <p>Q4O est le studio data parisien qui a conçu Canot et réalise des exercices de sortie. <a href="https://q4o.com">À propos de Q4O</a></p>
+      <p>Choisissez un créneau.</p>
     </div>
     <div class="form-box">
-      <form id="form-invited" data-lead="invited" novalidate>
-        <div class="fields">
-          <label>Nom<input name="name" autocomplete="name" required><span class="err" data-for="name"></span></label>
-          <label>Email professionnel<input name="email" type="email" autocomplete="email" required><span class="err" data-for="email"></span></label>
-          <label>Entreprise (facultatif)<input name="company" autocomplete="organization"></label>
-        </div>
-        <label>Contexte (facultatif)<textarea name="message" rows="4" maxlength="500" placeholder="Où on s'est croisés, votre plateforme, ce dont vous aimeriez parler."></textarea></label>
-        <div class="hp" aria-hidden="true"><label>Ne pas remplir<input name="website" tabindex="-1" autocomplete="off"></label></div>
-        <div class="fail" id="fail-invited" role="alert" hidden></div>
-        <button class="send" type="submit">Demander un appel</button>
-        <p class="legal">Ces informations servent uniquement à vous répondre. Aucun pisteur sur cette page. Responsable du traitement : Q4O. Détails et droits : <a href="mentions-legales.html#confidentialite">confidentialité</a>.</p>
-      </form>
-      <div class="thanks" id="thanks-invited" hidden>
-        <img src="/assets/canot-symbole.svg" alt="" width="160" height="82">
-        <span class="h">Demande reçue.</span>
-        <p>Merci. Vincent revient vers vous avec quelques créneaux.</p>
-      </div>
+      <iframe class="booking" src="https://calendar.google.com/calendar/appointments/schedules/AcZssZ0CHGua0Kg4P-gOPQB77XBsNnnl_yBWl8ZQaRTE3-ak9jhNJww8-sH2mn6CXY9hncdkepefF81y?gv=true" title="Réserver 30 minutes avec Vincent" loading="lazy" width="100%" height="680" frameborder="0"></iframe>
+      <p class="note"><a href="https://calendar.app.google/7fi6qx2f3euP369i8">Ouvrir l'agenda dans un nouvel onglet</a></p>
     </div>
   </div>
 </section>

@@ -425,3 +425,5 @@ input[type=file]{font:inherit;padding:8px 0}
 /* Home: report (wash) / who (paper) / destinations (wash) / contact (paper) alternate */
 .sov{background:var(--wash)}
 .sov + .contact{background:var(--paper)}
+
+.booking{display:block;width:100%;min-height:680px;border:1px solid var(--line-2);border-radius:8px;background:var(--paper)}
