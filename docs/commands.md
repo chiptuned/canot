@@ -6,7 +6,7 @@ Canot rehearses your exit from a data platform, inside your own accounts. One co
 uvx canot drill SOURCE DESTINATION
 ```
 
-`SOURCE` is the platform you would leave (Snowflake, Databricks, BigQuery), `DESTINATION` is where the copy is written. Replace the `MY_…` values with your own. Canot copies the tables to Apache Iceberg, compares everything, replays your most expensive queries and writes a signed evidence log. It sends nothing to us: no telemetry.
+`SOURCE` is the platform you would leave (Snowflake, Databricks, BigQuery), or a dbt project that runs on one, `DESTINATION` is where the copy is written. Replace the `MY_…` values with your own. Canot copies the tables to Apache Iceberg, compares everything, replays your most expensive queries and writes a signed evidence log. It sends nothing to us: no telemetry.
 
 ```bash
 # Snowflake to a local folder
@@ -17,6 +17,9 @@ uvx canot drill "databricks://MY_WORKSPACE.cloud.databricks.com/sql/1.0/warehous
 
 # BigQuery to a European hosting provider
 uvx canot drill "bigquery://MY_PROJECT/MY_DATASET?location=EU" scaleway:fr-par --bucket my-bucket
+
+# A dbt project: the tables it uses are copied and compared, then its models are replayed on the copy
+uvx canot drill dbt://./my_dbt_project ./iceberg --target prod
 ```
 
 The Snowflake, BigQuery and Databricks connectors ship with Canot: nothing to add. Without `uv`, `pipx run canot …` or `pip install canot` work the same way.
@@ -26,7 +29,7 @@ The Snowflake, BigQuery and Databricks connectors ship with Canot: nothing to ad
 | Command | What it does |
 |---|---|
 | `canot scan SOURCE` | Read-only assessment: inventory, volumes, consumption, what does not move as-is, query replayability. Writes `scan.html` (to share), `scan.json` and CSV files. See [scan](scan.md). |
-| `canot drill SOURCE DESTINATION` | Full exit exercise: copy, table-by-table comparison, query replay, signed evidence log. |
+| `canot drill SOURCE DESTINATION` | Full exit exercise: copy, table-by-table comparison, query replay, signed evidence log. With `dbt://PROJECT` as the source: reads the warehouse named by the dbt profile, copies the relations the project uses, then replays its models on the copy (P1 to P3, one evidence folder). See [`canot drill dbt://`](#canot-drill-dbt). |
 | `canot demo` | A 30-second demo, no account or data needed: the TPC-H dataset (the standard database benchmark, generated locally, 100 MB by default; `--sf 1` for about 1 GB) and a full exercise. It prints the two commands it runs (`demo-data`, `drill`) and accepts a destination: `canot demo aws:eu-west-3 --bucket MY-BUCKET`. Offline, it falls back to a fictional dataset. |
 | `canot verify-evidence FOLDER` | Verifies the hash chain and signature of an evidence log. `--expect-pub` rejects a log signed by a different key. |
 | `canot teardown DESTINATION` | Deletes the copied data. |
@@ -56,8 +59,39 @@ Useful options:
 | `--credit-price USD` | The Snowflake credit price in your contract. Without it: a dated range based on the list price. |
 | `--replay-max-gb N` | Maximum size of a table loaded in memory to replay queries (default 2). |
 | `--key PATH` | Signing key (default `~/.canot/evidence.key`, or the `CANOT_EVIDENCE_KEY_PATH` variable). |
+| `--profiles-dir FOLDER` | dbt project only: the folder that holds `profiles.yml`. |
+| `--target NAME` | dbt project only: the profile target to read (also `dbt://PROJECT?target=NAME`). |
 
 Output in `--out`: `report.html` (readable by a committee), `report.json`, the evidence log (`evidence.jsonl`, `evidence.sig`, `evidence.pub`) and `reread.sql`. The signature attests that the log has not been modified since it was signed. It attests neither the author nor the date.
+
+## `canot drill dbt://`
+
+```bash
+uvx canot drill dbt://PROJECT_PATH DESTINATION [--target NAME] [--profiles-dir FOLDER]
+```
+
+The exit exercise of a dbt project, in one command:
+
+1. **Reads the project**: `dbt_project.yml` (the profile name), `profiles.yml` and `target/manifest.json` (`dbt parse` produces it from the project files, without connecting to the warehouse). `profiles.yml` is found with `--profiles-dir`, else `DBT_PROFILES_DIR`, else the project folder, else `~/.dbt/profiles.yml`; the target is `--target` (or `?target=NAME` in the URL), else the profile's default target. `{{ env_var('NAME') }}` and `{{ env_var('NAME', 'default') }}` are resolved; no other Jinja is evaluated and no code is run: a value that needs more is refused with the field named.
+2. **Works out the warehouse and the relations**: the adapter of the target gives the platform; the manifest gives the relations, under the names dbt uses (database, schema, alias). Copied: every source, seed and snapshot, every model materialized as `table` or `incremental` (a Python model's table is copied and compared, the model is not replayed). Not copied, with the reason in the report: views (they hold no data; they are replayed and proven through the tables that read them), ephemeral models (no relation), materialized views and dynamic tables (maintained by the platform, to rebuild), relations in another database, and relations the warehouse does not show to the profile's role.
+3. **Copies and compares** those tables to Apache Iceberg: the same copy, comparison and query replay as `canot drill`.
+4. **Replays the models** on the copy and compares each output with the original table, as [`canot replay-dbt`](scan.md#p3-evidence-canot-replay-dbt) does: identical, different, not compared, not replayable.
+5. **Writes one evidence folder** in `--out`: `report.html` and `report.json` (the drill, with a `dbt` section: relations copied and not copied, replay, the explanation of each difference), `replay-dbt.json`, one signed evidence log (`canot verify-evidence` checks it) and `reread.sql`.
+
+| Adapter | Connection read from the profile | Credentials |
+|---|---|---|
+| `snowflake` | account, user, role, warehouse, database; the schemas of the relations | `private_key_path` (becomes `SNOWFLAKE_PRIVATE_KEY_PATH` unless already set) or a password from the environment; `externalbrowser` and inline keys are not supported yet |
+| `bigquery` | project (`execution_project` for billing), location | `method: oauth` (application default credentials) or `service-account` (the keyfile path becomes `GOOGLE_APPLICATION_CREDENTIALS` unless already set) |
+| `databricks` | host, http_path, catalog | token from the environment (`DATABRICKS_TOKEN`) |
+| `duckdb` | path (relative to the project folder) | none |
+
+Another adapter (postgres, redshift, sqlserver…) gets the same message as a platform without a connector, with how to ask for one.
+
+**Your credentials, read-only.** Canot connects with the credentials and the role the profile names, only reads, and never adds a right. What the role cannot see is reported as not copied, never worked around. A secret (password, token, key passphrase) is accepted only as `{{ env_var('…') }}`: written in clear in `profiles.yml`, it is refused. Secrets are never printed nor written: the evidence log records the adapter, account or project, database, role and schemas, never the user, a secret or a key path.
+
+**Reading the result.** A model that differs while its inputs were copied identically is explained with what the run measured, measured causes first: an input copied with a lossy conversion (a `TIMESTAMP_TZ` reduced to UTC shifts the dates derived from it, see [discrepancies](discrepancies.md)), then the row access and masking policies on its inputs (Snowflake: read with the profile's role, or reported as not readable). Under such a policy the copy holds what the role can read: a table that dbt built with a role that saw more cannot be reproduced from it. That is the expected result for this reader, not a translation error (finding F10 of `canot scan`). Exit code: 0 when the copy is identical and no model differs, 1 otherwise.
+
+Tested on 2026-10-19 on the Snowflake test bench (`lab/dbt`, target `snowflake`); BigQuery and Databricks profiles are written but not yet validated on a real account. Details: [scan](scan.md#exit-exercise-of-a-dbt-project-canot-drill-dbt).
 
 ## `canot scan`
 
@@ -75,9 +109,9 @@ uvx canot scan "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" --level 2
 | Snowflake | `snowflake://ACCOUNT/DATABASE?user=…&warehouse=…&role=…&schemas=A,B` | key pair: `SNOWFLAKE_PRIVATE_KEY_PATH` variable (recommended) or `SNOWFLAKE_PASSWORD` |
 | Databricks | `databricks://HOST/WAREHOUSE_HTTP_PATH?catalog=…` | `DATABRICKS_TOKEN` variable (read token); connector not yet tested on a real account |
 | DuckDB | `house.duckdb` | none |
-| dbt (project) | `dbt://PROJECT_PATH`: the project, its `target/` folder or `manifest.json`; scan only (artifacts read offline), evidence through `canot replay-dbt` | none: no network, no dbt command |
+| dbt (project) | `dbt://PROJECT_PATH`: the project, its `target/` folder or `manifest.json`. `canot scan` reads the artifacts offline; `canot drill dbt://PROJECT DESTINATION` (`?target=NAME`, `--profiles-dir`) reads the warehouse named by `profiles.yml` (Snowflake, BigQuery, Databricks, DuckDB) | scan: none, no network, no dbt command. drill: the credentials of the dbt profile, read-only; secrets only from the environment |
 
-`canot connectors` shows, for each one, what Canot can do (full or light inventory, export, evidence) and whether it is tested. For dbt, P3 evidence goes through `canot replay-dbt`.
+`canot connectors` shows, for each one, what Canot can do (full or light inventory, export, evidence) and whether it is tested. For dbt, `canot drill dbt://` gives P1 to P3 in one folder; `canot replay-dbt` replays the models on a copy that already exists.
 
 ## Local or on-prem exit
 
@@ -135,7 +169,7 @@ Exposed tools:
 | `read_doc(topic)` | Returns a full page: `commands`, `scan`, `on-prem`, `targets`, `discrepancies`. |
 | `capabilities(platform)` | What Canot can do on each platform (inventory, export, evidence type), with the status (tested, or written but untested) and the recorded test date. Without an argument: all platforms. |
 | `explain_scan(path)` | Reads a `scan.json` and summarizes it: findings, reads not performed, estimated figures, what to look into. |
-| `explain_report(path)` | Reads an exercise `report.json`: discrepancies, tables and queries involved, known causes from the catalog. Also reads a `replay-dbt.json` (dbt P3 evidence): identical, different and non-replayable models, with their reasons. |
+| `explain_report(path)` | Reads an exercise `report.json`: discrepancies, tables and queries involved, known causes from the catalog. Also reads a `replay-dbt.json` (dbt P3 evidence): identical, different and non-replayable models, with their reasons; for a `canot drill dbt://` folder, the `dbt` section: relations not copied and why each model differs. |
 
 The tools read files you point them to. They open no connection to your platforms.
 

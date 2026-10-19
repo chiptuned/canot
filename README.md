@@ -48,7 +48,7 @@ No account, no data: it runs the TPC-H benchmark dataset through a full exit exe
 |---|---|---|
 | Snowflake | `snowflake://ACCOUNT/DATABASE` | available, tested: full scan, copy, comparison, query replay |
 | BigQuery | `bigquery://PROJECT/DATASET` | available, tested: full scan, copy, comparison, query replay |
-| dbt | `dbt://PROJECT_PATH` | available, tested: scan of the project files, replay of the models (`canot replay-dbt`) |
+| dbt | `dbt://PROJECT_PATH` | available, tested on Snowflake: scan of the project files; `canot drill dbt://` copies the tables the project uses (warehouse and credentials read from your dbt profile, read-only), compares them and replays the models |
 | DuckDB | `file.duckdb` | available, tested: light scan, copy, comparison |
 | Databricks | `databricks://HOST/HTTP_PATH?catalog=…` | written, not yet validated on a real account |
 | Amazon Redshift | `redshift://CLUSTER/DATABASE` | roadmap, no connector yet |

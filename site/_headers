@@ -19,7 +19,3 @@
   Cache-Control: public, max-age=0, must-revalidate
 /sitemap.xml
   Cache-Control: public, max-age=0, must-revalidate
-/example-report.html
-  ! Content-Security-Policy
-  Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
-  Cache-Control: public, max-age=0, must-revalidate
