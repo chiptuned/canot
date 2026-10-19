@@ -219,3 +219,14 @@ def test_nanosecond_timestamps_convert_without_pandas():
     assert got[0] == "1970-01-12T13:46:40.000000001"   # sub-microsecond value kept exact, so it differs from a microsecond copy
     assert got[1] == dt.datetime(1970, 1, 24, 3, 33, 20)
     assert got[2] is None
+
+
+def test_reported_version_is_the_packaged_version():
+    """Reports and the evidence log carry the version: it must follow pyproject.toml (it once stayed at 0.5.0)."""
+    import tomllib
+    from pathlib import Path
+
+    import canot
+
+    meta = tomllib.loads((Path(__file__).parent.parent / "pyproject.toml").read_text(encoding="utf-8"))
+    assert canot.__version__ == meta["project"]["version"]

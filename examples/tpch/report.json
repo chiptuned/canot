@@ -11,18 +11,18 @@
     "tables_precision_only": 1,
     "queries_order_differs": 0,
     "lossy_conversions": 1,
-    "throughput_mb_s": 227.38,
+    "throughput_mb_s": 237.06,
     "rto": {
       "seconds": [
-        0.5,
-        1.0
+        0.4,
+        0.9
       ],
       "basis": "measured throughput ±, excluding human validation and application cutover"
     },
     "warehouse_credits_used_est": null,
     "cost_usd_est": null,
     "cost_basis": null,
-    "duration_s": 2.3,
+    "duration_s": 2.2,
     "proof_level": "full_aggregates",
     "tables_by_proof_level": {
       "not_compared": 0,
@@ -40,14 +40,14 @@
     "kind": "local",
     "catalog": "SQLite (catalog.db in the output folder)",
     "metadata": {
-      "tpch.customer": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/customer/metadata/00001-2a8dacb2-6228-4461-a447-903a9d3151d2.metadata.json",
-      "tpch.lineitem": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/lineitem/metadata/00002-5bc9aa95-6aa5-47a4-842a-9a8e70a17633.metadata.json",
-      "tpch.nation": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/nation/metadata/00001-a0971194-317d-4d7f-a081-ffdfa9342e46.metadata.json",
-      "tpch.orders": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/orders/metadata/00001-52f8b399-de6f-4b38-a765-71ecb8e0aa99.metadata.json",
-      "tpch.part": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/part/metadata/00001-0d1363e0-eace-4644-959d-74f5cea794f6.metadata.json",
-      "tpch.partsupp": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/partsupp/metadata/00001-71c7795f-baaa-4806-b1fe-70c63393ca3e.metadata.json",
-      "tpch.region": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/region/metadata/00001-6bed82df-b0d9-4fd6-b6c0-5e617eb6ad96.metadata.json",
-      "tpch.supplier": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/supplier/metadata/00001-bf218bc7-0c7b-473c-bf39-8c1b1cd3fdb5.metadata.json"
+      "tpch.customer": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/customer/metadata/00001-ee8aae99-33bf-4c18-9cf6-8a51f5136579.metadata.json",
+      "tpch.lineitem": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/lineitem/metadata/00002-82e3cb68-1c3d-42ab-bc11-a78cb90e2c75.metadata.json",
+      "tpch.nation": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/nation/metadata/00001-536136ac-5164-40cb-8082-1cba2c9ab0b6.metadata.json",
+      "tpch.orders": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/orders/metadata/00001-15b23903-5da5-4a28-bea0-17aaba5d95f6.metadata.json",
+      "tpch.part": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/part/metadata/00001-887449e6-1f4e-4d83-99fe-55b90bd3f7e0.metadata.json",
+      "tpch.partsupp": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/partsupp/metadata/00001-3652f2ba-b10a-4fbd-9b1c-97cd67cfcf8c.metadata.json",
+      "tpch.region": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/region/metadata/00001-bc6a85b5-4fa4-4a48-b9be-d17cf634f70a.metadata.json",
+      "tpch.supplier": "file:///private/tmp/canot-sf1/iceberg/warehouse/tpch/supplier/metadata/00001-0943f26f-7c19-4991-a09b-02af2deee00c.metadata.json"
     }
   },
   "scan": {
@@ -168,8 +168,8 @@
       "schema_ok": true,
       "stats_ok": false,
       "stats_diffs": [
-        "l_loaded_at.min: Timestamp('1992-01-31 00:00:00.287971001') / datetime.datetime(1992, 1, 31, 0, 0, 0, 287971)",
-        "l_loaded_at.max: Timestamp('1998-10-31 00:00:00.455367004') / datetime.datetime(1998, 10, 31, 0, 0, 0, 455367)"
+        "l_loaded_at.min: '1992-01-31T00:00:00.287971001' / datetime.datetime(1992, 1, 31, 0, 0, 0, 287971)",
+        "l_loaded_at.max: '1998-10-31T00:00:00.455367004' / datetime.datetime(1998, 10, 31, 0, 0, 0, 455367)"
       ],
       "fingerprint_ok": true,
       "bad_buckets": [],
@@ -307,7 +307,7 @@
       "sql": "select * from tpch.lineitem order by l_orderkey, l_linenumber limit 50",
       "translated": "SELECT * FROM tpch.lineitem ORDER BY l_orderkey, l_linenumber LIMIT 50",
       "status": "mismatch",
-      "detail": "sorted row 0, column 16: Timestamp('1996-02-12 00:00:00.000001001') / datetime.datetime(1996, 2, 12, 0, 0, 0, 1)",
+      "detail": "sorted row 0, column 16: '1996-02-12T00:00:00.000001001' / datetime.datetime(1996, 2, 12, 0, 0, 0, 1)",
       "rows_source": 50,
       "rows_target": 50,
       "order_differs": false
@@ -325,15 +325,15 @@
     }
   ],
   "env": {
-    "canot": "0.5.0",
+    "canot": "0.6.4",
     "duckdb": "1.5.6",
     "pyarrow": "26.0.0",
     "pyiceberg": "0.12.0",
-    "sqlglot": "30.22.0"
+    "sqlglot": "30.23.0"
   },
   "seal": {
-    "last_hash": "331d993818b563648063a3bcd180da19eb784519390a4c32f2e6e71db377f743",
-    "signature": "8e5ac819fb224c9975601dc90e3f87f00292031de9ac8b636af86215e3ea78aea03803a1fa4c263adfd78a0d69ddab0b0b215b5ed19d7a025988dae9d200ca04",
+    "last_hash": "beb139963868b7dc0ed942a94383c09566b2a047764af572d6723abf9ea259d5",
+    "signature": "2ad5d8ea85e28e60b58e086479ae54fdd5d2e76e46f85597b17949abc1021c334da35025f19af010013e08453c692c7464a490f82eb1e8ec8d0f911394597d0d",
     "entries": 23
   },
   "source": "duckdb:/tmp/canot-sf1/demo.duckdb",
