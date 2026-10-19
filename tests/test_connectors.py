@@ -14,11 +14,12 @@ from canot.scanner import run
 FIX = Path(__file__).parent / "fixtures"
 
 
-def test_quatre_connecteurs_et_leur_statut():
+def test_cinq_connecteurs_et_leur_statut():
     c = connectors.CONNECTORS
-    assert list(c) == ["snowflake", "bigquery", "databricks", "duckdb"]
-    assert {n: x.status for n, x in c.items()} == {"snowflake": "testé", "bigquery": "testé", "databricks": "écrit, non testé", "duckdb": "testé"}
-    assert [n for n, x in c.items() if x.capabilities.inventaire == "complet"] == ["snowflake", "bigquery"]
+    assert list(c) == ["snowflake", "bigquery", "databricks", "duckdb", "dbt"]
+    assert {n: x.status for n, x in c.items()} == {"snowflake": "testé", "bigquery": "testé", "databricks": "écrit, non testé", "duckdb": "testé",
+                                                   "dbt": "testé"}
+    assert [n for n, x in c.items() if x.capabilities.inventaire == "complet"] == ["snowflake", "bigquery", "dbt"]
     assert all(set(x.capabilities.preuve) <= set(connectors.PREUVES) for x in c.values())
 
 

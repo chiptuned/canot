@@ -102,7 +102,8 @@ def expliquer_scan(chemin: str, max_constats: int = 40) -> dict:
         "a_savoir": ["Chaque constat est « À examiner », sans niveau de gravité : il dit ce qui est observé et ce qui ne l'est pas.",
                      "Une absence de constat ne vaut que pour les lectures faites.",
                      "Accepté par DuckDB ne veut pas dire résultat identique : seul canot drill compare les résultats.",
-                     "Un scan inventorie : il n'exporte rien et ne prouve rien. Export et preuve sont des capacités de canot drill."],
+                     "Un scan inventorie : il n'exporte rien et ne prouve rien. Export et preuve sont des capacités de canot drill "
+                     "(canot rejeu-dbt pour la preuve P3 d'un projet dbt)."],
     }
 
 
@@ -134,12 +135,24 @@ def capacites(plateforme: str | None = None) -> dict:
     return {"connecteurs": items, "formes_de_preuve": connectors.PREUVES,
             "a_savoir": ["statut « testé » : vu sur une vraie plateforme ; « écrit, non testé » : code présent, jamais exécuté sur un vrai compte.",
                          "teste_sur : date et objet du test consignés dans la documentation du dépôt ; vide si aucun test n'y est consigné.",
-                         "Inventaire = canot scan ; export et preuve = canot drill. Une forme de preuve absente n'est remplacée par aucun score."]}
+                         "Inventaire = canot scan ; export et preuve = canot drill (P3 d'un projet dbt : canot rejeu-dbt). "
+                         "Une forme de preuve absente n'est remplacée par aucun score."]}
 
 
 def expliquer_rapport(chemin: str, max_lignes: int = 30) -> dict:
-    """Résumé d'un report.json d'exercice : parité, tables et requêtes en écart, pistes du catalogue des écarts."""
+    """Résumé d'un report.json d'exercice (parité, tables et requêtes en écart, pistes du catalogue des écarts)
+    ou d'un rejeu-dbt.json (preuve P3 : modèles identiques, différents, non comparés, non rejouables et leurs raisons)."""
     r = _load(chemin)
+    if r.get("schema") == "canot.rejeu-dbt/1":
+        mods = r.get("modeles") or []
+        return {"resume": r.get("summary"), "forme": "P3 rejeu de traitements",
+                "differents": [{"modele": m["modele"], "raison": m.get("raison")} for m in mods if m.get("statut") == "different"][:max_lignes],
+                "non_rejouables": [{"modele": m["modele"], "raison": m.get("raison")} for m in mods if m.get("statut") == "non_rejouable"][:max_lignes],
+                "non_compares": [m["modele"] for m in mods if m.get("statut") == "non_compare"][:max_lignes],
+                "regles": r.get("regles"),
+                "a_savoir": ["« identique » : même SQL compilé, entrées copiées, sortie DuckDB comparée à la table d'origine.",
+                             "Un modèle non rejouable ou non comparé n'est pas prouvé : il est compté avec sa raison.",
+                             "La signature du dossier atteste son intégrité, pas l'auteur ni la date."]}
     if "summary" not in r or "checks" not in r:
         raise ValueError("ce fichier n'est pas un report.json de Canot")
     bad_t = [{"table": c["table"], "lignes_source": c.get("rows_source"), "lignes_copie": c.get("rows_target"), "schema_ok": c.get("schema_ok"),

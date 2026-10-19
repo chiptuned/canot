@@ -1,0 +1,14 @@
+Canot scan en lecture seule (niveau 1 : inventaire, volumes, consommation)
+Source : projet dbt canot_lab : adaptateur snowflake, dbt 1.12.6, manifest du 17/10/2026
+  DSI : 8 modèles dbt, 8 tests dbt, 4 sources dbt ; 8 relations stockées ; 19 liens de dépendance. Matérialisations : 4 table, 4 view.
+  DSI : Portabilité : 17 traduisible(s), 0 à reconstruire (F13), 0 non déterminée(s), 4 portable(s) tel quel.
+  DSI : Rejouabilité : 8 modèles traduit(s), non testé(s) par EXPLAIN DuckDB (catalog.json non lu : EXPLAIN DuckDB non exécuté).
+  DAF : Consommation non lue : fichiers de projet : ni crédits ni octets facturés ; le scan de la plateforme cible les mesure.
+  RSSI : Aucune connexion à une plateforme : fichiers lus localement ; le code est réduit à des empreintes et des comptes.
+  RSSI : 0 dépendance externe déclarée (F01) ; écritures hors plateforme, droits et politiques non lus ici.
+À examiner : F11 ×1, F12 ×1
+Lectures : 2 faites, 1 non lues (détail et raisons dans le rapport)
+Rapport à transmettre : <TMP>/out/scan.html
+Données : <TMP>/out/scan.json et les CSV du même dossier
+Pour nous le transmettre : <TMP>/out/scan-partage.json (des comptes seulement : ni nom de table, ni SQL, ni identité) sur https://canot.io/offres.html#demarrer
+Besoin d'aide pour lire ce rapport ou préparer la suite ? https://canot.io/#contact

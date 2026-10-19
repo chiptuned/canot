@@ -1,0 +1,1996 @@
+{
+  "as_of": "2026-10-19T10:00:00Z",
+  "avec_sql_brut": false,
+  "capacites": {
+    "export": [],
+    "famille": "fichiers",
+    "inventaire": "complet",
+    "libelle": "dbt",
+    "niveaux": [
+      1
+    ],
+    "plateforme": "dbt",
+    "preuve": [
+      {
+        "forme": "P3",
+        "libelle": "rejeu de traitements"
+      }
+    ],
+    "statut": "testé",
+    "teste_sur": "19/10/2026 : canot scan dbt://lab/dbt (projet dbt du banc, manifest dbt 1.12.6, adaptateur Snowflake) ; canot rejeu-dbt sur ces artefacts et une copie DuckDB locale construite par les tests (docs/scan.md)"
+  },
+  "carte_sortie": {
+    "portable_tel_quel": {
+      "donnees": 4
+    },
+    "traduisible": {
+      "planification": 1,
+      "traitement": 16
+    }
+  },
+  "cout_du_scan": {
+    "duree": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "mesuré",
+      "raison": null,
+      "unite": "secondes",
+      "valeur": 0.0
+    },
+    "lectures": {
+      "lu": 2,
+      "non_lu": 1,
+      "total": 3
+    },
+    "requetes": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "mesuré",
+      "raison": null,
+      "unite": "requêtes",
+      "valeur": 0
+    }
+  },
+  "couts": {
+    "credits": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_lu",
+      "raison": "fichiers de projet : ni crédits ni octets facturés ; le scan de la plateforme cible les mesure",
+      "unite": "crédits",
+      "valeur": null
+    },
+    "credits_par_entrepot": [],
+    "credits_par_service": [],
+    "fenetre_jours": null,
+    "monnaie": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_estimé",
+      "raison": "consommation non lue",
+      "unite": "USD",
+      "valeur": null
+    },
+    "note": "Aucune consommation dans des fichiers de projet.",
+    "stockage_monnaie": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_estimé",
+      "raison": "prix de votre contrat non lu",
+      "unite": "USD",
+      "valeur": null
+    },
+    "stockage_octets_moyens": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_lu",
+      "raison": "fichiers de projet : ni crédits ni octets facturés ; le scan de la plateforme cible les mesure",
+      "unite": "octets",
+      "valeur": null
+    },
+    "transferts": []
+  },
+  "dependances": {
+    "aretes": [
+      [
+        "model.canot_lab.dbt_customer_ltv",
+        "CANOT_LAB.DBT_dbt_mart.dbt_fct_orders"
+      ],
+      [
+        "model.canot_lab.dbt_daily_revenue",
+        "CANOT_LAB.DBT_dbt_mart.dbt_fct_orders"
+      ],
+      [
+        "model.canot_lab.dbt_fct_orders",
+        "CANOT_LAB.DBT_dbt_mart.int_order_totals"
+      ],
+      [
+        "model.canot_lab.dbt_fct_orders",
+        "CANOT_LAB.DBT_dbt_stg.stg_customers"
+      ],
+      [
+        "model.canot_lab.dbt_fct_orders",
+        "CANOT_LAB.DBT_dbt_stg.stg_orders"
+      ],
+      [
+        "model.canot_lab.int_order_totals",
+        "CANOT_LAB.DBT_dbt_stg.stg_order_lines"
+      ],
+      [
+        "model.canot_lab.int_order_totals",
+        "CANOT_LAB.DBT_dbt_stg.stg_products"
+      ],
+      [
+        "model.canot_lab.stg_customers",
+        "CANOT_LAB.RAW.customers"
+      ],
+      [
+        "model.canot_lab.stg_order_lines",
+        "CANOT_LAB.RAW.order_lines"
+      ],
+      [
+        "model.canot_lab.stg_orders",
+        "CANOT_LAB.RAW.orders"
+      ],
+      [
+        "model.canot_lab.stg_products",
+        "CANOT_LAB.RAW.products"
+      ],
+      [
+        "test.canot_lab.not_null_dbt_customer_ltv_customer_id.187864d35c",
+        "CANOT_LAB.DBT_dbt_mart.dbt_customer_ltv"
+      ],
+      [
+        "test.canot_lab.not_null_dbt_fct_orders_order_id.42b5497576",
+        "CANOT_LAB.DBT_dbt_mart.dbt_fct_orders"
+      ],
+      [
+        "test.canot_lab.not_null_stg_customers_customer_id.e2cfb1f9aa",
+        "CANOT_LAB.DBT_dbt_stg.stg_customers"
+      ],
+      [
+        "test.canot_lab.not_null_stg_orders_order_id.81cfe2fe64",
+        "CANOT_LAB.DBT_dbt_stg.stg_orders"
+      ],
+      [
+        "test.canot_lab.unique_dbt_customer_ltv_customer_id.d86203d0a3",
+        "CANOT_LAB.DBT_dbt_mart.dbt_customer_ltv"
+      ],
+      [
+        "test.canot_lab.unique_dbt_fct_orders_order_id.ccd7bb51af",
+        "CANOT_LAB.DBT_dbt_mart.dbt_fct_orders"
+      ],
+      [
+        "test.canot_lab.unique_stg_customers_customer_id.c7614daada",
+        "CANOT_LAB.DBT_dbt_stg.stg_customers"
+      ],
+      [
+        "test.canot_lab.unique_stg_orders_order_id.e3b841c71a",
+        "CANOT_LAB.DBT_dbt_stg.stg_orders"
+      ]
+    ],
+    "base": [],
+    "cachees": [],
+    "clients": [],
+    "consommateurs": [],
+    "ecritures_externes": [],
+    "externes": [],
+    "outils": []
+  },
+  "drapeaux": [
+    {
+      "base": [
+        "B01",
+        "B02"
+      ],
+      "cible": "dbt:canot_lab",
+      "cible_type": "objet",
+      "code": "F11",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Chaîne planifiée et ses échecs",
+      "preuve": {
+        "chaine": [
+          "dbt:canot_lab"
+        ],
+        "echecs_n": 0,
+        "etat": "dernière invocation : build",
+        "executions_n": 1
+      },
+      "texte": "DAG, planification non lue (orchestrateur hors des fichiers dbt), état dernière invocation : build ; 1 exécution, 0 échec, dernière le 17/10/2026."
+    },
+    {
+      "base": [],
+      "cible": "B03",
+      "cible_type": "lecture",
+      "code": "F12",
+      "confiance": null,
+      "etiquette": "À examiner",
+      "libelle": "Lecture incomplète",
+      "preuve": {
+        "raison": "absent ou non exposé",
+        "vue": "target/catalog.json"
+      },
+      "texte": "target/catalog.json non lue (absent ou non exposé) ; limite : colonnes, types et volumes des relations ; rejouabilité non testée par EXPLAIN DuckDB."
+    }
+  ],
+  "edition": "dbt 1.12.6",
+  "f04_lu": false,
+  "famille": "fichiers",
+  "familles": [],
+  "fourchettes": {
+    "cout_lecture": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_estimé",
+      "raison": "dépend de la plateforme qui héberge les tables, non lue ici",
+      "unite": "USD",
+      "valeur": null
+    },
+    "duree_lecture": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_estimé",
+      "raison": "volume non lu",
+      "unite": "heures",
+      "valeur": null
+    },
+    "reprise": {
+      "bas": 0.0,
+      "base": [],
+      "confiance": "basse",
+      "formule": "objets × jours par objet + colonnes × jours par colonne",
+      "haut": 0.0,
+      "hypotheses": [
+        "0 objet à reconstruire et 0 colonne à type propre à la plateforme",
+        "hypothèses de q4o : 0,25 à 1,5 jour par objet, 0,1 à 0,5 par colonne, à discuter"
+      ],
+      "nature": "estimé",
+      "raison": null,
+      "unite": "jours",
+      "valeur": null
+    },
+    "volume": {
+      "bas": null,
+      "base": [],
+      "confiance": null,
+      "formule": null,
+      "haut": null,
+      "hypotheses": [],
+      "nature": "non_lu",
+      "raison": "catalog.json non lu",
+      "unite": "octets",
+      "valeur": null
+    }
+  },
+  "fraicheur": null,
+  "latence_max_h": null,
+  "lectures": [
+    {
+      "fenetre": null,
+      "id": "B01",
+      "latence_max_h": null,
+      "lignes": 583,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "target/manifest.json"
+    },
+    {
+      "fenetre": {
+        "au": "2026-10-17T08:43:24.336260Z",
+        "du": "2026-10-17T08:42:58.456644Z"
+      },
+      "id": "B02",
+      "latence_max_h": null,
+      "lignes": 16,
+      "limite": null,
+      "raison": null,
+      "statut": "lu",
+      "vue": "target/run_results.json"
+    },
+    {
+      "fenetre": null,
+      "id": "B03",
+      "latence_max_h": null,
+      "lignes": null,
+      "limite": "colonnes, types et volumes des relations ; rejouabilité non testée par EXPLAIN DuckDB",
+      "raison": "absent ou non exposé",
+      "statut": "non_lu",
+      "vue": "target/catalog.json"
+    }
+  ],
+  "liens": [
+    {
+      "de": "model.canot_lab.dbt_customer_ltv",
+      "nature": "lit",
+      "vers": "model.canot_lab.dbt_fct_orders"
+    },
+    {
+      "de": "model.canot_lab.dbt_daily_revenue",
+      "nature": "lit",
+      "vers": "model.canot_lab.dbt_fct_orders"
+    },
+    {
+      "de": "model.canot_lab.dbt_fct_orders",
+      "nature": "lit",
+      "vers": "model.canot_lab.int_order_totals"
+    },
+    {
+      "de": "model.canot_lab.dbt_fct_orders",
+      "nature": "lit",
+      "vers": "model.canot_lab.stg_customers"
+    },
+    {
+      "de": "model.canot_lab.dbt_fct_orders",
+      "nature": "lit",
+      "vers": "model.canot_lab.stg_orders"
+    },
+    {
+      "de": "model.canot_lab.int_order_totals",
+      "nature": "lit",
+      "vers": "model.canot_lab.stg_order_lines"
+    },
+    {
+      "de": "model.canot_lab.int_order_totals",
+      "nature": "lit",
+      "vers": "model.canot_lab.stg_products"
+    },
+    {
+      "de": "model.canot_lab.stg_customers",
+      "nature": "lit",
+      "vers": "source.canot_lab.raw.customers"
+    },
+    {
+      "de": "model.canot_lab.stg_order_lines",
+      "nature": "lit",
+      "vers": "source.canot_lab.raw.order_lines"
+    },
+    {
+      "de": "model.canot_lab.stg_orders",
+      "nature": "lit",
+      "vers": "source.canot_lab.raw.orders"
+    },
+    {
+      "de": "model.canot_lab.stg_products",
+      "nature": "lit",
+      "vers": "source.canot_lab.raw.products"
+    },
+    {
+      "de": "test.canot_lab.not_null_dbt_customer_ltv_customer_id.187864d35c",
+      "nature": "depend",
+      "vers": "model.canot_lab.dbt_customer_ltv"
+    },
+    {
+      "de": "test.canot_lab.not_null_dbt_fct_orders_order_id.42b5497576",
+      "nature": "depend",
+      "vers": "model.canot_lab.dbt_fct_orders"
+    },
+    {
+      "de": "test.canot_lab.not_null_stg_customers_customer_id.e2cfb1f9aa",
+      "nature": "depend",
+      "vers": "model.canot_lab.stg_customers"
+    },
+    {
+      "de": "test.canot_lab.not_null_stg_orders_order_id.81cfe2fe64",
+      "nature": "depend",
+      "vers": "model.canot_lab.stg_orders"
+    },
+    {
+      "de": "test.canot_lab.unique_dbt_customer_ltv_customer_id.d86203d0a3",
+      "nature": "depend",
+      "vers": "model.canot_lab.dbt_customer_ltv"
+    },
+    {
+      "de": "test.canot_lab.unique_dbt_fct_orders_order_id.ccd7bb51af",
+      "nature": "depend",
+      "vers": "model.canot_lab.dbt_fct_orders"
+    },
+    {
+      "de": "test.canot_lab.unique_stg_customers_customer_id.c7614daada",
+      "nature": "depend",
+      "vers": "model.canot_lab.stg_customers"
+    },
+    {
+      "de": "test.canot_lab.unique_stg_orders_order_id.e3b841c71a",
+      "nature": "depend",
+      "vers": "model.canot_lab.stg_orders"
+    }
+  ],
+  "mode_sql": "aucun SQL émis (fichiers lus)",
+  "mouvements": {
+    "base": [
+      "B02"
+    ],
+    "figée": 0,
+    "non_determine": 4,
+    "recréée": 0,
+    "regle": "recréée : DDL de moins de 7 jours sans écriture postérieure ; vivante : écriture de moins de 30 jours ; figée : dernière écriture plus ancienne ; non déterminée : écritures non lues",
+    "vivante": 4
+  },
+  "ne_part_pas": {
+    "colonnes_non_portables": 0,
+    "exemples": {
+      "dag": [
+        "dbt:canot_lab"
+      ],
+      "modele_dbt": [
+        "model.canot_lab.dbt_customer_ltv",
+        "model.canot_lab.dbt_daily_revenue",
+        "model.canot_lab.dbt_fct_orders",
+        "model.canot_lab.int_order_totals",
+        "model.canot_lab.stg_customers"
+      ],
+      "paquet_dbt": [
+        "paquet:dbt",
+        "paquet:dbt_snowflake"
+      ],
+      "source_dbt": [
+        "source.canot_lab.raw.customers",
+        "source.canot_lab.raw.order_lines",
+        "source.canot_lab.raw.orders",
+        "source.canot_lab.raw.products"
+      ],
+      "test_dbt": [
+        "test.canot_lab.not_null_dbt_customer_ltv_customer_id.187864d35c",
+        "test.canot_lab.not_null_dbt_fct_orders_order_id.42b5497576",
+        "test.canot_lab.not_null_stg_customers_customer_id.e2cfb1f9aa",
+        "test.canot_lab.not_null_stg_orders_order_id.81cfe2fe64",
+        "test.canot_lab.unique_dbt_customer_ltv_customer_id.d86203d0a3"
+      ]
+    },
+    "historique": {
+      "octets": {
+        "bas": null,
+        "base": [],
+        "confiance": null,
+        "formule": null,
+        "haut": null,
+        "hypotheses": [],
+        "nature": "non_lu",
+        "raison": "fichiers de projet : ni crédits ni octets facturés ; le scan de la plateforme cible les mesure",
+        "unite": "octets",
+        "valeur": null
+      },
+      "tables": 0
+    },
+    "objets_par_type": {
+      "dag": 1,
+      "modele_dbt": 8,
+      "paquet_dbt": 2,
+      "source_dbt": 4,
+      "test_dbt": 8
+    },
+    "routines_par_langage": {}
+  },
+  "niveau_droits": 1,
+  "non_estime": [
+    {
+      "raison": "non lue : fichiers de projet : ni crédits ni octets facturés ; le scan de la plateforme cible les mesure",
+      "sujet": "Consommation de la plateforme"
+    },
+    {
+      "raison": "catalog.json non lu",
+      "sujet": "Volume à copier"
+    },
+    {
+      "raison": "volume non lu",
+      "sujet": "Durée de lecture de la copie"
+    },
+    {
+      "raison": "dépend de la plateforme qui héberge les tables, non lue ici",
+      "sujet": "Coût de lecture de la copie"
+    },
+    {
+      "raison": "fichiers de projet : ni crédits ni octets facturés ; le scan de la plateforme cible les mesure",
+      "sujet": "Historique facturé"
+    },
+    {
+      "raison": "prix de votre contrat non lu",
+      "sujet": "Tarif de votre contrat"
+    },
+    {
+      "raison": "dépendent de votre contrat et de votre architecture",
+      "sujet": "Stockage d'arrivée, double exploitation, fonctionnement après la sortie"
+    },
+    {
+      "raison": "accepté ≠ résultat identique : traduit vers DuckDB, non comparé ; un canot drill compare les résultats",
+      "sujet": "Résultat identique des requêtes traduites"
+    },
+    {
+      "raison": "non reprises : elles ne se vérifient pas depuis le scan",
+      "sujet": "Projections de coût fournies par la plateforme"
+    }
+  ],
+  "objets": [
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T08:43:24Z",
+      "detail": {
+        "analyses_n": 0,
+        "duree_s": 9.3,
+        "fenetre": "dernière invocation seulement (run_results.json)",
+        "noeuds_avertis_n": 0,
+        "noeuds_en_echec_n": 0,
+        "noeuds_executes_n": 16
+      },
+      "drapeaux": [
+        "F11"
+      ],
+      "echecs_n": 0,
+      "etat": "dernière invocation : build",
+      "executions_n": 1,
+      "externe": false,
+      "famille_objet": "planification",
+      "id": "dbt:canot_lab",
+      "kind": "dag",
+      "langage": null,
+      "moteur": "dbt",
+      "planification": "non lue (orchestrateur hors des fichiers dbt)",
+      "portabilite": "traduisible",
+      "proprietaire": null,
+      "reference": [],
+      "schema": null,
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T08:43:22Z",
+      "detail": {
+        "acces": "protected",
+        "analyse": "compilé",
+        "categorie": null,
+        "colonnes_documentees_n": 1,
+        "constructions": [],
+        "contrat": false,
+        "fichier": "models/marts/dbt_customer_ltv.sql",
+        "fonctions_propres": [],
+        "hooks_n": 0,
+        "jinja_appels_n": 0,
+        "jinja_blocs_n": 0,
+        "macros_adaptateur_n": 0,
+        "macros_n": 0,
+        "materialisation": "table",
+        "paquet": "canot_lab",
+        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
+        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "relation": "CANOT_LAB.DBT_dbt_mart.dbt_customer_ltv",
+        "tests_n": 2
+      },
+      "drapeaux": [],
+      "echecs_n": 0,
+      "empreinte_code": "8cd867c2ec602de4102d3af92574278aed03e2a348bab11713a68cee09cab91f",
+      "entrees": [
+        "model.canot_lab.dbt_fct_orders"
+      ],
+      "etat": "success",
+      "executions_n": 1,
+      "externe": false,
+      "famille_objet": "traitement",
+      "id": "model.canot_lab.dbt_customer_ltv",
+      "kind": "modele_dbt",
+      "langage": "sql",
+      "lignes_code": 2,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "traduisible",
+      "proprietaire": null,
+      "reference": [
+        "CANOT_LAB.DBT_dbt_mart.dbt_fct_orders"
+      ],
+      "schema": "DBT_dbt_mart",
+      "sorties": [
+        "CANOT_LAB.DBT_dbt_mart.dbt_customer_ltv"
+      ],
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T08:43:23Z",
+      "detail": {
+        "acces": "protected",
+        "analyse": "compilé",
+        "categorie": null,
+        "colonnes_documentees_n": 0,
+        "constructions": [],
+        "contrat": false,
+        "fichier": "models/marts/dbt_daily_revenue.sql",
+        "fonctions_propres": [],
+        "hooks_n": 0,
+        "jinja_appels_n": 0,
+        "jinja_blocs_n": 0,
+        "macros_adaptateur_n": 0,
+        "macros_n": 0,
+        "materialisation": "table",
+        "paquet": "canot_lab",
+        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
+        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "relation": "CANOT_LAB.DBT_dbt_mart.dbt_daily_revenue",
+        "tests_n": 0
+      },
+      "drapeaux": [],
+      "echecs_n": 0,
+      "empreinte_code": "8e774eda946f3d2a366a20cf486a296c66c0801c802d9ffa3a583d373bf5976e",
+      "entrees": [
+        "model.canot_lab.dbt_fct_orders"
+      ],
+      "etat": "success",
+      "executions_n": 1,
+      "externe": false,
+      "famille_objet": "traitement",
+      "id": "model.canot_lab.dbt_daily_revenue",
+      "kind": "modele_dbt",
+      "langage": "sql",
+      "lignes_code": 2,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "traduisible",
+      "proprietaire": null,
+      "reference": [
+        "CANOT_LAB.DBT_dbt_mart.dbt_fct_orders"
+      ],
+      "schema": "DBT_dbt_mart",
+      "sorties": [
+        "CANOT_LAB.DBT_dbt_mart.dbt_daily_revenue"
+      ],
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T08:43:21Z",
+      "detail": {
+        "acces": "protected",
+        "analyse": "compilé",
+        "categorie": null,
+        "colonnes_documentees_n": 1,
+        "constructions": [],
+        "contrat": false,
+        "fichier": "models/marts/dbt_fct_orders.sql",
+        "fonctions_propres": [],
+        "hooks_n": 0,
+        "jinja_appels_n": 0,
+        "jinja_blocs_n": 0,
+        "macros_adaptateur_n": 0,
+        "macros_n": 0,
+        "materialisation": "table",
+        "paquet": "canot_lab",
+        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
+        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "relation": "CANOT_LAB.DBT_dbt_mart.dbt_fct_orders",
+        "tests_n": 2
+      },
+      "drapeaux": [],
+      "echecs_n": 0,
+      "empreinte_code": "f365b84e065eeeb5144ef9ecb913978a31a4bbfc03f8dda24dba0ba6981632a7",
+      "entrees": [
+        "model.canot_lab.int_order_totals",
+        "model.canot_lab.stg_customers",
+        "model.canot_lab.stg_orders"
+      ],
+      "etat": "success",
+      "executions_n": 1,
+      "externe": false,
+      "famille_objet": "traitement",
+      "id": "model.canot_lab.dbt_fct_orders",
+      "kind": "modele_dbt",
+      "langage": "sql",
+      "lignes_code": 4,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "traduisible",
+      "proprietaire": null,
+      "reference": [
+        "CANOT_LAB.DBT_dbt_mart.int_order_totals",
+        "CANOT_LAB.DBT_dbt_stg.stg_customers",
+        "CANOT_LAB.DBT_dbt_stg.stg_orders"
+      ],
+      "schema": "DBT_dbt_mart",
+      "sorties": [
+        "CANOT_LAB.DBT_dbt_mart.dbt_fct_orders"
+      ],
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T08:43:19Z",
+      "detail": {
+        "acces": "protected",
+        "analyse": "compilé",
+        "categorie": null,
+        "colonnes_documentees_n": 0,
+        "constructions": [],
+        "contrat": false,
+        "fichier": "models/marts/int_order_totals.sql",
+        "fonctions_propres": [],
+        "hooks_n": 0,
+        "jinja_appels_n": 0,
+        "jinja_blocs_n": 0,
+        "macros_adaptateur_n": 0,
+        "macros_n": 0,
+        "materialisation": "table",
+        "paquet": "canot_lab",
+        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
+        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "relation": "CANOT_LAB.DBT_dbt_mart.int_order_totals",
+        "tests_n": 0
+      },
+      "drapeaux": [],
+      "echecs_n": 0,
+      "empreinte_code": "086e801425ee5dafc19b7c347415a76f44db4de1ca3cfb4cf1eae46547d3ec05",
+      "entrees": [
+        "model.canot_lab.stg_order_lines",
+        "model.canot_lab.stg_products"
+      ],
+      "etat": "success",
+      "executions_n": 1,
+      "externe": false,
+      "famille_objet": "traitement",
+      "id": "model.canot_lab.int_order_totals",
+      "kind": "modele_dbt",
+      "langage": "sql",
+      "lignes_code": 3,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "traduisible",
+      "proprietaire": null,
+      "reference": [
+        "CANOT_LAB.DBT_dbt_stg.stg_order_lines",
+        "CANOT_LAB.DBT_dbt_stg.stg_products"
+      ],
+      "schema": "DBT_dbt_mart",
+      "sorties": [
+        "CANOT_LAB.DBT_dbt_mart.int_order_totals"
+      ],
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T08:43:18Z",
+      "detail": {
+        "acces": "protected",
+        "analyse": "compilé",
+        "categorie": null,
+        "colonnes_documentees_n": 1,
+        "constructions": [],
+        "contrat": false,
+        "fichier": "models/staging/stg_customers.sql",
+        "fonctions_propres": [],
+        "hooks_n": 0,
+        "jinja_appels_n": 0,
+        "jinja_blocs_n": 0,
+        "macros_adaptateur_n": 0,
+        "macros_n": 0,
+        "materialisation": "view",
+        "paquet": "canot_lab",
+        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
+        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "relation": "CANOT_LAB.DBT_dbt_stg.stg_customers",
+        "tests_n": 2
+      },
+      "drapeaux": [],
+      "echecs_n": 0,
+      "empreinte_code": "3b9f7b70d8175921de48db3bb203558081336ed126ac67dd9c58d9f5b5f9550f",
+      "entrees": [
+        "source.canot_lab.raw.customers"
+      ],
+      "etat": "success",
+      "executions_n": 1,
+      "externe": false,
+      "famille_objet": "traitement",
+      "id": "model.canot_lab.stg_customers",
+      "kind": "modele_dbt",
+      "langage": "sql",
+      "lignes_code": 2,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "traduisible",
+      "proprietaire": null,
+      "reference": [
+        "CANOT_LAB.RAW.customers"
+      ],
+      "schema": "DBT_dbt_stg",
+      "sorties": [
+        "CANOT_LAB.DBT_dbt_stg.stg_customers"
+      ],
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T08:43:17Z",
+      "detail": {
+        "acces": "protected",
+        "analyse": "compilé",
+        "categorie": null,
+        "colonnes_documentees_n": 0,
+        "constructions": [],
+        "contrat": false,
+        "fichier": "models/staging/stg_order_lines.sql",
+        "fonctions_propres": [],
+        "hooks_n": 0,
+        "jinja_appels_n": 0,
+        "jinja_blocs_n": 0,
+        "macros_adaptateur_n": 0,
+        "macros_n": 0,
+        "materialisation": "view",
+        "paquet": "canot_lab",
+        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
+        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "relation": "CANOT_LAB.DBT_dbt_stg.stg_order_lines",
+        "tests_n": 0
+      },
+      "drapeaux": [],
+      "echecs_n": 0,
+      "empreinte_code": "336014d17566e5b58dbee01224de8e97d0e42fa04fa9637a097123c3e057a17d",
+      "entrees": [
+        "source.canot_lab.raw.order_lines"
+      ],
+      "etat": "success",
+      "executions_n": 1,
+      "externe": false,
+      "famille_objet": "traitement",
+      "id": "model.canot_lab.stg_order_lines",
+      "kind": "modele_dbt",
+      "langage": "sql",
+      "lignes_code": 1,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "traduisible",
+      "proprietaire": null,
+      "reference": [
+        "CANOT_LAB.RAW.order_lines"
+      ],
+      "schema": "DBT_dbt_stg",
+      "sorties": [
+        "CANOT_LAB.DBT_dbt_stg.stg_order_lines"
+      ],
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T08:43:18Z",
+      "detail": {
+        "acces": "protected",
+        "analyse": "compilé",
+        "categorie": null,
+        "colonnes_documentees_n": 1,
+        "constructions": [],
+        "contrat": false,
+        "fichier": "models/staging/stg_orders.sql",
+        "fonctions_propres": [],
+        "hooks_n": 0,
+        "jinja_appels_n": 0,
+        "jinja_blocs_n": 0,
+        "macros_adaptateur_n": 0,
+        "macros_n": 0,
+        "materialisation": "view",
+        "paquet": "canot_lab",
+        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
+        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "relation": "CANOT_LAB.DBT_dbt_stg.stg_orders",
+        "tests_n": 2
+      },
+      "drapeaux": [],
+      "echecs_n": 0,
+      "empreinte_code": "c6fc3b31a980dcee55ff12b1309db88bad4ebf7a3d5be80256764edf7b527448",
+      "entrees": [
+        "source.canot_lab.raw.orders"
+      ],
+      "etat": "success",
+      "executions_n": 1,
+      "externe": false,
+      "famille_objet": "traitement",
+      "id": "model.canot_lab.stg_orders",
+      "kind": "modele_dbt",
+      "langage": "sql",
+      "lignes_code": 2,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "traduisible",
+      "proprietaire": null,
+      "reference": [
+        "CANOT_LAB.RAW.orders"
+      ],
+      "schema": "DBT_dbt_stg",
+      "sorties": [
+        "CANOT_LAB.DBT_dbt_stg.stg_orders"
+      ],
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T08:43:18Z",
+      "detail": {
+        "acces": "protected",
+        "analyse": "compilé",
+        "categorie": null,
+        "colonnes_documentees_n": 0,
+        "constructions": [],
+        "contrat": false,
+        "fichier": "models/staging/stg_products.sql",
+        "fonctions_propres": [],
+        "hooks_n": 0,
+        "jinja_appels_n": 0,
+        "jinja_blocs_n": 0,
+        "macros_adaptateur_n": 0,
+        "macros_n": 0,
+        "materialisation": "view",
+        "paquet": "canot_lab",
+        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
+        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "relation": "CANOT_LAB.DBT_dbt_stg.stg_products",
+        "tests_n": 0
+      },
+      "drapeaux": [],
+      "echecs_n": 0,
+      "empreinte_code": "8cf2a1db5993e815af84b49d359e6617792938b073178902d64108df713da393",
+      "entrees": [
+        "source.canot_lab.raw.products"
+      ],
+      "etat": "success",
+      "executions_n": 1,
+      "externe": false,
+      "famille_objet": "traitement",
+      "id": "model.canot_lab.stg_products",
+      "kind": "modele_dbt",
+      "langage": "sql",
+      "lignes_code": 1,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "traduisible",
+      "proprietaire": null,
+      "reference": [
+        "CANOT_LAB.RAW.products"
+      ],
+      "schema": "DBT_dbt_stg",
+      "sorties": [
+        "CANOT_LAB.DBT_dbt_stg.stg_products"
+      ],
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {
+        "macros_n": 423,
+        "role": "dbt-core"
+      },
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "famille_objet": "code",
+      "id": "paquet:dbt",
+      "kind": "paquet_dbt",
+      "langage": null,
+      "planification": null,
+      "proprietaire": null,
+      "reference": [],
+      "schema": null,
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {
+        "macros_n": 140,
+        "role": "adaptateur"
+      },
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "famille_objet": "code",
+      "id": "paquet:dbt_snowflake",
+      "kind": "paquet_dbt",
+      "langage": null,
+      "planification": null,
+      "proprietaire": null,
+      "reference": [],
+      "schema": null,
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {
+        "chargeur": null,
+        "colonnes_documentees_n": 0,
+        "fraicheur_declaree": false,
+        "relation": "CANOT_LAB.RAW.customers",
+        "source": "raw",
+        "tests_n": 0
+      },
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "famille_objet": "donnees",
+      "id": "source.canot_lab.raw.customers",
+      "kind": "source_dbt",
+      "langage": null,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "portable_tel_quel",
+      "proprietaire": null,
+      "reference": [],
+      "schema": "RAW",
+      "sorties": [
+        "CANOT_LAB.RAW.customers"
+      ],
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {
+        "chargeur": null,
+        "colonnes_documentees_n": 0,
+        "fraicheur_declaree": false,
+        "relation": "CANOT_LAB.RAW.order_lines",
+        "source": "raw",
+        "tests_n": 0
+      },
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "famille_objet": "donnees",
+      "id": "source.canot_lab.raw.order_lines",
+      "kind": "source_dbt",
+      "langage": null,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "portable_tel_quel",
+      "proprietaire": null,
+      "reference": [],
+      "schema": "RAW",
+      "sorties": [
+        "CANOT_LAB.RAW.order_lines"
+      ],
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {
+        "chargeur": null,
+        "colonnes_documentees_n": 0,
+        "fraicheur_declaree": false,
+        "relation": "CANOT_LAB.RAW.orders",
+        "source": "raw",
+        "tests_n": 0
+      },
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "famille_objet": "donnees",
+      "id": "source.canot_lab.raw.orders",
+      "kind": "source_dbt",
+      "langage": null,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "portable_tel_quel",
+      "proprietaire": null,
+      "reference": [],
+      "schema": "RAW",
+      "sorties": [
+        "CANOT_LAB.RAW.orders"
+      ],
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": null,
+      "detail": {
+        "chargeur": null,
+        "colonnes_documentees_n": 0,
+        "fraicheur_declaree": false,
+        "relation": "CANOT_LAB.RAW.products",
+        "source": "raw",
+        "tests_n": 0
+      },
+      "drapeaux": [],
+      "echecs_n": null,
+      "etat": null,
+      "executions_n": null,
+      "externe": false,
+      "famille_objet": "donnees",
+      "id": "source.canot_lab.raw.products",
+      "kind": "source_dbt",
+      "langage": null,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "portable_tel_quel",
+      "proprietaire": null,
+      "reference": [],
+      "schema": "RAW",
+      "sorties": [
+        "CANOT_LAB.RAW.products"
+      ],
+      "sql_dynamique": null
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T08:43:23Z",
+      "detail": {
+        "analyse": "compilé",
+        "attache_a": "model.canot_lab.dbt_customer_ltv",
+        "categorie": null,
+        "colonne": "customer_id",
+        "constructions": [],
+        "fichier": "models/schema.yml",
+        "fonctions_propres": [],
+        "jinja_appels_n": 1,
+        "jinja_blocs_n": 0,
+        "lignes_en_echec": 0,
+        "macros_adaptateur_n": 2,
+        "macros_n": 5,
+        "paquet": "canot_lab",
+        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
+        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "severite": "ERROR",
+        "type": "not_null"
+      },
+      "drapeaux": [],
+      "echecs_n": 0,
+      "empreinte_code": "93141a9bb893c70b2c20507d3d8087e14ace4629a23c05af1b9e6d22e8d85181",
+      "entrees": [
+        "model.canot_lab.dbt_customer_ltv"
+      ],
+      "etat": "pass",
+      "executions_n": 1,
+      "externe": false,
+      "famille_objet": "traitement",
+      "id": "test.canot_lab.not_null_dbt_customer_ltv_customer_id.187864d35c",
+      "kind": "test_dbt",
+      "langage": "sql",
+      "lignes_code": 1,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "traduisible",
+      "proprietaire": null,
+      "reference": [
+        "CANOT_LAB.DBT_dbt_mart.dbt_customer_ltv"
+      ],
+      "schema": "DBT_dbt_test__audit",
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T08:43:21Z",
+      "detail": {
+        "analyse": "compilé",
+        "attache_a": "model.canot_lab.dbt_fct_orders",
+        "categorie": null,
+        "colonne": "order_id",
+        "constructions": [],
+        "fichier": "models/schema.yml",
+        "fonctions_propres": [],
+        "jinja_appels_n": 1,
+        "jinja_blocs_n": 0,
+        "lignes_en_echec": 0,
+        "macros_adaptateur_n": 2,
+        "macros_n": 5,
+        "paquet": "canot_lab",
+        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
+        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "severite": "ERROR",
+        "type": "not_null"
+      },
+      "drapeaux": [],
+      "echecs_n": 0,
+      "empreinte_code": "4993b2b96d31fb126703a4d790894d18f049ba0e7e9b84bb44fbf145f3737ae4",
+      "entrees": [
+        "model.canot_lab.dbt_fct_orders"
+      ],
+      "etat": "pass",
+      "executions_n": 1,
+      "externe": false,
+      "famille_objet": "traitement",
+      "id": "test.canot_lab.not_null_dbt_fct_orders_order_id.42b5497576",
+      "kind": "test_dbt",
+      "langage": "sql",
+      "lignes_code": 1,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "traduisible",
+      "proprietaire": null,
+      "reference": [
+        "CANOT_LAB.DBT_dbt_mart.dbt_fct_orders"
+      ],
+      "schema": "DBT_dbt_test__audit",
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T08:43:18Z",
+      "detail": {
+        "analyse": "compilé",
+        "attache_a": "model.canot_lab.stg_customers",
+        "categorie": null,
+        "colonne": "customer_id",
+        "constructions": [],
+        "fichier": "models/schema.yml",
+        "fonctions_propres": [],
+        "jinja_appels_n": 1,
+        "jinja_blocs_n": 0,
+        "lignes_en_echec": 0,
+        "macros_adaptateur_n": 2,
+        "macros_n": 5,
+        "paquet": "canot_lab",
+        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
+        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "severite": "ERROR",
+        "type": "not_null"
+      },
+      "drapeaux": [],
+      "echecs_n": 0,
+      "empreinte_code": "4dbc40a578873ab5e1a156347b6abbd3f9b396763f67c19a6b3cfbab7aa37b82",
+      "entrees": [
+        "model.canot_lab.stg_customers"
+      ],
+      "etat": "pass",
+      "executions_n": 1,
+      "externe": false,
+      "famille_objet": "traitement",
+      "id": "test.canot_lab.not_null_stg_customers_customer_id.e2cfb1f9aa",
+      "kind": "test_dbt",
+      "langage": "sql",
+      "lignes_code": 1,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "traduisible",
+      "proprietaire": null,
+      "reference": [
+        "CANOT_LAB.DBT_dbt_stg.stg_customers"
+      ],
+      "schema": "DBT_dbt_test__audit",
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T08:43:18Z",
+      "detail": {
+        "analyse": "compilé",
+        "attache_a": "model.canot_lab.stg_orders",
+        "categorie": null,
+        "colonne": "order_id",
+        "constructions": [],
+        "fichier": "models/schema.yml",
+        "fonctions_propres": [],
+        "jinja_appels_n": 1,
+        "jinja_blocs_n": 0,
+        "lignes_en_echec": 0,
+        "macros_adaptateur_n": 2,
+        "macros_n": 5,
+        "paquet": "canot_lab",
+        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
+        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "severite": "ERROR",
+        "type": "not_null"
+      },
+      "drapeaux": [],
+      "echecs_n": 0,
+      "empreinte_code": "36af9948de67a8941db0b585b6972e45355e9ee2c9bda2589d7edfc5e1bef350",
+      "entrees": [
+        "model.canot_lab.stg_orders"
+      ],
+      "etat": "pass",
+      "executions_n": 1,
+      "externe": false,
+      "famille_objet": "traitement",
+      "id": "test.canot_lab.not_null_stg_orders_order_id.81cfe2fe64",
+      "kind": "test_dbt",
+      "langage": "sql",
+      "lignes_code": 1,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "traduisible",
+      "proprietaire": null,
+      "reference": [
+        "CANOT_LAB.DBT_dbt_stg.stg_orders"
+      ],
+      "schema": "DBT_dbt_test__audit",
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T08:43:23Z",
+      "detail": {
+        "analyse": "compilé",
+        "attache_a": "model.canot_lab.dbt_customer_ltv",
+        "categorie": null,
+        "colonne": "customer_id",
+        "constructions": [],
+        "fichier": "models/schema.yml",
+        "fonctions_propres": [],
+        "jinja_appels_n": 1,
+        "jinja_blocs_n": 0,
+        "lignes_en_echec": 0,
+        "macros_adaptateur_n": 2,
+        "macros_n": 5,
+        "paquet": "canot_lab",
+        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
+        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "severite": "ERROR",
+        "type": "unique"
+      },
+      "drapeaux": [],
+      "echecs_n": 0,
+      "empreinte_code": "158b749ee9e22038a1b7221c7202a9236bf728fc0f7433c3074b75dd6ae76a80",
+      "entrees": [
+        "model.canot_lab.dbt_customer_ltv"
+      ],
+      "etat": "pass",
+      "executions_n": 1,
+      "externe": false,
+      "famille_objet": "traitement",
+      "id": "test.canot_lab.unique_dbt_customer_ltv_customer_id.d86203d0a3",
+      "kind": "test_dbt",
+      "langage": "sql",
+      "lignes_code": 1,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "traduisible",
+      "proprietaire": null,
+      "reference": [
+        "CANOT_LAB.DBT_dbt_mart.dbt_customer_ltv"
+      ],
+      "schema": "DBT_dbt_test__audit",
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T08:43:21Z",
+      "detail": {
+        "analyse": "compilé",
+        "attache_a": "model.canot_lab.dbt_fct_orders",
+        "categorie": null,
+        "colonne": "order_id",
+        "constructions": [],
+        "fichier": "models/schema.yml",
+        "fonctions_propres": [],
+        "jinja_appels_n": 1,
+        "jinja_blocs_n": 0,
+        "lignes_en_echec": 0,
+        "macros_adaptateur_n": 2,
+        "macros_n": 5,
+        "paquet": "canot_lab",
+        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
+        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "severite": "ERROR",
+        "type": "unique"
+      },
+      "drapeaux": [],
+      "echecs_n": 0,
+      "empreinte_code": "85b0f26a3d9b285601c1495563f1fb67ecc8c22c71d8fb719fe9b36b19e8f130",
+      "entrees": [
+        "model.canot_lab.dbt_fct_orders"
+      ],
+      "etat": "pass",
+      "executions_n": 1,
+      "externe": false,
+      "famille_objet": "traitement",
+      "id": "test.canot_lab.unique_dbt_fct_orders_order_id.ccd7bb51af",
+      "kind": "test_dbt",
+      "langage": "sql",
+      "lignes_code": 1,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "traduisible",
+      "proprietaire": null,
+      "reference": [
+        "CANOT_LAB.DBT_dbt_mart.dbt_fct_orders"
+      ],
+      "schema": "DBT_dbt_test__audit",
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T08:43:18Z",
+      "detail": {
+        "analyse": "compilé",
+        "attache_a": "model.canot_lab.stg_customers",
+        "categorie": null,
+        "colonne": "customer_id",
+        "constructions": [],
+        "fichier": "models/schema.yml",
+        "fonctions_propres": [],
+        "jinja_appels_n": 1,
+        "jinja_blocs_n": 0,
+        "lignes_en_echec": 0,
+        "macros_adaptateur_n": 2,
+        "macros_n": 5,
+        "paquet": "canot_lab",
+        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
+        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "severite": "ERROR",
+        "type": "unique"
+      },
+      "drapeaux": [],
+      "echecs_n": 0,
+      "empreinte_code": "68bb24bf13762068e5eae9b4a0818f98d2764cc3c234e3f6a42958e1fcc7d256",
+      "entrees": [
+        "model.canot_lab.stg_customers"
+      ],
+      "etat": "pass",
+      "executions_n": 1,
+      "externe": false,
+      "famille_objet": "traitement",
+      "id": "test.canot_lab.unique_stg_customers_customer_id.c7614daada",
+      "kind": "test_dbt",
+      "langage": "sql",
+      "lignes_code": 1,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "traduisible",
+      "proprietaire": null,
+      "reference": [
+        "CANOT_LAB.DBT_dbt_stg.stg_customers"
+      ],
+      "schema": "DBT_dbt_test__audit",
+      "sql_dynamique": false
+    },
+    {
+      "dependances_externes": [],
+      "derniere_execution": "2026-10-17T08:43:18Z",
+      "detail": {
+        "analyse": "compilé",
+        "attache_a": "model.canot_lab.stg_orders",
+        "categorie": null,
+        "colonne": "order_id",
+        "constructions": [],
+        "fichier": "models/schema.yml",
+        "fonctions_propres": [],
+        "jinja_appels_n": 1,
+        "jinja_blocs_n": 0,
+        "lignes_en_echec": 0,
+        "macros_adaptateur_n": 2,
+        "macros_n": 5,
+        "paquet": "canot_lab",
+        "raison_portabilite": "SQL traduit vers DuckDB par sqlglot, non testé",
+        "raison_rejeu": "colonnes non lues : EXPLAIN DuckDB non exécuté",
+        "severite": "ERROR",
+        "type": "unique"
+      },
+      "drapeaux": [],
+      "echecs_n": 0,
+      "empreinte_code": "0ca450def73356b3da92349c312db1312c75b521d5b276080d4ae36a4207944b",
+      "entrees": [
+        "model.canot_lab.stg_orders"
+      ],
+      "etat": "pass",
+      "executions_n": 1,
+      "externe": false,
+      "famille_objet": "traitement",
+      "id": "test.canot_lab.unique_stg_orders_order_id.e3b841c71a",
+      "kind": "test_dbt",
+      "langage": "sql",
+      "lignes_code": 1,
+      "moteur": "snowflake",
+      "planification": null,
+      "portabilite": "traduisible",
+      "proprietaire": null,
+      "reference": [
+        "CANOT_LAB.DBT_dbt_stg.stg_orders"
+      ],
+      "schema": "DBT_dbt_test__audit",
+      "sql_dynamique": false
+    }
+  ],
+  "perimetre": "projet dbt canot_lab : adaptateur snowflake, dbt 1.12.6, manifest du 17/10/2026",
+  "plateforme": "dbt",
+  "regles": {
+    "debit_mo_s": [
+      20.0,
+      80.0
+    ],
+    "horizon_lectures_jours": 365,
+    "recreee_jours": 7,
+    "vivante_jours": 30
+  },
+  "rejouabilite": {
+    "base": "0/0 modèles testés, 8 non testé(s), SQL des modèles et snapshots du manifest, sqlglot X, duckdb X",
+    "bases": {
+      "familles": "SQL des modèles et snapshots du manifest, sqlglot X, duckdb X"
+    },
+    "categories": {
+      "C0": {
+        "executions": null,
+        "familles": 0,
+        "poids": null
+      },
+      "C1": {
+        "executions": null,
+        "familles": 0,
+        "poids": null
+      },
+      "C2": {
+        "executions": null,
+        "familles": 0,
+        "poids": null
+      },
+      "C3": {
+        "executions": null,
+        "familles": 0,
+        "poids": null
+      },
+      "C4": {
+        "executions": null,
+        "familles": 0,
+        "poids": null
+      },
+      "C5": {
+        "executions": null,
+        "familles": 0,
+        "poids": null
+      },
+      "C6": {
+        "executions": null,
+        "familles": 0,
+        "poids": null
+      },
+      "C7": {
+        "executions": null,
+        "familles": 0,
+        "poids": null
+      }
+    },
+    "fonctions": {},
+    "mention": "accepté ≠ résultat identique",
+    "non_testees": {
+      "executions": null,
+      "familles": 8
+    },
+    "raison": null,
+    "secrets_ecartes": {
+      "executions": null,
+      "familles": 0
+    },
+    "statut": "lu",
+    "taux": {
+      "executions": {
+        "bas": null,
+        "base": [],
+        "confiance": null,
+        "formule": null,
+        "haut": null,
+        "hypotheses": [],
+        "nature": "non_estimé",
+        "raison": "sans objet : des fichiers dbt ne portent pas d'historique par requête",
+        "unite": null,
+        "valeur": null
+      },
+      "familles": {
+        "bas": null,
+        "base": [],
+        "confiance": null,
+        "formule": null,
+        "haut": null,
+        "hypotheses": [],
+        "nature": "non_estimé",
+        "raison": "catalog.json non lu : EXPLAIN DuckDB non exécuté",
+        "unite": null,
+        "valeur": null
+      },
+      "poids": {
+        "bas": null,
+        "base": [],
+        "confiance": null,
+        "formule": null,
+        "haut": null,
+        "hypotheses": [],
+        "nature": "non_lu",
+        "raison": "crédits et octets non lus (fichiers dbt)",
+        "unite": null,
+        "valeur": null
+      }
+    }
+  },
+  "resume": {
+    "DAF": [
+      "Consommation non lue : fichiers de projet : ni crédits ni octets facturés ; le scan de la plateforme cible les mesure."
+    ],
+    "DSI": [
+      "8 modèles dbt, 8 tests dbt, 4 sources dbt ; 8 relations stockées ; 19 liens de dépendance. Matérialisations : 4 table, 4 view.",
+      "Portabilité : 17 traduisible(s), 0 à reconstruire (F13), 0 non déterminée(s), 4 portable(s) tel quel.",
+      "Rejouabilité : 8 modèles traduit(s), non testé(s) par EXPLAIN DuckDB (catalog.json non lu : EXPLAIN DuckDB non exécuté)."
+    ],
+    "RSSI": [
+      "Aucune connexion à une plateforme : fichiers lus localement ; le code est réduit à des empreintes et des comptes.",
+      "0 dépendance externe déclarée (F01) ; écritures hors plateforme, droits et politiques non lus ici."
+    ]
+  },
+  "schema": "canot.scan/2",
+  "schemas_caches": [],
+  "sources_prix": [],
+  "tables": [
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 0,
+      "colonnes_non_portables": [],
+      "derniere_ddl": null,
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": "2026-10-17T08:43:22Z",
+        "n": null
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [
+        "dbt:model"
+      ],
+      "id": "CANOT_LAB.DBT_dbt_mart.dbt_customer_ltv",
+      "lectures": {
+        "derniere": null,
+        "n": null,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": null,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 17/10/2026",
+      "nom": "dbt_customer_ltv",
+      "octets_actifs": null,
+      "octets_historique": null,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": null,
+      "retention_jours": null,
+      "schema": "DBT_dbt_mart",
+      "stockage": {
+        "connexion": "dbt:snowflake",
+        "type": "snowflake"
+      },
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 0,
+      "colonnes_non_portables": [],
+      "derniere_ddl": null,
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": "2026-10-17T08:43:23Z",
+        "n": null
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [
+        "dbt:model"
+      ],
+      "id": "CANOT_LAB.DBT_dbt_mart.dbt_daily_revenue",
+      "lectures": {
+        "derniere": null,
+        "n": null,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": null,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 17/10/2026",
+      "nom": "dbt_daily_revenue",
+      "octets_actifs": null,
+      "octets_historique": null,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": null,
+      "retention_jours": null,
+      "schema": "DBT_dbt_mart",
+      "stockage": {
+        "connexion": "dbt:snowflake",
+        "type": "snowflake"
+      },
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 0,
+      "colonnes_non_portables": [],
+      "derniere_ddl": null,
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": "2026-10-17T08:43:21Z",
+        "n": null
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [
+        "dbt:model"
+      ],
+      "id": "CANOT_LAB.DBT_dbt_mart.dbt_fct_orders",
+      "lectures": {
+        "derniere": null,
+        "n": null,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": null,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 17/10/2026",
+      "nom": "dbt_fct_orders",
+      "octets_actifs": null,
+      "octets_historique": null,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": null,
+      "retention_jours": null,
+      "schema": "DBT_dbt_mart",
+      "stockage": {
+        "connexion": "dbt:snowflake",
+        "type": "snowflake"
+      },
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 0,
+      "colonnes_non_portables": [],
+      "derniere_ddl": null,
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": "2026-10-17T08:43:19Z",
+        "n": null
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [
+        "dbt:model"
+      ],
+      "id": "CANOT_LAB.DBT_dbt_mart.int_order_totals",
+      "lectures": {
+        "derniere": null,
+        "n": null,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": null,
+      "mouvement": "vivante",
+      "mouvement_preuve": "dernière écriture le 17/10/2026",
+      "nom": "int_order_totals",
+      "octets_actifs": null,
+      "octets_historique": null,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": null,
+      "retention_jours": null,
+      "schema": "DBT_dbt_mart",
+      "stockage": {
+        "connexion": "dbt:snowflake",
+        "type": "snowflake"
+      },
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 0,
+      "colonnes_non_portables": [],
+      "derniere_ddl": null,
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": null,
+        "n": null
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [
+        "dbt:source"
+      ],
+      "id": "CANOT_LAB.RAW.customers",
+      "lectures": {
+        "derniere": null,
+        "n": null,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": null,
+      "mouvement": null,
+      "mouvement_preuve": "écritures non lues",
+      "nom": "customers",
+      "octets_actifs": null,
+      "octets_historique": null,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": null,
+      "retention_jours": null,
+      "schema": "RAW",
+      "stockage": {
+        "connexion": "dbt:snowflake",
+        "type": "snowflake"
+      },
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 0,
+      "colonnes_non_portables": [],
+      "derniere_ddl": null,
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": null,
+        "n": null
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [
+        "dbt:source"
+      ],
+      "id": "CANOT_LAB.RAW.order_lines",
+      "lectures": {
+        "derniere": null,
+        "n": null,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": null,
+      "mouvement": null,
+      "mouvement_preuve": "écritures non lues",
+      "nom": "order_lines",
+      "octets_actifs": null,
+      "octets_historique": null,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": null,
+      "retention_jours": null,
+      "schema": "RAW",
+      "stockage": {
+        "connexion": "dbt:snowflake",
+        "type": "snowflake"
+      },
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 0,
+      "colonnes_non_portables": [],
+      "derniere_ddl": null,
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": null,
+        "n": null
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [
+        "dbt:source"
+      ],
+      "id": "CANOT_LAB.RAW.orders",
+      "lectures": {
+        "derniere": null,
+        "n": null,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": null,
+      "mouvement": null,
+      "mouvement_preuve": "écritures non lues",
+      "nom": "orders",
+      "octets_actifs": null,
+      "octets_historique": null,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": null,
+      "retention_jours": null,
+      "schema": "RAW",
+      "stockage": {
+        "connexion": "dbt:snowflake",
+        "type": "snowflake"
+      },
+      "supprimee_le": null,
+      "type": "TABLE"
+    },
+    {
+      "base": "CANOT_LAB",
+      "clone_de": null,
+      "clustering": [],
+      "colonnes_n": 0,
+      "colonnes_non_portables": [],
+      "derniere_ddl": null,
+      "detail": {},
+      "drapeaux": [],
+      "ecritures": {
+        "derniere": null,
+        "n": null
+      },
+      "etiquettes_n": 0,
+      "externe_uri": null,
+      "flags": [
+        "dbt:source"
+      ],
+      "id": "CANOT_LAB.RAW.products",
+      "lectures": {
+        "derniere": null,
+        "n": null,
+        "n_pruning": null,
+        "partage": null
+      },
+      "lignes": null,
+      "mouvement": null,
+      "mouvement_preuve": "écritures non lues",
+      "nom": "products",
+      "octets_actifs": null,
+      "octets_historique": null,
+      "partitionnement": null,
+      "politiques": [],
+      "proprietaire": null,
+      "retention_jours": null,
+      "schema": "RAW",
+      "stockage": {
+        "connexion": "dbt:snowflake",
+        "type": "snowflake"
+      },
+      "supprimee_le": null,
+      "type": "TABLE"
+    }
+  ],
+  "versions": {
+    "canot": "X",
+    "duckdb": "X",
+    "sqlglot": "X"
+  }
+}

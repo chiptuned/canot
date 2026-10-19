@@ -7,7 +7,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from .. import __version__
-from ..connectors import for_source, supports_full  # noqa: F401 : supports_full reste importable d'ici
+from ..connectors import effective_level, for_source, supports_full  # noqa: F401 : supports_full reste importable d'ici
 from .model import new_salt
 
 LEVELS = {1: "inventaire, volumes, consommation", 2: "+ requêtes (formes normalisées), lectures par table, politiques", 3: "+ droits et outils (pseudonymisés)"}
@@ -25,10 +25,15 @@ def collect(src, *, level: int, days: int | None = None, log: Callable[[str], No
     if not supports_full(src):
         raise ValueError(f"scan complet non disponible pour {getattr(src, 'dialect', None)}")
     salt = new_salt()
-    snap, raw = for_source(src).scan_collect(src, level=level, salt=salt, days=days)
+    conn = for_source(src)
+    level = effective_level(src, level)
+    snap, raw = conn.scan_collect(src, level=level, salt=salt, days=days)
     snap["niveau_droits"] = level
     snap.setdefault("mode_sql", "lecture seule")
     snap["versions"] = _versions()
+    if not conn.rejeu_familles:  # rejouabilité déjà calculée par la collecte (artefacts dbt) : pas de familles d'historique
+        snap.setdefault("familles", [])
+        return snap, raw
     # rejouabilité : le texte brut est normalisé ici, puis jeté
     from . import replay
 

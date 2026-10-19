@@ -34,6 +34,7 @@ Si un connecteur manque, Canot affiche la commande exacte à lancer (par exemple
 | `canot bigquery-setup` | Écrit le script `gcloud` du rôle personnalisé en lecture seule. |
 | `canot init-tolerances` | Écrit un fichier de tolérances de comparaison à relire avec vous. |
 | `canot demo-data CHEMIN` | Crée une base DuckDB de démonstration. |
+| `canot rejeu-dbt dbt://PROJET --base COPIE.duckdb` | Preuve P3 sur un projet dbt : rejoue les modèles SQL dans DuckDB à partir de la copie des sources (base DuckDB, ou `--lac` écrit par `canot drill`), compare chaque sortie à la table d'origine (lignes, statistiques, empreinte) et signe un dossier. Voir [scan](scan.md#preuve-p3--canot-rejeu-dbt). |
 | `canot connecteurs` | Liste les plateformes connues : forme d'URL, inventaire (`scan`), export (`drill`), forme de preuve, statut (testé ou écrit, non testé) et extra `pip` à installer. |
 | `canot mcp` | Serveur MCP : la documentation et l'explication de vos rapports, pour un agent. Voir [Avec un agent](#avec-un-agent-mcp). |
 
@@ -74,8 +75,9 @@ uvx canot scan "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" --level 2
 | Snowflake | `snowflake://COMPTE/BASE?user=…&warehouse=…&role=…&schemas=A,B` | paire de clés : variable `SNOWFLAKE_PRIVATE_KEY_PATH` (recommandé) ou `SNOWFLAKE_PASSWORD` |
 | Databricks | `databricks://HÔTE/CHEMIN_HTTP_DE_L_ENTREPÔT?catalog=…` | variable `DATABRICKS_TOKEN` (jeton en lecture) ; connecteur non encore testé sur un vrai compte |
 | DuckDB | `maison.duckdb` | aucune |
+| dbt (projet) | `dbt://CHEMIN_DU_PROJET` : le projet, son dossier `target/` ou `manifest.json` ; scan seulement (artefacts lus hors ligne), preuve par `canot rejeu-dbt` | aucune : ni réseau, ni commande dbt |
 
-`canot connecteurs` affiche, pour chacune, ce que Canot sait faire (inventaire complet ou léger, export, preuve) et si c'est testé.
+`canot connecteurs` affiche, pour chacune, ce que Canot sait faire (inventaire complet ou léger, export, preuve) et si c'est testé. Pour dbt, la preuve P3 passe par `canot rejeu-dbt`.
 
 ## Sortie en local ou on-prem
 
@@ -133,7 +135,7 @@ Outils exposés :
 | `lire_doc(sujet)` | Rend une page entière : `commandes`, `scan`, `sur-site`, `cibles`, `ecarts`. |
 | `capacites(plateforme)` | Ce que Canot sait faire sur chaque plateforme (inventaire, export, forme de preuve), avec le statut (testé ou écrit, non testé) et la date de test consignée. Sans argument : toutes les plateformes. |
 | `expliquer_scan(chemin)` | Lit un `scan.json` et le résume : constats, lectures non faites, chiffres estimés, ce qui est à examiner. |
-| `expliquer_rapport(chemin)` | Lit un `report.json` d'exercice : écarts, tables et requêtes en cause, causes connues du catalogue. |
+| `expliquer_rapport(chemin)` | Lit un `report.json` d'exercice : écarts, tables et requêtes en cause, causes connues du catalogue. Lit aussi un `rejeu-dbt.json` (preuve P3 dbt) : modèles identiques, différents, non rejouables et leurs raisons. |
 
 Les outils lisent des fichiers que vous désignez. Ils n'ouvrent aucune connexion à vos plateformes.
 

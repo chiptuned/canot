@@ -22,6 +22,9 @@ class Conversion:
 
 
 def _convert_type(t: pa.DataType) -> tuple[pa.DataType, str | None, bool]:
+    if pa.types.is_timestamp(t) and t.tz and t.tz.upper() not in ("UTC", "+00:00", "Z"):
+        unit = "us" if t.unit == "ns" else t.unit
+        return pa.timestamp(unit, tz="UTC"), f"fuseau {t.tz} -> UTC (Iceberg ne garde que UTC) : l'instant est conservé, le nom du fuseau non", True
     if pa.types.is_timestamp(t) and t.unit == "ns":
         return pa.timestamp("us", tz=t.tz), "ns -> us (Iceberg v2 ne garde pas les nanosecondes)", True
     if pa.types.is_large_string(t):

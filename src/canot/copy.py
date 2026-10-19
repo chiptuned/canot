@@ -22,6 +22,29 @@ class CopyResult:
     error: str | None = None
 
 
+def empty_table(t: TableInfo, dialect: str) -> pa.Table:
+    """Table Arrow vide dont les types viennent des colonnes de la source (types traduits par sqlglot, VARCHAR à défaut)."""
+    import duckdb
+    from sqlglot import exp
+
+    con = duckdb.connect()
+    defs, seen = [], set()
+    for c in t.columns:
+        if c.name.upper() in seen:
+            continue
+        seen.add(c.name.upper())
+        try:
+            typ = exp.DataType.build(c.type, dialect=dialect).sql("duckdb")
+            con.execute(f"select cast(null as {typ})").fetch_arrow_table()  # le type doit aussi passer en Arrow (VARIANT non)
+        except Exception:  # noqa: BLE001 : type inconnu de DuckDB ou sans équivalent Arrow, texte à défaut
+            typ = "VARCHAR"
+        defs.append(f"{exp.to_identifier(c.name, quoted=True).sql('duckdb')} {typ}")
+    con.execute(f"create table e ({', '.join(defs)})")
+    out = con.execute("select * from e").fetch_arrow_table()
+    con.close()
+    return out
+
+
 def copy_table(src: Source, t: TableInfo, catalog, chunk_rows: int = 500_000) -> CopyResult:
     res = CopyResult(t)
     t0 = time.monotonic()
@@ -55,11 +78,16 @@ def copy_table(src: Source, t: TableInfo, catalog, chunk_rows: int = 500_000) ->
             buf_rows += batch.num_rows
             if buf_rows >= chunk_rows:
                 flush()
-        if ice is None:  # empty table: schema from source column list is not available as arrow; create from a limit-0 read
-            empty = src.query(f"select * from {t.sql} limit 0") if src.dialect == "duckdb" else None
-            if empty is not None:
-                res.schema, res.conversions = target_schema(t.fqn, empty.schema, types)
-                catalog.create_table((ns, t.name), schema=res.schema)
+        if ice is None:  # table vide : la lecture ne rend aucun lot, donc aucun schéma Arrow ; on le reconstruit depuis la liste des colonnes
+            empty = None
+            if src.dialect == "duckdb":
+                empty = src.query(f"select * from {t.sql} limit 0")
+            if empty is None or not len(empty.schema):
+                empty = empty_table(t, src.dialect)
+            res.schema, res.conversions = target_schema(t.fqn, empty.schema, types)
+            if catalog.table_exists((ns, t.name)):
+                catalog.drop_table((ns, t.name))
+            catalog.create_table((ns, t.name), schema=res.schema)
         else:
             flush()
     except Exception as e:  # keep going: one broken table must not hide the others

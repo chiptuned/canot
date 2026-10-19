@@ -1,0 +1,9 @@
+id,base,schema,nom,type,lignes,octets_actifs,octets_historique,retention_jours,clone_de,supprimee_le,emplacement,proprietaire,mouvement,mouvement_preuve,n_lectures,derniere_lecture,n_ecritures,derniere_ecriture,derniere_ddl,colonnes_non_portables,politiques,etiquettes_n,drapeaux
+CANOT_LAB.DBT_dbt_mart.dbt_customer_ltv,CANOT_LAB,DBT_dbt_mart,dbt_customer_ltv,TABLE,,,,,,,,,vivante,dernière écriture le 17/10/2026,,,,2026-10-17T08:43:22Z,,,,0,
+CANOT_LAB.DBT_dbt_mart.dbt_daily_revenue,CANOT_LAB,DBT_dbt_mart,dbt_daily_revenue,TABLE,,,,,,,,,vivante,dernière écriture le 17/10/2026,,,,2026-10-17T08:43:23Z,,,,0,
+CANOT_LAB.DBT_dbt_mart.dbt_fct_orders,CANOT_LAB,DBT_dbt_mart,dbt_fct_orders,TABLE,,,,,,,,,vivante,dernière écriture le 17/10/2026,,,,2026-10-17T08:43:21Z,,,,0,
+CANOT_LAB.DBT_dbt_mart.int_order_totals,CANOT_LAB,DBT_dbt_mart,int_order_totals,TABLE,,,,,,,,,vivante,dernière écriture le 17/10/2026,,,,2026-10-17T08:43:19Z,,,,0,
+CANOT_LAB.RAW.customers,CANOT_LAB,RAW,customers,TABLE,,,,,,,,,,écritures non lues,,,,,,,,0,
+CANOT_LAB.RAW.order_lines,CANOT_LAB,RAW,order_lines,TABLE,,,,,,,,,,écritures non lues,,,,,,,,0,
+CANOT_LAB.RAW.orders,CANOT_LAB,RAW,orders,TABLE,,,,,,,,,,écritures non lues,,,,,,,,0,
+CANOT_LAB.RAW.products,CANOT_LAB,RAW,products,TABLE,,,,,,,,,,écritures non lues,,,,,,,,0,

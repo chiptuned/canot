@@ -36,6 +36,7 @@ Si un connecteur manque, Canot affiche la commande exacte à lancer (par exemple
 | `canot bigquery-setup` | Écrit le script `gcloud` du rôle personnalisé en lecture seule. |
 | `canot init-tolerances` | Écrit un fichier de tolérances de comparaison à relire avec vous. |
 | `canot demo-data CHEMIN` | Crée une base DuckDB de démonstration. |
+| `canot rejeu-dbt dbt://PROJET --base COPIE.duckdb` | Preuve P3 sur un projet dbt : rejoue les modèles SQL dans DuckDB à partir de la copie des sources (base DuckDB, ou `--lac` écrit par `canot drill`), compare chaque sortie à la table d'origine (lignes, statistiques, empreinte) et signe un dossier. Voir [scan](scan.md#preuve-p3--canot-rejeu-dbt). |
 | `canot connecteurs` | Liste les plateformes connues : forme d'URL, inventaire (`scan`), export (`drill`), forme de preuve, statut (testé ou écrit, non testé) et extra `pip` à installer. |
 | `canot mcp` | Serveur MCP : la documentation et l'explication de vos rapports, pour un agent. Voir [Avec un agent](#avec-un-agent-mcp). |
 
@@ -76,8 +77,9 @@ uvx canot scan "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" --level 2
 | Snowflake | `snowflake://COMPTE/BASE?user=…&warehouse=…&role=…&schemas=A,B` | paire de clés : variable `SNOWFLAKE_PRIVATE_KEY_PATH` (recommandé) ou `SNOWFLAKE_PASSWORD` |
 | Databricks | `databricks://HÔTE/CHEMIN_HTTP_DE_L_ENTREPÔT?catalog=…` | variable `DATABRICKS_TOKEN` (jeton en lecture) ; connecteur non encore testé sur un vrai compte |
 | DuckDB | `maison.duckdb` | aucune |
+| dbt (projet) | `dbt://CHEMIN_DU_PROJET` : le projet, son dossier `target/` ou `manifest.json` ; scan seulement (artefacts lus hors ligne), preuve par `canot rejeu-dbt` | aucune : ni réseau, ni commande dbt |
 
-`canot connecteurs` affiche, pour chacune, ce que Canot sait faire (inventaire complet ou léger, export, preuve) et si c'est testé.
+`canot connecteurs` affiche, pour chacune, ce que Canot sait faire (inventaire complet ou léger, export, preuve) et si c'est testé. Pour dbt, la preuve P3 passe par `canot rejeu-dbt`.
 
 ## Sortie en local ou on-prem
 
@@ -135,7 +137,7 @@ Outils exposés :
 | `lire_doc(sujet)` | Rend une page entière : `commandes`, `scan`, `sur-site`, `cibles`, `ecarts`. |
 | `capacites(plateforme)` | Ce que Canot sait faire sur chaque plateforme (inventaire, export, forme de preuve), avec le statut (testé ou écrit, non testé) et la date de test consignée. Sans argument : toutes les plateformes. |
 | `expliquer_scan(chemin)` | Lit un `scan.json` et le résume : constats, lectures non faites, chiffres estimés, ce qui est à examiner. |
-| `expliquer_rapport(chemin)` | Lit un `report.json` d'exercice : écarts, tables et requêtes en cause, causes connues du catalogue. |
+| `expliquer_rapport(chemin)` | Lit un `report.json` d'exercice : écarts, tables et requêtes en cause, causes connues du catalogue. Lit aussi un `rejeu-dbt.json` (preuve P3 dbt) : modèles identiques, différents, non rejouables et leurs raisons. |
 
 Les outils lisent des fichiers que vous désignez. Ils n'ouvrent aucune connexion à vos plateformes.
 
@@ -157,7 +159,7 @@ Le scan produit `scan.html` (à transmettre), `scan.json` et des CSV. Il décrit
 
 ## Garanties
 
-- **Lecture seule.** Chaque requête passe par une garde avant d'être envoyée : seuls `SELECT`, `SHOW`, `DESCRIBE` et `ALTER SESSION SET` sont admis. Tout le reste est refusé sans rien envoyer. Les fonctions `SYSTEM$` sont refusées aussi.
+- **Lecture seule.** (Projet dbt : aucune requête, des fichiers lus, voir [dbt](#dbt).) Chaque requête passe par une garde avant d'être envoyée : seuls `SELECT`, `SHOW`, `DESCRIBE` et `ALTER SESSION SET` sont admis. Tout le reste est refusé sans rien envoyer. Les fonctions `SYSTEM$` sont refusées aussi.
 - **Jamais le contenu des tables.** Le scan lit des métadonnées et l'historique d'exécution. Il ne demande aucun droit de lecture sur les données.
 - **Le SQL brut n'est pas écrit.** Les littéraux sont masqués (`WHERE email = ?`), les requêtes qui contiennent un mot de passe ou un secret sont comptées puis jetées. Le texte brut n'est écrit qu'avec `--include-sql-text`, dans `scan-sql-brut.json` (droits 0600), et le rapport le signale.
 - **Identités pseudonymisées.** Les utilisateurs et rôles de requêtes sont remplacés par un pseudonyme (HMAC, sel tiré à chaque scan et jamais écrit). Les e-mails, identifiants de connexion et adresses IP ne sont jamais lus. Les chemins de stockage sont réduits au nom du compartiment.
@@ -199,6 +201,36 @@ Points de méthode :
 - Les volumes viennent de `TABLE_STORAGE` quand elle est lisible, sinon de l'API `tables.get`. Canot ne modifie jamais le paramétrage du projet pour l'activer.
 - Sous une politique de lignes, `total_bytes_billed` est vide : le rapport le dit au lieu d'afficher 0.
 - Le palier gratuit est partagé par le compte de facturation : il n'est pas imputable par projet.
+
+## dbt
+
+`canot scan dbt://CHEMIN_DU_PROJET` lit les artefacts du projet, sans réseau ni commande dbt : `target/manifest.json` (obligatoire), `target/run_results.json` et `target/catalog.json` s'ils existent. `CHEMIN` peut être le projet, son dossier `target/` ou le fichier `manifest.json` ; un dossier de projet passé sans `dbt://` est reconnu aussi. Sans manifest, `dbt parse` le produit en lisant les fichiers du projet, sans se connecter à l'entrepôt. Un seul niveau (1) : `--level` est ramené à 1.
+
+| Lu | Ce qu'on garde |
+|---|---|
+| `manifest.json` | modèles (matérialisation, relation cible, dépendances), tests, sources, seeds, snapshots, expositions, métriques, macros du projet, paquets (nombre de macros), adaptateur et version de dbt, graphe des dépendances (`liens` : chaque `ref()` et `source()`) |
+| SQL compilé des modèles, tests, snapshots | empreinte sha256 de la forme normalisée (littéraux masqués), nombre de lignes, fonctions et constructions propres au dialecte de l'adaptateur (sqlglot), fonctions absentes de DuckDB, catégorie de traduction vers DuckDB (C0 à C7, mêmes règles que les requêtes) ; jamais le texte |
+| `run_results.json` | état de la dernière invocation par nœud, échecs, lignes en échec des tests, date de dernière écriture des tables |
+| `catalog.json` | colonnes et types (squelette pour l'EXPLAIN DuckDB), lignes et octets si l'adaptateur les donne, propriétaire pseudonymisé |
+
+Portabilité d'un traitement : `traduisible` quand sqlglot traduit le SQL vers DuckDB (accepté par EXPLAIN si `catalog.json` est lu, « non testé » sinon) ; `a_reconstruire` seulement sur un fait lu : fonction absente de DuckDB, traduction impossible, matérialisation propre à l'adaptateur (par exemple `dynamic_table`) ; `non_determine` pour un modèle Python, un SQL non compilé encore plein de Jinja, ou un SQL qui contient un secret (compté puis écarté).
+
+Constats : F13 pour un traitement à reconstruire (avec la raison), F08 pour un modèle dont le SQL dépend de Jinja et de macros (blocs `{% %}`, appels autres que `ref`, `source`, `config` ; les tests génériques de dbt ne comptent pas), F11 pour le DAG du projet (dernière invocation, échecs ; planification non lue : elle vit dans l'orchestrateur), F01 pour une source externe (emplacement réduit au compartiment), F12 pour un artefact absent. Consommation, volumes facturés et droits ne sont pas dans ces fichiers : le rapport les dit « non lus ».
+
+Validé le 19/10/2026 sur le projet du banc `lab/dbt` (artefacts d'un `dbt build` réel, dbt 1.12.6, adaptateur Snowflake) : 8 modèles (4 vues staging, 4 tables marts), 8 tests, 4 sources, 19 liens ; constats F11 et F12 (pas de `catalog.json`). Copie de ces artefacts et sorties figées : `tests/fixtures/dbt/banc`, `tests/golden/cli_scan_dbt`.
+
+### Preuve P3 : `canot rejeu-dbt`
+
+`canot rejeu-dbt dbt://PROJET --base copie.duckdb` (ou `--lac DESTINATION --drill-out DOSSIER` pour le lac Iceberg écrit par `canot drill`) rejoue chaque modèle SQL dans un DuckDB local, dans l'ordre du graphe, à partir des tables sources de la copie, puis compare sa sortie à la table que la plateforme avait matérialisée, avec les critères de `canot drill` : nombre de lignes, statistiques par colonne, empreinte de contenu. Les types de la sortie rejouée sont alignés sur ceux de la table d'origine avant la comparaison ; chaque conversion est consignée. Le résultat (`rejeu-dbt.json`) et le dossier signé (`evidence.jsonl`, à vérifier par `canot verify-evidence`) classent chaque modèle :
+
+| Statut | Sens |
+|---|---|
+| `identique` | rejoué, comparé, aucun écart dans les tolérances |
+| `different` | rejoué, comparé, écart (lignes, statistiques ou empreinte) |
+| `non_compare` | rejoué, mais aucune table d'origine dans la copie (une vue) ; sa sortie alimente les modèles suivants |
+| `non_rejouable` | avec la raison : langage Python, incrémental (dépend de l'état antérieur), éphémère (rejoué à travers ses utilisateurs), fonction propre ou matérialisation propre à l'adaptateur, traduction refusée, table absente de la copie, dépendance non rejouée |
+
+Il faut le SQL compilé dans le manifest (`dbt compile` ou `dbt build` l'y met). Testé le 19/10/2026 sur les artefacts du banc et une copie DuckDB construite par les tests (tables d'origine écrites à la main, sans réseau) : 4 tables marts identiques, 4 vues rejouées non comparées, écart injecté détecté, y compris en lisant le lac écrit par `canot drill`. Pas encore exercé sur une copie réelle des tables du compte du banc.
 
 ## Lire les chiffres
 

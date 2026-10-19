@@ -60,7 +60,7 @@ def parser() -> argparse.ArgumentParser:
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("scan", help="radiographie en lecture seule : inventaire, enfermement, coût de sortie estimé")
-    s.add_argument("source", nargs="?", help="la source : bigquery://PROJET/dataset, snowflake://COMPTE/BASE, un fichier .duckdb")
+    s.add_argument("source", nargs="?", help="la source : bigquery://PROJET/dataset, snowflake://COMPTE/BASE, un fichier .duckdb, dbt://CHEMIN_DU_PROJET")
     s.add_argument("--from", dest="src", help="équivalent de l'argument source")
     s.add_argument("--out", default="canot-out")
     s.add_argument("--credit-price", type=float, default=None, help="prix du crédit Snowflake de votre contrat, en USD. Sans lui : fourchette du prix catalogue (voir canot/prices.py)")
@@ -111,6 +111,16 @@ def parser() -> argparse.ArgumentParser:
     dd.add_argument("--rows", type=int, default=20_000)
     dd.add_argument("--retail", action="store_true", help="jeu fictif de distributeur (tickets avec lignes imbriquées)")
     sub.add_parser("connecteurs", help="les plateformes connues : inventaire, export, preuve, statut de validation")
+    rd = sub.add_parser("rejeu-dbt", help="preuve P3 : rejoue les modèles d'un projet dbt dans DuckDB sur la copie et compare aux tables d'origine")
+    rd.add_argument("projet", help="dbt://CHEMIN_DU_PROJET (dossier qui contient target/manifest.json, SQL compilé compris)")
+    rd.add_argument("--base", help="copie en base DuckDB : tables sources et tables d'origine des modèles")
+    rd.add_argument("--lac", help="ou le lac Iceberg écrit par canot drill (même DESTINATION que pour drill)")
+    rd.add_argument("--drill-out", help="avec --lac : le dossier --out du drill, qui contient son catalogue (défaut canot-out)")
+    rd.add_argument("--catalog", help="avec --lac : le même catalogue que pour drill")
+    rd.add_argument("--out", default="canot-rejeu-dbt")
+    rd.add_argument("--tolerances", help="fichier TOML (voir `canot init-tolerances`)")
+    rd.add_argument("--key", default=os.environ.get("CANOT_EVIDENCE_KEY_PATH", str(Path.home() / ".canot" / "evidence.key")),
+                    help="clé de signature (défaut : variable CANOT_EVIDENCE_KEY_PATH, sinon ~/.canot/evidence.key)")
     return ap
 
 
@@ -221,15 +231,30 @@ def run(argv: list[str] | None = None) -> int:
         _p(("OK : " if ok else "ÉCHEC : ") + msg)
         return 0 if ok else 2
 
+    if a.cmd == "rejeu-dbt":
+        from .dbt_rejeu import run_rejeu
+        from .tolerances import Tolerances
+
+        res = run_rejeu(a.projet, out, Path(a.key), base=a.base, lac=a.lac, drill_out=a.drill_out, catalog=a.catalog,
+                        tol=Tolerances.load(a.tolerances), log=_p)
+        s = res["summary"]
+        _p(f"\nRejeu dbt (P3) : {s['identique']} identique(s), {s['different']} différent(s), {s['non_compare']} rejoué(s) non comparé(s), "
+           f"{s['non_rejouable']} non rejouable(s), sur {s['modeles']} modèle(s)")
+        _p(f"Dossier : {out / 'rejeu-dbt.json'} ; vérifier : canot verify-evidence {out}")
+        return 0 if s["different"] == 0 else 1
     if a.cmd == "teardown":
         from .target import parse_target
 
         _p(parse_target(a.dst, a.bucket, out, a.catalog).teardown())
         return 0
 
-    from .sources import open_source
+    from .connectors import effective_level, for_url, open_url
 
-    src = open_source(a.src)
+    conn = for_url(a.src)
+    if a.cmd == "drill" and conn is not None and conn.famille == "fichiers":
+        raise ValueError(f"URL {conn.label} : drill indisponible pour des fichiers de projet ; les tables vivent sur la plateforme "
+                         "de l'adaptateur : canot drill sur cette plateforme les copie et les compare (voir canot scan pour la commande).")
+    src = open_url(a.src)
     try:
         from .connectors import supports_full
 
@@ -238,8 +263,12 @@ def run(argv: list[str] | None = None) -> int:
 
             from .scanner.run import LEVELS, scan_full
 
-            _p(f"Canot scan en lecture seule (niveau {a.level} : {LEVELS[a.level]})")
-            res = scan_full(src, out, level=a.level, credit_price=a.credit_price, include_sql_text=a.include_sql_text, log=_p)
+            level = effective_level(src, a.level)
+            if a.include_sql_text and conn is not None and conn.famille == "fichiers":
+                _p("--include-sql-text sans objet ici : le code est déjà dans les fichiers du projet ; rien de plus n'est écrit.")
+                a.include_sql_text = False
+            _p(f"Canot scan en lecture seule (niveau {level} : {LEVELS[level]})")
+            res = scan_full(src, out, level=level, credit_price=a.credit_price, include_sql_text=a.include_sql_text, log=_p)
             _p(f"Source : {res['perimetre']}")
             for role, lines in res["resume"].items():
                 for line in lines:

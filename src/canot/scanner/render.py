@@ -206,13 +206,17 @@ def _capacites(r: dict) -> str:
     if niv:
         inv += f", niveaux {niv[0]} à {niv[-1]}" if len(niv) > 1 else f", niveau {niv[0]}"
     export, preuve = c.get("export") or [], [p for p in c.get("preuve") or [] if isinstance(p, dict)]
+    fiche = connectors.profile(r["plateforme"])
+    commande = fiche.get("commande_preuve", "canot drill")
     rows = [[_e("Inventaire"), _e(f"fait par ce scan (niveau {r['niveau_droits']})" if r.get("niveau_droits") else "fait par ce scan"), _e(inv)],
             [_e("Export"), _e("non fait par ce scan"), _e(f"{', '.join(export)}, avec canot drill" if export else "aucun format déclaré")],
             [_e("Preuve"), _e("non faite par ce scan"),
-             _e(" ; ".join(f"{p.get('forme')} {p.get('libelle')}" for p in preuve) + ", avec canot drill" if preuve else "aucune forme déclarée")]]
+             _e(" ; ".join(f"{p.get('forme')} {p.get('libelle')}" for p in preuve) + f", avec {commande}" if preuve else "aucune forme déclarée")]]
     statut = f"Connecteur {lab} : {c.get('statut') or 'statut non déclaré'}"
     statut += f" ; test consigné : {c['teste_sur']}." if c.get("teste_sur") else " ; aucune date de test consignée dans le dépôt."
-    if preuve:
+    if preuve and fiche.get("limite_preuve"):
+        limite = f"Ce que Canot ne peut pas prouver ici : {fiche['limite_preuve']}"
+    elif preuve:
         limite = (f"Ce que Canot ne peut pas prouver ici : les formes déclarées ({', '.join(str(p.get('forme')) for p in preuve)}) portent sur "
                   "les tables et les requêtes ; les objets à reconstruire hors tables sont comptés, pas prouvés.")
     else:
@@ -237,6 +241,8 @@ def _carte_sortie(r: dict) -> str:
 
 def _couts(r: dict) -> str:
     c = r["couts"]
+    if r.get("famille") == "fichiers":
+        return _section("couts", "Coûts observés", f"<p>Non lus : {_e(c['credits']['raison'])}.</p>")
     jours = f"Fenêtre : {c['fenetre_jours']} jours. " if c.get("fenetre_jours") else ""
     if r["plateforme"] == "bigquery":
         od, rs = c["a_la_demande"], c["reserve"]
@@ -287,7 +293,8 @@ def _ne_part_pas(r: dict) -> str:
     cols = [[_e(t["id"]), _e(c["nom"]), _e(c["type"])] for t in r["tables"] if not t["supprimee_le"] for c in t["colonnes_non_portables"]]
     body += f"<h3>Colonnes à type propre à la plateforme ({fr_num(n['colonnes_non_portables'])})</h3>"
     body += _list_table(["Table", "Colonne", "Type"], cols, "tables.csv")
-    body += "<h3>Historique facturé</h3>" + _fig_table([(f"Time Travel et Fail-safe ({pl(n['historique']['tables'], 'table')})", n["historique"]["octets"])])
+    if r.get("famille") != "fichiers":
+        body += "<h3>Historique facturé</h3>" + _fig_table([(f"Time Travel et Fail-safe ({pl(n['historique']['tables'], 'table')})", n["historique"]["octets"])])
     return _section("ne-part-pas", "Ce qui ne part pas avec la copie", body)
 
 
@@ -420,9 +427,11 @@ def _methode(r: dict) -> str:
             f"Jamais demandés : {_e(fiche.get('droits_jamais', 'droits d’écriture'))}.</p>"
             + "<h3>Coût du scan</h3>" + _fig_table(cost)
             + "<h3>Garde-fous</h3><ul>"
-            "<li>Tout SQL envoyé passe par une garde lecture seule : seules les instructions SELECT, SHOW, DESCRIBE et ALTER SESSION SET partent. "
-            "Aucune écriture, aucune activation d'API, aucune modification de paramètre.</li>"
-            "<li>Utilisateurs et rôles des requêtes pseudonymisés par HMAC, avec un sel tiré pour ce scan et jamais écrit ; "
+            + ("<li>Aucune connexion : Canot lit les fichiers JSON du projet, sans réseau ni commande ; aucune requête n'est envoyée.</li>"
+               if r.get("famille") == "fichiers" else
+               "<li>Tout SQL envoyé passe par une garde lecture seule : seules les instructions SELECT, SHOW, DESCRIBE et ALTER SESSION SET partent. "
+               "Aucune écriture, aucune activation d'API, aucune modification de paramètre.</li>")
+            + "<li>Utilisateurs et rôles des requêtes pseudonymisés par HMAC, avec un sel tiré pour ce scan et jamais écrit ; "
             "valeurs d'étiquettes hachées ; emplacements réduits au compartiment.</li>"
             "<li>Le texte SQL brut n'est jamais écrit : seules les formes normalisées, littéraux masqués, sortent de la collecte"
             + (" (sauf scan-sql-brut.json, demandé par --include-sql-text)" if r.get("avec_sql_brut") else "") + ".</li></ul>"

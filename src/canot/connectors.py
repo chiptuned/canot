@@ -45,6 +45,8 @@ class Connector(ABC):
     profile: ClassVar[dict] = {}
     # garde HTTP (scanner/http_guard.py) : POST admis seulement sur ces chemins de lecture (motifs regex du chemin d'URL)
     http_post_lecture: ClassVar[tuple[str, ...]] = ()
+    # rejouabilité des familles de l'historique (scanner/replay.py), calculée après la collecte
+    rejeu_familles: ClassVar[bool] = True
 
     def capacites(self) -> dict:
         """Déclaration sérialisable (scan.json, MCP) : ce que Canot sait faire ici, et si c'est testé."""
@@ -137,7 +139,69 @@ class DuckDB(Connector):
                                 teste_sur="canot drill, 17/10/2026 : base de démonstration canot demo (docs/ecarts.md)")
 
 
-CONNECTORS: dict[str, Connector] = {c.name: c for c in (Snowflake(), BigQuery(), Databricks(), DuckDB())}
+class Dbt(Connector):
+    """Projet dbt lu par ses artefacts (target/manifest.json, run_results.json, catalog.json) : ni réseau, ni commande dbt."""
+    name, label, schemes, dialect = "dbt", "dbt", ("dbt", "dbt+file"), "dbt"
+    url = "dbt://CHEMIN_DU_PROJET"
+    famille = "fichiers"
+    status = TESTE
+    capabilities = Capabilities("complet", (1,), (), ("P3",),
+                                teste_sur="19/10/2026 : canot scan dbt://lab/dbt (projet dbt du banc, manifest dbt 1.12.6, adaptateur Snowflake) ; "
+                                          "canot rejeu-dbt sur ces artefacts et une copie DuckDB locale construite par les tests (docs/scan.md)")
+    rejeu_familles = False  # pas d'historique de requêtes : la rejouabilité est calculée par modèle à la collecte
+    profile = {
+        "droits": {1: ["lecture des fichiers manifest.json, run_results.json et catalog.json du dossier target/"]},
+        "droits_jamais": "aucune connexion à l'entrepôt, aucune commande dbt (ni parse, ni compile, ni run)",
+        # lus par render.py (section Capacités)
+        "commande_preuve": "canot rejeu-dbt",
+        "limite_preuve": ("P3 porte sur les modèles SQL que DuckDB rejoue et dont la table d'origine est dans la copie ; les vues sont "
+                          "rejouées sans comparaison, les modèles Python, incrémentaux, les snapshots et les modèles à reconstruire (F13) "
+                          "sont comptés, pas prouvés."),
+    }
+
+    def open(self, url: str):
+        from .scanner.dbt import ProjetDbt
+
+        return ProjetDbt(url)
+
+    def scan_collect(self, src, *, level, salt, days=None):
+        from .scanner import dbt
+
+        return dbt.collect(src, salt=salt)
+
+
+CONNECTORS: dict[str, Connector] = {c.name: c for c in (Snowflake(), BigQuery(), Databricks(), DuckDB(), Dbt())}
+
+
+def for_url(url: str) -> Connector | None:
+    """Connecteur désigné par le schéma de l'URL ; sans schéma, un dossier qui contient un manifest dbt est un projet dbt."""
+    if "://" in url:
+        scheme = url.split("://", 1)[0].lower()
+        return next((c for c in CONNECTORS.values() if scheme in c.schemes), None)
+    from pathlib import Path
+
+    p = Path(url).expanduser()
+    if p.is_dir() and ((p / "manifest.json").is_file() or (p / "target" / "manifest.json").is_file()):
+        return CONNECTORS.get("dbt")
+    return None
+
+
+def open_url(url: str):
+    """Ouvre la source par le registre ; repli sur sources.open_source (même message pour un schéma inconnu)."""
+    c = for_url(url)
+    if c is not None:
+        return c.open(url)
+    from . import sources
+
+    return sources.open_source(url)
+
+
+def effective_level(src, level: int) -> int:
+    """Niveau demandé, borné au plus haut niveau déclaré par le connecteur."""
+    c = for_source(src)
+    if c and c.capabilities.niveaux:
+        return min(level, max(c.capabilities.niveaux))
+    return level
 
 
 def register(connector: Connector) -> Connector:
@@ -183,6 +247,8 @@ def table() -> str:
     def inv(c: Connector) -> str:
         cap = c.capabilities
         if cap.inventaire == "complet":
+            if len(cap.niveaux) == 1:
+                return f"complet (niveau {cap.niveaux[0]})"
             return f"complet (niveaux {cap.niveaux[0]}-{cap.niveaux[-1]})" if cap.niveaux else "complet"
         return cap.inventaire
 
@@ -193,5 +259,5 @@ def table() -> str:
     lines = ["  ".join(v.ljust(w[i]) for i, v in enumerate(r)).rstrip() for r in (head, *rows)]
     used = sorted({p for c in CONNECTORS.values() for p in c.capabilities.preuve})
     lines += ["", "Preuve : " + " ; ".join(f"{p} {PREUVES[p]}" for p in used) + ".",
-              "Inventaire complet : canot scan (lectures consignées, niveaux 1 à 3). Léger : tables, volumes, objets, sans historique."]
+              "Inventaire complet : canot scan (lectures consignées, niveaux 1 à 3 selon le connecteur). Léger : tables, volumes, objets, sans historique."]
     return "\n".join(lines)

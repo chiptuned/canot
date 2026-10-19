@@ -149,3 +149,14 @@ def test_cli_scan_leger_identique(tmp_path, capsys):
     out = tmp_path / "out"
     stdout = _cli(["scan", str(db), "--out", str(out)], capsys).replace(str(tmp_path), "<TMP>")
     _compare("cli_scan_leger", {"stdout.txt": stdout, "scan.json": (out / "scan.json").read_text(encoding="utf-8").replace(str(tmp_path), "<TMP>")})
+
+
+def test_cli_scan_dbt_identique(figer, monkeypatch, tmp_path, capsys):
+    """Projet dbt du banc (copie des artefacts de lab/dbt) : canot scan dbt://… de bout en bout, sorties figées."""
+    from canot.scanner import dbt as dbt_scan
+
+    monkeypatch.setattr(dbt_scan, "now_iso", lambda: "2026-10-19T10:00:00Z")
+    monkeypatch.setattr(dbt_scan, "_duree", lambda t0: 0.0)
+    out = tmp_path / "out"
+    stdout = _cli(["scan", f"dbt://{FIX / 'dbt' / 'banc'}", "--out", str(out)], capsys).replace(str(tmp_path), "<TMP>")
+    _compare("cli_scan_dbt", {"stdout.txt": stdout, **_read(out)})

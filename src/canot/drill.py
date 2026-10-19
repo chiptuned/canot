@@ -55,7 +55,13 @@ def run_drill(src: Source, target: Target, out: Path, key_path: Path, queries_fi
         r = copies[t.fqn]
         if r.error:
             continue
-        c = check_table(src, t, cat.load_table((t.schema, t.name)), r.fingerprint, tol, {cv.column for cv in r.conversions if cv.lossy})
+        try:
+            c = check_table(src, t, cat.load_table((t.schema, t.name)), r.fingerprint, tol, {cv.column for cv in r.conversions if cv.lossy})
+        except Exception as e:  # noqa: BLE001 : une table qui ne se compare pas ne doit pas masquer les autres
+            r.error = f"comparaison impossible : {type(e).__name__}: {str(e).splitlines()[0][:200]}"
+            log(f"   {t.fqn}: ERREUR {r.error}")
+            ev.add("table_check_error", {"table": t.fqn, "error": r.error})
+            continue
         checks.append(c)
         log(f"   {t.fqn}: {'OK' if c.ok else 'ÉCART'}")
         ev.add("table_check", asdict(c) | {"ok": c.ok})

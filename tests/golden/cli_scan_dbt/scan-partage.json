@@ -1,0 +1,55 @@
+{
+  "as_of": "2026-10-19T10:00:00Z",
+  "capacites": {
+    "export": [],
+    "inventaire": "complet",
+    "preuve": [
+      "P3"
+    ],
+    "statut": "testé"
+  },
+  "constats": {
+    "F11": 1,
+    "F12": 1
+  },
+  "famille": "fichiers",
+  "lectures": {
+    "faites": 2,
+    "non_lues": 1
+  },
+  "niveau_droits": 1,
+  "objets": {
+    "dag": 1,
+    "modele_dbt": 8,
+    "paquet_dbt": 2,
+    "source_dbt": 4,
+    "test_dbt": 8
+  },
+  "plateforme": "dbt",
+  "portabilite": {
+    "portable_tel_quel": 4,
+    "traduisible": 17
+  },
+  "rejouabilite_familles_pct": null,
+  "resume": {
+    "DAF": [
+      "Consommation non lue : fichiers de projet : ni crédits ni octets facturés ; le scan de la plateforme cible les mesure."
+    ],
+    "DSI": [
+      "8 modèles dbt, 8 tests dbt, 4 sources dbt ; 8 relations stockées ; 19 liens de dépendance. Matérialisations : 4 table, 4 view.",
+      "Portabilité : 17 traduisible(s), 0 à reconstruire (F13), 0 non déterminée(s), 4 portable(s) tel quel.",
+      "Rejouabilité : 8 modèles traduit(s), non testé(s) par EXPLAIN DuckDB (catalog.json non lu : EXPLAIN DuckDB non exécuté)."
+    ],
+    "RSSI": [
+      "Aucune connexion à une plateforme : fichiers lus localement ; le code est réduit à des empreintes et des comptes.",
+      "0 dépendance externe déclarée (F01) ; écritures hors plateforme, droits et politiques non lus ici."
+    ]
+  },
+  "schema": "canot.partage/1",
+  "tables": 8,
+  "versions": {
+    "canot": "X",
+    "duckdb": "X",
+    "sqlglot": "X"
+  }
+}

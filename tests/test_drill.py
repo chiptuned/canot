@@ -171,3 +171,31 @@ def test_relire_sql_runs_with_plain_duckdb(tmp_path):
             name, n = con.execute(line.rstrip(";")).fetchone()
             counts[name] = n
     assert counts["distrib.stores"] == 300 and counts["distrib.tickets"] == 1000
+
+
+def test_table_vide_et_fuseau_non_utc(tmp_path):
+    """Régressions trouvées sur un vrai compte Snowflake : table vide sans lot Arrow, TIMESTAMP_TZ en fuseau nommé."""
+    import pyarrow as pa
+    from pyiceberg.catalog.sql import SqlCatalog
+
+    from canot.convert import target_schema
+    from canot.copy import copy_table, empty_table
+    from canot.model import ColumnInfo, TableInfo
+    from canot.sources.base import Source
+
+    t = TableInfo("RAW", "VIDE", 0, 0, [ColumnInfo("ID", "NUMBER(38,0)"), ColumnInfo("TS", "TIMESTAMP_TZ"), ColumnInfo("V", "VARIANT")])
+    e = empty_table(t, "snowflake")
+    assert e.num_rows == 0 and e.column_names == ["ID", "TS", "V"]
+
+    sch, convs = target_schema("RAW.T", pa.schema([("ts", pa.timestamp("us", tz="America/Los_Angeles"))]), {})
+    assert sch.field("ts").type == pa.timestamp("us", tz="UTC") and convs and convs[0].lossy
+
+    class Vide(Source):
+        dialect = "snowflake"
+        def tables(self): return [t]
+        def read(self, table, batch_rows=100_000): return iter(())
+        def query(self, sql): return pa.table({})
+
+    cat = SqlCatalog("c", uri=f"sqlite:///{tmp_path}/c.db", warehouse=f"file://{tmp_path}/w")
+    r = copy_table(Vide(), t, cat)
+    assert r.error is None and cat.table_exists(("RAW", "VIDE"))

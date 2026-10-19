@@ -48,7 +48,14 @@ KIND_LABELS = {
     "dossier_gere": "dossier géré", "service_api": "service d'API", "env_code": "environnement de code", "plugin": "plugin",
     "mesure": "mesure", "calcul_rapport": "calcul de rapport", "rapport": "rapport", "flux_etl": "flux ETL", "dag": "DAG",
     "programme_sas": "programme SAS",
+    # projet dbt (famille « fichiers ») : artefacts lus hors ligne
+    "modele_dbt": "modèle dbt", "test_dbt": "test dbt", "source_dbt": "source dbt", "seed_dbt": "seed dbt", "snapshot_dbt": "snapshot dbt",
+    "macro_dbt": "macro dbt du projet", "paquet_dbt": "paquet dbt", "exposition_dbt": "exposition dbt", "metrique_dbt": "métrique dbt",
+    "modele_semantique_dbt": "modèle sémantique dbt", "requete_sauvegardee_dbt": "requête sauvegardée dbt",
+    "test_unitaire_dbt": "test unitaire dbt", "fonction_dbt": "fonction dbt",
 }
+DBT_KINDS = ("modele_dbt", "test_dbt", "source_dbt", "seed_dbt", "snapshot_dbt", "macro_dbt", "paquet_dbt", "exposition_dbt", "metrique_dbt",
+             "modele_semantique_dbt", "requete_sauvegardee_dbt", "test_unitaire_dbt", "fonction_dbt")
 # objets à reconstruire sur la destination (comptés dans le travail de reprise)
 REBUILD_KINDS = ("vue", "vue_materialisee", "fonction", "procedure", "tache", "flux", "pipe", "stage", "table_dynamique",
                  "modele_ml", "politique_masquage", "politique_lignes", "requete_planifiee", "connexion", "integration")
@@ -80,6 +87,7 @@ KIND_SOURCES = {
     "politique_masquage": ("POLICY_REFERENCES",), "politique_lignes": ("POLICY_REFERENCES", "rowAccessPolicies.list"),
     "requete_planifiee": ("transferConfigs.list",), "connexion": ("connections.list",),
     "integration": ("INTEGRATIONS", "SHOW INTEGRATIONS"), "reservation": ("RESERVATIONS",), "etiquette": ("TAG_REFERENCES",),
+    "dag": ("run_results.json", "manifest.json"), **{k: ("manifest.json",) for k in DBT_KINDS},
 }
 TABLE_SOURCES = ("TABLES", "TABLE_OPTIONS", "tables.get")
 STORAGE_SOURCES = ("TABLE_STORAGE_METRICS", "TABLE_STORAGE", "tables.get")
@@ -126,6 +134,9 @@ IMPACTS = {
     "SHOW ICEBERG TABLES": "tables Iceberg (F01)", "SHOW EXTERNAL TABLES": "emplacements des tables externes (F01)",
     "SHOW STREAMS": "flux (F11)", "QUERY_HISTORY × SESSIONS": "outil par famille de requêtes",
     "transferConfigs.runs.list": "exécutions et échecs des requêtes planifiées (F11)", "tables.list": "inventaire des tables",
+    # artefacts dbt
+    "manifest.json": "tout l'inventaire du projet dbt", "run_results.json": "dernières exécutions et échecs (F11, mouvement)",
+    "catalog.json": "colonnes, types et volumes des relations ; rejouabilité non testée par EXPLAIN DuckDB",
 }
 # une lecture non lue ne limite rien si sa remplaçante a été lue
 FALLBACKS = {"TABLE_QUERY_PRUNING_HISTORY": ("ACCESS_HISTORY",), "TABLE_STORAGE": ("tables.get",), "tables.get": ("TABLE_STORAGE",),
@@ -412,6 +423,8 @@ class _Ctx:
         self.snap, self.plat, self.as_of, self.reads = snap, snap.get("plateforme"), as_of, reads
         self.tables, self.objets, self.familles = tables, objets, familles
         self.present = [t for t in tables if not t["supprimee_le"]]
+        c = connecteur(self.plat)
+        self.famille = c.famille if c else (snap.get("famille") if snap.get("famille") in FAMILLES else None)
 
     def kind_ids(self, kind) -> list[str]:
         return self.reads.ids(*KIND_SOURCES.get(kind, ()))
@@ -665,10 +678,15 @@ def _f06_f07(ctx: _Ctx) -> list[dict]:
     return flags
 
 
+F08_DBT = (" : SQL produit par Jinja et des macros à la compilation ; le SQL rejoué dépend de la cible et des variables, "
+           "seul le SQL compilé lu est analysé.")
+
+
 def _f08(ctx: _Ctx) -> list[dict]:
     return [_flag("F08", "objet", o["id"],
-                  f"{cap(KIND_LABELS.get(o['kind'], o['kind']))}" + (f" en {o['langage']}" if o["langage"] else "")
-                  + " : construit du SQL à l'exécution ; les objets touchés ne se lisent pas dans le code.",
+                  f"{cap(KIND_LABELS.get(o['kind'], o['kind']))}"
+                  + (F08_DBT if o["kind"] in DBT_KINDS else (f" en {o['langage']}" if o["langage"] else "")
+                     + " : construit du SQL à l'exécution ; les objets touchés ne se lisent pas dans le code."),
                   ctx.kind_ids(o["kind"]), {"langage": o["langage"]})
             for o in ctx.objets if o["sql_dynamique"] is True]
 
@@ -788,8 +806,10 @@ def _f13(ctx: _Ctx) -> list[dict]:
             io.append(pl(len(o["entrees"]), "entrée"))
         if "sorties" in o:
             io.append(pl(len(o["sorties"]), "sortie"))
+        raison = o["detail"].get("raison_portabilite")
         texte = (f"{_label(o)} sans équivalent exécutable hors plateforme (type lu : {o['kind']}"
                  + (f", moteur {o['moteur']}" if o.get("moteur") else "") + ")"
+                 + (f" ; {raison}" if raison else "")
                  + (f" ; {', '.join(io)}" if io else "") + " ; à reconstruire : compté, non rejoué.")
         flags.append(_flag("F13", "objet", o["id"], texte, ctx.kind_ids(o["kind"]),
                            {"kind": o["kind"], "portabilite": o.get("portabilite"), "moteur": o.get("moteur"),
@@ -966,8 +986,19 @@ def _months_touched(du: datetime, au: datetime) -> int:
     return (au.year - du.year) * 12 + au.month - du.month + 1
 
 
+COUTS_FICHIERS = "fichiers de projet : ni crédits ni octets facturés ; le scan de la plateforme cible les mesure"
+
+
 def _couts(ctx: _Ctx, credit_price: float | None, ne: _NonEstime, row_policies: bool) -> dict:
     r, m = ctx.reads, ctx.snap.get("metering") or {}
+    if ctx.famille == "fichiers":
+        ne.add("Consommation de la plateforme", f"non lue : {COUTS_FICHIERS}")
+        return {"fenetre_jours": None, "credits": fig(nature="non_lu", unite="crédits", raison=COUTS_FICHIERS),
+                "credits_par_service": [], "credits_par_entrepot": [], "transferts": [],
+                "monnaie": fig(nature="non_estimé", unite="USD", raison="consommation non lue"),
+                "stockage_octets_moyens": fig(nature="non_lu", unite="octets", raison=COUTS_FICHIERS),
+                "stockage_monnaie": fig(nature="non_estimé", unite="USD", raison=CONTRAT_NON_LU),
+                "note": "Aucune consommation dans des fichiers de projet."}
     out: dict = {"fenetre_jours": m.get("fenetre_jours")}
     stock = _measured(m.get("stockage_octets_moyens"), r, ("STORAGE_USAGE", "TABLE_STORAGE", "tables.get"), "octets")
     out["stockage_octets_moyens"] = ne.track("Stockage moyen facturé", stock)
@@ -1044,7 +1075,11 @@ def _fourchettes(ctx: _Ctx, credit_price: float | None, ne: _NonEstime) -> dict:
     known = [t["octets_actifs"] for t in movable if t["octets_actifs"] is not None]
     missing = len(movable) - len(known)
     if movable and not known:
-        volume = fig(nature="non_lu", unite="octets", raison=r.why(*STORAGE_SOURCES) if not r.ok(*STORAGE_SOURCES) else "volumes non transmis")
+        if ctx.famille == "fichiers":
+            raison = "volumes absents de catalog.json" if r.ok("catalog.json") else "catalog.json non lu"
+        else:
+            raison = r.why(*STORAGE_SOURCES) if not r.ok(*STORAGE_SOURCES) else "volumes non transmis"
+        volume = fig(nature="non_lu", unite="octets", raison=raison)
     else:
         hyp = ["octets actifs des tables présentes, hors tables externes et temporaires"]
         if ctx.plat == "snowflake":
@@ -1073,6 +1108,9 @@ def _fourchettes(ctx: _Ctx, credit_price: float | None, ne: _NonEstime) -> dict:
                      base=base, formule="durée × crédits par heure", hypotheses=[debit, "entrepôt XS, 1 crédit par heure"], confiance="basse")
         out["credits_lecture"] = ne.track("Crédits de lecture de la copie", cr)
         out["cout_lecture"] = ne.track("Coût de lecture de la copie", _usd_from_credits(cr, credit_price, base))
+    elif ctx.plat != "bigquery":
+        out["cout_lecture"] = ne.track("Coût de lecture de la copie", fig(nature="non_estimé", unite="USD",
+                                                                        raison="dépend de la plateforme qui héberge les tables, non lue ici"))
     else:
         out["cout_lecture"] = ne.track("Coût de lecture de la copie (API Storage Read, sortie réseau)",
                                        fig(nature="non_estimé", unite="USD", raison=CONTRAT_NON_LU,
@@ -1187,7 +1225,39 @@ def _fraicheur_phrase(fr: dict | None) -> str | None:
     return " ".join(out) or None
 
 
+def _resume_fichiers(ctx: _Ctx, res: dict, by_code: Counter) -> dict:
+    """Résumé d'un projet lu en fichiers (dbt) : traitements, portabilité, ce qui n'est pas lu ici."""
+    kinds = Counter(o["kind"] for o in ctx.objets if o.get("famille_objet") in ("traitement", "donnees"))
+    def lab(k: str) -> tuple[str, str]:
+        x = KIND_LABELS.get(k, k)
+        return x, (x[:-4] + "s dbt" if x.endswith(" dbt") else x + "s")
+
+    quoi = ", ".join(pl(n, *lab(k)) for k, n in sorted(kinds.items(), key=lambda kv: (-kv[1], kv[0])))
+    port = Counter(o["portabilite"] or "non_determine" for o in ctx.objets if "portabilite" in o)
+    mats = Counter(o["detail"].get("materialisation") for o in ctx.objets if o["kind"] == "modele_dbt")
+    dsi = [f"{quoi or 'aucun objet'} ; {pl(len(ctx.present), 'relation stockée', 'relations stockées')} ; {pl(len(res['liens']), 'lien')} de dépendance."
+           + (f" Matérialisations : {', '.join(f'{fr_num(n)} {m}' for m, n in sorted(mats.items(), key=lambda kv: str(kv[0])))}." if mats else ""),
+           f"Portabilité : {fr_num(port['traduisible'])} traduisible(s), {fr_num(port['a_reconstruire'])} à reconstruire (F13), "
+           f"{fr_num(port['non_determine'])} non déterminée(s), {fr_num(port['portable_tel_quel'])} portable(s) tel quel."]
+    rj = res["rejouabilite"]
+    cats = rj.get("categories") or {}
+    tested = sum((v["familles"] or 0) for k, v in cats.items() if k not in ("C7",))
+    if rj["statut"] == "lu" and tested:
+        dsi.append(f"Rejouabilité : {fr_num((cats.get('C0') or {}).get('familles') or 0)}/{fr_num(tested)} modèles acceptés par DuckDB ; "
+                   f"{MENTION_REJOUABILITE}.")
+    elif rj["statut"] == "lu":
+        nt = (rj.get("non_testees") or {}).get("familles") or 0
+        dsi.append(f"Rejouabilité : {pl(nt, 'modèle')} traduit(s), non testé(s) par EXPLAIN DuckDB ({rj['taux']['familles'].get('raison')}).")
+    daf = [f"Consommation non lue : {COUTS_FICHIERS}."]
+    rssi = ["Aucune connexion à une plateforme : fichiers lus localement ; le code est réduit à des empreintes et des comptes.",
+            f"{pl(by_code['F01'], 'dépendance externe déclarée', 'dépendances externes déclarées')} (F01) ; écritures hors plateforme, "
+            "droits et politiques non lus ici."]
+    return {"DSI": dsi, "DAF": daf, "RSSI": rssi}
+
+
 def _resume(ctx: _Ctx, res: dict, by_code: Counter) -> dict:
+    if ctx.famille == "fichiers":
+        return _resume_fichiers(ctx, res, by_code)
     r, couts, fr = ctx.reads, res["couts"], res["fourchettes"]
     vol = fr["volume"]["valeur"]
     n_obj = sum(o["kind"] in REBUILD_KINDS or o.get("portabilite") == "a_reconstruire" for o in ctx.objets)
@@ -1322,7 +1392,7 @@ def analyze(snapshot: dict, *, credit_price: float | None = None) -> dict:
 
     mv = Counter(t["mouvement"] for t in ctx.present)
     mouvements = {"figée": mv["figée"], "vivante": mv["vivante"], "recréée": mv["recréée"], "non_determine": mv[None],
-                  "base": reads.ids(*WRITE_SOURCES),
+                  "base": reads.ids(*WRITE_SOURCES) + (reads.ids("run_results.json") if ctx.famille == "fichiers" else []),
                   "regle": (f"recréée : DDL de moins de {RECREEE_JOURS} jours sans écriture postérieure ; vivante : écriture de moins de "
                             f"{VIVANTE_JOURS} jours ; figée : dernière écriture plus ancienne ; non déterminée : écritures non lues")}
 
@@ -1332,6 +1402,8 @@ def analyze(snapshot: dict, *, credit_price: float | None = None) -> dict:
     if reads.ok(*STORAGE_SOURCES) and any(t["octets_historique"] is not None for t in tables):
         hist = fig(hist_total, nature="calculé", unite="octets", base=reads.ids(*STORAGE_SOURCES),
                    formule="Time Travel + Fail-safe des tables présentes, + octets encore facturés des tables supprimées")
+    elif ctx.famille == "fichiers":
+        hist = fig(nature="non_lu", unite="octets", raison=COUTS_FICHIERS)
     else:
         hist = fig(nature="non_lu", unite="octets", raison=reads.why(*STORAGE_SOURCES) if not reads.ok(*STORAGE_SOURCES) else "historique non transmis")
     ne.track("Historique facturé", hist)
@@ -1395,7 +1467,7 @@ def analyze(snapshot: dict, *, credit_price: float | None = None) -> dict:
                    "debit_mo_s": list(THROUGHPUT_MBPS)},
         "sources_prix": [profile(plat)["source_prix"]] if "source_prix" in profile(plat) else [],
         # canot.scan/2 : déclarations du connecteur (registre d'abord, sinon celles du snapshot), lignage et carte de sortie
-        "famille": connecteur(plat).famille if connecteur(plat) else (snapshot.get("famille") if snapshot.get("famille") in FAMILLES else None),
+        "famille": ctx.famille,
         "capacites": capacites(plat) or _capacites_snapshot(snapshot.get("capacites")),
         "liens": _liens(snapshot.get("liens")),
         "carte_sortie": _carte_sortie(objets),

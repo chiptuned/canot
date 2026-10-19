@@ -81,7 +81,10 @@ PORTABILITES = ("portable_tel_quel", "traduisible", "exporte_proprietaire", "a_r
 FAMILLES_OBJET = ("donnees", "traitement", "modele", "rapport", "planification", "connexion", "securite", "code", "extension")
 NATURES_LIEN = ("lit", "ecrit", "declenche", "depend")
 KINDS_V2 = ("recette_sql", "recette_python", "recette_visuelle", "recette_plugin", "scenario", "modele_entraine", "notebook", "dossier_gere",
-            "service_api", "env_code", "plugin", "mesure", "calcul_rapport", "rapport", "flux_etl", "dag", "programme_sas")
+            "service_api", "env_code", "plugin", "mesure", "calcul_rapport", "rapport", "flux_etl", "dag", "programme_sas",
+            # projet dbt (scanner/dbt.py) : artefacts lus hors ligne
+            "modele_dbt", "test_dbt", "source_dbt", "seed_dbt", "snapshot_dbt", "macro_dbt", "paquet_dbt", "exposition_dbt", "metrique_dbt",
+            "modele_semantique_dbt", "requete_sauvegardee_dbt", "test_unitaire_dbt", "fonction_dbt")
 CHAMPS_OBJET_V2 = ("famille_objet", "entrees", "sorties", "portabilite", "formats_export", "empreinte_code", "lignes_code", "moteur",
                    "extensions", "non_triviale")
 # clés qui porteraient du code ou du texte brut : refusées au premier niveau des tables / objets / liens
