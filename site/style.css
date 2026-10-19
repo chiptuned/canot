@@ -427,3 +427,7 @@ input[type=file]{font:inherit;padding:8px 0}
 .sov + .contact{background:var(--paper)}
 
 .booking{display:block;width:100%;min-height:680px;border:1px solid var(--line-2);border-radius:8px;background:var(--paper)}
+/* /invited: the calendar uses the full width (Google lays it out on two columns when wide) */
+.booking-s .wrap{display:block}
+.booking-s .form-box{margin-top:28px;padding:0;background:none;border:0;box-shadow:none}
+.booking-s .booking{min-height:760px}

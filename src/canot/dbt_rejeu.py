@@ -34,6 +34,7 @@ from . import __version__, proof
 from .convert import fingerprint
 from .evidence import EvidenceLog
 from .model import ColumnInfo, TableInfo, q
+from .verify import _pylist
 from .scanner import dbt as dbt_scan
 from .scanner import replay
 from .tolerances import Tolerances
@@ -216,7 +217,7 @@ def chiffres_flottants(tol: Tolerances) -> int:
 def _arrondir(tb: pa.Table, cols: list[str], chiffres: int) -> pa.Table:
     for c in cols:
         i = tb.schema.get_field_index(c)
-        vals = [None if v is None else format(v, f".{chiffres}g") for v in tb.column(i).to_pylist()]
+        vals = [None if v is None else format(v, f".{chiffres}g") for v in _pylist(tb.column(i))]
         tb = tb.set_column(i, c, pa.array(vals, type=pa.string()))
     return tb
 
@@ -233,8 +234,8 @@ def _empreinte_flottants(orig: pa.Table, rej: pa.Table, tol: Tolerances, res: di
     egal = fingerprint(_arrondir(orig, cols, n)) == fingerprint(_arrondir(rej, cols, n))
     exacts = {}
     for c in cols:
-        a = sorted(x for x in orig.column(c).to_pylist() if x is not None)
-        b = sorted(x for x in rej.column(c).to_pylist() if x is not None)
+        a = sorted(x for x in _pylist(orig.column(c)) if x is not None)
+        b = sorted(x for x in _pylist(rej.column(c)) if x is not None)
         rel = max((abs(x - y) / max(abs(x), abs(y)) for x, y in zip(a, b) if x != y), default=0.0)
         exacts[c] = {"valeurs_differentes_au_bit": sum(1 for x, y in zip(a, b) if x != y), "ecart_relatif_max": rel}
     res["verification"]["empreinte_flottants"] = {"colonnes": cols, "chiffres_significatifs": n, "egale": egal, "ecarts_exacts": exacts}

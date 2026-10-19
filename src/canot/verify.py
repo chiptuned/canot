@@ -92,8 +92,26 @@ def _combine(acc: dict, part: dict) -> dict:
     return acc
 
 
+def _pylist(col: pa.ChunkedArray) -> list:
+    """Python values of a column. Nanosecond timestamps convert without pandas (a clean install does not have it):
+    whole microseconds become a datetime, anything finer is kept exact as an ISO string, so it still differs from a microsecond copy."""
+    if not (pa.types.is_timestamp(col.type) and col.type.unit == "ns"):
+        return col.to_pylist()
+    import datetime as dt
+
+    out = []
+    for ns in col.cast(pa.int64()).to_pylist():
+        if ns is None:
+            out.append(None)
+            continue
+        sec, rem = divmod(ns, 1_000_000_000)
+        base = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc if col.type.tz else None) + dt.timedelta(seconds=sec)
+        out.append(base.replace(microsecond=rem // 1000) if rem % 1000 == 0 else f"{base.isoformat()[:19]}.{rem:09d}")
+    return out
+
+
 def _row(tbl: pa.Table) -> dict:
-    return {k.lower(): v[0] for k, v in tbl.to_pydict().items()}
+    return {tbl.schema.names[i].lower(): _pylist(tbl.column(i))[0] for i in range(tbl.num_columns)}
 
 
 def check_table(src: Source, t: TableInfo, ice_table, source_fp: dict[int, list[int]], tol: Tolerances,
@@ -172,7 +190,7 @@ def referenced_tables(sql: str, dialect: str) -> list[tuple[str | None, str]]:
 
 
 def _rows(t: pa.Table) -> list[tuple]:
-    cols = [t.column(i).to_pylist() for i in range(t.num_columns)]
+    cols = [_pylist(t.column(i)) for i in range(t.num_columns)]
     return list(zip(*cols)) if cols else []
 
 

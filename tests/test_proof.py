@@ -204,3 +204,18 @@ def test_dbt_drill_report_states_the_replay_level(tmp_path):
     p = panes((out / "report.html").read_text())
     assert "Proof level of the replay:" in text(p["en"]) and "Niveau de preuve du rejeu :" in text(p["fr"])
     assert "identique" not in text(p["fr"]) and "identical" not in text(p["en"])
+
+
+def test_nanosecond_timestamps_convert_without_pandas():
+    """A clean install has no pandas: nanosecond timestamps must still convert (Windows crash on `uvx canot demo`)."""
+    import datetime as dt
+
+    import pyarrow as pa
+
+    from canot.verify import _pylist
+
+    col = pa.chunked_array([pa.array([1_000_000_000_000_001, 2_000_000_000_000_000, None], type=pa.timestamp("ns"))])
+    got = _pylist(col)
+    assert got[0] == "1970-01-12T13:46:40.000000001"   # sub-microsecond value kept exact, so it differs from a microsecond copy
+    assert got[1] == dt.datetime(1970, 1, 24, 3, 33, 20)
+    assert got[2] is None

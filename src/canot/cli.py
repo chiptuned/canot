@@ -238,7 +238,7 @@ def run(argv: list[str] | None = None) -> int:
             src.close()
         rep = write_report(res, evidence, a.lang)
         s = res["summary"]
-        _p(f"\n{'Full parity' if s['parity'] == 'complete' else 'Mismatches found'}: {s['tables_ok']}/{s['tables_total']} tables, {s['queries_match']}/{s['queries_total']} queries.")
+        _p(f"\n{'No difference found' if s['parity'] == 'complete' else 'Differences found'}: {s['tables_ok']}/{s['tables_total']} tables match, {s['queries_match']}/{s['queries_total']} queries return the same result.")
         _p(f"Proof level: {s['proof_level']}")
         _p(f"Evidence report: {rep}")
         _p("Check that it has not been modified: canot verify-evidence " + str(evidence))

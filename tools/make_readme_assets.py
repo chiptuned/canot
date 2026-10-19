@@ -63,7 +63,7 @@ TERM = [
     ("ok", "   [match]     select l_orderkey, sum(l_extendedprice * (1 - l_discount)) …"),
     ("ok", "   [match]     select sum(l_extendedprice * l_discount) as revenue …"),
     ("warn", "   [mismatch]  select * from tpch.lineitem order by l_orderkey …"),
-    ("bold", "Mismatches found: 7/8 tables, 3/4 queries."),
+    ("bold", "Differences found: 7/8 tables match, 3/4 queries return the same result."),
     ("dim", "Evidence report: canot-demo/evidence/report.html   (signed log, verifiable)"),
 ]
 
