@@ -53,7 +53,12 @@ Result: 7 tables out of 8 identical, 3 queries out of 4 returning the same resul
 | dbt | `dbt://PROJECT_PATH` | available, tested: scan of the project files, replay of the models (`canot replay-dbt`) |
 | DuckDB | `file.duckdb` | available, tested: light scan, copy, comparison |
 | Databricks | `databricks://HOST/HTTP_PATH?catalog=…` | written, not yet validated on a real account |
-| Microsoft Fabric / Azure Synapse, Amazon Redshift, Teradata, Oracle, SAP Datasphere, ClickHouse | | on the roadmap, no connector yet |
+| Amazon Redshift | `redshift://CLUSTER/DATABASE` | roadmap, no connector yet |
+| Microsoft Fabric / Azure Synapse | `fabric://WORKSPACE` | roadmap, no connector yet |
+| Teradata | `teradata://HOST/DATABASE` | roadmap, no connector yet |
+| Oracle | `oracle://HOST/SERVICE` | roadmap, no connector yet |
+| SAP Datasphere | `sap://TENANT` | roadmap, no connector yet |
+| ClickHouse | `clickhouse://HOST/DATABASE` | roadmap, no connector yet |
 
 Running Canot on a platform without a connector prints how to ask for it. A connector is written and validated with you, on your own account: [tell us what you run](https://canot.io/en/review.html).
 
@@ -74,5 +79,3 @@ uvx canot drill "snowflake://MY_ACCOUNT/MY_DATABASE?user=MY_USER" ./iceberg   # 
 ```
 
 Exit to your own infrastructure (folder, NAS, self-hosted S3 storage), commands, permissions and agent access (MCP): see the [documentation](docs/commands.md). `uvx canot connectors` lists the supported platforms, what Canot can do on each (inventory, export, evidence) and whether the connector is tested. Canot is **not** a certification: it produces a dated record of measurements on the scope you ran. The website, [canot.io](https://canot.io), explains the rest.
-
-<sub>Apache-2.0 · No trackers, no telemetry · [Security policy](SECURITY.md) · [q4o](https://q4o.com)</sub>
