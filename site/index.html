@@ -28,7 +28,6 @@
       <a class="hide-s" href="/pourquoi.html">Pourquoi</a>
       <a class="hide-s" href="/methode.html">Méthode</a>
       <a class="hide-s" href="/discrepancies.html" hreflang="en">Écarts</a>
-      <a class="hide-s" href="/docs.html" hreflang="en">Documentation</a>
       <a class="hide-s" href="/offres.html">Offres</a>
       <a href="/rapport.html"><span class="long">Exemple de rapport</span><span class="short">Exemple</span></a>
       <span class="lang-switch" aria-label="Langue / Language"><b aria-current="true">FR</b> | <a href="/en/" hreflang="en" lang="en">EN</a></span>
@@ -118,25 +117,12 @@
   </div>
 </section>
 
-<section class="s sov" id="souverainete">
-  <div class="wrap">
-    <h2>Rapatriez vos données, simplement.</h2>
-    <p class="lead-p">Changer d'hébergeur ne devrait pas être un acte de foi. Canot fait la copie vers l'endroit où vous voulez que vos données vivent, la compare à l'original et vous remet la preuve.</p>
-    <div class="who-grid">
-      <div class="who-card"><span class="k">Un hébergeur européen</span><p>Scaleway, OVHcloud, Outscale, IONOS, STACKIT : un raccourci par hébergeur, ou tout stockage compatible S3. Vous choisissez, selon vos exigences de souveraineté.</p></div>
-      <div class="who-card"><span class="k">Chez vous</span><p>Un dossier, un NAS, un stockage S3 interne (MinIO, Ceph), avec proxy et autorité de certification maison. Aucun cloud à l'arrivée.</p></div>
-      <div class="who-card"><span class="k">Sans dépendance à Canot</span><p>La copie est au format ouvert Apache Iceberg : DuckDB, Spark ou Trino la lisent. Vous pouvez vérifier sans nous, et la quitter quand vous voulez.</p></div>
-    </div>
-    <p class="note">La qualification SecNumCloud, quand elle compte pour vous, dépend de l'offre précise de l'hébergeur : à vérifier sur la liste de l'ANSSI. Canot ne certifie rien.</p>
-    <p><a class="btn btn-line" href="/methode.html#sortie-locale">Voir les destinations</a></p>
-  </div>
-</section>
-
 <section class="s report">
   <div class="wrap">
     <div class="txt">
       <h2>Ce que vous recevez tient sur une page.</h2>
       <p>Un verdict, ce qui part tel quel, ce qu'il faut traiter avant de partir. Le détail technique reste disponible pour vos équipes, avec un journal signé qui rend toute modification visible.</p>
+      <p>Le rapport n'est que la partie visible : Canot copie réellement les données vers le format ouvert Apache Iceberg, rejoue vos requêtes et vos modèles dbt sur la copie, puis écrit le rapport à partir de ces mesures.</p>
       <a class="more" href="/rapport.html">Lire l'exemple complet →</a>
     </div>
     <a class="card" href="/rapport.html" aria-label="Lire l'exemple de rapport">
@@ -160,6 +146,20 @@
       <div class="who-card"><span class="k">DSI et directions data</span><p>Un coût de sortie mesuré avant de négocier votre renouvellement, au lieu d'une estimation à la louche.</p></div>
       <div class="who-card"><span class="k">Ingénieurs data</span><p>Une commande, du code Apache-2.0, des tests. Vous voyez tout ce qu'elle fait avant de la lancer.</p></div>
     </div>
+  </div>
+</section>
+
+<section class="s sov" id="souverainete">
+  <div class="wrap">
+    <h2>Rapatriez vos données, simplement.</h2>
+    <p class="lead-p">Changer d'hébergeur ne devrait pas être un acte de foi. Canot fait la copie vers l'endroit où vous voulez que vos données vivent, la compare à l'original et vous remet la preuve.</p>
+    <div class="who-grid">
+      <div class="who-card"><span class="k">Un hébergeur européen</span><p>Scaleway, OVHcloud, Outscale, IONOS, STACKIT : un raccourci par hébergeur, ou tout stockage compatible S3. Vous choisissez, selon vos exigences de souveraineté.</p></div>
+      <div class="who-card"><span class="k">Chez vous</span><p>Un dossier, un NAS, un stockage S3 interne (MinIO, Ceph), avec proxy et autorité de certification maison. Aucun cloud à l'arrivée.</p></div>
+      <div class="who-card"><span class="k">Sans dépendance à Canot</span><p>La copie est au format ouvert Apache Iceberg : DuckDB, Spark ou Trino la lisent. Vous pouvez vérifier sans nous, et la quitter quand vous voulez.</p></div>
+    </div>
+    <p class="note">La qualification SecNumCloud, quand elle compte pour vous, dépend de l'offre précise de l'hébergeur : à vérifier sur la liste de l'ANSSI. Canot ne certifie rien.</p>
+    <p><a class="btn btn-line" href="/methode.html#sortie-locale">Voir les destinations</a></p>
   </div>
 </section>
 
@@ -201,7 +201,7 @@
 <footer class="bot">
   <div class="wrap">
     <span>Canot · un outil libre (Apache-2.0) et des missions de <a href="https://q4o.com">Q4O</a>. Ce n'est pas une certification.</span>
-    <span class="foot-links"><a href="/docs.html" hreflang="en">Documentation</a> · <a href="/faq.html">Questions fréquentes</a> · <a href="/mentions-legales.html">Mentions légales et confidentialité</a> · <a href="https://github.com/chiptuned/canot">Code source</a></span>
+    <span class="foot-links"><a href="/faq.html">Questions fréquentes</a> · <a href="/mentions-legales.html">Mentions légales et confidentialité</a> · <a href="https://github.com/chiptuned/canot">Code source</a></span>
   </div>
 </footer>
 <script src="/app.js?v=36c0db0dac" defer></script>

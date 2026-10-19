@@ -28,7 +28,6 @@
       <a class="hide-s" href="/en/why.html">Why</a>
       <a class="hide-s" href="/en/method.html">Method</a>
       <a class="hide-s" href="/discrepancies.html">Discrepancies</a>
-      <a class="hide-s" href="/docs.html">Docs</a>
       <a class="hide-s" href="/en/offers.html">Offers</a>
       <a href="/en/report.html"><span class="long">Example report</span><span class="short">Example</span></a>
       <span class="lang-switch" aria-label="Language / Langue"><a href="/" hreflang="fr" lang="fr">FR</a> | <b aria-current="true">EN</b></span>
@@ -118,25 +117,12 @@
   </div>
 </section>
 
-<section class="s sov" id="sovereignty">
-  <div class="wrap">
-    <h2>Bring your data home, simply.</h2>
-    <p class="lead-p">Changing hosts should not be an act of faith. Canot copies your data to where you want it to live, compares the copy to the original and hands you the evidence.</p>
-    <div class="who-grid">
-      <div class="who-card"><span class="k">A European host</span><p>Scaleway, OVHcloud, Outscale, IONOS, STACKIT: one shortcut per host, or any S3-compatible storage. You choose, based on your sovereignty requirements.</p></div>
-      <div class="who-card"><span class="k">On your premises</span><p>A folder, a NAS, internal S3 storage (MinIO, Ceph), with your own proxy and certificate authority. No cloud at the destination.</p></div>
-      <div class="who-card"><span class="k">No dependency on Canot</span><p>The copy uses the open Apache Iceberg format: DuckDB, Spark and Trino read it. You can check it without us, and move off it whenever you want.</p></div>
-    </div>
-    <p class="note">SecNumCloud qualification, when it matters to you, depends on the host's specific offering: check the ANSSI list. Canot certifies nothing.</p>
-    <p><a class="btn btn-line" href="/en/method.html#local-exit">See the destinations</a></p>
-  </div>
-</section>
-
 <section class="s report">
   <div class="wrap">
     <div class="txt">
       <h2>What you get fits on one page.</h2>
       <p>A verdict, what moves as is, and what to fix before you leave. The technical detail stays available to your teams, with a signed log that makes any change visible.</p>
+      <p>The report is only the visible part: Canot really copies the data to the open Apache Iceberg format, replays your queries and dbt models on the copy, then writes the report from those measurements.</p>
       <a class="more" href="/en/report.html">Read the full sample →</a>
     </div>
     <a class="card" href="/en/report.html" aria-label="Read the sample report">
@@ -160,6 +146,20 @@
       <div class="who-card"><span class="k">CIOs and data leaders</span><p>An exit cost measured before you negotiate your renewal, instead of a rough guess.</p></div>
       <div class="who-card"><span class="k">Data engineers</span><p>One command, Apache-2.0 code, tests. You see everything it does before you run it.</p></div>
     </div>
+  </div>
+</section>
+
+<section class="s sov" id="sovereignty">
+  <div class="wrap">
+    <h2>Bring your data home, simply.</h2>
+    <p class="lead-p">Changing hosts should not be an act of faith. Canot copies your data to where you want it to live, compares the copy to the original and hands you the evidence.</p>
+    <div class="who-grid">
+      <div class="who-card"><span class="k">A European host</span><p>Scaleway, OVHcloud, Outscale, IONOS, STACKIT: one shortcut per host, or any S3-compatible storage. You choose, based on your sovereignty requirements.</p></div>
+      <div class="who-card"><span class="k">On your premises</span><p>A folder, a NAS, internal S3 storage (MinIO, Ceph), with your own proxy and certificate authority. No cloud at the destination.</p></div>
+      <div class="who-card"><span class="k">No dependency on Canot</span><p>The copy uses the open Apache Iceberg format: DuckDB, Spark and Trino read it. You can check it without us, and move off it whenever you want.</p></div>
+    </div>
+    <p class="note">SecNumCloud qualification, when it matters to you, depends on the host's specific offering: check the ANSSI list. Canot certifies nothing.</p>
+    <p><a class="btn btn-line" href="/en/method.html#local-exit">See the destinations</a></p>
   </div>
 </section>
 
@@ -201,7 +201,7 @@
 <footer class="bot">
   <div class="wrap">
     <span>Canot · a free tool (Apache-2.0) and engagements by <a href="https://q4o.com">Q4O</a>. This is not a certification.</span>
-    <span class="foot-links"><a href="/docs.html">Documentation</a> · <a href="/en/faq.html">FAQ</a> · <a href="/en/legal.html">Legal notice and privacy</a> · <a href="https://github.com/chiptuned/canot">Source code</a></span>
+    <span class="foot-links"><a href="/en/faq.html">FAQ</a> · <a href="/en/legal.html">Legal notice and privacy</a> · <a href="https://github.com/chiptuned/canot">Source code</a></span>
   </div>
 </footer>
 <script src="/app.js?v=36c0db0dac" defer></script>
