@@ -136,10 +136,10 @@
     { id: 'demo', word: 'demo', label: tr('démo', 'demo'), src: false, dst: true, dstIds: null, srcIds: [],
       text: tr("Génère TPC-H en local, le copie, compare tout et écrit un dossier de preuve signé. Sans compte ni données.",
                "Generates TPC-H locally, copies it, compares everything and writes a signed evidence pack. No account, no data needed.") },
-    { id: 'scan', word: 'scan', label: 'scan', src: true, dst: false, srcIds: ['snowflake', 'bigquery', 'databricks', 'dbt'],
+    { id: 'scan', word: 'scan', label: 'scan', src: true, dst: false, srcIds: ['snowflake', 'bigquery', 'databricks', 'dbt', 'fabric', 'redshift', 'teradata', 'oracle', 'sap', 'clickhouse'],
       text: tr("Radiographie en lecture seule : inventaire, coûts, ce qui ne part pas tel quel. Rien n'est modifié chez vous.",
                "Read-only X-ray: inventory, costs, what will not move as is. Nothing is changed on your side.") },
-    { id: 'drill', word: 'drill', label: 'drill', src: true, dst: true, dstIds: null, srcIds: ['snowflake', 'bigquery', 'databricks'],
+    { id: 'drill', word: 'drill', label: 'drill', src: true, dst: true, dstIds: null, srcIds: ['snowflake', 'bigquery', 'databricks', 'fabric', 'redshift', 'teradata', 'oracle', 'sap', 'clickhouse'],
       text: tr("Copie, compare tout, rejoue vos requêtes les plus coûteuses et écrit un dossier de preuve signé.",
                "Copies, compares everything, replays your most expensive queries and writes a signed evidence pack.") },
     { id: 'replay', word: 'replay-dbt', label: tr('rejeu dbt', 'dbt replay'), src: true, dst: true, dstIds: ['local', 'onprem'], srcIds: ['dbt'],
@@ -150,6 +150,12 @@
     { id: 'snowflake', label: 'Snowflake', rest: '://MY_ACCOUNT/MY_DATABASE?user=MY_USER' },
     { id: 'bigquery', label: 'BigQuery', rest: '://MY_PROJECT/MY_DATASET?location=EU' },
     { id: 'dbt', label: 'dbt', rest: '://MY_DBT_PROJECT' },
+    { id: 'fabric', label: 'Microsoft Fabric / Synapse', rest: '://MY_WORKSPACE', soon: true },
+    { id: 'redshift', label: 'Amazon Redshift', rest: '://MY_CLUSTER/MY_DATABASE', soon: true },
+    { id: 'teradata', label: 'Teradata', rest: '://MY_HOST/MY_DATABASE', soon: true },
+    { id: 'oracle', label: 'Oracle', rest: '://MY_HOST/MY_SERVICE', soon: true },
+    { id: 'sap', label: 'SAP Datasphere', rest: '://MY_TENANT', soon: true },
+    { id: 'clickhouse', label: 'ClickHouse', rest: '://MY_HOST/MY_DATABASE', soon: true },
     { id: 'databricks', label: 'Databricks', rest: '://MY_WORKSPACE.cloud.databricks.com/sql/1.0/warehouses/MY_WAREHOUSE_ID?catalog=MY_CATALOG' }
   ];
   var BUCKET = ' --bucket MY_BUCKET';
@@ -199,6 +205,7 @@
     var destRestEls = root.querySelectorAll('[data-cs-dest-rest]');
     var prefixEls = root.querySelectorAll('[data-cs-dest-prefix]');
     var textEls = root.querySelectorAll('[data-cs-action-text]');
+    var soonEls = root.querySelectorAll('[data-cs-soon]');
     var picks = [['data-cs-pick', 'src'], ['data-cs-pick-out', 'dst'], ['data-cs-pick-act', 'act']].map(function (x) { return { attr: x[0], kind: x[1], els: root.querySelectorAll('[' + x[0] + ']') }; });
     var copyEls = root.querySelectorAll('[data-cs-copy]');
     var drums = Array.prototype.map.call(root.querySelectorAll('[data-cs-drum]'), buildDrum);
@@ -210,8 +217,23 @@
       if (a.dst) out += (a.id === 'replay' ? ' --iceberg ' : ' ') + d.word + (a.id === 'replay' ? '' : d.rest);
       return out;
     }
+    function actionFor(kind, i) {  // the first action that can show this value (picking dbt switches to scan, a host to drill...)
+      var id = LISTS[kind][i].id, order = kind === 'src' ? ['drill', 'scan', 'replay'] : ['drill', 'demo', 'replay'];
+      for (var n = 0; n < order.length; n++) {
+        var k = ACTIONS.findIndex(function (a) { return a.id === order[n]; }), a = ACTIONS[k];
+        var ids = kind === 'src' ? a.srcIds : a.dstIds;
+        if (a[kind] && (!ids || ids.indexOf(id) >= 0)) return k;
+      }
+      return -1;
+    }
     function set(kind, i, byUser) {
-      if (kind === 'src' || kind === 'dst') { if (allowed(kind).indexOf(i) < 0) return; }
+      if (kind === 'src' || kind === 'dst') {
+        if (allowed(kind).indexOf(i) < 0 || !ACTIONS[st.act][kind]) {
+          var k = actionFor(kind, i);
+          if (k < 0) return;
+          st.act = k; clamp();
+        }
+      }
       if (byUser) touched = true;
       if (i === st[kind]) return;
       st[kind] = i;
@@ -226,6 +248,17 @@
       destRestEls.forEach(function (el) { el.textContent = a.id === 'replay' ? '' : DESTS[st.dst].rest; });
       prefixEls.forEach(function (el) { el.textContent = a.id === 'replay' ? ' --iceberg ' : ' '; });
       textEls.forEach(function (el) { el.textContent = a.text; });
+      var soon = a.src && SOURCES[st.src].soon;
+      soonEls.forEach(function (el) {
+        el.hidden = !soon;
+        if (soon) {
+          var l = SOURCES[st.src].label, href = EN ? '/en/review.html' : '/revue.html';
+          el.innerHTML = '';
+          el.appendChild(document.createTextNode(tr(l + " : connecteur sur demande, il s'écrit et se valide avec vous sur votre compte. ", l + ': connector on request, written and validated with you on your account. ')));
+          var link = document.createElement('a'); link.href = href; link.textContent = tr('Dites-nous ce que vous utilisez', 'Tell us what you run'); el.appendChild(link);
+        }
+      });
+      copyEls.forEach(function (b) { b.hidden = !!soon; });
       picks.forEach(function (p) {
         p.els.forEach(function (el) {
           var j = LISTS[p.kind].findIndex(function (x) { return x.id === norm(el.getAttribute(p.attr)); });
