@@ -348,7 +348,7 @@ def test_bilingue_deterministe_sans_script_ids_uniques(name, lang):
         assert bad + ("click" if bad == " on" else "") not in low
     ids = re.findall(r'\bid="([^"]+)"', a)
     assert len(ids) == len(set(ids)), sorted(i for i in ids if ids.count(i) > 1)
-    assert a.count("<style>") == 1 and a.count('class="brandbar"') == 1 and a.count("<svg") == 1
+    assert a.count("<style>") == 1 and a.count('class="brandbar"') == 1 and a.count("<svg") == 2
 
 
 def test_bascule_de_langue_par_ancre_sans_script():

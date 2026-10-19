@@ -103,7 +103,7 @@ def test_ids_are_unique_and_only_the_pane_wrappers_are_shared_names(demo):
 def test_toggle_one_brand_bar_and_default_from_lang_option(demo):
     page = (demo[1] / "report.html").read_text(encoding="utf-8")
     assert page.count('href="#lang-en"') == 1 and page.count('href="#lang-fr"') == 1
-    assert page.count("<svg") == 1 and page.count('class="brandbar"') == 1 and page.count("<style>") == 1
+    assert page.count("<svg") == 2 and page.count('class="brandbar"') == 1 and page.count("<style>") == 1
     assert page.index('class="langbar"') < page.index('id="lang-')  # the language bar comes before both panes
     assert panes(page)["_order"] == ("en", "fr")  # --lang fr: English is the alternate pane, French the main one
     assert '<html lang="fr">' in page and "<title>Rapport de preuve Canot</title>" in page

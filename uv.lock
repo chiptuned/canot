@@ -140,7 +140,7 @@ wheels = [
 
 [[package]]
 name = "canot"
-version = "0.6.1"
+version = "0.6.5"
 source = { editable = "." }
 dependencies = [
     { name = "cryptography" },

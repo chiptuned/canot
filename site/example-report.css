@@ -8,8 +8,9 @@ code{background:#eef3f6;padding:1px 4px;border-radius:3px;word-break:break-all}.
 .find b{display:block;font-size:1.05rem}.find span{color:#41566b}.cta{background:#1f3a5f;color:#fff;padding:1rem 1.2rem;border-radius:8px;margin-top:2rem}.cta a{color:#ffb88f;font-weight:600}
 .brandbar .langbar{margin:0}
 @media(max-width:560px){.find{grid-template-columns:1fr}}.brandbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:0 0 12px;margin:0 0 18px;border-bottom:1px solid rgba(128,128,128,.35)}
-.brandbar .brand{display:flex;align-items:center;gap:10px;font:700 20px system-ui,sans-serif;letter-spacing:-.01em}
-.brandbar .brand svg{background:#fff;border-radius:6px;padding:3px 5px;height:26px;width:auto;box-sizing:content-box}
+.brandbar .brand{display:flex;align-items:center;gap:8px}
+.brandbar .brand .word{height:20px;width:auto;position:relative;top:-1px;background:none;padding:0;border-radius:0}
+.brandbar .brand svg:first-child{background:#fff;border-radius:6px;padding:3px 5px;height:26px;width:auto;box-sizing:content-box}
 .brandbar .kind{font:600 13px system-ui,sans-serif;opacity:.7}
 .share{margin:14px 0 18px;padding:12px 14px;border:1px solid rgba(128,128,128,.35);border-radius:8px}
 .share .acts{display:flex;flex-wrap:wrap;gap:8px}
