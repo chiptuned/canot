@@ -18,6 +18,20 @@ PROVIDERS: dict[str, tuple[str, str]] = {
 }
 
 
+def file_uri(p: Path) -> str:
+    """file:// URI of a local folder. Windows needs three slashes and forward slashes (file:///C:/...): the Iceberg metadata
+    stores these URIs, and DuckDB or Spark must be able to read them."""
+    return "file:///" + p.as_posix() if os.name == "nt" else f"file://{p}"
+
+
+def local_path(uri: str) -> Path:
+    """Inverse of file_uri (also accepts a plain path)."""
+    rest = uri[len("file://"):] if uri.startswith("file://") else uri
+    if len(rest) > 2 and rest[0] == "/" and rest[2] == ":":  # /C:/Users/...
+        rest = rest[1:]
+    return Path(rest)
+
+
 @dataclass
 class Target:
     kind: str  # local | s3
@@ -36,7 +50,7 @@ class Target:
 
     def teardown(self) -> str:
         if self.kind == "local":
-            p = Path(self.warehouse.replace("file://", ""))
+            p = local_path(self.warehouse)
             if p.exists():
                 shutil.rmtree(p)
             return f"deleted: {p}"
@@ -133,4 +147,4 @@ def parse_target(spec: str, bucket: str | None, workdir: Path, catalog: str | No
             os.environ.setdefault("SSL_CERT_FILE", qs["ca"])
         return Target("s3", f"s3://{u.netloc}{u.path}", f"s3://{u.netloc}{u.path}".rstrip("/"), props, workdir, uri)
     path = Path(spec.replace("file://", "")).expanduser().resolve()
-    return Target("local", f"local:{path}", f"file://{path / 'warehouse'}", {}, workdir, uri)
+    return Target("local", f"local:{path}", file_uri(path / "warehouse"), {}, workdir, uri)

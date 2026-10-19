@@ -12,6 +12,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from .target import local_path
 from . import proof
 from .regulatory import section as regulatory_section
 from .brand import CSS as BRAND_CSS, bilingual, brand_bar, default_lang, drill_share, share_block
@@ -483,7 +484,7 @@ def write_relire_sql(res: dict, out: Path) -> Path:
         lines += ["-- S3-compatible storage: first create a secret with YOUR keys (never paste them into a shared file).",
                   "-- CREATE SECRET (TYPE S3, KEY_ID '...', SECRET '...', ENDPOINT 's3-host', URL_STYLE 'path');"]
     for fqn, meta in sorted((loc.get("metadata") or {}).items()):
-        path = (meta[len("file://"):] if meta.startswith("file://") else meta).replace("\\", "/")  # DuckDB reads C:/... on Windows
+        path = local_path(meta).as_posix() if meta.startswith("file://") else meta.replace("\\", "/")  # DuckDB reads C:/... on Windows
         lines.append(f"SELECT '{fqn}' AS table_name, count(*) AS row_count FROM iceberg_scan('{path}');")
     p = out / REREAD_FILE
     p.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
