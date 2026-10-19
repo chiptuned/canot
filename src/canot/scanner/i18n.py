@@ -161,8 +161,9 @@ def _rt_quoi(m: re.Match) -> str:
     for n, what in re.findall(r"(\d+) (tables?|objects?)", m.group(1)):
         parts.append(_fr_count(n, "table", "tables") if what.startswith("table") else _fr_count(n, "objet", "objets"))
     lat = f", dont la latence atteint {m.group(2)} h selon la vue" if m.group(2) else ""
-    return (f"{' et '.join(parts)} vu{'s' if sum(int(x) for x in re.findall(r'(\d+)', m.group(1))) > 1 else ''} seulement en temps réel : "
-            f"absent{'s' if sum(int(x) for x in re.findall(r'(\d+)', m.group(1))) > 1 else ''} d'ACCOUNT_USAGE{lat} ; leur historique "
+    plural = "s" if sum(int(x) for x in re.findall(r"(\d+)", m.group(1))) > 1 else ""
+    return (f"{' et '.join(parts)} vu{plural} seulement en temps réel : "
+            f"absent{plural} d'ACCOUNT_USAGE{lat} ; leur historique "
             "(volumes facturés, lectures) n'est pas encore disponible.")
 
 

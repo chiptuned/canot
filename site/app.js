@@ -23,6 +23,28 @@
   document.querySelectorAll(".lang-switch a[hreflang]").forEach(function (a) {
     a.addEventListener("click", function () { store(a.getAttribute("hreflang")); });
   });
+  // Docs and discrepancies exist in English only and are shared by both versions: when the visitor came
+  // from the French site, keep the French header so the way back lands on the French home page.
+  (function sharedPages() {
+    var shared = /^\/(docs|discrepancies)(\.html)?$/.test(location.pathname);
+    if (!shared) { store(EN ? "en" : "fr"); return; }
+    if (stored() !== "fr") return;
+    var FR = { "/en/": ["/", "accueil"], "/en/why.html": ["/pourquoi.html", "Pourquoi"], "/en/method.html": ["/methode.html", "Méthode"],
+      "/en/offers.html": ["/offres.html", "Offres"], "/en/report.html": ["/rapport.html", null] };
+    document.querySelectorAll("header.top a").forEach(function (a) {
+      var m = FR[a.getAttribute("href")];
+      if (m) { a.setAttribute("href", m[0]); if (m[1] && !a.classList.contains("brand")) a.textContent = m[1]; }
+    });
+    document.querySelectorAll("header.top nav a").forEach(function (a) {
+      var h = a.getAttribute("href");
+      if (h === "/discrepancies.html") a.textContent = "Écarts";
+      else if (h === "/docs.html") a.textContent = "Documentation";
+      else if (h === "/rapport.html") a.innerHTML = '<span class="long">Exemple de rapport</span><span class="short">Exemple</span>';
+      else if (a.classList.contains("btn")) a.innerHTML = '<span class="long">Tester gratuitement</span><span class="short">Test gratuit</span>';
+    });
+    var sw = document.querySelector(".lang-switch a[hreflang='fr']");
+    if (sw) sw.setAttribute("href", "/");
+  })();
   (function banner() {
     var en = document.querySelector(".lang-switch a[hreflang='en']");
     var nav = (navigator.languages && navigator.languages[0]) || navigator.language || "";
