@@ -22,7 +22,8 @@
   <a href="docs/commands.md">Documentation</a> ·
   <a href="docs/discrepancies.md">Measured discrepancies</a> ·
   <a href="#-try-it">Try it</a> ·
-  <a href="#-why">Why</a>
+  <a href="#-why">Why</a> ·
+  <a href="README.fr.md">Français</a>
 </p>
 
 ---
@@ -33,13 +34,13 @@
 uvx canot demo
 ```
 
-No account, no data: Canot generates **TPC-H**, the standard database benchmark (8 tables, 22 queries, up to 1 GB of data at scale factor 1), copies it to Apache Iceberg, compares everything, replays TPC-H queries on both sides and writes a signed evidence report. A 100 MB version by default (a few seconds); `uvx canot demo --sf 1` runs scale factor 1, about 1 GB (around 20 seconds on a laptop). The command prints the two commands it runs (`canot demo-data`, then `canot drill`): copy them to change the destination, for example `uvx canot demo aws:eu-west-3 --bucket MY-BUCKET`.
+No account, no data: it runs the TPC-H benchmark dataset through a full exit exercise (copy to Apache Iceberg, comparison, signed evidence report) in a few seconds.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/chiptuned/canot/main/docs/assets/demo.svg" alt="uvx canot demo copies the 8 TPC-H tables, compares everything and flags a discrepancy" width="860">
 </p>
 
-Result: 7 tables out of 8 with identical content, 3 queries out of 4 returning the same result. The discrepancy comes from a nanosecond timestamp column added by Canot: Iceberg v2 reduces it to microsecond precision. This is the kind of discrepancy you want to find **before** you leave.
+Result: 7 tables out of 8 identical, 3 queries out of 4 returning the same result. The discrepancy is a nanosecond timestamp column: Iceberg v2 reduces it to microseconds. The kind of discrepancy you want to find **before** you leave.
 
 ## ▶ Connectors
 
